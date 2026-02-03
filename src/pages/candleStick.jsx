@@ -79,11 +79,7 @@ const Candlestick = () => {
   }, [timeframe]); // 👈 will refetch later based on timeframe
 
   return (
-    <div className="w-fit overflow-hidden border flex flex-col mx-auto justify-center border-slate-800 bg-slate-900">
-      
-      
-      
-      
+    <div className="w-screen h-screen flex flex-col bg-slate-900">
       {/* ✅ Chart Header */}
       <ChartHeader
         symbol="BTC / USDT"
@@ -91,7 +87,6 @@ const Candlestick = () => {
         change={2.15}
         timeframe={timeframe}
         onTimeframeChange={setTimeframe}
-        
       />
 
       {/* ✅ Chart Canvas */}

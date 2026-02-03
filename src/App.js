@@ -1,6 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import './App.css';
-import { Form } from './pages/Form';
+import {Form} from './pages/form'
 import Candlestick from './pages/candleStick';
 import TradingViewChart from './pages/TradingViewChart';
 
