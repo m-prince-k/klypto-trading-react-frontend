@@ -3,6 +3,7 @@ import './App.css';
 import { Form } from './pages/Form';
 import Candlestick from './pages/candleStick';
 import TradingViewChart from './pages/TradingViewChart';
+import IndiatorSlide from './component/indicator/indicatorSlide';
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
         <Route path="/" element={<Form />} />
         <Route path="/candlestick" element={< Candlestick />} />
         <Route path="/tradingview" element={< TradingViewChart />} />
+        <Route path="/indiatorSlide" element={< IndiatorSlide />} />
 
       </Routes>
       </BrowserRouter>

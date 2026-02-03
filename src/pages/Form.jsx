@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import Select from "react-select";
+import "./css/slide.css";
 
 export const Form = () => {
   const [populate, setPopulate] = useState({
@@ -64,10 +65,24 @@ export const Form = () => {
   ];
 
   // setFirst((prev) => ({...prev,first:32}));
+const [isRight, setIsRight] = useState(false);
+
 
   return (
+    <>
+ <div className={`box ${isRight ? "right" : "left"}`}>
+        Slide me
+      </div>
+
+      <button onClick={() => setIsRight(!isRight)}>
+        Toggle Slide
+      </button>
     <form onSubmit={handleSubmit}>
       <section className="flex gap-4 m-8">
+
+     
+
+
         <Select
           name="candle"
           options={candles}
@@ -126,6 +141,7 @@ export const Form = () => {
         </pre>
       </div>
     </form>
+    </>
   );
 };
 
