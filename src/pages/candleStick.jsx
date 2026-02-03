@@ -1,14 +1,20 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createChart, CandlestickSeries } from "lightweight-charts";
-import ChartHeader from "../pages/chartHeader";
+import ChartHeader from "../components/tradingModals/chartHeader";
+import { FaFileWaveform } from "react-icons/fa6";
+import { Form } from "../components/tradingModals/Form";
 
 const Candlestick = () => {
   const chartRef = useRef(null);
   const [timeframe, setTimeframe] = useState("1m");
+  const [openForm, setOpenForm] = useState(false);
+
+  const handleOpen = () => setOpenForm(true);
+  const handleClose = () => setOpenForm(false);
 
   useEffect(() => {
     const chart = createChart(chartRef.current, {
-      width: 800,
+      width: 1200,
       height: 400,
 
       layout: {
@@ -21,11 +27,31 @@ const Candlestick = () => {
       timeScale: {
         timeVisible: true,
         secondsVisible: false,
+
         borderColor: "#334155",
         fixLeftEdge: true,
         fixRightEdge: true,
       },
+      tickMarkFormatter: (time) => {
+        const date = new Date(time * 1000);
+        return date.getDate().toString();
+      },
 
+      tickMarkFormatter: (time, tickMarkType) => {
+        const date = new Date(time * 1000);
+
+        if (tickMarkType === 0) {
+          return date.getDate(); // day
+        }
+
+        if (tickMarkType === 1) {
+          return date.toLocaleString("en-US", { month: "short" });
+        }
+
+        if (tickMarkType === 2) {
+          return date.getFullYear();
+        }
+      },
       rightPriceScale: {
         borderColor: "#334155",
         scaleMargins: { top: 0.2, bottom: 0.2 },
@@ -80,7 +106,7 @@ const Candlestick = () => {
 
   return (
     <div className="w-screen h-screen flex flex-col bg-slate-900">
-      {/* ✅ Chart Header */}
+      {/* Header */}
       <ChartHeader
         symbol="BTC / USDT"
         price="43,250"
@@ -89,8 +115,31 @@ const Candlestick = () => {
         onTimeframeChange={setTimeframe}
       />
 
-      {/* ✅ Chart Canvas */}
-      <div ref={chartRef} />
+      {/* Chart */}
+      <div className="flex-1 relative">
+        <div ref={chartRef} className="w-full h-full" />
+      </div>
+
+      {/* Slide-in Form */}
+      <div
+        className={`
+      fixed top-0 right-0 h-screen w-[400px] bg-white shadow-xl z-50
+      transform transition-transform duration-300 ease-in-out
+      ${openForm ? "translate-x-0" : "translate-x-full"}
+    `}
+      >
+        <Form onClose={handleClose} />
+
+      </div>
+
+      {/* Open Button */}
+      <button
+        onClick={handleOpen}
+        className="fixed bottom-6 right-6 flex items-center gap-1 px-3 py-2
+               text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-purple-500 z-50"
+      >
+        <FaFileWaveform />
+      </button>
     </div>
   );
 };

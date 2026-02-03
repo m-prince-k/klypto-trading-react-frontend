@@ -1,19 +1,47 @@
+import { useState, useEffect } from "react";
 import { IoCloseSharp } from "react-icons/io5";
 import { FiSearch } from "react-icons/fi";
 import { GrBitcoin } from "react-icons/gr";
 
 export const ListingModal = ({ isOpen, onClose, items, title }) => {
-  if (!isOpen) return null;
+  const [activeTab, setActiveTab] = useState("Indicators");
+  const [indicators, setIndicators] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const symbolListing = [
-  {
-    code: "BTCUSD",
-    name: "Bitcoin / U.S Dollar",
-    category: "index",
-    type: "spot crypto",
-    icon: "bitcoin",
-  },
-];
+    {
+      code: "BTCUSD",
+      name: "Bitcoin / U.S Dollar",
+      category: "index",
+      type: "spot crypto",
+      icon: "bitcoin",
+    },
+  ];
+
+  useEffect(() => {
+    const fetchIndicators = async () => {
+      try {
+        const response = await fetch("http://192.168.1.10:3000/getIndicators");
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch indicators");
+        }
+
+        const data = await response.json();
+        setIndicators(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchIndicators();
+  }, []);
+
+  const TABS = ["Indicators", "Strategies", "Profiles", "Patterns"];
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
@@ -68,7 +96,7 @@ export const ListingModal = ({ isOpen, onClose, items, title }) => {
         )}
 
         {title === "Indicators" && (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 py-3">
             <div className="relative">
               <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
@@ -78,13 +106,40 @@ export const ListingModal = ({ isOpen, onClose, items, title }) => {
               />
             </div>
 
-            <div>
-              <button className="rounded-full text-sm px-2 py-1 bg-slate-950 text-slate-100">Indicators</button>
+            <div className="flex gap-2">
+              {TABS.map((tab) => {
+                const isActive = activeTab === tab;
+
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`
+                      rounded-full text-sm px-3 py-1 transition
+                      ${
+                        isActive
+                          ? "bg-slate-950 text-slate-100"
+                          : "bg-slate-200 text-slate-950"
+                      }
+                    `}
+                  >
+                    {tab}
+                  </button>
+                );
+              })}
             </div>
 
+            <div>
+              <pre>{JSON.stringify(indicators, null, 2)}</pre>{" "}
+            </div>
           </div>
         )}
-        
+
+        {title === "Alerts" && (
+          <div>
+            <h1> Create Alert</h1>
+          </div>
+        )}
       </div>
     </div>
   );
