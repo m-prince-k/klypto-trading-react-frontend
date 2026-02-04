@@ -147,12 +147,22 @@ export default function ChartHeader({
             </>
           ))}
         </div>
-
+{/* -------------------------------------------------------------ADD CANDLE charts------------------- */}
         {/* Candlestick */}
-        <button className="flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700">
-          <BsBarChartFill className="text-sm" />
-          Candlestick
-        </button>
+        {/* <select
+                value={"line"}
+                onChange={(e) => setChartType("line")}
+                style={{ marginBottom: "10px" }}
+            >
+                <option value="candlestick">Candlestick</option>
+                <option value="line">Line</option>
+                <option value="bar">Bar</option>
+                <option value="area">Area</option>
+                <option value="baseline">Baseline</option>
+                <option value="histogram">Histogram (Volume)</option>
+                  <option value="custom">Custom Series</option>
+            </select> */}
+
 
         {/* Indicator */}
         <button

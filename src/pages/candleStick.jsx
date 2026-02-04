@@ -1,38 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
-import { createChart, CandlestickSeries } from "lightweight-charts";
-import ChartHeader from "../components/tradingModals/ChartHeader";
+import { createChart, CandlestickSeries, LineSeries, BarSeries, AreaSeries, HistogramSeries, BaselineSeries, CustomSeries } from "lightweight-charts";
+import { ChartProprties } from "../util/common";
 import { FaFileWaveform } from "react-icons/fa6";
 import { Form } from "../components/tradingModals/Form";
-import { ChartProprties } from "../util/common";
+import ChartHeader from "../components/tradingModals/ChartHeader";
 
-const CandleStick = () => {
-  const containerRef = useRef(null); // DOM container
-  const chartRef = useRef(null); // Chart instance
-  const [timeframe, setTimeframe] = useState("1m");
-  const [openForm, setOpenForm] = useState(false);
-  const [timeframeValue, setTimeframeValue] = useState(60);
-  const [rangeValue, setRangeValue] = useState(1);
-
-  console.log("timeframeValue---------------", timeframeValue);
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    // 🟢 Create chart
-    const chart = createChart(containerRef.current, ChartProprties);
-
-    chartRef.current = chart; // ✅ store chart instance
-
-    // 🟢 Add candlestick series (v4+ API)
-    const candleSeries = chart.addSeries(CandlestickSeries, {
-      upColor: "#22c55e",
-      downColor: "#ef4444",
-      borderUpColor: "#22c55e",
-      borderDownColor: "#ef4444",
-      wickUpColor: "#22c55e",
-      wickDownColor: "#ef4444",
-    });
-
-    candleSeries.setData([
+const ohlcData = [
       { time: "2025-01-01", open: 100, high: 110, low: 95, close: 105 },
       { time: "2025-01-02", open: 105, high: 115, low: 100, close: 112 },
       { time: "2025-01-03", open: 112, high: 120, low: 108, close: 118 },
@@ -53,18 +26,38 @@ const CandleStick = () => {
       { time: "2025-01-18", open: 152, high: 160, low: 150, close: 158 },
       { time: "2025-01-19", open: 158, high: 168, low: 155, close: 165 },
       { time: "2025-01-20", open: 165, high: 175, low: 120, close: 150 },
-    ]);
+    ];
 
-    chart.timeScale().fitContent();
+export default function ChartDemoCandle() {
+    const containerRef = useRef(null);
+    const chartRef = useRef(null);
+    const seriesRef = useRef(null);
 
-    return () => {
-      chart.remove();
-      chartRef.current = null;
-    };
-  }, [timeframe]);
 
-  // 🔍 Zoom In
-  const zoomIn = () => {
+    
+  const [timeframe, setTimeframe] = useState("1m");
+  const [openForm, setOpenForm] = useState(false);
+  const [timeframeValue, setTimeframeValue] = useState(60);
+  const [rangeValue, setRangeValue] = useState(1);
+
+    const [chartType, setChartType] = useState("candlestick");
+
+    // Create chart ONCE
+    useEffect(() => {
+        chartRef.current = createChart(containerRef.current, 
+          ChartProprties
+        );
+
+        return () => chartRef.current?.remove();
+    }, []);
+
+    // Reload series when chartType changes
+    useEffect(() => {
+        loadSeries(chartType);
+    }, [chartType]);
+
+
+     const zoomIn = () => {
     const chart = chartRef.current;
     if (!chart) return;
 
@@ -95,7 +88,8 @@ const CandleStick = () => {
   const resetZoom = () => {
     chartRef.current?.timeScale().fitContent();
   };
-  function generateCandles(tfSeconds, bars = 100) {
+
+   function generateCandles(tfSeconds, bars = 100) {
     let time = Math.floor(Date.now() / 1000) - bars * tfSeconds;
     let price = 30000;
     const data = [];
@@ -121,28 +115,142 @@ const CandleStick = () => {
     return data;
   }
 
-  useEffect(() => {
-    if (!chartRef.current) return;
-    const { chart, series } = chartRef.current;
-    console.log("timeframe in candleStick.jsx==================>>>>>>>>>", timeframe.seconds, rangeValue);
-    if(timeframe.seconds && rangeValue){ 
-      series.setData(generateCandles(60,1));
-      chart.timeScale().fitContent();
-    }
-  }, [timeframe, rangeValue]);
+    const clearSeries = () => {
+        if (!chartRef.current || !seriesRef.current) return;
 
-  return (
-    <div className="w-screen h-screen flex flex-col bg-slate-900">
-      {/* Zoom Controls */}
-      <ChartHeader
-        price="43,250"
-        change={2.15}
-        timeframe={timeframe}
-        onTimeframeChange={setTimeframe}
-        setTimeframeValue={setTimeframeValue}
-        setRangeValue={rangeValue}
-      />
-      <div className="ml-3 text-slate-50">
+        try {
+            chartRef.current.removeSeries(seriesRef.current);
+        } catch (e) {
+            console.warn("Series already removed");
+        }
+
+        seriesRef.current = null;
+    };
+
+    const loadSeries = (type) => {
+        const chart = chartRef.current;
+        if (!chart) return;
+
+        clearSeries();
+
+        let series;
+
+        if (type === "line") {
+            series = chart.addSeries(LineSeries, { color: "#38bdf8" });
+            series.setData(
+                ohlcData.map(d => ({ time: d.time, value: d.close }))
+            );
+        }
+
+        if (type === "bar") {
+            series = chart.addSeries(BarSeries, {});
+            series.setData(ohlcData);
+        }
+
+        if (type === "area") {
+            series = chart.addSeries(AreaSeries, {
+                topColor: "rgba(56,189,248,0.4)",
+                bottomColor: "rgba(56,189,248,0)",
+                lineColor: "#38bdf8",
+            });
+            series.setData(
+                ohlcData.map(d => ({ time: d.time, value: d.close }))
+            );
+        }
+
+        if (type === "candlestick") {
+            series = chart.addSeries(CandlestickSeries, {
+                  upColor: "#22c55e",
+      downColor: "#ef4444",
+      borderUpColor: "#22c55e",
+      borderDownColor: "#ef4444",
+      wickUpColor: "#22c55e",
+      wickDownColor: "#ef4444",
+            });
+            series.setData(ohlcData);
+        }
+
+        if (type === "baseline") {
+            series = chart.addSeries(BaselineSeries, {
+                baseValue: { type: "price", price: 100 },
+                topLineColor: "#22c55e",
+                bottomLineColor: "#ef4444",
+                topFillColor1: "rgba(34,197,94,0.3)",
+                bottomFillColor1: "rgba(239,68,68,0.3)",
+            });
+            series.setData(
+                ohlcData.map(d => ({ time: d.time, value: d.close }))
+            );
+        }
+
+        if (type === "histogram") {
+            series = chart.addSeries(HistogramSeries, {
+                priceFormat: { type: "volume" },
+                priceScaleId: "",
+            });
+            series.setData(
+                ohlcData.map(d => ({
+                    time: d.time,
+                    value: Math.floor(Math.random() * 3000 + 1000),
+                    color: d.close >= d.open ? "#22c55e" : "#ef4444",
+                }))
+            );
+        }
+        
+    //      if (type === "custom") {
+    //   series = chart.addSeries(CustomSeries,
+    //     { priceLineVisible: false },
+    //     {
+    //       renderer: {
+    //         draw(ctx, priceToY, timeToX, data) {
+    //           ctx.fillStyle = "#fbbf24";
+    //           data.forEach(point => {
+    //             const x = timeToX(point.time);
+    //             const y = priceToY(point.value);
+    //             if (x !== null && y !== null) {
+    //               ctx.beginPath();
+    //               ctx.arc(x, y, 4, 0, Math.PI * 2);
+    //               ctx.fill();
+    //             }
+    //           });
+    //         },
+    //       },
+    //     }
+    //   );
+    //   series.setData(ohlcData.map(d => ({ time: d.time,value: d.close}) ));
+    // }
+
+
+        seriesRef.current = series;
+        chart.timeScale().fitContent();
+    };
+
+    return (
+        <div className="w-screen h-screen flex flex-col bg-slate-900">
+            {/* Dropdown */}
+            <select
+                value={chartType}
+                onChange={(e) => setChartType(e.target.value)}
+                style={{ marginBottom: "10px" }}
+            >
+                <option value="candlestick">Candlestick</option>
+                <option value="line">Line</option>
+                <option value="bar">Bar</option>
+                <option value="area">Area</option>
+                <option value="baseline">Baseline</option>
+                <option value="histogram">Histogram (Volume)</option>
+                  {/* <option value="custom">Custom Series</option> */}
+            </select>
+             <ChartHeader
+                    price="43,250"
+                    change={2.15}
+                    timeframe={timeframe}
+                    onTimeframeChange={setTimeframe}
+                    setTimeframeValue={setTimeframeValue}
+                    setRangeValue={rangeValue}
+                  />
+
+        <div className="ml-3 text-slate-50">
         <button onClick={zoomIn}>➕ Zoom In</button>
         <button onClick={zoomOut} className="ml-3 ">
           ➖ Zoom Out
@@ -152,40 +260,34 @@ const CandleStick = () => {
         </button>
       </div>
 
-      {/* Chart */}
-      <div ref={containerRef} />
 
-      {/* display data */}
-      {/* <div className="mx-8 mt-6">
-        <h3 className="font-bold mb-2">Form Data</h3>
-        <pre className="bg-gray-100 p-4 rounded">
-           {JSON.stringify(data || [], null, 2)} 
-        </pre>
-      </div> */}
+            {/* Chart */}
+            <div ref={containerRef} />
 
-      {/* Slide-in Form */}
-      <div
-        className={`
-            fixed top-0 right-0 h-screen w-[400px] bg-white shadow-xl z-50
-            transform transition-transform duration-300 ease-in-out
-            ${openForm ? "translate-x-0" : "translate-x-full"}
-          `}
-      >
-        <Form onClose={() => setOpenForm(false)} />
-      </div>
 
-      {/* Open Button */}
-      {!openForm && (
-        <button
-          onClick={() => setOpenForm(true)}
-          className="fixed bottom-6 right-6 flex items-center gap-1 px-3 py-2
-               text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-purple-500 z-50"
-        >
-          <FaFileWaveform />
-        </button>
-      )}
-    </div>
-  );
-};
 
-export default CandleStick;
+
+              <div
+                    className={`
+                        fixed top-0 right-0 h-screen w-[400px] bg-white shadow-xl z-50
+                        transform transition-transform duration-300 ease-in-out
+                        ${openForm ? "translate-x-0" : "translate-x-full"}
+                      `}
+                  >
+                    <Form onClose={() => setOpenForm(false)} />
+                  </div>
+            
+                  {/* Open Button */}
+                  {!openForm && (
+                    <button
+                      onClick={() => setOpenForm(true)}
+                      className="fixed bottom-6 right-6 flex items-center gap-1 px-3 py-2
+                           text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-purple-500 z-50"
+                    >
+                      <FaFileWaveform />
+                    </button>
+                  )}
+                </div>
+        
+    );
+}
