@@ -10,11 +10,10 @@ const CandleStick = () => {
   const chartRef = useRef(null); // Chart instance
   const [timeframe, setTimeframe] = useState("1m");
   const [openForm, setOpenForm] = useState(false);
-  const [timeframeValue, setTimeframeValue] = useState("");
-  const [rangeValue, setRangeValue] = useState("");
+  const [timeframeValue, setTimeframeValue] = useState(60);
+  const [rangeValue, setRangeValue] = useState(1);
 
-
-console.log("timeframeValue---------------", timeframeValue);
+  console.log("timeframeValue---------------", timeframeValue);
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -96,6 +95,41 @@ console.log("timeframeValue---------------", timeframeValue);
   const resetZoom = () => {
     chartRef.current?.timeScale().fitContent();
   };
+  function generateCandles(tfSeconds, bars = 100) {
+    let time = Math.floor(Date.now() / 1000) - bars * tfSeconds;
+    let price = 30000;
+    const data = [];
+
+    for (let i = 0; i < bars; i++) {
+      const open = price;
+      const close = open + (Math.random() - 0.5) * 200;
+      const high = Math.max(open, close) + Math.random() * 100;
+      const low = Math.min(open, close) - Math.random() * 100;
+
+      data.push({
+        time,
+        open: +open.toFixed(2),
+        high: +high.toFixed(2),
+        low: +low.toFixed(2),
+        close: +close.toFixed(2),
+      });
+
+      price = close;
+      time += tfSeconds;
+    }
+    console.log("generatedData", data);
+    return data;
+  }
+
+  useEffect(() => {
+    if (!chartRef.current) return;
+    const { chart, series } = chartRef.current;
+    console.log("timeframe in candleStick.jsx==================>>>>>>>>>", timeframe.seconds, rangeValue);
+    if(timeframe.seconds && rangeValue){ 
+      series.setData(generateCandles(60,1));
+      chart.timeScale().fitContent();
+    }
+  }, [timeframe, rangeValue]);
 
   return (
     <div className="w-screen h-screen flex flex-col bg-slate-900">
@@ -105,10 +139,8 @@ console.log("timeframeValue---------------", timeframeValue);
         change={2.15}
         timeframe={timeframe}
         onTimeframeChange={setTimeframe}
-        
         setTimeframeValue={setTimeframeValue}
         setRangeValue={rangeValue}
-
       />
       <div className="ml-3 text-slate-50">
         <button onClick={zoomIn}>➕ Zoom In</button>

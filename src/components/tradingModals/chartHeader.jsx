@@ -133,10 +133,7 @@ export default function ChartHeader({
               </small>
               <button
                 key={i}
-                onClick={() => {
-                  setRange(r);
-                  setRangeValue(r);
-                }}
+                onClick={(e) => setRangeValue(r)}
                 style={{
                   padding: "4px 10px",
                   background: range === r ? "#2563eb" : "#1e293b",
