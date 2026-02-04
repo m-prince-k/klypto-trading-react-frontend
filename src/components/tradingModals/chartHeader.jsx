@@ -1,7 +1,7 @@
 import { FiClock, FiX, FiPlus } from "react-icons/fi";
 import { VscGraphLine } from "react-icons/vsc";
 import { BsBarChartFill } from "react-icons/bs";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ListingModal } from "./ListingModal";
 
 const TIMEFRAMES = ["O:32", "H:33", "L:34", "C:31", "V:43"];
@@ -11,7 +11,6 @@ export default function ChartHeader({
   exchange = "BIOFIlCHEM",
   price = 0,
   changePercent = 0,
-  timeframe = "1m",
   onTimeframeChange,
 }) {
   // const isPositive = changePercent >= 0;
@@ -25,7 +24,7 @@ export default function ChartHeader({
     "6 Months",
     "1 Year",
   ];
-  
+
   const [modalConfig, setModalConfig] = useState({
     open: false,
     title: "",
@@ -44,6 +43,39 @@ export default function ChartHeader({
     setModalConfig((prev) => ({ ...prev, open: false }));
   };
 
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState("");
+  const [timeframe, setTimeframe] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function fetchTimeframe() {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch("http://192.168.1.4:3000/getTimeFrames", {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch timeframes");
+      }
+
+      const result = await response.json();
+      setTimeframe(result.data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (open == true) return;
+    fetchTimeframe();
+  }, []);
+
   return (
     <div className="w-full justify-startflex flex-col items-center gap-3 py-1.5 bg-slate-950  ">
       <div className="flex gap-3 px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg  ">
@@ -55,11 +87,31 @@ export default function ChartHeader({
           Name
         </button>
 
-        {/* TineFrame */}
-        <button className="flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-purple-600/20 text-purple-400 border border-purple-500">
-          <FiClock className="text-sm" />
-          Timeframe{" "}
-        </button>
+        {/* TimeFrame */}
+        <div className="inline-flex items-center gap-1">
+
+          <select
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            className="px-2 py-1 w-36 text-sm rounded-md bg-slate-50 text-slate-900 border"
+          >
+            <option value="" disabled>
+              Timeframe
+            </option>
+
+            {timeframe &&
+              Object.entries(timeframe)?.map(([group, items]) => (
+                <optgroup className="text-slate-500 text-sm mt-2 " key={group} label={group?.toUpperCase()}>
+                  {items?.map((item) => (
+                    <option key={item.value || item.label} value={item.value}
+                    className="text-sm text-slate-900">
+                      {item.label}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+          </select>
+        </div>
 
         {/* Candlestick */}
         <button className="flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700">
@@ -77,14 +129,19 @@ export default function ChartHeader({
         </button>
 
         {/* Alert */}
-        <button onClick={() => openModal("Alerts")} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-purple-500">
+        <button
+          onClick={() => openModal("Alerts")}
+          className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-purple-500"
+        >
           <FiPlus className="text-md" />
           Alert
         </button>
 
         {/* Alert */}
-        
-
+        <button className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-purple-500">
+          <FiPlus className="text-md" />
+          Simulation
+        </button>
       </div>
 
       <div className="flex px-2 items-center gap-2 justify-start">

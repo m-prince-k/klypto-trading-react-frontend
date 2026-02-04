@@ -1,13 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { IoCloseSharp } from "react-icons/io5";
 import { FiSearch } from "react-icons/fi";
 import { GrBitcoin } from "react-icons/gr";
+import { Link } from "react-router-dom";
 
 export const ListingModal = ({ isOpen, onClose, items, title }) => {
   const [activeTab, setActiveTab] = useState("Indicators");
   const [indicators, setIndicators] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [search, setSearch] = useState("");
 
   const symbolListing = [
     {
@@ -19,26 +21,36 @@ export const ListingModal = ({ isOpen, onClose, items, title }) => {
     },
   ];
 
-  useEffect(() => {
-    const fetchIndicators = async () => {
-      try {
-        const response = await fetch("http://192.168.1.10:3000/getIndicators");
+  // API calling- Indicators
+  async function fetchIndicators() {
+    setLoading(true);
+    setError(null);
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch indicators");
-        }
+    try {
+      const response = await fetch("http://192.168.1.4:3000/getIndicators", {
+        method: "POST",
+      });
 
-        const data = await response.json();
-        setIndicators(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error("Failed to fetch indicators");
       }
-    };
 
-    fetchIndicators();
-  }, []);
+      const result = await response.json();
+
+      // IMPORTANT: API structure = { data: {...} }
+      setIndicators(result.data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (title === "Indicators") {
+      fetchIndicators();
+    }
+  }, [title]);
 
   const TABS = ["Indicators", "Strategies", "Profiles", "Patterns"];
   if (!isOpen) return null;
@@ -97,40 +109,84 @@ export const ListingModal = ({ isOpen, onClose, items, title }) => {
 
         {title === "Indicators" && (
           <div className="flex flex-col gap-3 py-3">
+            {/* Search */}
             <div className="relative">
               <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search"
-                className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-md "
+                placeholder="Search indicators"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-md"
               />
             </div>
 
-            <div className="flex gap-2">
-              {TABS.map((tab) => {
-                const isActive = activeTab === tab;
-
-                return (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`
-                      rounded-full text-sm px-3 py-1 transition
-                      ${
-                        isActive
-                          ? "bg-slate-950 text-slate-100"
-                          : "bg-slate-200 text-slate-950"
-                      }
-                    `}
-                  >
-                    {tab}
-                  </button>
-                );
-              })}
+            {/* Tabs */}
+            <div className="flex gap-2 flex-wrap">
+              {TABS.map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`rounded-full text-sm px-3 py-1 transition
+            ${
+              activeTab === tab
+                ? "bg-slate-950 text-slate-100"
+                : "bg-slate-200 text-slate-950"
+            }`}
+                >
+                  {tab}
+                </button>
+              ))}
             </div>
 
-            <div>
-              <pre>{JSON.stringify(indicators, null, 2)}</pre>{" "}
+            {/* Content */}
+            <div className="mt-3 space-y-4 max-h-[55vh] overflow-y-auto">
+              {loading && <p className="text-sm">Loading indicators...</p>}
+              {error && <p className="text-red-500 text-sm">{error}</p>}
+
+              {!loading &&
+                !error &&
+                activeTab === "Indicators" &&
+                
+                indicators ? (
+                    Object.entries(indicators)?.map(([category, items]) => {
+                  const filteredItems = items?.filter((item) =>
+                    item?.toLowerCase().includes(search?.toLowerCase()),
+                  );
+
+                  return (
+                    <div key={category} className="text-left pl-3">
+                      <h3 className="font-semibold text-slate-950 mb-2">
+                        {category}
+                      </h3>
+
+                      <ul className="grid pl-3 grid-cols-1 text-slate-700 gap-2 text-sm">
+                        {filteredItems?.map((item) => (
+                          <Link to='#'
+                            key={item}
+                            className="px-2 py-1  rounded cursor-pointer hover:bg-slate-100"
+                          >
+                            {item}
+                          </Link>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                } ))
+ :  
+  
+(                  
+  <p className="text-sm text-slate-500">No indicators found</p>
+)  
+                
+
+                }
+
+              {activeTab !== "Indicators" && (
+                <p className="text-sm text-slate-500">
+                  {activeTab} content coming soon
+                </p>
+              )}
             </div>
           </div>
         )}

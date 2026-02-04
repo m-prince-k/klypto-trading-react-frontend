@@ -131,12 +131,7 @@ export const Form = ({onClose}) => {
         </div>
 
         {/* Display Data */}
-        <div className="mx-8 mt-6">
-          <h3 className="font-bold mb-2">Form Data</h3>
-          <pre className="bg-gray-100 p-4 rounded">
-            {JSON.stringify(data, null, 2)}
-          </pre>
-        </div>
+       
       </form>
     </div>
   );

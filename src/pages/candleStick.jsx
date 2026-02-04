@@ -3,72 +3,25 @@ import { createChart, CandlestickSeries } from "lightweight-charts";
 import ChartHeader from "../components/tradingModals/chartHeader";
 import { FaFileWaveform } from "react-icons/fa6";
 import { Form } from "../components/tradingModals/Form";
-
+import { ChartProprties } from "../util/common";
 const Candlestick = () => {
-  const chartRef = useRef(null);
+  const containerRef = useRef(null); // DOM container
+  const chartRef = useRef(null); // Chart instance
   const [timeframe, setTimeframe] = useState("1m");
   const [openForm, setOpenForm] = useState(false);
 
-  const handleOpen = () => setOpenForm(true);
-  const handleClose = () => setOpenForm(false);
+
+  
 
   useEffect(() => {
-    const chart = createChart(chartRef.current, {
-      width: 1200,
-      height: 400,
+    if (!containerRef.current) return;
 
-      layout: {
-        background: { type: "solid", color: "#0f172a" },
-        textColor: "#cbd5e1",
-        fontSize: 12,
-        fontFamily: "Inter, sans-serif",
-      },
+    // 🟢 Create chart
+    const chart = createChart(containerRef.current, ChartProprties);
 
-      timeScale: {
-        timeVisible: true,
-        secondsVisible: false,
+    chartRef.current = chart; // ✅ store chart instance
 
-        borderColor: "#334155",
-        fixLeftEdge: true,
-        fixRightEdge: true,
-      },
-      tickMarkFormatter: (time) => {
-        const date = new Date(time * 1000);
-        return date.getDate().toString();
-      },
-
-      tickMarkFormatter: (time, tickMarkType) => {
-        const date = new Date(time * 1000);
-
-        if (tickMarkType === 0) {
-          return date.getDate(); // day
-        }
-
-        if (tickMarkType === 1) {
-          return date.toLocaleString("en-US", { month: "short" });
-        }
-
-        if (tickMarkType === 2) {
-          return date.getFullYear();
-        }
-      },
-      rightPriceScale: {
-        borderColor: "#334155",
-        scaleMargins: { top: 0.2, bottom: 0.2 },
-      },
-
-      grid: {
-        vertLines: { color: "#1e293b" },
-        horzLines: { color: "#1e293b" },
-      },
-
-      crosshair: {
-        mode: 1,
-        vertLine: { color: "#64748b" },
-        horzLine: { color: "#64748b" },
-      },
-    });
-
+    // 🟢 Add candlestick series (v4+ API)
     const candleSeries = chart.addSeries(CandlestickSeries, {
       upColor: "#22c55e",
       downColor: "#ef4444",
@@ -98,15 +51,53 @@ const Candlestick = () => {
       { time: "2025-01-17", open: 150, high: 158, low: 145, close: 152 },
       { time: "2025-01-18", open: 152, high: 160, low: 150, close: 158 },
       { time: "2025-01-19", open: 158, high: 168, low: 155, close: 165 },
-      { time: "2025-01-20", open: 165, high: 175, low: 20, close: 150 },
+      { time: "2025-01-20", open: 165, high: 175, low: 120, close: 150 },
     ]);
 
-    return () => chart.remove();
-  }, [timeframe]); // 👈 will refetch later based on timeframe
+    chart.timeScale().fitContent();
+
+    return () => {
+      chart.remove();
+      chartRef.current = null;
+    };
+  }, [timeframe]);
+
+  // 🔍 Zoom In
+  const zoomIn = () => {
+    const chart = chartRef.current;
+    if (!chart) return;
+
+    const range = chart.timeScale().getVisibleLogicalRange();
+    if (!range) return;
+
+    chart.timeScale().setVisibleLogicalRange({
+      from: range.from + 1,
+      to: range.to - 1,
+    });
+  };
+
+  // 🔎 Zoom Out
+  const zoomOut = () => {
+    const chart = chartRef.current;
+    if (!chart) return;
+
+    const range = chart.timeScale().getVisibleLogicalRange();
+    if (!range) return;
+
+    chart.timeScale().setVisibleLogicalRange({
+      from: range.from - 1,
+      to: range.to + 1,
+    });
+  };
+
+  // 🔄 Reset Zoom
+  const resetZoom = () => {
+    chartRef.current?.timeScale().fitContent();
+  };
 
   return (
     <div className="w-screen h-screen flex flex-col bg-slate-900">
-      {/* Header */}
+      {/* Zoom Controls */}
       <ChartHeader
         symbol="BTC / USDT"
         price="43,250"
@@ -114,32 +105,48 @@ const Candlestick = () => {
         timeframe={timeframe}
         onTimeframeChange={setTimeframe}
       />
+      <div className="ml-3 text-slate-50">
+        <button onClick={zoomIn}>➕ Zoom In</button>
+        <button onClick={zoomOut} className="ml-3 ">
+          ➖ Zoom Out
+        </button>
+        <button onClick={resetZoom} className="ml-3">
+          🔄 Reset
+        </button>
+      </div>
 
       {/* Chart */}
-      <div className="flex-1 relative">
-        <div ref={chartRef} className="w-full h-full" />
-      </div>
+      <div ref={containerRef} />
+
+      {/* display data */}
+      {/* <div className="mx-8 mt-6">
+        <h3 className="font-bold mb-2">Form Data</h3>
+        <pre className="bg-gray-100 p-4 rounded">
+           {JSON.stringify(data || [], null, 2)} 
+        </pre>
+      </div> */}
 
       {/* Slide-in Form */}
       <div
         className={`
-      fixed top-0 right-0 h-screen w-[400px] bg-white shadow-xl z-50
-      transform transition-transform duration-300 ease-in-out
-      ${openForm ? "translate-x-0" : "translate-x-full"}
-    `}
+            fixed top-0 right-0 h-screen w-[400px] bg-white shadow-xl z-50
+            transform transition-transform duration-300 ease-in-out
+            ${openForm ? "translate-x-0" : "translate-x-full"}
+          `}
       >
-        <Form onClose={handleClose} />
-
+        <Form onClose={() => setOpenForm(false)} />
       </div>
 
       {/* Open Button */}
-      <button
-        onClick={handleOpen}
-        className="fixed bottom-6 right-6 flex items-center gap-1 px-3 py-2
+      {!openForm && (
+        <button
+          onClick={() => setOpenForm(true)}
+          className="fixed bottom-6 right-6 flex items-center gap-1 px-3 py-2
                text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-purple-500 z-50"
-      >
-        <FaFileWaveform />
-      </button>
+        >
+          <FaFileWaveform />
+        </button>
+      )}
     </div>
   );
 };
