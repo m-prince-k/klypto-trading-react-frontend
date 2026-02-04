@@ -1,18 +1,20 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createChart, CandlestickSeries } from "lightweight-charts";
-import ChartHeader from "../components/tradingModals/chartHeader";
+import ChartHeader from "../components/tradingModals/ChartHeader";
 import { FaFileWaveform } from "react-icons/fa6";
 import { Form } from "../components/tradingModals/Form";
 import { ChartProprties } from "../util/common";
-const Candlestick = () => {
+
+const CandleStick = () => {
   const containerRef = useRef(null); // DOM container
   const chartRef = useRef(null); // Chart instance
   const [timeframe, setTimeframe] = useState("1m");
   const [openForm, setOpenForm] = useState(false);
+  const [timeframeValue, setTimeframeValue] = useState("");
+  const [rangeValue, setRangeValue] = useState("");
 
 
-  
-
+console.log("timeframeValue---------------", timeframeValue);
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -99,11 +101,14 @@ const Candlestick = () => {
     <div className="w-screen h-screen flex flex-col bg-slate-900">
       {/* Zoom Controls */}
       <ChartHeader
-        symbol="BTC / USDT"
         price="43,250"
         change={2.15}
         timeframe={timeframe}
         onTimeframeChange={setTimeframe}
+        
+        setTimeframeValue={setTimeframeValue}
+        setRangeValue={rangeValue}
+
       />
       <div className="ml-3 text-slate-50">
         <button onClick={zoomIn}>➕ Zoom In</button>
@@ -151,4 +156,4 @@ const Candlestick = () => {
   );
 };
 
-export default Candlestick;
+export default CandleStick;

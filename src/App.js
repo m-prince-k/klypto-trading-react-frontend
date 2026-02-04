@@ -1,7 +1,7 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import './App.css';
 import {Form} from './components/tradingModals/Form'
-import Candlestick from './pages/candleStick';
+import Candlestick from './pages/CandleStick';
 import TradingViewChart from './pages/TradingViewChart';
 import IndiatorSlide from './components/indicator/indicatorSlide';
 

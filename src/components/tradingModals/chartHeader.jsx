@@ -1,4 +1,4 @@
-import { FiClock, FiX, FiPlus } from "react-icons/fi";
+import { FiPlus } from "react-icons/fi";
 import { VscGraphLine } from "react-icons/vsc";
 import { BsBarChartFill } from "react-icons/bs";
 import { useState, useEffect } from "react";
@@ -7,23 +7,25 @@ import { ListingModal } from "./ListingModal";
 const TIMEFRAMES = ["O:32", "H:33", "L:34", "C:31", "V:43"];
 
 export default function ChartHeader({
-  //   symbol = "BTC / USDT",
   exchange = "BIOFIlCHEM",
-  price = 0,
-  changePercent = 0,
   onTimeframeChange,
+  setTimeframeValue,
+  setRangeValue,
 }) {
-  // const isPositive = changePercent >= 0;
-  const SYMBOLS = ["BTC/USDT", "ETH/USDT", "SOL/USDT", "BNB/USDT"];
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState("");
+  const [timeframe, setTimeframe] = useState(60);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [range, setRange] = useState(100);
 
-  const TIMEFRAMES = [
-    "Today",
-    "1 Week",
-    "1 Month",
-    "3 Months",
-    "6 Months",
-    "1 Year",
-  ];
+  console.log("timeframeValue---------------", value);
+
+  console.log("timeframeValue---------------", setTimeframeValue);
+
+
+  const RANGES = [1, 10, 100, 1000];
+  const SYMBOLS = ["BTC/USDT", "ETH/USDT", "SOL/USDT", "BNB/USDT"];
 
   const [modalConfig, setModalConfig] = useState({
     open: false,
@@ -43,12 +45,6 @@ export default function ChartHeader({
     setModalConfig((prev) => ({ ...prev, open: false }));
   };
 
-  const [open, setOpen] = useState(false);
-  const [value, setValue] = useState("");
-  const [timeframe, setTimeframe] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
   async function fetchTimeframe() {
     setLoading(true);
     setError(null);
@@ -64,6 +60,8 @@ export default function ChartHeader({
 
       const result = await response.json();
       setTimeframe(result.data);
+      await setTimeframeValue(value);
+      
     } catch (err) {
       setError(err.message);
     } finally {
@@ -72,9 +70,13 @@ export default function ChartHeader({
   }
 
   useEffect(() => {
-    if (open == true) return;
+    if (open === true) return;
     fetchTimeframe();
   }, []);
+
+  const handleChange = (e) => {
+    setValue(e.target.value);
+  };
 
   return (
     <div className="w-full justify-startflex flex-col items-center gap-3 py-1.5 bg-slate-950  ">
@@ -89,10 +91,9 @@ export default function ChartHeader({
 
         {/* TimeFrame */}
         <div className="inline-flex items-center gap-1">
-
           <select
             value={value}
-            onChange={(e) => setValue(e.target.value)}
+            onChange={(e) => handleChange(e)}
             className="px-2 py-1 w-36 text-sm rounded-md bg-slate-50 text-slate-900 border"
           >
             <option value="" disabled>
@@ -101,16 +102,53 @@ export default function ChartHeader({
 
             {timeframe &&
               Object.entries(timeframe)?.map(([group, items]) => (
-                <optgroup className="text-slate-500 text-sm mt-2 " key={group} label={group?.toUpperCase()}>
+                <optgroup
+                  className="text-slate-500 text-sm mt-2 "
+                  key={group}
+                  label={group?.toUpperCase()}
+                >
                   {items?.map((item) => (
-                    <option key={item.value || item.label} value={item.value}
-                    className="text-sm text-slate-900">
-                      {item.label}
+                    <option
+                      key={item?.seconds}
+                      value={item?.seconds}
+                      className="text-sm text-slate-900"
+                    >
+                      {item?.label}
                     </option>
                   ))}
                 </optgroup>
               ))}
           </select>
+
+          {RANGES?.map((r, i) => (
+            <>
+              <small class="badge badge-success text-white">
+                {i === 0
+                  ? "1 Range"
+                  : i === 1
+                    ? "10 Range"
+                    : i === 2
+                      ? "100 Range"
+                      : "1000 Range"}
+              </small>
+              <button
+                key={i}
+                onClick={() => {
+                  setRange(r);
+                  setRangeValue(r);
+                }}
+                style={{
+                  padding: "4px 10px",
+                  background: range === r ? "#2563eb" : "#1e293b",
+                  color: "#fff",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                {r}
+              </button>
+            </>
+          ))}
         </div>
 
         {/* Candlestick */}
