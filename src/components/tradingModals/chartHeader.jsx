@@ -19,9 +19,7 @@ export default function ChartHeader({
   const [error, setError] = useState(null);
   const [range, setRange] = useState(100);
 
-  console.log("timeframeValue---------------", value);
 
-  console.log("timeframeValue---------------", setTimeframeValue);
 
 
   const RANGES = [1, 10, 100, 1000];

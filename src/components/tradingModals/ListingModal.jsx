@@ -123,9 +123,9 @@ export const ListingModal = ({ isOpen, onClose, items, title }) => {
 
             {/* Tabs */}
             <div className="flex gap-2 flex-wrap">
-              {TABS.map((tab) => (
+              {TABS.map((tab,index) => (
                 <button
-                  key={tab}
+                  key={index}
                   onClick={() => setActiveTab(tab)}
                   className={`rounded-full text-sm px-3 py-1 transition
             ${
