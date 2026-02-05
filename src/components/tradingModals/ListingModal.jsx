@@ -3,10 +3,13 @@ import { IoCloseSharp } from "react-icons/io5";
 import { FiSearch } from "react-icons/fi";
 import { GrBitcoin } from "react-icons/gr";
 import { Link } from "react-router-dom";
+import apiService from "../../services/apiServices";
 
 export const ListingModal = ({ isOpen, onClose, items, title }) => {
   const [activeTab, setActiveTab] = useState("Indicators");
   const [indicators, setIndicators] = useState([]);
+  const [currencies, setCurrencies] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
@@ -27,9 +30,7 @@ export const ListingModal = ({ isOpen, onClose, items, title }) => {
     setError(null);
 
     try {
-      const response = await fetch("http://192.168.1.4:3000/getIndicators", {
-        method: "POST",
-      });
+      const response = apiService.post("getIndicators")
 
       if (!response.ok) {
         throw new Error("Failed to fetch indicators");
@@ -46,14 +47,39 @@ export const ListingModal = ({ isOpen, onClose, items, title }) => {
     }
   }
 
+   async function fetchCurrencies() {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response =await apiService.post("getCurrencies",{})
+
+     
+      // console.log(result,"-9000000000000000000000000000000000000000000000000000")
+      // IMPORTANT: API structure = { data: {...} }
+      setCurrencies(response?.data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchCurrencies();
+  },[]);
+
   useEffect(() => {
     if (title === "Indicators") {
       fetchIndicators();
     }
+
   }, [title]);
 
   const TABS = ["Indicators", "Strategies", "Profiles", "Patterns"];
   if (!isOpen) return null;
+
+  console.log(currencies,"============================>>>>>>>>>>")
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
@@ -78,9 +104,14 @@ export const ListingModal = ({ isOpen, onClose, items, title }) => {
             </div>
 
             {/* Listing Grid */}
-            {symbolListing.map((item, index) => (
-              <div
-                key={index}
+            
+
+          {
+            Object.entries(currencies).map(([key,value]) =>(
+              <li>
+                   <div
+                   key={key}
+                // key={index}
                 className="w-full flex border-b border-slate-200 justify-between py-3"
               >
                 {/* LEFT */}
@@ -89,21 +120,25 @@ export const ListingModal = ({ isOpen, onClose, items, title }) => {
                     <GrBitcoin />
                   </span>
 
-                  <h2 className="uppercase w-30 text-left">{item.code}</h2>
-                  <h3>{item.name}</h3>
+                  <h2 className="uppercase w-30 text-left">{key}</h2>
+                  <h3>{value}</h3>
                 </div>
 
                 {/* RIGHT */}
-                <div className="flex gap-3 items-center">
+                {/* <div className="flex gap-3 items-center">
                   <h3 className="text-slate-500 text-sm">{item.category}</h3>
                   <h2>{item.type}</h2>
 
                   <span className="text-md">
                     <GrBitcoin />
                   </span>
-                </div>
+                </div> */}
               </div>
-            ))}
+              </li>
+            ) )
+          }
+
+
           </div>
         )}
 

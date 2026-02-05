@@ -3,6 +3,7 @@ import { VscGraphLine } from "react-icons/vsc";
 import { BsBarChartFill } from "react-icons/bs";
 import { useState, useEffect } from "react";
 import { ListingModal } from "./ListingModal";
+import apiService from "../../services/apiServices";
 
 const TIMEFRAMES = ["O:32", "H:33", "L:34", "C:31", "V:43"];
 
@@ -48,9 +49,7 @@ export default function ChartHeader({
     setError(null);
 
     try {
-      const response = await fetch("http://192.168.1.4:3000/getTimeFrames", {
-        method: "POST",
-      });
+      const response = apiService.post("getTimeFrames")
 
       if (!response.ok) {
         throw new Error("Failed to fetch timeframes");

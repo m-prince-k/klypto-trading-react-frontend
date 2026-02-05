@@ -19,6 +19,8 @@ export default function Candlestick() {
   const chartRef = useRef();
   const containerRef = useRef();
   const seriesRef = useRef(null);
+  const apiCalledRef = useRef(false);
+
   const [timeframe, setTimeframe] = useState("1m");
   const [openForm, setOpenForm] = useState(false);
   const [timeframeValue, setTimeframeValue] = useState(60);
@@ -29,35 +31,100 @@ export default function Candlestick() {
   const formatCandleData = (data) => {
     if (!Array.isArray(data)) return [];
 
-    return data
-      .filter((item) => item?.time || item?.t)
-      .map((item) => ({
-        time: item.time ? item.time : Math.floor(item.t / 1000), // if API gives ms
+    const map = new Map();
+
+    data.forEach((item) => {
+      const time = item.time
+        ? Number(item.time)
+        : Math.floor(Number(item.t) / 1000);
+
+      if (!time) return;
+
+      map.set(time, {
+        time,
         open: Number(item.open ?? item.o),
         high: Number(item.high ?? item.h),
         low: Number(item.low ?? item.l),
         close: Number(item.close ?? item.c),
-      }));
+        volume: Number(item.volume ?? item.v ?? 0),
+      });
+    });
+
+    return Array.from(map.values()).sort((a, b) => a.time - b.time);
   };
 
-  const data = [
-    { time: "2024-01-01", open: 100, high: 120, low: 90, close: 110, value: 110, volume: 500 },
-    { time: "2024-01-02", open: 110, high: 130, low: 100, close: 125, value: 125, volume: 800 },
-    { time: "2024-01-03", open: 125, high: 140, low: 115, close: 135, value: 135, volume: 650 },
-    { time: "2024-01-04", open: 135, high: 150, low: 120, close: 145, value: 145, volume: 900 },
-  ];
+  // const data = [
+  //   {
+  //     time: "2024-01-01",
+  //     open: 100,
+  //     high: 120,
+  //     low: 90,
+  //     close: 110,
+  //     value: 110,
+  //     volume: 500,
+  //   },
+  //   {
+  //     time: "2024-01-02",
+  //     open: 110,
+  //     high: 130,
+  //     low: 100,
+  //     close: 125,
+  //     value: 125,
+  //     volume: 800,
+  //   },
+  //   {
+  //     time: "2024-01-03",
+  //     open: 125,
+  //     high: 140,
+  //     low: 115,
+  //     close: 135,
+  //     value: 135,
+  //     volume: 650,
+  //   },
+  //   {
+  //     time: "2024-01-04",
+  //     open: 135,
+  //     high: 150,
+  //     low: 120,
+  //     close: 145,
+  //     value: 145,
+  //     volume: 900,
+  //   },
+  // ];
 
-  async function fetchChartData() {
-    try {
-      const response = await apiService.post("listing", { type: chartType });
+  // async function fetchChartData() {
+  //   try {
+  //     const response = await apiService.post("listing", { type: chartType });
 
-      if (response?.statusCode === 200) {
-        setHistoricalData(response?.data);
-      }
-    } catch (error) {
-      console.log("error", error.message);
-    }
-  }
+  //     if (response?.statusCode === 200) {
+  //       setHistoricalData(response?.data);
+  //     }
+  //   } catch (error) {
+  //     console.log("error", error.message);
+  //   }
+  // }
+
+  // useEffect(() => {
+  //   if (seriesRef.current) {
+  //     chartRef.current.removeSeries(seriesRef.current);
+  //   }
+  //   if (apiCalledRef.current) return;
+  //   apiCalledRef.current = true;
+
+  //   // apiService
+  //   //   .post("/listing", { chartType })
+  //   //   .then(async (res) => {
+  //   //     console.log(
+  //   //       res,
+  //   //       "-------------------------------------------------------asjkfjskfjksjfkjk",
+  //   //     );
+
+  //   //     // because of interceptor, res is already response.data
+  //   //     const formatted = await res.data;
+  //   //     setHistoricalData(formatted);
+  //   //   })
+  //   //   .catch(console.error);
+  // }, []);
 
   useEffect(() => {
     chartRef.current = createChart(containerRef.current, ChartProprties);
@@ -101,88 +168,131 @@ export default function Candlestick() {
 
     switch (chartType) {
       case "line":
-        seriesRef.current = chartRef.current.addSeries(LineSeries, {
-          color: "#38bdf8",
+        apiService.post("/listing", { type: chartType }).then(async (res) => {
+          seriesRef.current = chartRef.current.addSeries(LineSeries, {
+            color: "#38bdf8",
+          });
+          seriesRef.current.setData(
+            await res.data.map((d) => ({ time: d.time, value: d.value })),
+          );
         });
-        seriesRef.current.setData(
-          data.map((d) => ({ time: d.time, value: d.close })),
-        );
         break;
 
       case "bar":
-        seriesRef.current = chartRef.current.addSeries(BarSeries);
-        seriesRef.current.setData(data);
+        apiService.post("/listing", { type: chartType }).then((res) => {
+          if (seriesRef.current) {
+            chartRef.current.removeSeries(seriesRef.current);
+          }
+
+          seriesRef.current = chartRef.current.addSeries(BarSeries, {
+            upColor: "#22c55e",
+            downColor: "#ef4444",
+          });
+
+          seriesRef.current.setData(
+            res.data.map((d) => ({
+              time: d.time,
+              open: d.open,
+              high: d.high,
+              low: d.low,
+              close: d.close,
+            })),
+          );
+
+          chartRef.current.timeScale().fitContent();
+        });
         break;
 
       case "area":
-        seriesRef.current = chartRef.current.addSeries(AreaSeries);
-        seriesRef.current.setData(
-          data.map((d) => ({ time: d.time, value: d.close })),
-        );
+        apiService.post("/listing", { type: chartType }).then(async (res) => {
+          seriesRef.current = chartRef.current.addSeries(AreaSeries);
+          seriesRef.current.setData(
+            await res.data.map((d) => ({ time: d.time, value: d.value })),
+          );
+        });
         break;
 
       case "baseline":
-        seriesRef.current = chartRef.current.addSeries(BaselineSeries, {
-          baseValue: { type: "price", price: 120 },
+        apiService.post("/listing", { type: chartType }).then(async (res) => {
+          if (seriesRef.current) {
+            chartRef.current.removeSeries(seriesRef.current);
+          }
+          seriesRef.current = chartRef.current.addSeries(BaselineSeries, {
+            baseValue: { type: "price", price: 120 },
+          });
+          seriesRef.current.setData(
+            await res.data.map((d) => ({ time: d.time, value: d.value })),
+          );
         });
-        seriesRef.current.setData(
-          data.map((d) => ({ time: d.time, value: d.close })),
-        );
         break;
 
       case "histogram":
-        seriesRef.current = chartRef.current.addSeries(HistogramSeries, {
-          priceFormat: { type: "volume" },
+        apiService.post("/listing", { type: chartType }).then(async (res) => {
+          seriesRef.current = chartRef.current.addSeries(HistogramSeries, {
+            priceFormat: { type: "volume" },
+            priceScaleId: "",
+            scaleMargins: { top: 0.7, bottom: 0 },
+          });
+          seriesRef.current.setData(
+            await res.data.map((d) => ({ time: d.time, value: d.value })),
+          );
         });
-        seriesRef.current.setData(
-          data.map((d) => ({ time: d.time, value: d.volume })),
-        );
         break;
 
       case "heikinashi":
-        seriesRef.current = chartRef.current.addSeries(CandlestickSeries);
-        seriesRef.current.setData(convertToHeikinAshi(data));
+        apiService.post("/listing", { type: chartType }).then(async (res) => {
+          seriesRef.current = chartRef.current.addSeries(CandlestickSeries);
+          seriesRef.current.setData(convertToHeikinAshi(await res.data));
+        });
         break;
 
       case "hollow":
-        seriesRef.current = chartRef.current.addSeries(CandlestickSeries, {
-           upColor: "transparent",
-  downColor: "#26dc35",
-  borderUpColor: "#8378e2",
-  borderDownColor: "#26dc35",
-  wickUpColor: "#8378e2",
-  wickDownColor: "#26dc35",
+        apiService.post("/listing", { type: chartType }).then(async (res) => {
+          seriesRef.current = chartRef.current.addSeries(CandlestickSeries, {
+            upColor: "transparent",
+            downColor: "#26dc35",
+            borderUpColor: "#8378e2",
+            borderDownColor: "#26dc35",
+            wickUpColor: "#8378e2",
+            wickDownColor: "#26dc35",
+          });
+          seriesRef.current.setData(await res.data);
         });
-        seriesRef.current.setData(data);
         break;
 
       case "hollowcandles":
-        seriesRef.current = chartRef.current.addSeries(CandlestickSeries, {
-          upColor: "transparent",
-          downColor: "#ef4444",
-          borderUpColor: "#22c55e",
-          borderDownColor: "#ef4444",
-          wickUpColor: "#22c55e",
-          wickDownColor: "#ef4444",
+        apiService.post("/listing", { type: chartType }).then(async (res) => {
+          seriesRef.current = chartRef.current.addSeries(CandlestickSeries, {
+            upColor: "transparent",
+            downColor: "#ef4444",
+            borderUpColor: "#22c55e",
+            borderDownColor: "#ef4444",
+            wickUpColor: "#22c55e",
+            wickDownColor: "#ef4444",
+          });
+          seriesRef.current.setData(await res.data);
         });
-        seriesRef.current.setData(data);
         break;
 
       default:
-        console.log("------------------>>>>>>>>>>>asfasf");
-        seriesRef.current = chartRef.current.addSeries(CandlestickSeries, {
-          upColor: "#22c55e",
-          downColor: "#ef4444",
-          borderUpColor: "#22c55e",
-          borderDownColor: "#ef4444",
-          wickUpColor: "#22c55e",
-          wickDownColor: "#ef4444",
+        apiService.post("/listing", { type: chartType }).then(async (res) => {
+          if (seriesRef.current) {
+            chartRef.current.removeSeries(seriesRef.current);
+          }
+          seriesRef.current = chartRef.current.addSeries(CandlestickSeries, {
+            upColor: "#22c55e",
+            downColor: "#ef4444",
+            borderUpColor: "#22c55e",
+            borderDownColor: "#ef4444",
+            wickUpColor: "#22c55e",
+            wickDownColor: "#ef4444",
+          });
+          seriesRef.current.setData(await res.data);
         });
-        seriesRef.current.setData(data);
     }
 
     chartRef.current.timeScale().fitContent();
-  }, [chartType]);
+  }, [chartType, historicalData]);
 
   // useEffect(() => {
   //   loadSeries(chartType);
@@ -412,7 +522,10 @@ export default function Candlestick() {
         setRangeValue={rangeValue}
       />
 
-      <div className="ml-3 text-slate-50">
+      {/* Chart */}
+      <div ref={containerRef} />
+
+       <div className="ml-3 text-slate-50">
         <button onClick={zoomIn}>➕ Zoom In</button>
         <button onClick={zoomOut} className="ml-3 ">
           ➖ Zoom Out
@@ -421,9 +534,6 @@ export default function Candlestick() {
           🔄 Reset
         </button>
       </div>
-
-      {/* Chart */}
-      <div ref={containerRef} />
 
       <div
         className={`
