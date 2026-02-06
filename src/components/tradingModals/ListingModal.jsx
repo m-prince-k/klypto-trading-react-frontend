@@ -1,62 +1,57 @@
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
 import { IoCloseSharp } from "react-icons/io5";
 import { FiSearch } from "react-icons/fi";
 import { GrBitcoin } from "react-icons/gr";
 import { Link } from "react-router-dom";
 import apiService from "../../services/apiServices";
 
-export const ListingModal = ({ isOpen, onClose, items, title }) => {
+export const ListingModal = ({
+  isOpen,
+  onClose,
+  items,
+  title,
+  selectedCurrency,
+  setSelectedCurrency,
+}) => {
   const [activeTab, setActiveTab] = useState("Indicators");
   const [indicators, setIndicators] = useState([]);
   const [currencies, setCurrencies] = useState([]);
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [search, setSearch] = useState("");
-
-  const symbolListing = [
-    {
-      code: "BTCUSD",
-      name: "Bitcoin / U.S Dollar",
-      category: "index",
-      type: "spot crypto",
-      icon: "bitcoin",
-    },
-  ];
+  const [selectedIndicator, setSelectedIndicator] = useState("");
 
   // API calling- Indicators
   async function fetchIndicators() {
     setLoading(true);
     setError(null);
+    let response;
 
     try {
-      const response = apiService.post("getIndicators")
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch indicators");
+      if (selectedIndicator) {
+        response = await apiService.post(`getIndicators?q=${selectedIndicator}`);
+      } else {
+        response = await apiService.post(`getIndicators`);
       }
-
-      const result = await response.json();
-
-      // IMPORTANT: API structure = { data: {...} }
-      setIndicators(result.data);
+      setIndicators(response?.data);
     } catch (err) {
-      setError(err.message);
+      console.error(err);
+      setError(err?.message || "Failed to fetch indicators");
     } finally {
       setLoading(false);
     }
   }
 
-   async function fetchCurrencies() {
+  //API-Calling Currencies
+  async function fetchCurrencies() {
     setLoading(true);
     setError(null);
-
+    let response;
     try {
-      const response =await apiService.post("getCurrencies",{})
-
-     
-      // console.log(result,"-9000000000000000000000000000000000000000000000000000")
-      // IMPORTANT: API structure = { data: {...} }
+      if (selectedCurrency) {
+        response = await apiService.post(`getCurrencies?q=${selectedCurrency}`);
+      } else {
+        response = await apiService.post(`getCurrencies`);
+      }
       setCurrencies(response?.data);
     } catch (err) {
       setError(err.message);
@@ -67,19 +62,16 @@ export const ListingModal = ({ isOpen, onClose, items, title }) => {
 
   useEffect(() => {
     fetchCurrencies();
-  },[]);
+  }, [selectedCurrency]);
 
   useEffect(() => {
     if (title === "Indicators") {
       fetchIndicators();
     }
-
-  }, [title]);
+  }, [title, selectedIndicator]);
 
   const TABS = ["Indicators", "Strategies", "Profiles", "Patterns"];
   if (!isOpen) return null;
-
-  console.log(currencies,"============================>>>>>>>>>>")
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
@@ -99,33 +91,33 @@ export const ListingModal = ({ isOpen, onClose, items, title }) => {
               <input
                 type="text"
                 placeholder="Search symbol..."
+                value={selectedCurrency}
+                onChange={(e) => setSelectedCurrency(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-md "
               />
             </div>
 
             {/* Listing Grid */}
-            
+            <div className="overflow-y-auto mt-3 max-h-[68vh]">
+              {Object.entries(currencies).map(([key, value]) => (
+                <Link
+                  to="#"
+                  onClick={(e) => setSelectedCurrency(key)}
+                  key={key}
+                  className="w-full flex border-b border-slate-200 justify-between py-3"
+                >
+                  {/* LEFT */}
+                  <div className="flex gap-2 items-center">
+                    <span className="text-xl text-yellow-500">
+                      <GrBitcoin />
+                    </span>
 
-          {
-            Object.entries(currencies).map(([key,value]) =>(
-              <li>
-                   <div
-                   key={key}
-                // key={index}
-                className="w-full flex border-b border-slate-200 justify-between py-3"
-              >
-                {/* LEFT */}
-                <div className="flex gap-2 items-center">
-                  <span className="text-xl text-yellow-500">
-                    <GrBitcoin />
-                  </span>
+                    <h2 className="uppercase w-30 text-left">{key}</h2>
+                    <h3>{value}</h3>
+                  </div>
 
-                  <h2 className="uppercase w-30 text-left">{key}</h2>
-                  <h3>{value}</h3>
-                </div>
-
-                {/* RIGHT */}
-                {/* <div className="flex gap-3 items-center">
+                  {/* RIGHT */}
+                  {/* <div className="flex gap-3 items-center">
                   <h3 className="text-slate-500 text-sm">{item.category}</h3>
                   <h2>{item.type}</h2>
 
@@ -133,12 +125,9 @@ export const ListingModal = ({ isOpen, onClose, items, title }) => {
                     <GrBitcoin />
                   </span>
                 </div> */}
-              </div>
-              </li>
-            ) )
-          }
-
-
+                </Link>
+              ))}
+            </div>
           </div>
         )}
 
@@ -150,15 +139,15 @@ export const ListingModal = ({ isOpen, onClose, items, title }) => {
               <input
                 type="text"
                 placeholder="Search indicators"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                value={selectedIndicator}
+                onChange={(e) => setSelectedIndicator(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-md"
               />
             </div>
 
             {/* Tabs */}
             <div className="flex gap-2 flex-wrap">
-              {TABS.map((tab,index) => (
+              {TABS.map((tab, index) => (
                 <button
                   key={index}
                   onClick={() => setActiveTab(tab)}
@@ -180,13 +169,14 @@ export const ListingModal = ({ isOpen, onClose, items, title }) => {
               {error && <p className="text-red-500 text-sm">{error}</p>}
 
               {!loading &&
-                !error &&
-                activeTab === "Indicators" &&
-                
-                indicators ? (
-                    Object.entries(indicators)?.map(([category, items]) => {
+              !error &&
+              activeTab === "Indicators" &&
+              indicators ? (
+                Object.entries(indicators)?.map(([category, items]) => {
                   const filteredItems = items?.filter((item) =>
-                    item?.toLowerCase().includes(search?.toLowerCase()),
+                    item
+                      ?.toLowerCase()
+                      .includes(selectedIndicator?.toLowerCase()),
                   );
 
                   return (
@@ -197,8 +187,10 @@ export const ListingModal = ({ isOpen, onClose, items, title }) => {
 
                       <ul className="grid pl-3 grid-cols-1 text-slate-700 gap-2 text-sm">
                         {filteredItems?.map((item) => (
-                          <Link to='#'
+                          <Link
+                            to="#"
                             key={item}
+                            onClick={(e) => setSelectedIndicator(item)}
                             className="px-2 py-1  rounded cursor-pointer hover:bg-slate-100"
                           >
                             {item}
@@ -207,15 +199,10 @@ export const ListingModal = ({ isOpen, onClose, items, title }) => {
                       </ul>
                     </div>
                   );
-                } ))
- :  
-  
-(                  
-  <p className="text-sm text-slate-500">No indicators found</p>
-)  
-                
-
-                }
+                })
+              ) : (
+                <p className="text-sm text-slate-500">No indicators found</p>
+              )}
 
               {activeTab !== "Indicators" && (
                 <p className="text-sm text-slate-500">

@@ -19,9 +19,7 @@ export default function ChartHeader({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [range, setRange] = useState(100);
-
-
-
+  const [selectedCurrency, setSelectedCurrency] = useState("BTC")
 
   const RANGES = [1, 10, 100, 1000];
   const SYMBOLS = ["BTC/USDT", "ETH/USDT", "SOL/USDT", "BNB/USDT"];
@@ -49,18 +47,15 @@ export default function ChartHeader({
     setError(null);
 
     try {
-      const response = apiService.post("getTimeFrames")
+      const response = await apiService.post("getTimeFrames");
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch timeframes");
-      }
+      console.log("timeframe response", response);
 
-      const result = await response.json();
-      setTimeframe(result.data);
-      await setTimeframeValue(value);
-      
+      setTimeframe(response.data);
+      setTimeframeValue(value);
     } catch (err) {
-      setError(err.message);
+      console.error(err);
+      setError(err?.message || "Failed to fetch timeframes");
     } finally {
       setLoading(false);
     }
@@ -80,10 +75,10 @@ export default function ChartHeader({
       <div className="flex gap-3 px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg  ">
         {/* Name */}
         <button
-          onClick={() => openModal("Symbol Search", SYMBOLS)}
-          className="flex items-center gap-1 text-xs bg-slate-300 text-slate-900 px-2 py-1 rounded-md hover:bg-slate-400"
+          onClick={() => openModal("Symbol Search")}
+          className=" bg-slate-900 px-2 w-10 text-xs rounded-md text-white border"
         >
-          Name
+          {selectedCurrency}
         </button>
 
         {/* TimeFrame */}
@@ -100,7 +95,7 @@ export default function ChartHeader({
             {timeframe &&
               Object.entries(timeframe)?.map(([group, items]) => (
                 <optgroup
-                  className="text-slate-500 text-sm mt-2 "
+                  className="text-slate-500 border-t border-slate-400 text-sm mt-2 "
                   key={group}
                   label={group?.toUpperCase()}
                 >
@@ -119,7 +114,7 @@ export default function ChartHeader({
 
           {RANGES?.map((r, i) => (
             <>
-              <small class="badge badge-success text-white">
+              <small className="badge badge-success text-white">
                 {i === 0
                   ? "1 Range"
                   : i === 1
@@ -144,7 +139,7 @@ export default function ChartHeader({
             </>
           ))}
         </div>
-{/* -------------------------------------------------------------ADD CANDLE charts------------------- */}
+        {/* -------------------------------------------------------------ADD CANDLE charts------------------- */}
         {/* Candlestick */}
         {/* <select
                 value={"line"}
@@ -159,7 +154,6 @@ export default function ChartHeader({
                 <option value="histogram">Histogram (Volume)</option>
                   <option value="custom">Custom Series</option>
             </select> */}
-
 
         {/* Indicator */}
         <button
@@ -217,6 +211,9 @@ export default function ChartHeader({
         onClose={closeModal}
         title={modalConfig.title}
         items={modalConfig.items}
+        selectedCurrency={selectedCurrency}
+        setSelectedCurrency={setSelectedCurrency}
+
       />
     </div>
   );
