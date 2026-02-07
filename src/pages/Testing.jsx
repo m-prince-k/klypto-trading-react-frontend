@@ -1,222 +1,237 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { createChart, CandlestickSeries, LineSeries } from "lightweight-charts";
 
 export default function Testing() {
-  const [open, setOpen] = useState(false);
-  const [dark, setDark] = useState(false);
-  const [drawingsPanel, setDrawingsPanel] = useState(true);
-  const [language, setLanguage] = useState("English (India)");
+  const chartContainerRef = useRef(null);
+  const chartRef = useRef(null);
+  const candleSeriesRef = useRef(null);
+  const rsiSeriesRef = useRef(null);
+  const smaSeriesRef = useRef(null);
+
+  const [style, setStyle] = useState({
+    rsiColor: "#2962FF",
+    smaColor: "#FF6D00",
+    bgColor: "#2962FF",
+    bgOpacity: 0.2,
+    lineWidth: 2,
+    showRSI: true,
+    showSMA: true
+  });
+
+  // ---------- RSI CALCULATION ----------
+  function calculateRSI(data, length = 14) {
+    let gains = [];
+    let losses = [];
+
+    for (let i = 1; i < data.length; i++) {
+      const diff = data[i].close - data[i - 1].close;
+      gains.push(diff > 0 ? diff : 0);
+      losses.push(diff < 0 ? Math.abs(diff) : 0);
+    }
+
+    const rsi = [];
+
+    for (let i = length; i < gains.length; i++) {
+      const avgGain =
+        gains.slice(i - length, i).reduce((a, b) => a + b, 0) / length;
+      const avgLoss =
+        losses.slice(i - length, i).reduce((a, b) => a + b, 0) / length;
+
+      const rs = avgGain / avgLoss;
+      const value = 100 - 100 / (1 + rs);
+
+      rsi.push({
+        time: data[i + 1].time,
+        value: value
+      });
+    }
+
+    return rsi;
+  }
+
+  // ---------- SMA ----------
+  function calculateSMA(data, length = 14) {
+    const sma = [];
+
+    for (let i = length; i < data.length; i++) {
+      const avg =
+        data
+          .slice(i - length, i)
+          .reduce((sum, d) => sum + d.close, 0) / length;
+
+      sma.push({
+        time: data[i].time,
+        value: avg
+      });
+    }
+
+    return sma;
+  }
+
+  // ---------- Chart Init ----------
+  useEffect(() => {
+    const chart = createChart(chartContainerRef.current, {
+      height: 500,
+      layout: {
+        background: { color: "#0f172a" },
+        textColor: "#DDD"
+      },
+      grid: {
+        vertLines: { color: "#1f2937" },
+        horzLines: { color: "#1f2937" }
+      }
+    });
+
+    chartRef.current = chart;
+
+    const candleSeries = chart.addSeries(CandlestickSeries);
+    candleSeriesRef.current = candleSeries;
+
+    const rsiSeries = chart.addSeries(LineSeries, {
+      color: style.rsiColor,
+      lineWidth: style.lineWidth
+    });
+
+    const smaSeries = chart.addSeries(LineSeries, {
+      color: style.smaColor,
+      lineWidth: style.lineWidth
+    });
+
+    rsiSeriesRef.current = rsiSeries;
+    smaSeriesRef.current = smaSeries;
+
+    // ---------- Dummy Data ----------
+    const data = [];
+
+    let price = 30000;
+
+    for (let i = 0; i < 200; i++) {
+      const open = price;
+      const close = open + (Math.random() - 0.5) * 500;
+      const high = Math.max(open, close) + Math.random() * 200;
+      const low = Math.min(open, close) - Math.random() * 200;
+
+      price = close;
+
+      data.push({
+        time: 1700000000 + i * 60,
+        open,
+        high,
+        low,
+        close
+      });
+    }
+
+    candleSeries.setData(data);
+
+    const rsiData = calculateRSI(data);
+    const smaData = calculateSMA(data);
+
+    rsiSeries.setData(rsiData);
+    smaSeries.setData(smaData);
+
+    chart.timeScale().fitContent();
+
+    return () => chart.remove();
+  }, []);
+
+  // ---------- STYLE UPDATE ----------
+  useEffect(() => {
+    if (!rsiSeriesRef.current || !smaSeriesRef.current) return;
+
+    rsiSeriesRef.current.applyOptions({
+      color: style.rsiColor,
+      lineWidth: style.lineWidth,
+      visible: style.showRSI
+    });
+
+    smaSeriesRef.current.applyOptions({
+      color: style.smaColor,
+      lineWidth: style.lineWidth,
+      visible: style.showSMA
+    });
+
+  }, [style]);
 
   return (
-    <div style={{ height: "100vh", background: dark ? "#111" : "#f5f5f5" }}>
-      {/* ===== TOP BAR ===== */}
-      <div style={styles.topBar}>
-        <button onClick={() => setOpen(true)} style={styles.menuBtn}>☰</button>
-        <b style={{ color: dark ? "#fff" : "#000" }}>TradingView</b>
-      </div>
-
-      {/* ===== DRAWER OVERLAY ===== */}
-      {open && (
-        <div style={styles.overlay} onClick={() => setOpen(false)} />
-      )}
-
-      {/* ===== DRAWER ===== */}
+    <div style={{ display: "flex" }}>
+      
+      {/* ---------- Indicator Palette ---------- */}
       <div
         style={{
-          ...styles.drawer,
-          left: open ? 0 : -300,
-          background: dark ? "#0e0e0e" : "#fff",
-          color: dark ? "#fff" : "#000",
+          width: 250,
+          padding: 15,
+          background: "#111827",
+          color: "white"
         }}
       >
-        {/* HEADER */}
-        <div style={styles.header}>
-          <div style={styles.avatar}>S</div>
-          <div>
-            <div style={{ fontWeight: 600 }}>sm954341</div>
-            <div style={{ fontSize: 12, opacity: 0.7 }}>View profile</div>
-          </div>
-        </div>
+        <h4>Indicator Style</h4>
 
-        <Divider />
-
-        {/* MENU ITEMS */}
-        <Item label="🏠 Home" onClick={() => alert("Home")} />
-        <Item label="❓ Help Center" onClick={() => alert("Help Center")} />
-        <Item label="⚡ What's new" onClick={() => alert("What's new")} />
-
-        <Divider />
-
-        {/* TOGGLES */}
-        <Toggle
-          label="🌙 Dark theme"
-          value={dark}
-          onChange={() => setDark(!dark)}
-        />
-
-        <Toggle
-          label="📐 Drawings panel"
-          value={drawingsPanel}
-          onChange={() => setDrawingsPanel(!drawingsPanel)}
-        />
-
-        {/* LANGUAGE */}
-        <Item
-          label={`🌐 Language`}
-          right={language}
-          onClick={() =>
-            setLanguage(
-              language === "English (India)" ? "English (US)" : "English (India)"
-            )
+        <label>RSI Color</label>
+        <input
+          type="color"
+          value={style.rsiColor}
+          onChange={(e) =>
+            setStyle({ ...style, rsiColor: e.target.value })
           }
         />
 
-        {/* SHORTCUT */}
-        <Item
-          label="⌨ Keyboard shortcuts"
-          right="Ctrl + /"
-          onClick={() => alert("Show shortcuts")}
-        />
+        <br />
 
-        {/* DESKTOP */}
-        <Item
-          label="🖥 Get desktop app"
-          onClick={() =>
-            window.open("https://www.tradingview.com/desktop/", "_blank")
+        <label>SMA Color</label>
+        <input
+          type="color"
+          value={style.smaColor}
+          onChange={(e) =>
+            setStyle({ ...style, smaColor: e.target.value })
           }
         />
 
-        <Divider />
+        <br />
 
-        {/* SIGN OUT */}
-        <Item
-          label="🚪 Sign out"
-          danger
-          onClick={() => alert("Signed out")}
+        <label>Thickness</label>
+        <input
+          type="range"
+          min="1"
+          max="5"
+          value={style.lineWidth}
+          onChange={(e) =>
+            setStyle({ ...style, lineWidth: Number(e.target.value) })
+          }
         />
+
+        <br />
+
+        <label>
+          <input
+            type="checkbox"
+            checked={style.showRSI}
+            onChange={(e) =>
+              setStyle({ ...style, showRSI: e.target.checked })
+            }
+          />
+          Show RSI
+        </label>
+
+        <br />
+
+        <label>
+          <input
+            type="checkbox"
+            checked={style.showSMA}
+            onChange={(e) =>
+              setStyle({ ...style, showSMA: e.target.checked })
+            }
+          />
+          Show SMA
+        </label>
       </div>
 
-      {/* ===== DEMO CONTENT ===== */}
-      <div style={{ padding: 20, color: dark ? "#fff" : "#000" }}>
-        <h2>Chart Area</h2>
-        <p>Dark Mode: {dark ? "ON" : "OFF"}</p>
-        <p>Drawings Panel: {drawingsPanel ? "Visible" : "Hidden"}</p>
-        <p>Language: {language}</p>
-      </div>
+      {/* ---------- Chart ---------- */}
+      <div
+        ref={chartContainerRef}
+        style={{ flex: 1 }}
+      />
     </div>
   );
 }
-
-/* =====================
-   UI COMPONENTS
-===================== */
-
-const Item = ({ label, right, onClick, danger }) => (
-  <div
-    onClick={onClick}
-    style={{
-      ...styles.item,
-      color: danger ? "#ff4d4f" : "inherit",
-    }}
-  >
-    <span>{label}</span>
-    {right && <span style={{ opacity: 0.6 }}>{right}</span>}
-  </div>
-);
-
-const Toggle = ({ label, value, onChange }) => (
-  <div style={styles.item}>
-    <span>{label}</span>
-    <div
-      onClick={onChange}
-      style={{
-        ...styles.toggle,
-        background: value ? "#4caf50" : "#ccc",
-      }}
-    >
-      <div
-        style={{
-          ...styles.knob,
-          left: value ? 18 : 2,
-        }}
-      />
-    </div>
-  </div>
-);
-
-const Divider = () => (
-  <div style={{ height: 1, background: "#ddd", margin: "8px 0" }} />
-);
-
-/* =====================
-   STYLES
-===================== */
-
-const styles = {
-  topBar: {
-    height: 44,
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    padding: "0 10px",
-    borderBottom: "1px solid #ddd",
-  },
-  menuBtn: {
-    fontSize: 18,
-    cursor: "pointer",
-  },
-  overlay: {
-    position: "fixed",
-    inset: 0,
-    background: "rgba(0,0,0,0.3)",
-  },
-  drawer: {
-    position: "fixed",
-    top: 0,
-    bottom: 0,
-    width: 280,
-    transition: "0.25s",
-    padding: 12,
-    zIndex: 10,
-    boxShadow: "2px 0 6px rgba(0,0,0,0.2)",
-  },
-  header: {
-    display: "flex",
-    gap: 10,
-    alignItems: "center",
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: "50%",
-    background: "#9c27b0",
-    color: "#fff",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: 600,
-  },
-  item: {
-    padding: "10px 6px",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    cursor: "pointer",
-    fontSize: 14,
-  },
-  toggle: {
-    width: 36,
-    height: 20,
-    borderRadius: 20,
-    position: "relative",
-    cursor: "pointer",
-  },
-  knob: {
-    width: 16,
-    height: 16,
-    borderRadius: "50%",
-    background: "#fff",
-    position: "absolute",
-    top: 2,
-    transition: "0.2s",
-  },
-};

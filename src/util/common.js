@@ -119,11 +119,10 @@ export const ChartProprties = {
 };
 
 
-export function getIndicatorChartProperties(height = 140, width= 1280) {
+export function getIndicatorChartProperties() {
   return {
     ...ChartProprties,
-    height,
-    width,
+    height:140,
     layout: { ...ChartProprties.layout },
 
     timeScale: {
@@ -142,6 +141,8 @@ export function getIndicatorChartProperties(height = 140, width= 1280) {
     crosshair: { ...ChartProprties.crosshair },
   };
 }
+
+
 export const MiniChartProprties = {
   width: 620,          // small footprint for hover
   height: 280,
@@ -227,7 +228,6 @@ export const TIMEFRAME_TO_SECONDS = {
   "1d": 86400,
   "1w": 604800,
 };
-
 export const SINGLE_VALUE_CHARTS = ["line", "area", "baseline", "histogram"];
 
 export const chartOptions = [

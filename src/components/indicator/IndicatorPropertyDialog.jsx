@@ -6,6 +6,7 @@ export default function IndicatorPropertyDialog({
   indicatorProperty,
   setIndicatorProperty,
   activeBarIndicator,
+    updateIndicator,
 }) {
   const labelStyle = {
     display: "inline-block",
@@ -202,7 +203,7 @@ export default function IndicatorPropertyDialog({
       length: 20,
       source: "Close",
     },
-    "Volume": {
+    Volume: {
       maLength: 20,
       colorByPrevious: false,
     },
@@ -270,6 +271,16 @@ export default function IndicatorPropertyDialog({
     width: 2,
   });
 
+  const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
+  const [tempIndicatorStyle, setTempIndicatorStyle] = useState({});
+
+  useEffect(() => {
+    if (activeBarIndicator) {
+      setTempIndicatorConfig(indicatorConfigs[activeBarIndicator] || {});
+      setTempIndicatorStyle(indicatorStyle || {});
+    }
+  }, [activeBarIndicator]);
+
   /* =========================
      CURRENT CONFIG
   ========================== */
@@ -281,17 +292,14 @@ export default function IndicatorPropertyDialog({
   ========================== */
 
   const updateProperty = (key, value) => {
-    setIndicatorConfigs((prev) => ({
+    setTempIndicatorConfig((prev) => ({
       ...prev,
-      [activeBarIndicator]: {
-        ...prev[activeBarIndicator],
-        [key]: value,
-      },
+      [key]: value,
     }));
   };
 
   const updateNestedProperty = (parentKey, childKey, value) => {
-    setIndicatorConfigs((prev) => ({
+    setTempIndicatorConfig((prev) => ({
       ...prev,
       [parentKey]: {
         ...prev[parentKey],
@@ -300,7 +308,7 @@ export default function IndicatorPropertyDialog({
     }));
   };
   const updateNestedDoubleProperty = (parentKey, childKey, fieldKey, value) => {
-    setIndicatorConfigs((prev) => ({
+    setTempIndicatorConfig((prev) => ({
       ...prev,
       [parentKey]: {
         ...prev[parentKey],
@@ -312,54 +320,33 @@ export default function IndicatorPropertyDialog({
     }));
   };
 
-  const updateSmoothing = (key, value) => {
-    setIndicatorConfigs((prev) => ({
-      ...prev,
-      [activeBarIndicator]: {
-        ...prev[activeBarIndicator],
-        smoothing: {
-          ...prev[activeBarIndicator].smoothing,
-          [key]: value,
-        },
-      },
-    }));
-  };
-
+const updateSmoothing = (key, value) => {
+  setTempIndicatorConfig((prev) => ({
+    ...prev,
+    smoothing: {
+      ...prev.smoothing,
+      [key]: value,
+    },
+  }));
+};
   /* =========================
      OK BUTTON
   ========================== */
-
   const handleIndicatorPropertyChange = () => {
-    const indicatorName = activeBarIndicator;
-    const fullConfig = indicatorConfigs[indicatorName];
+    setIndicatorConfigs((prev) => ({
+      ...prev,
+      [activeBarIndicator]: tempIndicatorConfig,
+    }));
 
-    if (!fullConfig) return;
+    updateIndicator(activeBarIndicator, tempIndicatorConfig);
 
-    const payload = {
-      indicatorName,
-      properties: {},
-    };
-
-    // Iterate over all keys in the fullConfig
-    for (const key in fullConfig) {
-      if (key === "smoothing") {
-        // Only add smoothing if it exists and has keys
-        if (
-          fullConfig.smoothing &&
-          Object.keys(fullConfig.smoothing).length > 0
-        ) {
-          payload.smoothing = { ...fullConfig.smoothing };
-        }
-      } else {
-        // Include all other keys dynamically
-        payload.properties[key] = fullConfig[key];
-      }
-    }
-
-    console.log(payload);
     setIndicatorProperty(false);
   };
 
+  const handleCancel = () => {
+  setTempIndicatorConfig(indicatorConfigs[activeBarIndicator]);
+  setIndicatorProperty(false);
+};
   /* =========================
      BASE SETTINGS COMPONENT
   ========================== */
@@ -1776,8 +1763,8 @@ export default function IndicatorPropertyDialog({
 
           <Tab eventKey="style" title="Style">
             <IndicatorStyle
-              style={indicatorStyle}
-              setStyle={setIndicatorStyle}
+              style={tempIndicatorStyle}
+              setStyle={setTempIndicatorStyle}
               activeBarIndicator={activeBarIndicator}
             />
           </Tab>
@@ -1785,7 +1772,7 @@ export default function IndicatorPropertyDialog({
       </Modal.Body>
 
       <Modal.Footer>
-        <Button variant="light" onClick={() => setIndicatorProperty(false)}>
+        <Button variant="light" onClick={handleCancel}>
           Cancel
         </Button>
 

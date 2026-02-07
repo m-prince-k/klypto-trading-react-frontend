@@ -28,7 +28,9 @@ import {
   convertToHeikinAshi,
   getIndicatorChartProperties,
 } from "../util/common";
-import apiService from "../services/apiServices";
+
+
+
 import {
   IoCloseSharp,
   IoEyeOffOutline,
@@ -42,7 +44,7 @@ import {
   fetchDataByCurrency,
   fetchIndicatorData,
   PANE_INDICATORS,
-} from "../util/chartFunctions";
+} from "../util/ChartFunctions";
 import IndicatorPropertyDialog from "../components/indicator/IndicatorPropertyDialog";
 
 export default function Candlestick() {

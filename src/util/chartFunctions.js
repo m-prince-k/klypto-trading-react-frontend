@@ -42,7 +42,7 @@ export async function fetchIndicatorData(
 
       /* ================= SINGLE LINE ================= */
 
-      if (result.type === "single") {
+      if (result?.type === "single") {
         removeSeries(indicatorSeriesRef, chartRef, indicator);
 
         const series = addSeries(indicator, LineSeries, {
@@ -220,6 +220,7 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
       };
 
     case "RSI":
+
       return {
         type: "single",
         data:
