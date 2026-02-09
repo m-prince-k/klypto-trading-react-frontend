@@ -6,8 +6,9 @@ import {
   AreaSeries,
   HistogramSeries,
   BaselineSeries,
-  CustomSeries,
 } from "lightweight-charts";
+import { LuCirclePlus, LuCircleMinus } from "react-icons/lu";
+import { RiResetRightLine } from "react-icons/ri";
 import { useEffect, useRef, useState } from "react";
 import { FaFileWaveform } from "react-icons/fa6";
 import { Form } from "../components/tradingModals/Form";
@@ -19,14 +20,22 @@ export default function Candlestick() {
   const chartRef = useRef();
   const containerRef = useRef();
   const seriesRef = useRef(null);
-  const apiCalledRef = useRef(false);
+  const indicatorSeries = useRef({});
+  const socketRef = useRef(null);
 
-  const [timeframe, setTimeframe] = useState("1m");
   const [openForm, setOpenForm] = useState(false);
-  const [timeframeValue, setTimeframeValue] = useState(60);
-  const [rangeValue, setRangeValue] = useState(1);
+  const [timeframeValue, setTimeframeValue] = useState('1m');
+  const [selectedCurrency, setSelectedCurrency] = useState("ETHBTC");
+  const [selectedIndicator, setSelectedIndicator] = useState("");
+  const [rangeValue, setRangeValue] = useState("1000");
   const [chartType, setChartType] = useState("candlestick");
   const [historicalData, setHistoricalData] = useState([]);
+  const [isMarketOpen, setIsMarketOpen] = useState(true);
+  const [liveOhlcv, setLiveOhlcv] = useState({});
+
+  console.log(selectedIndicator, "selecteddddddddddddddddddddddd------------");
+
+  const Statistics = ["O:32", "H:33", "L:34", "C:31", "V:43"];
 
   const formatCandleData = (data) => {
     if (!Array.isArray(data)) return [];
@@ -52,45 +61,6 @@ export default function Candlestick() {
 
     return Array.from(map.values()).sort((a, b) => a.time - b.time);
   };
-
-  // const data = [
-  //   {
-  //     time: "2024-01-01",
-  //     open: 100,
-  //     high: 120,
-  //     low: 90,
-  //     close: 110,
-  //     value: 110,
-  //     volume: 500,
-  //   },
-  //   {
-  //     time: "2024-01-02",
-  //     open: 110,
-  //     high: 130,
-  //     low: 100,
-  //     close: 125,
-  //     value: 125,
-  //     volume: 800,
-  //   },
-  //   {
-  //     time: "2024-01-03",
-  //     open: 125,
-  //     high: 140,
-  //     low: 115,
-  //     close: 135,
-  //     value: 135,
-  //     volume: 650,
-  //   },
-  //   {
-  //     time: "2024-01-04",
-  //     open: 135,
-  //     high: 150,
-  //     low: 120,
-  //     close: 145,
-  //     value: 145,
-  //     volume: 900,
-  //   },
-  // ];
 
   // async function fetchChartData() {
   //   try {
@@ -143,10 +113,96 @@ export default function Candlestick() {
     //     series.setData(formattedData);
     //   }
 
+    // 3️⃣ Connect Binance WebSocket (BTCUSDT 1m)
+    // const socket = new WebSocket(
+    //   "wss://stream.binance.com:9443/ws/btcusdt@kline_1m",
+    // );
+
+    // socketRef.current = socket;
+
+    // socket.onmessage = (event) => {
+    //   const msg = JSON.parse(event.data);
+    //   const k = msg.k;
+
+    //   // 4️⃣ Extract candle values
+    //   const candle = {
+    //     time: new Date(k.t).toISOString().split("T")[0], // YYYY-MM-DD
+    //     open: Number(k.o),
+    //     high: Number(k.h),
+    //     low: Number(k.l),
+    //     close: Number(k.c),
+    //   };
+
+    //   // 5️⃣ Update chart candle
+    //   console.log(candle, "live candle-----------------------------");
+    //   socketRef.current.update(candle);
+
+    //   // 6️⃣ Update OHLC panel
+    //   setLiveOhlcv({
+    //     open: Number(candle.open),
+    //     high: Number(candle.high),
+    //     low: Number(candle.low),
+    //     close: Number(candle.close),
+    //   });
+    // };
+
     chartRef.current.timeScale().fitContent();
-    return () => chartRef.current.remove();
+    return () => {
+      chartRef.current.remove();
+      // socketRef.close();
+    };
   }, []);
-  console.log(chartType, "===================>>>>>>>>>>>>>>>>>>>>");
+
+  //  -------------------LOAD INDICATOR FROM API------------------------------
+  const loadIndicator = async () => {
+    const { panel, data } = await apiService.post(
+      `indicatorDetails?symbol=${selectedCurrency ? selectedCurrency : "ETHBTC"}&interval=${timeframeValue}&indicator=${selectedIndicator.toLowerCase() || "ema"}`,
+    );
+    console.log(panel, "24444444444444444444");
+    // const responde = await res.data;
+    // const panel=responde.panel;
+    // let data=responde.data
+
+    console.log(data, "24444444444444444444");
+    // Remove existing indicator
+    if (indicatorSeries.current[selectedIndicator]) {
+      chartRef.current.removeSeries(indicatorSeries.current[selectedIndicator]);
+    }
+
+    let series;
+
+    // Overlay indicators
+    if (panel === "overlay") {
+      series = chartRef.current.addSeries(LineSeries, {
+        color: "#3b82f6",
+        lineWidth: 2,
+      });
+    }
+
+    // Separate panel indicators (RSI, MACD)
+    if (panel === "separate") {
+      series = chartRef.current.addSeries(LineSeries, {
+        color: "#facc15",
+        priceScaleId: "right",
+      });
+    }
+
+    // Volume
+    if (panel === "volume") {
+      series = chartRef.current.addSeries(HistogramSeries, {
+        priceFormat: { type: "volume" },
+        priceScaleId: "",
+        scaleMargins: { top: 0.8, bottom: 0 },
+      });
+    }
+
+    series.setData(data);
+    indicatorSeries.current[selectedIndicator] = series;
+  };
+
+  useEffect(() => {
+    loadIndicator();
+  }, [selectedIndicator]);
 
   useEffect(() => {
     // if(chartType == 'line'){
@@ -168,14 +224,34 @@ export default function Candlestick() {
 
     switch (chartType) {
       case "line":
-        apiService.post("/listing", { type: chartType }).then(async (res) => {
+        async function fetchCandeStickData1() {
+          let response;
+          if (selectedCurrency && timeframeValue && rangeValue) {
+            response = await apiService.post(
+              `listing?symbol=${selectedCurrency ? selectedCurrency : "ETHBTC"}&interval=${timeframeValue ? timeframeValue : "1m"}&limit=${rangeValue ? rangeValue : 1000}`,
+              { type: chartType },
+            );
+
+          } else {
+            console.log("fourth insertion------------------------------");
+
+            response = await apiService.post(
+              `listing?symbol=${selectedCurrency ? selectedCurrency : "ETHBTC"}&limit=${rangeValue ? rangeValue : 1000}&interval=${timeframeValue ? timeframeValue : "1m"}`,
+              { type: chartType },
+            );
+          }
+          resetZoom();
+
+          if (seriesRef.current) {
+            chartRef.current.removeSeries(seriesRef.current);
+          }
           seriesRef.current = chartRef.current.addSeries(LineSeries, {
             color: "#38bdf8",
+           
           });
-          seriesRef.current.setData(
-            await res.data.map((d) => ({ time: d.time, value: d.value })),
-          );
-        });
+          seriesRef.current.setData(await response.data.map((d) => ({ time: d.time, value: d.close })));
+        }
+        fetchCandeStickData1();
         break;
 
       case "bar":
@@ -275,7 +351,44 @@ export default function Candlestick() {
         break;
 
       default:
-        apiService.post("/listing", { type: chartType }).then(async (res) => {
+        async function fetchCandeStickData() {
+          let response;
+          if (selectedCurrency && timeframeValue && rangeValue) {
+            response = await apiService.post(
+              `listing?symbol=${selectedCurrency ? selectedCurrency : "ETHBTC"}&interval=${timeframeValue ? timeframeValue : "1m"}&limit=${rangeValue ? rangeValue : 1000}`,
+              { type: chartType },
+            );
+
+            console.log(
+              "first insertion------------------------------",
+              response,
+            );
+          } else if (rangeValue) {
+            response = await apiService.post(
+              `listing?limit=${rangeValue ? rangeValue : 1000}`,
+              { type: chartType },
+            );
+            console.log(
+              "second insertion------------------------------",
+              response,
+            );
+          } else if (selectedCurrency) {
+            console.log("third insertion------------------------------");
+
+            response = await apiService.post(
+              `listing?symbol=${selectedCurrency ? selectedCurrency : "ETHBTC"}`,
+              { type: chartType },
+            );
+          } else {
+            console.log("fourth insertion------------------------------");
+
+            response = await apiService.post(
+              `listing?symbol=${selectedCurrency ? selectedCurrency : "ETHBTC"}&limit=${rangeValue ? rangeValue : 1000}&interval=${timeframeValue ? timeframeValue : "1m"}`,
+              { type: chartType },
+            );
+          }
+          resetZoom();
+
           if (seriesRef.current) {
             chartRef.current.removeSeries(seriesRef.current);
           }
@@ -287,16 +400,13 @@ export default function Candlestick() {
             wickUpColor: "#22c55e",
             wickDownColor: "#ef4444",
           });
-          seriesRef.current.setData(await res.data);
-        });
+          seriesRef.current.setData(await response.data);
+        }
+        fetchCandeStickData();
     }
 
     chartRef.current.timeScale().fitContent();
-  }, [chartType, historicalData]);
-
-  // useEffect(() => {
-  //   loadSeries(chartType);
-  // }, [chartType]);
+  }, [chartType, historicalData, rangeValue, timeframeValue]);
 
   const convertToHeikinAshi = (data) => {
     if (!data.length) return [];
@@ -495,43 +605,87 @@ export default function Candlestick() {
   };
 
   return (
-    <div className="w-screen h-screen flex flex-col bg-slate-900">
-      {/* Dropdown */}
-      <select
-        value={chartType}
-        onChange={(e) => setChartType(e.target.value)}
-        className=" bg-slate-300"
-      >
-        <option value="candlestick">Candlestick</option>
-        <option value="line">Line</option>
-        <option value="bar">Bar</option>
-        <option value="area">Area</option>
-        <option value="baseline">Baseline</option>
-        <option value="hollow">Hollow</option>
-        <option value="hollowcandles">Hollow Candles</option>
-        <option value="heikinashi">Heikin Ashi</option>
-        <option value="histogram">Histogram (Volume)</option>
-      </select>
-
-      <ChartHeader
-        price="43,250"
-        change={2.15}
-        timeframe={timeframe}
-        onTimeframeChange={setTimeframe}
-        setTimeframeValue={setTimeframeValue}
-        setRangeValue={rangeValue}
-      />
+    <div className="w-full h-screen flex flex-col bg-slate-50 overflow-hidden">
+      <div>
+        <ChartHeader
+          timeframeValue={timeframeValue}
+          setTimeframeValue={setTimeframeValue}
+          rangeValue={rangeValue}
+          setRangeValue={setRangeValue}
+          selectedCurrency={selectedCurrency}
+          setSelectedCurrency={setSelectedCurrency}
+          setChartType={setChartType}
+          chartType={chartType}
+          selectedIndicator={selectedIndicator}
+          setSelectedIndicator={setSelectedIndicator}
+          loadIndicator={loadIndicator}
+        />
+      </div>
 
       {/* Chart */}
-      <div ref={containerRef} />
+      <div
+        ref={containerRef}
+        className="p-2 relative m-2 rounded-md bg-white w-fit"
+      >
+        {/* -------------------------------sub-header live Values----------------------- */}
+        <div className="flex px-2 top-2 z-50 absolute items-center gap-2 justify-start">
+          {/* LEFT: Symbol */}
 
-       <div className="ml-3 text-slate-50">
-        <button onClick={zoomIn}>➕ Zoom In</button>
-        <button onClick={zoomOut} className="ml-3 ">
-          ➖ Zoom Out
+          <div className="text-sm text-slate-400">
+            {selectedCurrency} : {timeframeValue} :
+            <span
+              className={`w-5 h-5 rounded-full ${
+                isMarketOpen ? "bg-green-500" : "bg-red-500"
+              }`}
+            ></span>
+          </div>
+
+          {/* CENTER: Timeframes */}
+          <div className="flex gap-1">
+            {Statistics.map((frame) => (
+              <button
+                key={frame}
+                onClick={() => setTimeframeValue(frame)}
+                className={`px-2 py-1 text-xs transition
+              ${
+                frame === timeframeValue
+                  ? "bg-blue-600 border-blue-600 text-white"
+                  : "bg-transparent border-slate-700 text-slate-300 hover:bg-slate-800"
+              }`}
+              >
+                {frame}
+              </button>
+            ))}
+            {/* <div className="flex gap-1">
+              <h2 className="px-2 py-1 text-xs">O: {liveOhlcv.open}</h2>
+              <h2 className="px-2 py-1 text-xs">H: {liveOhlcv.high}</h2>
+              <h2 className="px-2 py-1 text-xs">L: {liveOhlcv.low}</h2>
+              <h2 className="px-2 py-1 text-xs">C: {liveOhlcv.close}</h2> 
+            </div> */}
+
+
+          </div>
+        </div>
+      </div>
+
+      <div className="flex justify-center text-sm ml-3 text-slate-950">
+        <button
+          onClick={zoomIn}
+          className="flex items-center gap-1 px-2 py-1 bg-slate-200 rounded-md"
+        >
+          <LuCirclePlus /> Zoom In
         </button>
-        <button onClick={resetZoom} className="ml-3">
-          🔄 Reset
+        <button
+          onClick={zoomOut}
+          className="flex items-center gap-1 px-2 py-1 bg-slate-200 rounded-md ml-2"
+        >
+          <LuCircleMinus /> Zoom Out
+        </button>
+        <button
+          onClick={resetZoom}
+          className="flex items-center gap-1 px-2 py-1 bg-slate-200 rounded-md ml-2"
+        >
+          <RiResetRightLine /> Reset
         </button>
       </div>
 

@@ -1,34 +1,35 @@
 import { FiPlus } from "react-icons/fi";
 import { VscGraphLine } from "react-icons/vsc";
-import { BsBarChartFill } from "react-icons/bs";
 import { useState, useEffect } from "react";
 import { ListingModal } from "./ListingModal";
 import apiService from "../../services/apiServices";
 
-const TIMEFRAMES = ["O:32", "H:33", "L:34", "C:31", "V:43"];
 
 export default function ChartHeader({
   exchange = "BIOFIlCHEM",
-  onTimeframeChange,
+  timeframeValue,
   setTimeframeValue,
   setRangeValue,
+  rangeValue,
+  selectedCurrency,
+  selectedIndicator,
+  setSelectedIndicator,
+  setSelectedCurrency,
+  setChartType,
+  chartType,
+  loadIndicator
 }) {
-  const [open, setOpen] = useState(false);
-  const [value, setValue] = useState("");
   const [timeframe, setTimeframe] = useState(60);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [range, setRange] = useState(100);
-  const [selectedCurrency, setSelectedCurrency] = useState("BTC")
-
   const RANGES = [1, 10, 100, 1000];
-  const SYMBOLS = ["BTC/USDT", "ETH/USDT", "SOL/USDT", "BNB/USDT"];
 
   const [modalConfig, setModalConfig] = useState({
     open: false,
     title: "",
     items: [],
   });
+  console.log(selectedIndicator, "selecteddddddddddddddddddddddd")
 
   const openModal = (title, items) => {
     setModalConfig({
@@ -48,11 +49,8 @@ export default function ChartHeader({
 
     try {
       const response = await apiService.post("getTimeFrames");
-
-      console.log("timeframe response", response);
-
       setTimeframe(response.data);
-      setTimeframeValue(value);
+      setTimeframeValue(timeframeValue);
     } catch (err) {
       console.error(err);
       setError(err?.message || "Failed to fetch timeframes");
@@ -62,35 +60,34 @@ export default function ChartHeader({
   }
 
   useEffect(() => {
-    if (open === true) return;
     fetchTimeframe();
   }, []);
 
   const handleChange = (e) => {
-    setValue(e.target.value);
+    setTimeframeValue(e.target.value);
   };
 
+  console.log(timeframeValue, "timeframe------------------");
+
   return (
-    <div className="w-full justify-startflex flex-col items-center gap-3 py-1.5 bg-slate-950  ">
-      <div className="flex gap-3 px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg  ">
+    <div className="w-full justify-start flex flex-col gap-3  ">
+      <div className="flex items-center gap-3 px-3 py-1  rounded-lg bg-white   ">
         {/* Name */}
         <button
+        title={'Symbol Search'}
           onClick={() => openModal("Symbol Search")}
-          className=" bg-slate-900 px-2 w-10 text-xs rounded-md text-white border"
+          className=" bg-slate-200 px-2 w-24 h-7 text-left text-xs font-semibold rounded-full text-slate-900"
         >
-          {selectedCurrency}
+          {selectedCurrency || 'ETHBTC'}
         </button>
 
         {/* TimeFrame */}
-        <div className="inline-flex items-center gap-1">
+        <div title={timeframeValue} className="inline-flex items-center gap-1">
           <select
-            value={value}
+            value={timeframeValue}
             onChange={(e) => handleChange(e)}
-            className="px-2 py-1 w-36 text-sm rounded-md bg-slate-50 text-slate-900 border"
+            className="px-2 py-1 text-sm rounded-md bg-slate-50 text-slate-900 "
           >
-            <option value="" disabled>
-              Timeframe
-            </option>
 
             {timeframe &&
               Object.entries(timeframe)?.map(([group, items]) => (
@@ -102,7 +99,7 @@ export default function ChartHeader({
                   {items?.map((item) => (
                     <option
                       key={item?.seconds}
-                      value={item?.seconds}
+                      value={item?.value}
                       className="text-sm text-slate-900"
                     >
                       {item?.label}
@@ -111,34 +108,24 @@ export default function ChartHeader({
                 </optgroup>
               ))}
           </select>
-
-          {RANGES?.map((r, i) => (
-            <>
-              <small className="badge badge-success text-white">
-                {i === 0
-                  ? "1 Range"
-                  : i === 1
-                    ? "10 Range"
-                    : i === 2
-                      ? "100 Range"
-                      : "1000 Range"}
-              </small>
-              <button
-                key={i}
-                onClick={(e) => setRangeValue(r)}
-                style={{
-                  padding: "4px 10px",
-                  background: range === r ? "#2563eb" : "#1e293b",
-                  color: "#fff",
-                  border: "none",
-                  cursor: "pointer",
-                }}
-              >
-                {r}
-              </button>
-            </>
-          ))}
         </div>
+
+        <select
+        title={chartType}
+        value={chartType}
+        onChange={(e) => setChartType(e.target.value)}
+        className="px-2 py-1 w-36 text-sm rounded-md bg-slate-50 text-slate-900"
+      >
+        <option value="candlestick">Candlestick</option>
+        <option value="line">Line</option>
+        <option value="bar">Bar</option>
+        <option value="area">Area</option>
+        <option value="baseline">Baseline</option>
+        <option value="hollow">Hollow</option>
+        <option value="hollowcandles">Hollow Candles</option>
+        <option value="heikinashi">Heikin Ashi</option>
+        <option value="histogram">Histogram (Volume)</option>
+      </select>
         {/* -------------------------------------------------------------ADD CANDLE charts------------------- */}
         {/* Candlestick */}
         {/* <select
@@ -157,6 +144,7 @@ export default function ChartHeader({
 
         {/* Indicator */}
         <button
+        title="Indicators"
           onClick={() => openModal("Indicators")}
           className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md bg-purple-600 text-white hover:bg-purple-500"
         >
@@ -166,6 +154,7 @@ export default function ChartHeader({
 
         {/* Alert */}
         <button
+        title="Create Alert"
           onClick={() => openModal("Alerts")}
           className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-purple-500"
         >
@@ -174,35 +163,11 @@ export default function ChartHeader({
         </button>
 
         {/* Alert */}
-        <button className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-purple-500">
+        <button title="Simulation"
+         onClick={()=> openModal("Simulation")} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-purple-500">
           <FiPlus className="text-md" />
           Simulation
         </button>
-      </div>
-
-      <div className="flex px-2 items-center gap-2 justify-start">
-        {/* LEFT: Symbol */}
-        <div>
-          <div className="text-sm text-slate-400">{exchange} : DAILY:</div>
-        </div>
-
-        {/* CENTER: Timeframes */}
-        <div className="flex gap-1">
-          {TIMEFRAMES.map((tf) => (
-            <button
-              key={tf}
-              onClick={() => onTimeframeChange(tf)}
-              className={`px-2 py-1 text-xs transition
-              ${
-                tf === timeframe
-                  ? "bg-blue-600 border-blue-600 text-white"
-                  : "bg-transparent border-slate-700 text-slate-300 hover:bg-slate-800"
-              }`}
-            >
-              {tf}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* MODAL */}
@@ -210,9 +175,11 @@ export default function ChartHeader({
         isOpen={modalConfig.open}
         onClose={closeModal}
         title={modalConfig.title}
-        items={modalConfig.items}
         selectedCurrency={selectedCurrency}
         setSelectedCurrency={setSelectedCurrency}
+        selectedIndicator={selectedIndicator}
+        setSelectedIndicator={setSelectedIndicator}
+        loadIndicator={loadIndicator}
 
       />
     </div>
