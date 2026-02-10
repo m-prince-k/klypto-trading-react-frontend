@@ -22,6 +22,9 @@ export const ListingModal = ({
   const [currencies, setCurrencies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchIndicator, setSearchIndicator] = useState("");
+  const [searchCurrency, setSearchCurrency] = useState("");
+
   const debouncedCurrency = useDebounce(selectedCurrency, 500);
 
   // API calling- Indicators
@@ -108,9 +111,9 @@ export const ListingModal = ({
                 type="text"
                 autoFocus
                 placeholder="Search symbol..."
-                value={selectedCurrency}
+                value={searchCurrency}
                 onChange={(e) => {
-                  setSelectedCurrency(e.target.value);
+                  setSearchCurrency(e.target.value);
                 }}
                 className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-md "
               />
@@ -162,8 +165,8 @@ export const ListingModal = ({
                 type="text"
                 autoFocus
                 placeholder="Search indicators"
-                value={selectedIndicator}
-                onChange={(e) => setSelectedIndicator(e.target.value)}
+                value={searchIndicator}
+                onChange={(e) => setSearchIndicator(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-md"
               />{" "}
             </div>
@@ -180,7 +183,7 @@ export const ListingModal = ({
                     const filteredItems = items?.filter((item) =>
                       item
                         ?.toLowerCase()
-                        .includes(selectedIndicator?.toLowerCase()),
+                        .includes(searchIndicator?.toLowerCase()),
                     );
 
                     if (!filteredItems.length) return null;
@@ -192,11 +195,13 @@ export const ListingModal = ({
                         </h3>
 
                         <ul className="grid pl-3 grid-cols-1 text-slate-700 gap-2 text-sm">
-                          {filteredItems.map((item) => (
+                          {filteredItems?.map((item) => (
                             <Link
                               to="#"
                               key={item}
-                              onClick={() => setSelectedIndicator(item)}
+                              onClick={() => {
+                                setSelectedIndicator(item); onClose();}
+                              }
                               className="px-2 py-1 rounded cursor-pointer hover:bg-slate-100"
                             >
                               {item}
