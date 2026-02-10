@@ -22,12 +22,8 @@ export const ListingModal = ({
   const [currencies, setCurrencies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const debouncedCurrency = useDebounce(selectedCurrency, 500);
 
-  const filteredCurrencies = currencies?.filter(
-  (curr) =>
-    curr.symbol.toLowerCase().includes(selectedCurrency.toLowerCase()) ||
-    curr.quote.toLowerCase().includes(selectedCurrency.toLowerCase())
-);
   // API calling- Indicators
   async function fetchIndicators() {
     setLoading(true);
@@ -57,8 +53,8 @@ export const ListingModal = ({
     setError(null);
     let response;
     try {
-      if (!selectedCurrency) {
-        response = await apiService.post(`getCurrencies?q=${selectedCurrency}`);
+      if (!debouncedCurrency) {
+        response = await apiService.post(`getCurrencies?symbol=${debouncedCurrency}`);
       } else {
         response = await apiService.post(`getCurrencies`);
       }
@@ -80,7 +76,7 @@ export const ListingModal = ({
     if (title === "Symbol Search") {
       fetchCurrencies();
     }
-  }, [title]);
+  }, [title, debouncedCurrency]);
 
   useEffect(() => {
     if (title === "Indicators") {
@@ -89,7 +85,7 @@ export const ListingModal = ({
   }, [title, selectedIndicator]);
 
   const TABS = ["Indicators", "Strategies", "Profiles", "Patterns"];
-  console.log(selectedIndicator, "selecteddddddddddddddddddddddd");
+  // console.log(selectedIndicator, "selecteddddddddddddddddddddddd");
 
   if (!isOpen) return null;
 
@@ -124,14 +120,14 @@ export const ListingModal = ({
             <div className="overflow-y-auto mt-3 max-h-[70vh]">
               {loading ? (
                 <Spinner />
-              ) : filteredCurrencies?.length > 0 ? (
-                filteredCurrencies.map((curr) => (
+              ) : currencies?.length > 0 ? (
+                currencies.map((curr) => (
                   <Link
                   to="#"
                     key={curr.symbol}
                     onClick={() => {
-                      setSelectedCurrency(curr.symbol); // ✅ final selection
-                      onClose(); // ✅ close modal
+                      setSelectedCurrency(curr?.raw); 
+                      onClose(); 
                     }}
                     className="w-full flex border-b border-slate-200 justify-between py-3 text-left hover:bg-slate-100"
                   >
@@ -139,9 +135,12 @@ export const ListingModal = ({
                       <span className="text-xl text-yellow-500">
                         <GrBitcoin />
                       </span>
-                      <h2 className="uppercase">{curr.quote}</h2>
-                      <h3>{curr.symbol}</h3>
+                      <h2 className="uppercase">{curr?.raw}</h2>
+                      
                     </div>
+                    <div>
+                      <h3>{curr?.base}</h3>
+                      </div>
                   </Link>
                 ))
               ) : (

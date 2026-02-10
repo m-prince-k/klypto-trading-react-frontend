@@ -67,3 +67,4 @@ export const TIMEFRAME_TO_SECONDS = {
   "1w": 604800,
 };
 
+export const SINGLE_VALUE_CHARTS = ["line", "area", "baseline", "histogram"];

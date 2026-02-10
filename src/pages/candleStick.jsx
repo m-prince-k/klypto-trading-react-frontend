@@ -13,7 +13,11 @@ import { useEffect, useRef, useState } from "react";
 import { FaFileWaveform } from "react-icons/fa6";
 import { Form } from "../components/tradingModals/Form";
 import ChartHeader from "../components/tradingModals/ChartHeader";
-import { ChartProprties, TIMEFRAME_TO_SECONDS } from "../util/common";
+import {
+  ChartProprties,
+  TIMEFRAME_TO_SECONDS,
+  SINGLE_VALUE_CHARTS,
+} from "../util/common";
 import apiService from "../services/apiServices";
 import moment from "moment/moment";
 
@@ -34,9 +38,8 @@ export default function Candlestick() {
   const [isMarketOpen, setIsMarketOpen] = useState(true);
   const [liveOhlcv, setLiveOhlcv] = useState({});
 
-  // console.log(selectedIndicator, "selecteddddddddddddddddddddddd------------");
-
-  const Statistics = ["O:32", "H:33", "L:34", "C:31", "V:43"];
+  const isUp = liveOhlcv?.close >= liveOhlcv?.open;
+  const valueColor = isUp ? "text-green-500" : "text-red-500";
 
   const formatCandleData = (data) => {
     if (!Array.isArray(data)) return [];
@@ -103,11 +106,23 @@ export default function Candlestick() {
     /* =======================
        2️⃣ Load Historical OHLC
     ======================== */
+
+    const end = Math.floor(Date.now() / 1000);
+
+    const startDate = new Date();
+    startDate.setHours(0, 0, 0, 0);
+    const start = Math.floor(startDate.getTime() / 1000);
+    // --------------------------API calling for live records- current time Stamps-----------------------------
+
     fetch(
-      `https://api.india.delta.exchange/v2/history/candles?symbol=${selectedCurrency ? selectedCurrency : "BTCUSD"}&resolution=${timeframeValue ? timeframeValue : "1m"}`,
+      `https://api.india.delta.exchange/v2/history/candles?symbol=BTCUSD&resolution=1d&start=${start}&end=${end}`,
     )
       .then((res) => res.json())
       .then(async (data) => {
+        // console.log(
+        //   await data.result,
+        //   "historical data-----------------------------",
+        // );
         const candles = await data?.result?.map((c) => ({
           time: c.time, // unix seconds
           open: Number(c.open),
@@ -145,22 +160,15 @@ export default function Candlestick() {
 
     socket.onmessage = (event) => {
       const msg = JSON.parse(event.data);
-
       if (!msg?.mark_price || !msg?.timestamp) return;
-
-      const price = Number(msg.mark_price);
-
+      const price = Number(msg?.mark_price);
       const intervalSec = TIMEFRAME_TO_SECONDS[timeframeValue];
-
-      console.log(intervalSec, "interval sec-----------------------------");
-
-      const time = Math.floor(msg.timestamp / intervalSec) * intervalSec;
+      const time = Math.floor(msg?.timestamp / intervalSec) * intervalSec;
 
       if (!currentCandle || currentCandle.time !== time) {
         // 🔥 new candle
         const date = new Date(time / 1000);
 
-        console.log(date.toUTCString());
         currentCandle = {
           time: time / 1000, // convert to unix seconds
           open: price,
@@ -169,18 +177,15 @@ export default function Candlestick() {
           close: price,
         };
         setLiveOhlcv(currentCandle);
-        console.log(
-          currentCandle,
-          "current candle-----------------------------",
-        );
-        seriesRef.current.update(currentCandle);
+        // console.log(
+        //   currentCandle,
+        //   "current candle-----------------------------",
+        // );
       } else {
         // 🔁 update candle
         currentCandle.high = Math.max(currentCandle.high, price);
         currentCandle.low = Math.min(currentCandle.low, price);
         currentCandle.close = price;
-
-        seriesRef.current.update(currentCandle);
       }
     };
 
@@ -193,32 +198,33 @@ export default function Candlestick() {
   /* =======================
      4️⃣ Trade → OHLC logic
   ======================== */
-  function buildLiveCandle(price, tradeTimeMs) {
-    const candleTime =
-      Math.floor(tradeTimeMs / 1000 / timeframeValue) * timeframeValue;
+  // function buildLiveCandle(price, tradeTimeMs) {
+  //   const candleTime =
+  //     Math.floor(tradeTimeMs / 1000 / timeframeValue) * timeframeValue;
 
-    let candle = chartRef.current;
+  //   let candle = chartRef.current;
 
-    // New candle
-    if (!candle || candle.time !== candleTime) {
-      candle = {
-        time: candleTime,
-        open: price,
-        high: price,
-        low: price,
-        close: price,
-      };
-    } else {
-      candle.high = Math.max(candle.high, price);
-      candle.low = Math.min(candle.low, price);
-      candle.close = price;
-    }
+  //   // New candle
+  //   if (!candle || candle.time !== candleTime) {
+  //     candle = {
+  //       time: candleTime,
+  //       open: price,
+  //       high: price,
+  //       low: price,
+  //       close: price,
+  //     };
+  //   } else {
+  //     candle.high = Math.max(candle.high, price);
+  //     candle.low = Math.min(candle.low, price);
+  //     candle.close = price;
+  //   }
 
-    chartRef.current = candle;
-    seriesRef.current.update(candle);
-  }
+  //   chartRef.current = candle;
+  //   seriesRef.current.update(candle);
+  // }
 
   //  -------------------LOAD INDICATOR FROM API------------------------------
+
   const loadIndicator = async () => {
     const { panel, data } = await apiService.post(
       `indicatorDetails?symbol=${selectedCurrency ? selectedCurrency : "BTCUSD"}&interval=${timeframeValue}&indicator=${selectedIndicator.toLowerCase() || "ema"}`,
@@ -265,9 +271,9 @@ export default function Candlestick() {
     indicatorSeries.current[selectedIndicator] = series;
   };
 
-  useEffect(() => {
-    loadIndicator();
-  }, [selectedIndicator]);
+  // useEffect(() => {
+  //   loadIndicator();
+  // }, [selectedIndicator]);
 
   useEffect(() => {
     // if(chartType == 'line'){
@@ -309,7 +315,10 @@ export default function Candlestick() {
             color: "#38bdf8",
           });
           seriesRef.current.setData(
-            await response.data.map((d) => ({ time: d.time, value: d.close })),
+            await response.data.map((d) => ({
+              time: d?.time,
+              value: Math.round(d?.close),
+            })),
           );
         }
         LineData();
@@ -375,17 +384,12 @@ export default function Candlestick() {
           });
 
           seriesRef.current.setData(
-            response.data.map((d) => ({
-              time: d.time,
-              value: (d.open + d.high + d.low + d.close) / 4,
+            await response.data.map((d) => ({
+              time: d?.time,
+              value: Number(d?.close),
             })),
           );
           console.log(response.data, "area data-----------------------------");
-          //           seriesRef.current.setData([
-          //   { time: 1700000000, value: 100 },
-          //   { time: 1700000600, value: 120 },
-          //   { time: 1700001200, value: 90 },
-          // ]);
           chartRef.current.timeScale().fitContent();
         }
         AreaData();
@@ -448,6 +452,8 @@ export default function Candlestick() {
             chartRef.current.removeSeries(seriesRef.current);
           }
           seriesRef.current = chartRef.current.addSeries(HistogramSeries, {
+            color: "#22c55e", // ✅ green bars
+
             priceFormat: { type: "volume" },
             priceScaleId: "volume",
             scaleMargins: {
@@ -458,7 +464,17 @@ export default function Candlestick() {
           });
 
           seriesRef.current.setData(
-            await response.data.map((d) => ({ time: d.time, value: d.close })),
+            response.data.map((d, index, arr) => {
+              const prev = arr[index - 1];
+
+              const isUp = prev ? d.close >= prev.close : true;
+
+              return {
+                time: d.time,
+                value: d.volume, // or d.value
+                color: isUp ? "#22c55e" : "#ef4444", // ✅ green / red
+              };
+            }),
           );
           chartRef.current.timeScale().fitContent();
         }
@@ -811,68 +827,48 @@ export default function Candlestick() {
 
           <div className="text-sm text-slate-950">
             {selectedCurrency} : {timeframeValue} :
-            <span
-              className={`w-5 h-5 rounded-full ${
-                isMarketOpen ? "bg-green-500" : "bg-red-500"
-              }`}
-            ></span>
+          </div>
+          <div className="flex items-center justify-center">
+            <div className="relative">
+              {/* outer ring */}
+              <span
+                className={`absolute inset-0 rounded-full opacity-30 animate-ping ${isMarketOpen ? "bg-green-500" : "bg-red-400"}`}
+              ></span>
+
+              {/* inner dot */}
+              <span
+                className={`relative block w-3 h-3 rounded-full ${isMarketOpen ? "bg-green-500" : "bg-red-400"}`}
+              ></span>
+            </div>
           </div>
 
           {/* CENTER: Timeframes */}
-          <div className="flex gap-1">
-            <div className="flex gap-1 text-xs">
+          <div className="flex gap-1 text-xs">
+            {SINGLE_VALUE_CHARTS.includes(chartType) ? (
+              // 🔵 Line / Area / Baseline → Close only
               <h2 className="px-2 py-1">
-                O:{" "}
-                <span
-                  className={
-                    liveOhlcv?.close >= liveOhlcv?.open
-                      ? "text-green-500"
-                      : "text-red-500"
-                  }
-                >
-                  {liveOhlcv?.open}
-                </span>
+                <span className="text-blue-600">{liveOhlcv?.value}</span>
               </h2>
+            ) : (
+              // 🟢 Other charts → OHLC
+              <>
+                <h2 className="px-2 py-1">
+                  O: <span className={valueColor}>{liveOhlcv?.open}</span>
+                </h2>
 
-              <h2 className="px-2 py-1">
-                H:{" "}
-                <span
-                  className={
-                    liveOhlcv?.close >= liveOhlcv?.open
-                      ? "text-green-500"
-                      : "text-red-500"
-                  }
-                >
-                  {liveOhlcv?.high}
-                </span>
-              </h2>
+                <h2 className="px-2 py-1">
+                  H: <span className={valueColor}>{liveOhlcv?.high}</span>
+                </h2>
 
-              <h2 className="px-2 py-1">
-                L:{" "}
-                <span
-                  className={
-                    liveOhlcv?.close >= liveOhlcv?.open
-                      ? "text-green-500"
-                      : "text-red-500"
-                  }
-                >
-                  {liveOhlcv?.low}
-                </span>
-              </h2>
+                <h2 className="px-2 py-1">
+                  L: <span className={valueColor}>{liveOhlcv?.low}</span>
+                </h2>
 
-              <h2 className="px-2 py-1">
-                C:{" "}
-                <span
-                  className={
-                    liveOhlcv?.close >= liveOhlcv?.open
-                      ? "text-green-500"
-                      : "text-red-500"
-                  }
-                >
-                  {liveOhlcv?.close}
-                </span>
-              </h2>
-            </div>
+                <h2 className="px-2 py-1">
+                  C: <span className={valueColor}>{liveOhlcv?.close}</span>
+                </h2>
+              </>
+            )}
           </div>
         </div>
       </div>

@@ -28,7 +28,6 @@ export default function ChartHeader({
     title: "",
     items: [],
   });
-  console.log(selectedIndicator, "selecteddddddddddddddddddddddd");
 
   const openModal = (title, items) => {
     setModalConfig({
@@ -65,9 +64,6 @@ export default function ChartHeader({
   const handleChange = (e) => {
     setTimeframeValue(e.target.value);
   };
-
-  console.log(timeframeValue, "timeframe------------------");
-
   return (
     <div className="w-full justify-start flex flex-col gap-3  ">
       <div className="flex items-center gap-3 px-3 py-1  rounded-lg bg-white   ">
@@ -75,7 +71,7 @@ export default function ChartHeader({
         <button
           title={"Symbol Search"}
           onClick={() => openModal("Symbol Search")}
-          className=" bg-slate-200 px-2 w-24 h-7 text-left text-xs font-semibold rounded-full text-slate-900"
+          className=" bg-slate-200 px-2 w-fit h-7 text-left text-xs font-semibold rounded-full text-slate-900"
         >
           {selectedCurrency || "ETHBTC"}
         </button>
