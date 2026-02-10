@@ -110,6 +110,7 @@ export const ListingModal = ({
               <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
+                autoFocus
                 placeholder="Search symbol..."
                 value={selectedCurrency}
                 onChange={(e) => {
@@ -160,6 +161,7 @@ export const ListingModal = ({
               <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />{" "}
               <input
                 type="text"
+                autoFocus
                 placeholder="Search indicators"
                 value={selectedIndicator}
                 onChange={(e) => setSelectedIndicator(e.target.value)}

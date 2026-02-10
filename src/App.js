@@ -4,6 +4,7 @@ import {Form} from './components/tradingModals/Form'
 import CandleStick from './pages/CandleStick';
 import TradingViewChart from './pages/TradingViewChart';
 import IndiatorSlide from './components/indicator/indicatorSlide';
+import Testing from './pages/Testing';
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Form />} />
         <Route path="/candlestick" element={< CandleStick />} />
+        <Route path="/testing" element={< Testing />} />
         <Route path="/tradingview" element={< TradingViewChart />} />
         <Route path="/indiatorSlide" element={< IndiatorSlide />} />
 

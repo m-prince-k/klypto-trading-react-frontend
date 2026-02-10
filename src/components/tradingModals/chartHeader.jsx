@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { ListingModal } from "./ListingModal";
 import apiService from "../../services/apiServices";
 
-
 export default function ChartHeader({
   exchange = "BIOFIlCHEM",
   timeframeValue,
@@ -17,7 +16,7 @@ export default function ChartHeader({
   setSelectedCurrency,
   setChartType,
   chartType,
-  loadIndicator
+  loadIndicator,
 }) {
   const [timeframe, setTimeframe] = useState(60);
   const [loading, setLoading] = useState(false);
@@ -29,7 +28,7 @@ export default function ChartHeader({
     title: "",
     items: [],
   });
-  console.log(selectedIndicator, "selecteddddddddddddddddddddddd")
+  console.log(selectedIndicator, "selecteddddddddddddddddddddddd");
 
   const openModal = (title, items) => {
     setModalConfig({
@@ -74,11 +73,11 @@ export default function ChartHeader({
       <div className="flex items-center gap-3 px-3 py-1  rounded-lg bg-white   ">
         {/* Name */}
         <button
-        title={'Symbol Search'}
+          title={"Symbol Search"}
           onClick={() => openModal("Symbol Search")}
           className=" bg-slate-200 px-2 w-24 h-7 text-left text-xs font-semibold rounded-full text-slate-900"
         >
-          {selectedCurrency || 'ETHBTC'}
+          {selectedCurrency || "ETHBTC"}
         </button>
 
         {/* TimeFrame */}
@@ -88,7 +87,6 @@ export default function ChartHeader({
             onChange={(e) => handleChange(e)}
             className="px-2 py-1 text-sm rounded-md bg-slate-50 text-slate-900 "
           >
-
             {timeframe &&
               Object.entries(timeframe)?.map(([group, items]) => (
                 <optgroup
@@ -110,41 +108,27 @@ export default function ChartHeader({
           </select>
         </div>
 
+        {/* Adding Charts */}
         <select
-        title={chartType}
-        value={chartType}
-        onChange={(e) => setChartType(e.target.value)}
-        className="px-2 py-1 w-36 text-sm rounded-md bg-slate-50 text-slate-900"
-      >
-        <option value="candlestick">Candlestick</option>
-        <option value="line">Line</option>
-        <option value="bar">Bar</option>
-        <option value="area">Area</option>
-        <option value="baseline">Baseline</option>
-        <option value="hollow">Hollow</option>
-        <option value="hollowcandles">Hollow Candles</option>
-        <option value="heikinashi">Heikin Ashi</option>
-        <option value="histogram">Histogram (Volume)</option>
-      </select>
-        {/* -------------------------------------------------------------ADD CANDLE charts------------------- */}
-        {/* Candlestick */}
-        {/* <select
-                value={"line"}
-                onChange={(e) => setChartType("line")}
-                style={{ marginBottom: "10px" }}
-            >
-                <option value="candlestick">Candlestick</option>
-                <option value="line">Line</option>
-                <option value="bar">Bar</option>
-                <option value="area">Area</option>
-                <option value="baseline">Baseline</option>
-                <option value="histogram">Histogram (Volume)</option>
-                  <option value="custom">Custom Series</option>
-            </select> */}
+          title={chartType}
+          value={chartType}
+          onChange={(e) => setChartType(e.target.value)}
+          className="px-2 py-1 w-36 text-sm rounded-md bg-slate-50 text-slate-900"
+        >
+          <option value="candlestick">Candlestick</option>
+          <option value="line">Line</option>
+          <option value="bar">Bar</option>
+          <option value="area">Area</option>
+          <option value="baseline">Baseline</option>
+          {/* <option value="hollow">Hollow</option> */}
+          <option value="hollowcandles">Hollow Candles</option>
+          <option value="heikinashi">Heikin Ashi</option>
+          <option value="histogram">Histogram</option>
+        </select>
 
         {/* Indicator */}
         <button
-        title="Indicators"
+          title="Indicators"
           onClick={() => openModal("Indicators")}
           className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md bg-purple-600 text-white hover:bg-purple-500"
         >
@@ -154,7 +138,7 @@ export default function ChartHeader({
 
         {/* Alert */}
         <button
-        title="Create Alert"
+          title="Create Alert"
           onClick={() => openModal("Alerts")}
           className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-purple-500"
         >
@@ -163,8 +147,11 @@ export default function ChartHeader({
         </button>
 
         {/* Alert */}
-        <button title="Simulation"
-         onClick={()=> openModal("Simulation")} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-purple-500">
+        <button
+          title="Simulation"
+          onClick={() => openModal("Simulation")}
+          className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-purple-500"
+        >
           <FiPlus className="text-md" />
           Simulation
         </button>
@@ -180,7 +167,6 @@ export default function ChartHeader({
         selectedIndicator={selectedIndicator}
         setSelectedIndicator={setSelectedIndicator}
         loadIndicator={loadIndicator}
-
       />
     </div>
   );
