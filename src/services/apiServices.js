@@ -1,4 +1,5 @@
 import axios from "axios";
+import { toast } from "react-toastify";
 
 // 🔹 Create axios instance
 const api = axios.create({
@@ -17,16 +18,23 @@ api.interceptors.request.use(
     // if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 // 🔹 Response Interceptor
 api.interceptors.response.use(
   (response) => response.data,
   (error) => {
-    console.error("API Error:", error?.response || error);
+    const message =
+      error?.response?.data?.message ||
+      error?.message ||
+      "Something went wrong";
+    // console.log("API Error:", error?.response?.data?.message);
+    // console.log("API Error Details:", error?.message);
+    toast.error(error?.message);
+
     return Promise.reject(error);
-  }
+  },
 );
 
 // 🔹 API Methods

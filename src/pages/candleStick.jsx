@@ -30,7 +30,7 @@ export default function Candlestick() {
 
   const [openForm, setOpenForm] = useState(false);
   const [timeframeValue, setTimeframeValue] = useState("1m");
-  const [selectedCurrency, setSelectedCurrency] = useState("BTCUSD");
+  const [selectedCurrency, setSelectedCurrency] = useState("BTCUSDT");
   const [selectedIndicator, setSelectedIndicator] = useState("");
   const [rangeValue, setRangeValue] = useState("1000");
   const [chartType, setChartType] = useState("candlestick");
@@ -108,7 +108,7 @@ export default function Candlestick() {
     ======================== */
 
     const end = Math.floor(Date.now() / 1000);
-    const start = end - 60*60;
+    const start = end - 60 * 60;
 
     // --------------------------API calling for live records- current time Stamps-----------------------------
 
@@ -225,67 +225,102 @@ export default function Candlestick() {
 
   const loadIndicator = async () => {
     try {
-         const { candles, indicatorData } = await apiService.post(
-      `indicatorDetails?symbol=BTCUSD&interval=1d&period=20`,
-      { type: selectedIndicator },
-    );
-    // console.log(panel, "24444444444444444444");
-    // const responde = await res.data;
-    // const panel=responde.panel;
-    // let data=responde.data
+      const { candles, indicatorData } = await apiService.post(
+        `indicatorDetails?symbol=BTCUSD&interval=1d&indicator=${selectedIndicator.toLocaleUpperCase()}`,
+      );
+      // console.log(panel, "24444444444444444444");
+      // const responde = await res.data;
+      // const panel=responde.panel;
+      // let data=responde.data
 
-    // console.log(await indicatorData, "data-------------------------");
-    // Remove existing indicator
-    if (indicatorSeriesRef.current) {
-      chartRef.current.removeSeries(indicatorSeriesRef.current);
-      indicatorSeriesRef.current = null;
-    }
+      // console.log(await indicatorData, "data-------------------------");
+      // Remove existing indicator
+      // if (indicatorSeriesRef.current) {
+      //   chartRef.current.removeSeries(indicatorSeriesRef.current);
+      //   indicatorSeriesRef.current = null;
+      // }
 
-    if (chartType === "line") {
-      console.log(indicatorData,"loading indicator-------------------------");
-      indicatorSeriesRef.current = chartRef.current.addSeries(LineSeries, {
-        color: "#facc15",
-        lineWidth: 2,
-      });
-      indicatorSeriesRef.current.setData(await indicatorData?.map((d) => ({ time: d.time, value: d.value })));
-    }
+      // if (chartType === "line") {
+      //   console.log(indicatorData,"loading indicator-------------------------");
+      //   indicatorSeriesRef.current = chartRef.current.addSeries(LineSeries, {
+      //     color: "#facc15",
+      //     lineWidth: 2,
+      //   });
+      //   indicatorSeriesRef.current.setData(await indicatorData?.map((d) => ({ time: d.time, value: d.close })));
+      // }
 
-    // Overlay indicators
-    // if (panel === "overlay") {
-    //   series = chartRef.current.addSeries(LineSeries, {
-    //     color: "#3b82f6",
-    //     lineWidth: 2,
-    //   });
-    // }
+      // if (seriesRef.current) {
+      //   chartRef.current.removeSeries(seriesRef.current);
+      //   seriesRef.current = null;
+      // }
 
-    // // Separate panel indicators (RSI, MACD)
-    // if (panel === "separate") {
-    //   series = chartRef.current.addSeries(LineSeries, {
-    //     color: "#facc15",
-    //     priceScaleId: "right",
-    //   });
-    // }
+      // if (chartType === "line") {
+      //   console.log(indicatorData,"loading indicator-------------------------");
+      //   seriesRef.current = chartRef.current.addSeries(LineSeries, {
+      //     color: "#facc15",
+      //     lineWidth: 2,
+      //   });
+      //   seriesRef.current.setData(await indicatorData?.map((d) => ({ time: d.time, value: d.close })));
+      // }
+      if (chartType === "line") {
+        console.log(indicatorData, "loading indicator");
 
-    // // Volume
-    // if (panel === "volume") {
-    //   series = chartRef.current.addSeries(HistogramSeries, {
-    //     priceFormat: { type: "volume" },
-    //     priceScaleId: "",
-    //     scaleMargins: { top: 0.8, bottom: 0 },
-    //   });
-    // }
+        // Remove old indicator only
+        // if (indicatorSeriesRef.current) {
+        //   chartRef.current.removeSeries(indicatorSeriesRef.current);
+        // }
 
-    // series.setData(data);
-    // indicatorSeriesRef.current[selectedIndicator] = series;
+        // indicatorSeriesRef.current = chartRef.current.addSeries(LineSeries, {
+        //   color: "#facc15",
+        //   lineWidth: 2,
+        // });
+
+        // indicatorSeriesRef.current.setData(
+        //   indicatorData.map((d) => ({
+        //     time: d.time,
+        //     value: d.close, // indicators use value, NOT close
+        //   })),
+        // );
+      }
+
+      // Overlay indicators
+      // if (panel === "overlay") {
+      //   series = chartRef.current.addSeries(LineSeries, {
+      //     color: "#3b82f6",
+      //     lineWidth: 2,
+      //   });
+      // }
+
+      // // Separate panel indicators (RSI, MACD)
+      // if (panel === "separate") {
+      //   series = chartRef.current.addSeries(LineSeries, {
+      //     color: "#facc15",
+      //     priceScaleId: "right",
+      //   });
+      // }
+
+      // // Volume
+      // if (panel === "volume") {
+      //   series = chartRef.current.addSeries(HistogramSeries, {
+      //     priceFormat: { type: "volume" },
+      //     priceScaleId: "",
+      //     scaleMargins: { top: 0.8, bottom: 0 },
+      //   });
+      // }
+
+      // series.setData(data);
+      // indicatorSeriesRef.current[selectedIndicator] = series;
     } catch (error) {
-      console.log(error,"_________________________________--09876545678");
-      
+      console.log(
+        error,
+        "______________error loading indicator__________________",
+      );
     }
   };
 
-  useEffect(() => {
-    loadIndicator();
-  }, [selectedIndicator, chartType]);
+  // useEffect(() => {
+  //   loadIndicator();
+  // }, [selectedIndicator, chartType]);
 
   useEffect(() => {
     // if(chartType == 'line'){
@@ -307,33 +342,81 @@ export default function Candlestick() {
 
     switch (chartType) {
       case "line":
+        async function fetchIndicatorData() {
+          if (!selectedIndicator) return;
+
+          try {
+            const { data } = await apiService.post(
+              `indicatorDetails?symbol=BTCUSD&interval=${timeframeValue}&type=${selectedIndicator.toUpperCase()}`,
+            );
+
+            console.log(data, "indicator candles-------------------------");
+            // ✅ Remove previous indicator ONLY
+            if (indicatorSeriesRef.current) {
+              chartRef.current.removeSeries(indicatorSeriesRef.current);
+            }
+
+            indicatorSeriesRef.current = chartRef.current.addSeries(
+              LineSeries,
+              {
+                color: "#facc15",
+                lineWidth: 3,
+              },
+            );
+
+            indicatorSeriesRef.current.setData(
+              await data
+                .filter((d) => d.value != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: Number(d.value), // ✅ Defensive safety
+                })),
+            );
+          } catch (error) {
+            console.log(error, "Indicator loading error");
+          }
+        }
+
         async function LineData() {
           let response;
+
           if (selectedCurrency && timeframeValue && rangeValue) {
             response = await apiService.post(
-              `listing?symbol=${selectedCurrency ? selectedCurrency : "BTCUSD"}&interval=${timeframeValue ? timeframeValue : "1m"}&limit=${rangeValue ? rangeValue : 1000}`,
+              `listing?symbol=${selectedCurrency || "BTCUSD"}&interval=${timeframeValue || "1m"}&limit=${rangeValue || 1000}`,
               { type: chartType },
             );
           } else {
             response = await apiService.post(
-              `listing?symbol=${selectedCurrency ? selectedCurrency : "BTCUSD"}&limit=${rangeValue ? rangeValue : 1000}&interval=${timeframeValue ? timeframeValue : "1m"}`,
+              `listing?symbol=${selectedCurrency || "BTCUSD"}&limit=${rangeValue || 1000}&interval=${timeframeValue || "1m"}`,
               { type: chartType },
             );
           }
+
+          // ✅ Remove MAIN price line only
           if (seriesRef.current) {
             chartRef.current.removeSeries(seriesRef.current);
           }
+
           seriesRef.current = chartRef.current.addSeries(LineSeries, {
             color: "#38bdf8",
           });
+
           seriesRef.current.setData(
-            await response.data.map((d) => ({
-              time: d?.time,
-              value: Math.round(d?.close),
+            response.data.map((d) => ({
+              time: d.time,
+              value: Number(Math.round(d.close)), // ✅ Prevent undefined crash
             })),
           );
         }
-        LineData();
+
+        // ✅ CRITICAL FIX → Ensure correct order
+        async function load() {
+          await LineData(); // Draw price line FIRST
+          await fetchIndicatorData(); // Overlay indicator AFTER
+        }
+
+        load();
+
         break;
 
       case "bar":
@@ -610,7 +693,14 @@ export default function Candlestick() {
         fetchCandeStickData();
     }
     chartRef.current.timeScale().fitContent();
-  }, [chartType, historicalData, rangeValue, timeframeValue, selectedCurrency]);
+  }, [
+    chartType,
+    historicalData,
+    rangeValue,
+    timeframeValue,
+    selectedCurrency,
+    selectedIndicator,
+  ]);
 
   // console.log(liveOhlcv, "live ohlcv-----------------------------");
 

@@ -66,12 +66,12 @@ export default function ChartHeader({
   };
   return (
     <div className="w-full justify-start flex flex-col gap-3  ">
-      <div className="flex items-center gap-3 px-3 py-1  rounded-lg bg-white   ">
+      <div className="flex items-center gap-3 px-3 py-1 rounded-lg bg-white   ">
         {/* Name */}
         <button
           title={"Symbol Search"}
           onClick={() => openModal("Symbol Search")}
-          className=" bg-slate-200 px-2 w-fit h-7 text-left text-xs font-semibold rounded-full text-slate-900"
+          className=" bg-[#EBEBEB] px-3 w-fit h-7 text-left text-xs font-semibold rounded-full text-slate-900"
         >
           {selectedCurrency || "ETHBTC"}
         </button>
@@ -81,12 +81,12 @@ export default function ChartHeader({
           <select
             value={timeframeValue}
             onChange={(e) => handleChange(e)}
-            className="px-2 py-1 text-sm rounded-md bg-slate-50 text-slate-900 "
+            className="appearance-none px-2 py-1 text-sm rounded-md bg-white text-slate-900 "
           >
             {timeframe &&
               Object.entries(timeframe)?.map(([group, items]) => (
                 <optgroup
-                  className="text-slate-500 border-t border-slate-400 text-sm mt-2 "
+                  className="text-slate-500 text-sm mt-2 "
                   key={group}
                   label={group?.toUpperCase()}
                 >

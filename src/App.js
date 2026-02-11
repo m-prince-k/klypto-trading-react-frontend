@@ -5,11 +5,19 @@ import CandleStick from './pages/CandleStick';
 import TradingViewChart from './pages/TradingViewChart';
 import IndiatorSlide from './components/indicator/indicatorSlide';
 import Testing from './pages/Testing';
+import { ToastContainer } from 'react-toastify';
+import "react-toastify/dist/ReactToastify.css";
+
 
 function App() {
   return (
     <div className="App">
       <BrowserRouter>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        theme="colored"
+      />
       <Routes>
         <Route path="/" element={<Form />} />
         <Route path="/candlestick" element={< CandleStick />} />
