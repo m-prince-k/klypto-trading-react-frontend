@@ -7,10 +7,12 @@ import {
   HistogramSeries,
   BaselineSeries,
 } from "lightweight-charts";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+
 import { LuCirclePlus, LuCircleMinus } from "react-icons/lu";
 import { RiResetRightLine } from "react-icons/ri";
 import { useEffect, useRef, useState } from "react";
-import { FaFileWaveform } from "react-icons/fa6";
+import { FaCode, FaEye, FaEyeSlash, FaFileWaveform } from "react-icons/fa6";
 import { Form } from "../components/tradingModals/Form";
 import ChartHeader from "../components/tradingModals/ChartHeader";
 import {
@@ -20,6 +22,9 @@ import {
 } from "../util/common";
 import apiService from "../services/apiServices";
 import moment from "moment/moment";
+import { IndicatorBar } from "../components/tradingModals/IndicatorBar";
+import { IoCloseSharp, IoSettingsOutline } from "react-icons/io5";
+import { FiMoreHorizontal } from "react-icons/fi";
 
 export default function Candlestick() {
   const chartRef = useRef();
@@ -37,6 +42,13 @@ export default function Candlestick() {
   const [historicalData, setHistoricalData] = useState([]);
   const [isMarketOpen, setIsMarketOpen] = useState(true);
   const [liveOhlcv, setLiveOhlcv] = useState({});
+  const [liveIndicatorData, setLiveIndicatorData] = useState({});
+  console.log(
+    liveIndicatorData,
+    "live indicator data-----------------------------",
+  );
+
+  const [indicatorVisible, setIndicatorVisible] = useState(true);
 
   const isUp = liveOhlcv?.close >= liveOhlcv?.open;
   const valueColor = isUp ? "text-green-500" : "text-red-500";
@@ -351,7 +363,8 @@ export default function Candlestick() {
             );
 
             console.log(data, "indicator candles-------------------------");
-            // ✅ Remove previous indicator ONLY
+
+            // Remove old indicator
             if (indicatorSeriesRef.current) {
               chartRef.current.removeSeries(indicatorSeriesRef.current);
             }
@@ -364,14 +377,29 @@ export default function Candlestick() {
               },
             );
 
-            indicatorSeriesRef.current.setData(
-              await data
+            indicatorSeriesRef?.current.setData(
+              data
                 .filter((d) => d.value != null)
                 .map((d) => ({
                   time: d.time,
-                  value: Number(d.value), // ✅ Defensive safety
+                  value: Number(d.value),
                 })),
             );
+            chartRef.current.subscribeCrosshairMove((param) => {
+              if (!param.time || !param.seriesData) {
+                setLiveIndicatorData(null);
+                return;
+              }
+
+              const candle = param.seriesData?.get(indicatorSeriesRef.current);
+              if (!candle) return;
+
+              setLiveIndicatorData(candle);
+            });
+
+            indicatorSeriesRef.current.applyOptions({
+              visible: indicatorVisible,
+            });
           } catch (error) {
             console.log(error, "Indicator loading error");
           }
@@ -602,20 +630,6 @@ export default function Candlestick() {
         }
         HeikinAshiData();
         break;
-
-      // case "hollow":
-      //   apiService.post("/listing", { type: chartType }).then(async (res) => {
-      //     seriesRef.current = chartRef.current.addSeries(CandlestickSeries, {
-      //       upColor: "transparent",
-      //       downColor: "#26dc35",
-      //       borderUpColor: "#8378e2",
-      //       borderDownColor: "#26dc35",
-      //       wickUpColor: "#8378e2",
-      //       wickDownColor: "#26dc35",
-      //     });
-      //     seriesRef.current.setData(await res.data);
-      //   });
-      //   break;
 
       case "hollowcandles":
         async function HollowCandlesData() {
@@ -973,6 +987,119 @@ export default function Candlestick() {
             )}
           </div>
         </div>
+
+        {/* -----------------INDICATOR BAR------------------- */}
+        {selectedIndicator && (
+          <div className="absolute flex justify-between top-10 z-90 left-2 w-68 flex items-center gap-2 bg-white shadow-sm border border-slate-200 rounded-md px-3 h-8 text-xs">
+            <span className="font-medium text-slate-800">
+              {selectedIndicator?.toUpperCase()} : {timeframeValue} :{" "}
+              {liveIndicatorData?.value !== undefined && (
+                <span className="text-amber-500 ml-1">
+                  {Number(liveIndicatorData.value).toFixed(2)}
+                </span>
+              )}
+            </span>
+            <div className="flex items-center gap-2">
+              {/* Visibility Toggle */}
+              <button
+                onClick={() => {
+                  const next = !indicatorVisible;
+                  setIndicatorVisible(next);
+
+                  if (indicatorSeriesRef.current) {
+                    indicatorSeriesRef.current.applyOptions({ visible: next });
+                  }
+                }}
+                className="text-slate-400 hover:text-slate-700"
+              >
+                {indicatorVisible ? (
+                  <>
+                    <FaEye />
+                  </>
+                ) : (
+                  <>
+                    <FaEyeSlash />
+                  </>
+                )}
+              </button>
+
+              {/* Settings (Optional) */}
+              <button
+                title="Indicator Settings"
+                // onClick={() => openModal("Indicator Settings")}
+                className="text-slate-600 text-sm hover:text-slate-700"
+              >
+                <IoSettingsOutline />
+              </button>
+
+              {/* source code */}
+              <button
+                title="Source Code"
+                // onClick={() => openModal("Indicator Settings")}
+                className="text-slate-600 text-sm hover:text-slate-700"
+              >
+                <FaCode />
+              </button>
+
+              {/* Remove Indicator */}
+              <button
+                onClick={() => {
+                  if (indicatorSeriesRef.current) {
+                    chartRef.current.removeSeries(indicatorSeriesRef.current);
+                    indicatorSeriesRef.current = null;
+                  }
+                  setSelectedIndicator(null);
+                }}
+                className="text-slate-600 text-sm hover:text-red-500"
+              >
+                <IoCloseSharp />
+              </button>
+
+              {/* more options */}
+              
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger asChild>
+                  <button className="inline-flex items-center gap-x-1.5 rounded-md bg-white text-sm font-semibold text-gray-900 ">
+                    <FiMoreHorizontal />
+                  </button>
+                </DropdownMenu.Trigger>
+
+                <DropdownMenu.Portal>
+                  <DropdownMenu.Content
+                    sideOffset={6}
+                    className="w-56 origin-top-right mt-1 ml-5 rounded-md bg-white shadow-lg border border-gray-200 text-sm z-50"
+                  >
+                    <DropdownMenu.Item
+                      // onClick={() => openModal("Add Alert")}
+                      className="block px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer outline-none"
+                    >
+                      Add Alert
+                    </DropdownMenu.Item>
+
+                    <DropdownMenu.Item
+                      // onClick={() => openModal("Add Strategy/Indicator")}
+                      className="block px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer outline-none"
+                    >
+                      Add Strategy / Indicator
+                    </DropdownMenu.Item>
+
+                    <DropdownMenu.Separator className="h-px bg-gray-200 my-1" />
+
+                    <DropdownMenu.Item asChild>
+                      <a
+                        href="<LINK>"
+                        target="_blank"
+                        className="block px-4 py-2 text-gray-700 hover:bg-gray-100 outline-none"
+                      >
+                        View Source Code
+                      </a>
+                    </DropdownMenu.Item>
+                  </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+              </DropdownMenu.Root>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex justify-center text-sm ml-3 text-slate-950">
