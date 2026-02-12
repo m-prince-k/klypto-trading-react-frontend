@@ -22,9 +22,10 @@ import {
 } from "../util/common";
 import apiService from "../services/apiServices";
 import moment from "moment/moment";
-import { IndicatorBar } from "../components/tradingModals/IndicatorBar";
+import { IndicatorBar } from "../components/indicator/IndicatorBar";
 import { IoCloseSharp, IoSettingsOutline } from "react-icons/io5";
 import { FiMoreHorizontal } from "react-icons/fi";
+import IndicatorAlert from "../components/indicator/IndicatorAlert";
 
 export default function Candlestick() {
   const chartRef = useRef();
@@ -32,7 +33,6 @@ export default function Candlestick() {
   const seriesRef = useRef(null);
   const indicatorSeriesRef = useRef(null);
   const socketRef = useRef(null);
-
   const [openForm, setOpenForm] = useState(false);
   const [timeframeValue, setTimeframeValue] = useState("1m");
   const [selectedCurrency, setSelectedCurrency] = useState("BTCUSDT");
@@ -43,74 +43,24 @@ export default function Candlestick() {
   const [isMarketOpen, setIsMarketOpen] = useState(true);
   const [liveOhlcv, setLiveOhlcv] = useState({});
   const [liveIndicatorData, setLiveIndicatorData] = useState({});
-  console.log(
-    liveIndicatorData,
-    "live indicator data-----------------------------",
-  );
+  const [showAlertForm, setShowAlertForm] = useState(false);
+
+  const openAlert = () => {
+    setShowAlertForm(true);
+  };
+
+  const closeAlert = () => {
+    setShowAlertForm(false);
+  };
+  // console.log(
+  //   liveIndicatorData,
+  //   "live indicator data-----------------------------",
+  // );
 
   const [indicatorVisible, setIndicatorVisible] = useState(true);
 
   const isUp = liveOhlcv?.close >= liveOhlcv?.open;
   const valueColor = isUp ? "text-green-500" : "text-red-500";
-
-  const formatCandleData = (data) => {
-    if (!Array.isArray(data)) return [];
-
-    const map = new Map();
-
-    data.forEach((item) => {
-      const time = item.time
-        ? Number(item.time)
-        : Math.floor(Number(item.t) / 1000);
-
-      if (!time) return;
-
-      map.set(time, {
-        time,
-        open: Number(item.open ?? item.o),
-        high: Number(item.high ?? item.h),
-        low: Number(item.low ?? item.l),
-        close: Number(item.close ?? item.c),
-        volume: Number(item.volume ?? item.v ?? 0),
-      });
-    });
-
-    return Array.from(map.values()).sort((a, b) => a.time - b.time);
-  };
-
-  // async function fetchChartData() {
-  //   try {
-  //     const response = await apiService.post("listing", { type: chartType });
-
-  //     if (response?.statusCode === 200) {
-  //       setHistoricalData(response?.data);
-  //     }
-  //   } catch (error) {
-  //     console.log("error", error.message);
-  //   }
-  // }
-
-  // useEffect(() => {
-  //   if (seriesRef.current) {
-  //     chartRef.current.removeSeries(seriesRef.current);
-  //   }
-  //   if (apiCalledRef.current) return;
-  //   apiCalledRef.current = true;
-
-  //   // apiService
-  //   //   .post("/listing", { chartType })
-  //   //   .then(async (res) => {
-  //   //     console.log(
-  //   //       res,
-  //   //       "-------------------------------------------------------asjkfjskfjksjfkjk",
-  //   //     );
-
-  //   //     // because of interceptor, res is already response.data
-  //   //     const formatted = await res.data;
-  //   //     setHistoricalData(formatted);
-  //   //   })
-  //   //   .catch(console.error);
-  // }, []);
 
   useEffect(() => {
     chartRef.current = createChart(containerRef.current, ChartProprties);
@@ -122,17 +72,13 @@ export default function Candlestick() {
     const end = Math.floor(Date.now() / 1000);
     const start = end - 60 * 60;
 
-    // --------------------------API calling for live records- current time Stamps-----------------------------
+    // --------------------------API calling for live records-current time Stamps-----------------------------
 
     fetch(
       `https://api.india.delta.exchange/v2/history/candles?symbol=${selectedCurrency}&resolution=${timeframeValue}&start=${start}&end=${end}`,
     )
       .then((res) => res.json())
       .then(async (data) => {
-        // console.log(
-        //   await data.result,
-        //   "historical data-----------------------------",
-        // );
         const candles = await data?.result?.map((c) => ({
           time: c.time, // unix seconds
           open: Number(c.open),
@@ -205,34 +151,6 @@ export default function Candlestick() {
     };
   }, []);
 
-  /* =======================
-     4️⃣ Trade → OHLC logic
-  ======================== */
-  // function buildLiveCandle(price, tradeTimeMs) {
-  //   const candleTime =
-  //     Math.floor(tradeTimeMs / 1000 / timeframeValue) * timeframeValue;
-
-  //   let candle = chartRef.current;
-
-  //   // New candle
-  //   if (!candle || candle.time !== candleTime) {
-  //     candle = {
-  //       time: candleTime,
-  //       open: price,
-  //       high: price,
-  //       low: price,
-  //       close: price,
-  //     };
-  //   } else {
-  //     candle.high = Math.max(candle.high, price);
-  //     candle.low = Math.min(candle.low, price);
-  //     candle.close = price;
-  //   }
-
-  //   chartRef.current = candle;
-  //   seriesRef.current.update(candle);
-  // }
-
   //  -------------------LOAD INDICATOR FROM API------------------------------
 
   const loadIndicator = async () => {
@@ -240,40 +158,7 @@ export default function Candlestick() {
       const { candles, indicatorData } = await apiService.post(
         `indicatorDetails?symbol=BTCUSD&interval=1d&indicator=${selectedIndicator.toLocaleUpperCase()}`,
       );
-      // console.log(panel, "24444444444444444444");
-      // const responde = await res.data;
-      // const panel=responde.panel;
-      // let data=responde.data
 
-      // console.log(await indicatorData, "data-------------------------");
-      // Remove existing indicator
-      // if (indicatorSeriesRef.current) {
-      //   chartRef.current.removeSeries(indicatorSeriesRef.current);
-      //   indicatorSeriesRef.current = null;
-      // }
-
-      // if (chartType === "line") {
-      //   console.log(indicatorData,"loading indicator-------------------------");
-      //   indicatorSeriesRef.current = chartRef.current.addSeries(LineSeries, {
-      //     color: "#facc15",
-      //     lineWidth: 2,
-      //   });
-      //   indicatorSeriesRef.current.setData(await indicatorData?.map((d) => ({ time: d.time, value: d.close })));
-      // }
-
-      // if (seriesRef.current) {
-      //   chartRef.current.removeSeries(seriesRef.current);
-      //   seriesRef.current = null;
-      // }
-
-      // if (chartType === "line") {
-      //   console.log(indicatorData,"loading indicator-------------------------");
-      //   seriesRef.current = chartRef.current.addSeries(LineSeries, {
-      //     color: "#facc15",
-      //     lineWidth: 2,
-      //   });
-      //   seriesRef.current.setData(await indicatorData?.map((d) => ({ time: d.time, value: d.close })));
-      // }
       if (chartType === "line") {
         console.log(indicatorData, "loading indicator");
 
@@ -335,15 +220,6 @@ export default function Candlestick() {
   // }, [selectedIndicator, chartType]);
 
   useEffect(() => {
-    // if(chartType == 'line'){
-    //     console.log("---------------------0-0-0-0-")
-
-    //     seriesRef.current = chartRef.current.addSeries(LineSeries,{ color: "#38bdf8" });
-    //     seriesRef.current.setData(data.map(d => ({ time: d.time, value: d.close })));
-    // }
-
-    // if (!chartRef.current || !seriesRef.current) return;
-
     try {
       chartRef.current.removeSeries(seriesRef.current);
     } catch (e) {
@@ -363,7 +239,6 @@ export default function Candlestick() {
             );
 
             console.log(data, "indicator candles-------------------------");
-
             // Remove old indicator
             if (indicatorSeriesRef.current) {
               chartRef.current.removeSeries(indicatorSeriesRef.current);
@@ -407,7 +282,6 @@ export default function Candlestick() {
 
         async function LineData() {
           let response;
-
           if (selectedCurrency && timeframeValue && rangeValue) {
             response = await apiService.post(
               `listing?symbol=${selectedCurrency || "BTCUSD"}&interval=${timeframeValue || "1m"}&limit=${rangeValue || 1000}`,
@@ -778,31 +652,7 @@ export default function Candlestick() {
     chartRef.current?.timeScale().fitContent();
   };
 
-  // function generateCandles(tfSeconds, bars = 100) {
-  //   let time = Math.floor(Date.now() / 1000) - bars * tfSeconds;
-  //   let price = 30000;
-  //   const data = [];
 
-  //   for (let i = 0; i < bars; i++) {
-  //     const open = price;
-  //     const close = open + (Math.random() - 0.5) * 200;
-  //     const high = Math.max(open, close) + Math.random() * 100;
-  //     const low = Math.min(open, close) - Math.random() * 100;
-
-  //     data.push({
-  //       time,
-  //       open: +open.toFixed(2),
-  //       high: +high.toFixed(2),
-  //       low: +low.toFixed(2),
-  //       close: +close.toFixed(2),
-  //     });
-
-  //     price = close;
-  //     time += tfSeconds;
-  //   }
-  //   console.log("generatedData", data);
-  //   return data;
-  // }
 
   const clearSeries = () => {
     if (!chartRef.current || !seriesRef.current) return;
@@ -887,29 +737,6 @@ export default function Candlestick() {
       );
     }
 
-    //      if (type === "custom") {
-    //   series = chart.addSeries(CustomSeries,
-    //     { priceLineVisible: false },
-    //     {
-    //       renderer: {
-    //         draw(ctx, priceToY, timeToX, data) {
-    //           ctx.fillStyle = "#fbbf24";
-    //           data.forEach(point => {
-    //             const x = timeToX(point.time);
-    //             const y = priceToY(point.value);
-    //             if (x !== null && y !== null) {
-    //               ctx.beginPath();
-    //               ctx.arc(x, y, 4, 0, Math.PI * 2);
-    //               ctx.fill();
-    //             }
-    //           });
-    //         },
-    //       },
-    //     }
-    //   );
-    //   series.setData(historicalData.map(d => ({ time: d.time,value: d.close}) ));
-    // }
-
     seriesRef.current = series;
     chart.timeScale().fitContent();
   };
@@ -935,10 +762,10 @@ export default function Candlestick() {
       {/* Chart */}
       <div
         ref={containerRef}
-        className="p-2 relative m-2 rounded-md bg-white w-fit"
+        className="p-2 z-0 relative m-2 rounded-md bg-white w-fit"
       >
         {/* -------------------------------sub-header live Values----------------------- */}
-        <div className="flex px-2 top-2 z-50 absolute items-center gap-2 bg-slate-100 justify-start">
+        <div className="flex px-2 top-2 z-10 absolute items-center gap-2 bg-slate-100 justify-start">
           {/* LEFT: Symbol */}
 
           <div className="text-sm text-slate-950">
@@ -990,7 +817,7 @@ export default function Candlestick() {
 
         {/* -----------------INDICATOR BAR------------------- */}
         {selectedIndicator && (
-          <div className="absolute flex justify-between top-10 z-90 left-2 w-68 flex items-center gap-2 bg-white shadow-sm border border-slate-200 rounded-md px-3 h-8 text-xs">
+          <div className="absolute flex justify-between top-10 z-90 left-2 max-w-full w-68 flex items-center gap-2 bg-white shadow-sm border border-slate-200 rounded-md px-3 h-8 text-xs">
             <span className="font-medium text-slate-800">
               {selectedIndicator?.toUpperCase()} : {timeframeValue} :{" "}
               {liveIndicatorData?.value !== undefined && (
@@ -1056,7 +883,7 @@ export default function Candlestick() {
               </button>
 
               {/* more options */}
-              
+
               <DropdownMenu.Root>
                 <DropdownMenu.Trigger asChild>
                   <button className="inline-flex items-center gap-x-1.5 rounded-md bg-white text-sm font-semibold text-gray-900 ">
@@ -1070,7 +897,7 @@ export default function Candlestick() {
                     className="w-56 origin-top-right mt-1 ml-5 rounded-md bg-white shadow-lg border border-gray-200 text-sm z-50"
                   >
                     <DropdownMenu.Item
-                      // onClick={() => openModal("Add Alert")}
+                      onClick={openAlert}
                       className="block px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer outline-none"
                     >
                       Add Alert
@@ -1101,6 +928,14 @@ export default function Candlestick() {
           </div>
         )}
       </div>
+      {showAlertForm && (
+        <IndicatorAlert
+          onClose={closeAlert}
+          value={liveIndicatorData.value}
+          liveOhlcv={liveOhlcv}
+          symbol={selectedCurrency}
+        />
+      )}
 
       <div className="flex justify-center text-sm ml-3 text-slate-950">
         <button

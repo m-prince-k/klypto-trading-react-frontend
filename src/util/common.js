@@ -1,4 +1,11 @@
 import { useEffect, useState } from "react";
+import { FiBarChart2, FiActivity } from "react-icons/fi";
+import {
+  MdCandlestickChart,
+  MdShowChart,
+  MdStackedLineChart,
+  MdWaterfallChart,
+} from "react-icons/md";
 export const ChartProprties = {
   width: 1200,
   height: 400,
@@ -68,3 +75,14 @@ export const TIMEFRAME_TO_SECONDS = {
 };
 
 export const SINGLE_VALUE_CHARTS = ["line", "area", "baseline", "histogram"];
+
+export const chartOptions = [
+  { value: "candlestick", label: "Candlestick", icon: MdCandlestickChart },
+  { value: "line", label: "Line", icon: MdShowChart },
+  { value: "bar", label: "Bar", icon: FiBarChart2 },
+  { value: "area", label: "Area", icon: MdStackedLineChart },
+  { value: "baseline", label: "Baseline", icon: FiActivity },
+  { value: "hollowcandles", label: "Hollow Candles", icon: MdWaterfallChart },
+  { value: "heikinashi", label: "Heikin Ashi", icon: MdCandlestickChart },
+  { value: "histogram", label: "Histogram", icon: FiBarChart2 },
+];

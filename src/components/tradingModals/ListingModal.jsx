@@ -100,7 +100,7 @@ export const ListingModal = ({
       const filteredItems = items?.filter((item) =>
         item?.toLowerCase().includes(search),
       );
-      console.log(filteredItems, "filteredIndicators");
+      // console.log(filteredItems, "filteredIndicators");
 
       return { category, items: filteredItems };
     })
