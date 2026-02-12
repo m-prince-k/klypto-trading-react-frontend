@@ -15,6 +15,7 @@ export default function ChartHeader({
   selectedIndicator,
   setSelectedIndicator,
   setSelectedCurrency,
+  toggleIndicator,
   setChartType,
   chartType,
   loadIndicator,
@@ -100,7 +101,7 @@ export default function ChartHeader({
 
             {/* Custom Arrow */}
             <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-slate-900">
-              {timeframeValue? "": '1m'} ▾
+               ▾
             </div>
           </div>
         </div>
@@ -108,7 +109,7 @@ export default function ChartHeader({
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
             <button
-              className="h-8 z-99 flex items-center gap-2 px-3 rounded-md bg-white 
+              className="h-8 z-0 flex items-center gap-2 px-3 rounded-md bg-white 
           border border-slate-200 hover:bg-slate-50 hover:border-slate-300
           text-sm text-slate-800 transition-colors focus:outline-none"
             >
@@ -187,6 +188,7 @@ export default function ChartHeader({
         setSelectedCurrency={setSelectedCurrency}
         selectedIndicator={selectedIndicator}
         setSelectedIndicator={setSelectedIndicator}
+        toggleIndicator={toggleIndicator}
         loadIndicator={loadIndicator}
       />
     </div>

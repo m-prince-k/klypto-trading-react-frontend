@@ -15,6 +15,7 @@ export const ListingModal = ({
   setSelectedCurrency,
   selectedIndicator,
   setSelectedIndicator,
+  toggleIndicator,
   loadIndicator,
 }) => {
   const [activeTab, setActiveTab] = useState("Indicators");
@@ -27,6 +28,8 @@ export const ListingModal = ({
   // const TABS = ["Indicators", "Strategies", "Profiles", "Patterns"];
   const debouncedCurrency = useDebounce(selectedCurrency, 500);
   const debouncedIndicator = useDebounce(selectedIndicator, 500);
+
+
 
   // API calling- Indicators
   async function fetchIndicators() {
@@ -79,14 +82,13 @@ export const ListingModal = ({
 
   useEffect(() => {
     if (title === "Indicators") {
-      // setSearchIndicator(""); 
+      // setSearchIndicator("");
       fetchIndicators();
     }
     if (title === "Symbol Search") {
       fetchCurrencies();
     }
   }, [title]);
-
 
   const filteredIndicators = Object.entries(indicators || {})
     .map(([category, items]) => {
@@ -232,17 +234,19 @@ export const ListingModal = ({
 
                       <ul className="grid pl-3 grid-cols-1 text-slate-700 gap-2 text-sm">
                         {items.map((item) => (
-                          <Link
-                            to="#"
+                          <label
                             key={item}
-                            onClick={() => {
-                              setSelectedIndicator(item);
-                              onClose();
-                            }}
-                            className="px-2 py-1 rounded cursor-pointer hover:bg-slate-100"
+                            className="flex items-center gap-2 px-2 py-1 rounded cursor-pointer hover:bg-slate-100"
                           >
-                            {item}
-                          </Link>
+                            <input
+                              type="checkbox"
+                              checked={selectedIndicator.includes(item)}
+                              onChange={() => toggleIndicator(item)}
+                              className="accent-slate-900 cursor-pointer"
+                            />
+
+                            <span>{item}</span>
+                          </label>
                         ))}
                       </ul>
                     </div>

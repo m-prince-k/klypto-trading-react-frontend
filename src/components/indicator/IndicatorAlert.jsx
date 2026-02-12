@@ -4,7 +4,7 @@ import { IoMdClose } from "react-icons/io";
 export default function IndicatorAlert({ onClose, value, symbol, liveOhlcv }) {
   console.log("Live OHLCV in Alert:", liveOhlcv);
   return (
-    <div className="fixed inset-0 z-30 flex items-center mx-auto justify-center bg-black/40 p-3">
+    <div className="fixed inset-0 z-99 flex items-center mx-auto justify-center bg-black/40 p-3">
       <div className="w-full max-w-[520px] bg-white rounded-md shadow-xl">
         <div className="p-4 sm:p-5">
           {/* Header */}
@@ -66,7 +66,7 @@ export default function IndicatorAlert({ onClose, value, symbol, liveOhlcv }) {
                   </select>
                   <input
                     type="number"
-                    // value={value}
+                    value={value.toFixed(2)}
                     // onChange={(e) => setValue(e.target.value)}
                     className="border border-slate-300 rounded-lg px-2 py-2"
                   />

@@ -86,3 +86,12 @@ export const chartOptions = [
   { value: "heikinashi", label: "Heikin Ashi", icon: MdCandlestickChart },
   { value: "histogram", label: "Histogram", icon: FiBarChart2 },
 ];
+
+export const INDICATOR_COLORS = [
+  "#facc15", // yellow
+  "#f472b6", // pink
+  "#34d399", // green
+  "#a78bfa", // purple
+  "#71e6fb", // blue
+  "#f83838", // red
+];

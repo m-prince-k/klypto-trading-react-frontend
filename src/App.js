@@ -19,8 +19,8 @@ function App() {
         theme="colored"
       />
       <Routes>
-        <Route path="/" element={<Form />} />
-        <Route path="/candlestick" element={< CandleStick />} />
+        {/* <Route path="/" element={<Form />} /> */}
+        <Route path="/" element={< CandleStick />} />
         <Route path="/testing" element={< Testing />} />
         <Route path="/tradingview" element={< TradingViewChart />} />
         <Route path="/indiatorSlide" element={< IndiatorSlide />} />
