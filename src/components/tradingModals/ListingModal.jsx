@@ -192,10 +192,9 @@ export const ListingModal = ({
 
         {title === "Indicators" && (
           <div className="mt-3 space-y-4 max-h-[55vh]">
-            {/* Search */}{" "}
+            {/* Search */}
             <div className="relative">
-              {" "}
-              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />{" "}
+              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 autoFocus
@@ -203,7 +202,7 @@ export const ListingModal = ({
                 value={searchIndicator}
                 onChange={(e) => setSearchIndicator(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-md"
-              />{" "}
+              />
             </div>
             {/* {TABS.map((tab) => (
               <button
@@ -225,8 +224,8 @@ export const ListingModal = ({
                   <div className="flex items-center justify-center h-40">
                     <div className="w-8 h-8 border-4 border-slate-300 border-t-purple-600 rounded-full animate-spin"></div>
                   </div>
-                ) : filteredIndicators.length > 0 ? (
-                  filteredIndicators.map(({ category, items }) => (
+                ) : filteredIndicators?.length > 0 ? (
+                  filteredIndicators?.map(({ category, items }) => (
                     <div key={category} className="text-left pl-3 py-2">
                       <h3 className="font-semibold text-slate-950 mb-2">
                         {category}

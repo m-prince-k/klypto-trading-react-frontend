@@ -1,184 +1,251 @@
-import React, { useEffect, useRef, useState } from "react";
-import { createChart, CandlestickSeries, LineSeries } from "lightweight-charts";
+import React, { useState, useRef, useEffect } from "react";
 
-const INDICATOR_LIST = [
-  { key: "ema", label: "EMA (20)" },
-  { key: "sma", label: "SMA (20)" },
-];
+/* ---------------- Editable Select ---------------- */
 
-export default function ChartWithMultiSelect() {
-  const containerRef = useRef();
-  const chartRef = useRef();
-  const candleSeriesRef = useRef();
-  const indicatorSeriesRef = useRef({}); // map → { ema: series }
-
-  const [candles, setCandles] = useState([]);
-  const [open, setOpen] = useState(false);
-  const [selectedIndicators, setSelectedIndicators] = useState([]);
-
-  /* ---------------- CREATE CHART ---------------- */
+function EditableSelect({ value, options, onChange }) {
+  const [editing, setEditing] = useState(false);
+  const ref = useRef();
 
   useEffect(() => {
-    chartRef.current = createChart(containerRef.current, {
-      width: 900,
-      height: 500,
-      layout: {
-        background: { color: "white" },
-        textColor: "#111",
-      },
-    });
+    if (editing && ref.current) ref.current.focus();
+  }, [editing]);
 
-    candleSeriesRef.current = chartRef.current.addSeries(CandlestickSeries);
-
-    fetchCandles();
-
-    return () => chartRef.current.remove();
-  }, []);
-
-  /* ---------------- FETCH BINANCE DATA ---------------- */
-
-  async function fetchCandles() {
-    const res = await fetch(
-      "https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=300"
-    );
-
-    const data = await res.json();
-
-    const formatted = data.map((c) => ({
-      time: c[0] / 1000,
-      open: Number(c[1]),
-      high: Number(c[2]),
-      low: Number(c[3]),
-      close: Number(c[4]),
-    }));
-
-    setCandles(formatted);
-    candleSeriesRef.current.setData(formatted);
-  }
-
-  /* ---------------- INDICATOR MATH ---------------- */
-
-  function calculateSMA(data, period = 20) {
-    const result = [];
-
-    for (let i = period; i < data.length; i++) {
-      const slice = data.slice(i - period, i);
-      const avg =
-        slice.reduce((sum, c) => sum + c.close, 0) / period;
-
-      result.push({ time: data[i].time, value: avg });
-    }
-
-    return result;
-  }
-
-  function calculateEMA(data, period = 20) {
-    const result = [];
-    const k = 2 / (period + 1);
-
-    let prev = data[0].close;
-
-    for (let i = 1; i < data.length; i++) {
-      const value = data[i].close * k + prev * (1 - k);
-      prev = value;
-
-      result.push({ time: data[i].time, value });
-    }
-
-    return result;
-  }
-
-  /* ---------------- ADD / REMOVE SERIES ---------------- */
-
-  useEffect(() => {
-    if (!candles.length) return;
-
-    INDICATOR_LIST.forEach((ind) => {
-      const exists = indicatorSeriesRef.current[ind.key];
-      const selected = selectedIndicators.includes(ind.key);
-
-      // ADD
-      if (selected && !exists) {
-        const series = chartRef.current.addSeries(LineSeries, {
-          color: ind.key === "ema" ? "#f59e0b" : "#3b82f6",
-          lineWidth: 2,
-        });
-
-        const data =
-          ind.key === "ema"
-            ? calculateEMA(candles)
-            : calculateSMA(candles);
-
-        series.setData(data);
-
-        indicatorSeriesRef.current[ind.key] = series;
-      }
-
-      // REMOVE
-      if (!selected && exists) {
-        chartRef.current.removeSeries(exists);
-        delete indicatorSeriesRef.current[ind.key];
-      }
-    });
-  }, [selectedIndicators, candles]);
-
-  /* ---------------- UI HANDLER ---------------- */
-
-  function toggleIndicator(key) {
-    setSelectedIndicators((prev) =>
-      prev.includes(key)
-        ? prev.filter((k) => k !== key)
-        : [...prev, key]
+  if (editing) {
+    return (
+      <select
+        ref={ref}
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value);
+          setEditing(false);
+        }}
+        onBlur={() => setEditing(false)}
+        className="px-2 py-1 text-sm border border-slate-200 rounded-md bg-white"
+      >
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
     );
   }
 
-  /* ---------------- UI ---------------- */
+  const label =
+    options.find((o) => o.value === value)?.label ?? value;
 
   return (
-    <div style={{ position: "relative" }}>
-      <div style={{ marginBottom: 10 }}>
-        <button onClick={() => setOpen(!open)}>
-          Indicators ▾
+    <span
+      onClick={() => setEditing(true)}
+      className="cursor-pointer text-sm px-2 py-1 rounded-md hover:bg-slate-100 transition"
+    >
+      {label}
+    </span>
+  );
+}
+
+/* ---------------- Editable Number ---------------- */
+
+function EditableNumber({ value, onChange, width = "w-20" }) {
+  const [editing, setEditing] = useState(false);
+  const ref = useRef();
+
+  useEffect(() => {
+    if (editing && ref.current) ref.current.focus();
+  }, [editing]);
+
+  if (editing) {
+    return (
+      <input
+        ref={ref}
+        type="number"
+        defaultValue={value}
+        onBlur={(e) => {
+          onChange(Number(e.target.value));
+          setEditing(false);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            onChange(Number(e.target.value));
+            setEditing(false);
+          }
+        }}
+        className={`${width} px-2 py-1 text-sm border border-slate-200 rounded-md`}
+      />
+    );
+  }
+
+  return (
+    <span
+      onClick={() => setEditing(true)}
+      className={`${width} cursor-pointer text-sm px-2 py-1 rounded-md hover:bg-slate-100 transition text-center`}
+    >
+      {value}
+    </span>
+  );
+}
+
+/* ---------------- Operators ---------------- */
+
+const OPERATORS = [
+  { label: "Greater Than (>)", value: ">" },
+  { label: "Less Than (<)", value: "<" },
+  { label: "Greater Than or Equal (≥)", value: ">=" },
+  { label: "Less Than or Equal (≤)", value: "<=" },
+  { label: "Equal (=)", value: "=" },
+  { label: "Not Equal (≠)", value: "!=" },
+  { label: "Crosses Above ⤴", value: "crosses_above" },
+  { label: "Crosses Below ⤵", value: "crosses_below" },
+  { label: "Rising ↗", value: "rising" },
+  { label: "Falling ↘", value: "falling" },
+  { label: "Between ⇄", value: "between" },
+];
+
+/* ---------------- Main Component ---------------- */
+
+export default function Testing() {
+  const [rules, setRules] = useState([
+    {
+      id: 1,
+      timeframe: "Daily",
+      indicator: "RSI",
+      period: 14,
+      operator: ">",
+      value: 50,
+    },
+  ]);
+
+  function newRule() {
+    return {
+      id: Date.now(),
+      timeframe: "Daily",
+      indicator: "RSI",
+      period: 14,
+      operator: ">",
+      value: 50,
+    };
+  }
+
+  function appendRule() {
+    setRules((prev) => [...prev, newRule()]);
+  }
+
+  function prependRule() {
+    setRules((prev) => [newRule(), ...prev]);
+  }
+
+  function removeRule(id) {
+    setRules((prev) => prev.filter((r) => r.id !== id));
+  }
+
+  function updateField(id, field, value) {
+    setRules((prev) =>
+      prev.map((rule) =>
+        rule.id === id ? { ...rule, [field]: value } : rule
+      )
+    );
+  }
+
+  return (
+    <div className="w-full max-w-5xl mx-auto flex flex-col gap-4">
+
+      {/* Top Controls */}
+      <div className="flex flex-wrap items-center gap-3">
+        <input
+          placeholder="Search indicator or rule..."
+          className="
+            flex-1 min-w-[220px]
+            px-3 py-2 text-sm
+            border border-slate-200 rounded-lg
+            focus:outline-none focus:ring-2 focus:ring-purple-500
+          "
+        />
+
+        <button
+          onClick={prependRule}
+          className="w-10 h-10 rounded-lg bg-slate-200 hover:bg-slate-300 transition"
+        >
+          ↑
         </button>
 
-        {open && (
-          <div
-            style={{
-              position: "absolute",
-              top: 35,
-              left: 0,
-              background: "white",
-              border: "1px solid #ddd",
-              borderRadius: 6,
-              padding: 10,
-              boxShadow: "0 10px 20px rgba(0,0,0,0.1)",
-              zIndex: 10,
-            }}
-          >
-            {INDICATOR_LIST.map((ind) => (
-              <label
-                key={ind.key}
-                style={{
-                  display: "flex",
-                  gap: 8,
-                  cursor: "pointer",
-                  fontSize: 14,
-                  padding: "4px 0",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedIndicators.includes(ind.key)}
-                  onChange={() => toggleIndicator(ind.key)}
-                />
-                {ind.label}
-              </label>
-            ))}
-          </div>
-        )}
+        <button
+          onClick={appendRule}
+          className="w-10 h-10 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition"
+        >
+          +
+        </button>
       </div>
 
-      <div ref={containerRef} />
+      {/* Rules */}
+      {rules.map((rule) => (
+        <div
+          key={rule.id}
+          className="w-full bg-white border border-slate-200 rounded-2xl shadow-sm p-4"
+        >
+          <div className="flex flex-wrap items-center gap-2">
+
+            <EditableSelect
+              value={rule.timeframe}
+              options={[
+                { label: "Daily", value: "Daily" },
+                { label: "Weekly", value: "Weekly" },
+                { label: "Monthly", value: "Monthly" },
+              ]}
+              onChange={(v) => updateField(rule.id, "timeframe", v)}
+            />
+
+            <EditableSelect
+              value={rule.indicator}
+              options={[
+                { label: "RSI", value: "RSI" },
+                { label: "SMA", value: "SMA" },
+                { label: "EMA", value: "EMA" },
+                { label: "Bollinger Bands", value: "BB" },
+              ]}
+              onChange={(v) => updateField(rule.id, "indicator", v)}
+            />
+
+            {/* Period as label-style number */}
+            <EditableNumber
+              value={rule.period}
+              onChange={(v) => updateField(rule.id, "period", v)}
+            />
+
+            <EditableSelect
+              value={rule.operator}
+              options={OPERATORS}
+              onChange={(v) => updateField(rule.id, "operator", v)}
+            />
+
+            {/* Value as label-style number */}
+            <EditableNumber
+              value={rule.value}
+              width="w-24"
+              onChange={(v) => updateField(rule.id, "value", v)}
+            />
+
+            {rules.length > 1 && (
+              <button
+                onClick={() => removeRule(rule.id)}
+                className="w-9 h-9 rounded-lg bg-red-500 text-white hover:bg-red-600 transition"
+              >
+                −
+              </button>
+            )}
+          </div>
+        </div>
+      ))}
+
+      {/* Run Button */}
+      <button
+        className="
+          w-full px-4 py-3 rounded-xl text-sm font-medium
+          bg-purple-600 text-white hover:bg-purple-700
+          active:scale-[0.98] transition
+        "
+      >
+        Run Query
+      </button>
     </div>
   );
 }

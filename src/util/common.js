@@ -6,6 +6,7 @@ import {
   MdStackedLineChart,
   MdWaterfallChart,
 } from "react-icons/md";
+
 export const ChartProprties = {
   width: 1200,
   height: 400,
@@ -88,10 +89,82 @@ export const chartOptions = [
 ];
 
 export const INDICATOR_COLORS = [
-  "#facc15", // yellow
-  "#f472b6", // pink
+  "#fa15ae", // yellow
+  "#438506", // pink
   "#34d399", // green
   "#a78bfa", // purple
   "#71e6fb", // blue
   "#f83838", // red
+];
+
+export const chartSeriesStyles = {
+  candlestick: {
+    upColor: "#22c55e",
+    downColor: "#ef4444",
+    borderUpColor: "#22c55e",
+    borderDownColor: "#ef4444",
+    wickUpColor: "#22c55e",
+    wickDownColor: "#ef4444",
+  },
+
+  hollowcandles: {
+    upColor: "transparent",
+    downColor: "#ef4444",
+    borderUpColor: "#22c55e",
+    borderDownColor: "#ef4444",
+    wickUpColor: "#22c55e",
+    wickDownColor: "#ef4444",
+  },
+
+  line: {
+    color: "#fffc50",
+  },
+
+  bar: {
+    upColor: "#22c55e",
+    downColor: "#ef4444",
+  },
+
+  area: {
+    topColor: "rgba(56, 189, 248, 0.4)",
+    bottomColor: "rgba(56, 189, 248, 0.0)",
+    lineColor: "#38bdf8",
+  },
+
+  baseline: {
+    topLineColor: "rgba(34,197,94,1)",
+    topFillColor1: "rgba(34,197,94,0.4)",
+    topFillColor2: "rgba(34,197,94,0.05)",
+
+    bottomLineColor: "rgba(239,68,68,1)",
+    bottomFillColor1: "rgba(239,68,68,0.4)",
+    bottomFillColor2: "rgba(239,68,68,0.05)",
+  },
+
+  histogram: {
+    color: "#22c55e",
+
+    priceFormat: { type: "volume" },
+    priceScaleId: "volume",
+    scaleMargins: {
+      top: 0.7,
+      bottom: 0,
+    },
+    lastValueVisible: true,
+  },
+
+};
+
+export const OPERATORS = [
+  { label: "Greater Than (>)", value: ">" },
+  { label: "Less Than (<)", value: "<" },
+  { label: "Greater Than or Equal (≥)", value: ">=" },
+  { label: "Less Than or Equal (≤)", value: "<=" },
+  { label: "Equal (=)", value: "=" },
+  { label: "Not Equal (≠)", value: "!=" },
+  { label: "Crosses Above ⤴", value: "crosses_above" },
+  { label: "Crosses Below ⤵", value: "crosses_below" },
+  { label: "Rising ↗", value: "rising" },
+  { label: "Falling ↘", value: "falling" },
+  { label: "Between ⇄", value: "between" },
 ];

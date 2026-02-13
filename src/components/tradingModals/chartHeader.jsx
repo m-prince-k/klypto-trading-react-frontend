@@ -50,6 +50,7 @@ export default function ChartHeader({
     try {
       const response = await apiService.post("getTimeFrames");
       setTimeframe(response.data);
+      
       setTimeframeValue(timeframeValue);
     } catch (err) {
       console.error(err);
@@ -83,6 +84,12 @@ export default function ChartHeader({
               className="
                 appearance-none h-8 px-3 pr-8 text-sm rounded-md bg-white text-slate-900 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-slate-200 cursor-pointer transition-all mx-1"
             >
+              {!timeframe && <option value="1m">1 Minute</option>}
+
+              {/* ✅ Fallback if API returned empty object */}
+              {timeframe && Object.keys(timeframe).length === 0 && (
+                <option value="1m">1 Minute</option>
+              )}
               {timeframe &&
                 Object.entries(timeframe)?.map(([group, items]) => (
                   <optgroup
@@ -101,7 +108,7 @@ export default function ChartHeader({
 
             {/* Custom Arrow */}
             <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-slate-900">
-               ▾
+              ▾
             </div>
           </div>
         </div>

@@ -7,7 +7,7 @@ import IndiatorSlide from './components/indicator/indicatorSlide';
 import Testing from './pages/Testing';
 import { ToastContainer } from 'react-toastify';
 import "react-toastify/dist/ReactToastify.css";
-
+import IndicatorBuildingListing from './components/indicator/IndicatorBuilderListing';
 
 function App() {
   return (
@@ -24,6 +24,9 @@ function App() {
         <Route path="/testing" element={< Testing />} />
         <Route path="/tradingview" element={< TradingViewChart />} />
         <Route path="/indiatorSlide" element={< IndiatorSlide />} />
+
+        <Route path="/IndicatorBuildingListing" element={< IndicatorBuildingListing />} />
+
 
       </Routes>
       </BrowserRouter>

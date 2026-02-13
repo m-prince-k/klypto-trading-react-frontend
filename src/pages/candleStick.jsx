@@ -8,25 +8,28 @@ import {
   BaselineSeries,
 } from "lightweight-charts";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-
+import IndicatorRuleBuilder from "../components/indicator/IndicatorRuleBuilder";
 import { LuCirclePlus, LuCircleMinus } from "react-icons/lu";
 import { RiResetRightLine } from "react-icons/ri";
 import { useEffect, useRef, useState } from "react";
 import { FaCode, FaEye, FaEyeSlash, FaFileWaveform } from "react-icons/fa6";
 import { Form } from "../components/tradingModals/Form";
 import ChartHeader from "../components/tradingModals/ChartHeader";
+import IndicatorBuildingListing from "../components/indicator/IndicatorBuilderListing";
+
 import {
   ChartProprties,
   TIMEFRAME_TO_SECONDS,
   SINGLE_VALUE_CHARTS,
   INDICATOR_COLORS,
+  chartSeriesStyles,
 } from "../util/common";
 import apiService from "../services/apiServices";
-import moment from "moment/moment";
-import { IndicatorBar } from "../components/indicator/IndicatorBar";
 import { IoCloseSharp, IoSettingsOutline } from "react-icons/io5";
 import { FiMoreHorizontal } from "react-icons/fi";
 import IndicatorAlert from "../components/indicator/IndicatorAlert";
+import { fetchDataByCurrency, fetchIndicatorData } from "../util/chartFunctions";
+
 
 export default function Candlestick() {
   const chartRef = useRef();
@@ -34,7 +37,6 @@ export default function Candlestick() {
   const seriesRef = useRef(null);
   const indicatorSeriesRef = useRef({});
   const latestIndicatorValuesRef = useRef({});
-
   const socketRef = useRef(null);
   const [openForm, setOpenForm] = useState(false);
   const [timeframeValue, setTimeframeValue] = useState("1m");
@@ -137,10 +139,6 @@ export default function Candlestick() {
           close: price,
         };
         setLiveOhlcv(currentCandle);
-        // console.log(
-        //   currentCandle,
-        //   "current candle-----------------------------",
-        // );
       } else {
         // 🔁 update candle
         currentCandle.high = Math.max(currentCandle.high, price);
@@ -165,52 +163,7 @@ export default function Candlestick() {
 
       if (chartType === "line") {
         console.log(indicatorData, "loading indicator");
-
-        // Remove old indicator only
-        // if (indicatorSeriesRef.current) {
-        //   chartRef.current.removeSeries(indicatorSeriesRef.current);
-        // }
-
-        // indicatorSeriesRef.current = chartRef.current.addSeries(LineSeries, {
-        //   color: "#facc15",
-        //   lineWidth: 2,
-        // });
-
-        // indicatorSeriesRef.current.setData(
-        //   indicatorData.map((d) => ({
-        //     time: d.time,
-        //     value: d.close, // indicators use value, NOT close
-        //   })),
-        // );
       }
-
-      // Overlay indicators
-      // if (panel === "overlay") {
-      //   series = chartRef.current.addSeries(LineSeries, {
-      //     color: "#3b82f6",
-      //     lineWidth: 2,
-      //   });
-      // }
-
-      // // Separate panel indicators (RSI, MACD)
-      // if (panel === "separate") {
-      //   series = chartRef.current.addSeries(LineSeries, {
-      //     color: "#facc15",
-      //     priceScaleId: "right",
-      //   });
-      // }
-
-      // // Volume
-      // if (panel === "volume") {
-      //   series = chartRef.current.addSeries(HistogramSeries, {
-      //     priceFormat: { type: "volume" },
-      //     priceScaleId: "",
-      //     scaleMargins: { top: 0.8, bottom: 0 },
-      //   });
-      // }
-
-      // series.setData(data);
-      // indicatorSeriesRef.current[selectedIndicator] = series;
     } catch (error) {
       console.log(
         error,
@@ -233,7 +186,6 @@ export default function Candlestick() {
             liveValues[indicator] = latest;
           }
         });
-
         setLiveIndicatorData(liveValues);
         return;
       }
@@ -291,54 +243,6 @@ export default function Candlestick() {
     });
   };
 
-  async function fetchIndicatorData() {
-    if (!selectedIndicator.length) return;
-
-    selectedIndicator.forEach(async (indicator, index) => {
-      try {
-        const { data } = await apiService.post(
-          `indicatorDetails?symbol=BTCUSD&interval=${timeframeValue}&type=${indicator}`,
-        );
-
-        // Remove old series if exists
-        if (indicatorSeriesRef.current[indicator]) {
-          chartRef.current.removeSeries(indicatorSeriesRef.current[indicator]);
-        }
-
-        const series = chartRef.current.addSeries(LineSeries, {
-          color: getIndicatorColor(index),
-          lineWidth: 2,
-        });
-
-        // ✅ FORMAT DATA HERE
-        const formatted = data
-          .filter((d) => d.value != null)
-          .map((d) => ({
-            time: Number(d.time), // ✅ Ensure number
-            value: Number(d.value),
-          }));
-
-        series.setData(formatted);
-
-        // ✅ SAVE LATEST VALUE HERE (CRITICAL)
-        if (formatted.length) {
-          latestIndicatorValuesRef.current[indicator] =
-            formatted[formatted.length - 1].value;
-        }
-
-
-        indicatorSeriesRef.current[indicator] = series;
-        console.log(latestIndicatorValuesRef.current, "loaded indicator-----------------------------");
-      } catch (error) {
-        console.log(indicator, "Indicator loading error");
-      }
-    });
-  }
-
-  // useEffect(() => {
-  //   loadIndicator();
-  // }, [selectedIndicator, chartType]);
-
   useEffect(() => {
     try {
       chartRef.current.removeSeries(seriesRef.current);
@@ -350,118 +254,43 @@ export default function Candlestick() {
 
     switch (chartType) {
       case "line":
-        // async function fetchIndicatorData() {
-        //   if (!selectedIndicator) return;
-
-        //   try {
-        //     const { data } = await apiService.post(
-        //       `indicatorDetails?symbol=BTCUSD&interval=${timeframeValue}&type=${selectedIndicator.toUpperCase()}`,
-        //     );
-
-        //     console.log(data, "indicator candles-------------------------");
-        //     // Remove old indicator
-        //     if (indicatorSeriesRef.current) {
-        //       chartRef.current.removeSeries(indicatorSeriesRef.current);
-        //     }
-
-        //     indicatorSeriesRef.current = chartRef.current.addSeries(
-        //       LineSeries,
-        //       {
-        //         color: "#facc15",
-        //         lineWidth: 3,
-        //       },
-        //     );
-
-        //     indicatorSeriesRef?.current.setData(
-        //       data
-        //         .filter((d) => d.value != null)
-        //         .map((d) => ({
-        //           time: d.time,
-        //           value: Number(d.value),
-        //         })),
-        //     );
-        //     chartRef.current.subscribeCrosshairMove((param) => {
-        //       if (!param.time || !param.seriesData) {
-        //         setLiveIndicatorData(null);
-        //         return;
-        //       }
-
-        //       const candle = param.seriesData?.get(indicatorSeriesRef.current);
-        //       if (!candle) return;
-
-        //       setLiveIndicatorData(candle);
-        //     });
-
-        //     indicatorSeriesRef.current.applyOptions({
-        //       visible: indicatorVisible,
-        //     });
-        //   } catch (error) {
-        //     console.log(error, "Indicator loading error");
-        //   }
-        // }
         async function LineData() {
-          let response;
-          if (selectedCurrency && timeframeValue && rangeValue) {
-            response = await apiService.post(
-              `listing?symbol=${selectedCurrency || "BTCUSD"}&interval=${timeframeValue || "1m"}&limit=${rangeValue || 1000}`,
-              { type: chartType },
-            );
-          } else {
-            response = await apiService.post(
-              `listing?symbol=${selectedCurrency || "BTCUSD"}&limit=${rangeValue || 1000}&interval=${timeframeValue || "1m"}`,
-              { type: chartType },
-            );
-          }
+          const { data } = await fetchDataByCurrency(selectedCurrency, timeframeValue, chartType);
 
-          // ✅ Remove MAIN price line only
           if (seriesRef.current) {
             chartRef.current.removeSeries(seriesRef.current);
           }
-
-          seriesRef.current = chartRef.current.addSeries(LineSeries, {
-            color: "#38bdf8",
-          });
-
-          seriesRef.current.setData(
-            response.data.map((d) => ({
-              time: d.time,
-              value: Number(Math.round(d.close)), // ✅ Prevent undefined crash
-            })),
+          seriesRef.current = chartRef.current.addSeries(
+            LineSeries,
+            chartSeriesStyles.line,
           );
+          seriesRef.current.setData(
+            data
+              ?.map((d) => ({
+                time: d.time,
+                value: d?.close != null ? Number(d.close) : null,
+              }))
+              // .filter((d) => d.close != null && !Number.isNaN(d.close)),
+          );
+          chartRef.current.timeScale().fitContent();
+          await fetchIndicatorData(selectedIndicator, selectedCurrency, timeframeValue, chartRef, indicatorSeriesRef, latestIndicatorValuesRef, getIndicatorColor);
         }
-
-        // ✅ CRITICAL FIX → Ensure correct order
-        async function loadLine() {
-          await LineData(); // Draw price line FIRST
-          await fetchIndicatorData(); // Overlay indicator AFTER
-        }
-        loadLine();
+        LineData();
         break;
 
       case "bar":
         async function BarData() {
-          let response;
-          if (selectedCurrency && timeframeValue && rangeValue) {
-            response = await apiService.post(
-              `listing?symbol=${selectedCurrency ? selectedCurrency : "BTCUSD"}&interval=${timeframeValue ? timeframeValue : "1m"}&limit=${rangeValue ? rangeValue : 1000}`,
-              { type: chartType },
-            );
-          } else {
-            console.log("fourth insertion------------------------------");
-            response = await apiService.post(
-              `listing?symbol=${selectedCurrency ? selectedCurrency : "BTCUSD"}&limit=${rangeValue ? rangeValue : 1000}&interval=${timeframeValue ? timeframeValue : "1m"}`,
-              { type: chartType },
-            );
-          }
+          const { data } = await fetchDataByCurrency(selectedCurrency, timeframeValue, chartType);
+
           if (seriesRef.current) {
             chartRef.current.removeSeries(seriesRef.current);
           }
-          seriesRef.current = chartRef.current.addSeries(BarSeries, {
-            upColor: "#22c55e",
-            downColor: "#ef4444",
-          });
+          seriesRef.current = chartRef.current.addSeries(
+            BarSeries,
+            chartSeriesStyles.bar,
+          );
           seriesRef.current.setData(
-            response.data.map((d) => ({
+            await data?.map((d) => ({
               time: d.time,
               open: d.open,
               high: d.high,
@@ -470,238 +299,135 @@ export default function Candlestick() {
             })),
           );
           chartRef.current.timeScale().fitContent();
+          await fetchIndicatorData(selectedIndicator,selectedCurrency, timeframeValue, chartRef, indicatorSeriesRef, latestIndicatorValuesRef, getIndicatorColor);
         }
-        async function loadBar() {
-          await BarData(); // Draw price line FIRST
-          await fetchIndicatorData(); // Overlay indicator AFTER
-        }
-        loadBar();
+        BarData();
         break;
 
       case "area":
         async function AreaData() {
-          let response;
-          if (selectedCurrency && timeframeValue && rangeValue) {
-            response = await apiService.post(
-              `listing?symbol=${selectedCurrency ? selectedCurrency : "BTCUSD"}&interval=${timeframeValue ? timeframeValue : "1m"}&limit=${rangeValue ? rangeValue : 1000}`,
-              { type: chartType },
-            );
-          } else {
-            response = await apiService.post(
-              `listing?symbol=${selectedCurrency ? selectedCurrency : "BTCUSD"}&limit=${rangeValue ? rangeValue : 1000}&interval=${timeframeValue ? timeframeValue : "1m"}`,
-              { type: chartType },
-            );
-          }
+          const { data } = await fetchDataByCurrency(selectedCurrency, timeframeValue, chartType);
+
           if (seriesRef.current) {
             chartRef.current.removeSeries(seriesRef.current);
           }
-          seriesRef.current = chartRef.current.addSeries(AreaSeries, {
-            topColor: "rgba(56,189,248,0.4)",
-            bottomColor: "rgba(56,189,248,0)",
-            lineColor: "#38bdf8",
-          });
-
+          seriesRef.current = chartRef.current.addSeries(
+            AreaSeries,
+            chartSeriesStyles.area,
+          );
           seriesRef.current.setData(
-            await response.data.map((d) => ({
+            await data?.map((d) => ({
               time: d?.time,
               value: Number(d?.close),
             })),
           );
-          console.log(response.data, "area data-----------------------------");
           chartRef.current.timeScale().fitContent();
+          await fetchIndicatorData(selectedIndicator, selectedCurrency,timeframeValue, chartRef, indicatorSeriesRef, latestIndicatorValuesRef, getIndicatorColor);
         }
         AreaData();
         break;
 
       case "baseline":
         async function BaseLineData() {
-          let response;
-          if (selectedCurrency && timeframeValue && rangeValue) {
-            response = await apiService.post(
-              `listing?symbol=${selectedCurrency ? selectedCurrency : "BTCUSD"}&interval=${timeframeValue ? timeframeValue : "1m"}&limit=${rangeValue ? rangeValue : 1000}`,
-              { type: chartType },
-            );
-          } else {
-            console.log("fourth insertion------------------------------");
-            response = await apiService.post(
-              `listing?symbol=${selectedCurrency ? selectedCurrency : "BTCUSD"}&limit=${rangeValue ? rangeValue : 1000}&interval=${timeframeValue ? timeframeValue : "1m"}`,
-              { type: chartType },
-            );
-          }
+          const { data } = await fetchDataByCurrency(selectedCurrency, timeframeValue, chartType);
           if (seriesRef.current) {
             chartRef.current.removeSeries(seriesRef.current);
           }
           seriesRef.current = chartRef.current.addSeries(BaselineSeries, {
-            baseValue: { type: "price", price: response.data[0]?.close },
-
-            topLineColor: "rgba(34,197,94,1)", // green
-            topFillColor1: "rgba(34,197,94,0.4)",
-            topFillColor2: "rgba(34,197,94,0.05)",
-
-            bottomLineColor: "rgba(239,68,68,1)", // red
-            bottomFillColor1: "rgba(239,68,68,0.4)",
-            bottomFillColor2: "rgba(239,68,68,0.05)",
+            ...chartSeriesStyles.baseline,
+            baseValue: {
+              type: "price",
+              price: Number(data?.[0]?.close ?? 0),
+            },
           });
-
           seriesRef.current.setData(
-            await response.data.map((d) => ({ time: d.time, value: d.close })),
+            await data?.map((d) => ({ time: d.time, value: d.close })),
           );
           chartRef.current.timeScale().fitContent();
+          await fetchIndicatorData(selectedIndicator, selectedCurrency, timeframeValue, chartRef, indicatorSeriesRef, latestIndicatorValuesRef, getIndicatorColor);
         }
         BaseLineData();
         break;
 
       case "histogram":
         async function HistogramData() {
-          let response;
-          if (selectedCurrency && timeframeValue && rangeValue) {
-            response = await apiService.post(
-              `listing?symbol=${selectedCurrency ? selectedCurrency : "BTCUSD"}&interval=${timeframeValue ? timeframeValue : "1m"}&limit=${rangeValue ? rangeValue : 1000}`,
-              { type: chartType },
-            );
-          } else {
-            console.log("fourth insertion------------------------------");
-            response = await apiService.post(
-              `listing?symbol=${selectedCurrency ? selectedCurrency : "BTCUSD"}&limit=${rangeValue ? rangeValue : 1000}&interval=${timeframeValue ? timeframeValue : "1m"}`,
-              { type: chartType },
-            );
-          }
+          const { data } = await fetchDataByCurrency(selectedCurrency, timeframeValue, chartType);
           if (seriesRef.current) {
             chartRef.current.removeSeries(seriesRef.current);
           }
-          seriesRef.current = chartRef.current.addSeries(HistogramSeries, {
-            color: "#22c55e", // ✅ green bars
-
-            priceFormat: { type: "volume" },
-            priceScaleId: "volume",
-            scaleMargins: {
-              top: 0.7,
-              bottom: 0,
-            },
-            lastValueVisible: true,
-          });
-
+          seriesRef.current = chartRef.current.addSeries(
+            HistogramSeries,
+            chartSeriesStyles.histogram,
+          );
           seriesRef.current.setData(
-            response.data.map((d, index, arr) => {
+            data?.map((d, index, arr) => {
               const prev = arr[index - 1];
-
               const isUp = prev ? d.close >= prev.close : true;
-
               return {
                 time: d.time,
-                value: d.volume, // or d.value
-                color: isUp ? "#22c55e" : "#ef4444", // ✅ green / red
+                value: d.volume,
+                color: isUp ? "#22c55e" : "#ef4444",
               };
             }),
           );
           chartRef.current.timeScale().fitContent();
+          await fetchIndicatorData(selectedIndicator,selectedCurrency, timeframeValue, chartRef, indicatorSeriesRef, latestIndicatorValuesRef, getIndicatorColor);
         }
         HistogramData();
         break;
 
       case "heikinashi":
         async function HeikinAshiData() {
-          let response;
-          if (selectedCurrency && timeframeValue && rangeValue) {
-            response = await apiService.post(
-              `listing?symbol=${selectedCurrency ? selectedCurrency : "BTCUSD"}&interval=${timeframeValue ? timeframeValue : "1m"}&limit=${rangeValue ? rangeValue : 1000}`,
-              { type: chartType },
-            );
-          } else {
-            console.log("fourth insertion------------------------------");
-            response = await apiService.post(
-              `listing?symbol=${selectedCurrency ? selectedCurrency : "BTCUSD"}&limit=${rangeValue ? rangeValue : 1000}&interval=${timeframeValue ? timeframeValue : "1m"}`,
-              { type: chartType },
-            );
-          }
+          const { data } = await fetchDataByCurrency(selectedCurrency, timeframeValue, chartType);
           if (seriesRef.current) {
             chartRef.current.removeSeries(seriesRef.current);
           }
           seriesRef.current = chartRef.current.addSeries(CandlestickSeries);
 
-          seriesRef.current.setData(convertToHeikinAshi(await response?.data));
+          seriesRef.current.setData(convertToHeikinAshi(await data));
 
           chartRef.current.timeScale().fitContent();
+          await fetchIndicatorData(selectedIndicator, selectedCurrency,timeframeValue, chartRef, indicatorSeriesRef, latestIndicatorValuesRef, getIndicatorColor);
         }
         HeikinAshiData();
         break;
 
       case "hollowcandles":
         async function HollowCandlesData() {
-          let response;
-          if (selectedCurrency && timeframeValue && rangeValue) {
-            response = await apiService.post(
-              `listing?symbol=${selectedCurrency ? selectedCurrency : "BTCUSD"}&interval=${timeframeValue ? timeframeValue : "1m"}&limit=${rangeValue ? rangeValue : 1000}`,
-              { type: chartType },
-            );
-          } else {
-            console.log("fourth insertion------------------------------");
-            response = await apiService.post(
-              `listing?symbol=${selectedCurrency ? selectedCurrency : "BTCUSD"}&limit=${rangeValue ? rangeValue : 1000}&interval=${timeframeValue ? timeframeValue : "1m"}`,
-              { type: chartType },
-            );
-          }
+          const { data } = await fetchDataByCurrency(selectedCurrency, timeframeValue, chartType);
           if (seriesRef.current) {
             chartRef.current.removeSeries(seriesRef.current);
           }
-          seriesRef.current = chartRef.current.addSeries(CandlestickSeries, {
-            upColor: "transparent",
-            downColor: "#ef4444",
-            borderUpColor: "#22c55e",
-            borderDownColor: "#ef4444",
-            wickUpColor: "#22c55e",
-            wickDownColor: "#ef4444",
-          });
-          seriesRef.current.setData(await response?.data);
-
+          seriesRef.current = chartRef.current.addSeries(CandlestickSeries, chartSeriesStyles.hollowcandles);
+          seriesRef.current.setData(await data);
           chartRef.current.timeScale().fitContent();
+          await fetchIndicatorData(selectedIndicator,selectedCurrency, timeframeValue, chartRef, indicatorSeriesRef, latestIndicatorValuesRef, getIndicatorColor);
         }
         HollowCandlesData();
         break;
 
       default:
         async function fetchCandeStickData() {
-          let response;
-          if (selectedCurrency && timeframeValue && rangeValue) {
-            response = await apiService.post(
-              `listing?symbol=${selectedCurrency ? selectedCurrency : "BTCUSD"}&interval=${timeframeValue ? timeframeValue : "1m"}&limit=${rangeValue ? rangeValue : 1000}`,
-              { type: chartType },
-            );
-          } else {
-            response = await apiService.post(
-              `listing?symbol=${selectedCurrency ? selectedCurrency : "BTCUSD"}&limit=${rangeValue ? rangeValue : 1000}&interval=${timeframeValue ? timeframeValue : "1m"}`,
-              { type: chartType },
-            );
-          }
+          const { data } = await fetchDataByCurrency(selectedCurrency, timeframeValue, chartType);
           if (seriesRef.current) {
             chartRef.current.removeSeries(seriesRef.current);
           }
-          seriesRef.current = chartRef.current.addSeries(CandlestickSeries, {
-            upColor: "#22c55e",
-            downColor: "#ef4444",
-            borderUpColor: "#22c55e",
-            borderDownColor: "#ef4444",
-            wickUpColor: "#22c55e",
-            wickDownColor: "#ef4444",
-          });
-          seriesRef.current.setData(await response?.data);
-
+          seriesRef.current = chartRef.current.addSeries(CandlestickSeries, chartSeriesStyles.candlestick);
+          seriesRef.current.setData(await data);
           chartRef.current.subscribeCrosshairMove((param) => {
             if (!param.time || !param.seriesData) {
               setLiveOhlcv(null);
               return;
             }
-
             const candle = param.seriesData?.get(seriesRef.current);
             if (!candle) return;
-
             setLiveOhlcv(candle);
           });
+          chartRef.current.timeScale().fitContent();
+          await fetchIndicatorData(selectedIndicator,selectedCurrency, timeframeValue, chartRef, indicatorSeriesRef, latestIndicatorValuesRef, getIndicatorColor);
         }
-
         fetchCandeStickData();
     }
-    chartRef.current.timeScale().fitContent();
   }, [
     chartType,
     historicalData,
@@ -861,7 +587,7 @@ export default function Candlestick() {
   };
 
   return (
-    <div className="w-full h-screen flex flex-col bg-slate-50 overflow-hidden">
+    <div className="w-full h-screen flex flex-col bg-slate-50">
       <div>
         <ChartHeader
           timeframeValue={timeframeValue}
@@ -1057,20 +783,19 @@ export default function Candlestick() {
                     </DropdownMenu.Root>
                   </div>
                   {showAlertForm && (
-        <IndicatorAlert
-          onClose={closeAlert}
-          value={value}
-          liveOhlcv={liveOhlcv}
-          symbol={selectedCurrency}
-        />
-      )}
+                    <IndicatorAlert
+                      onClose={closeAlert}
+                      value={value}
+                      liveOhlcv={liveOhlcv}
+                      symbol={selectedCurrency}
+                    />
+                  )}
                 </div>
               );
             })}
           </div>
         )}
       </div>
-      
 
       <div className="flex justify-center text-sm ml-3 text-slate-950">
         <button
@@ -1113,6 +838,12 @@ export default function Candlestick() {
           <FaFileWaveform />
         </button>
       )}
+
+
+      {/* ------------Start Indicator Rule Builder for Caluculating Indicators along with condition---------------- */}
+      <IndicatorRuleBuilder />
+      <IndicatorBuildingListing selectedCurrency={selectedCurrency} timeframeValue={timeframeValue} />
+      {/* ------End of indicator rule builder */}
     </div>
   );
 }
