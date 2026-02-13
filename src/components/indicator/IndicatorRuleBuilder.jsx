@@ -5,6 +5,7 @@ import apiService from "../../services/apiServices";
 
 export default function IndicatorRuleBuilder() {
   const [timeframeOptions, setTimeframeOptions] = useState([]);
+  const [scannerOptions, setScannerOptions] = useState([]);
   const [indicators, setIndicators] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -15,6 +16,7 @@ export default function IndicatorRuleBuilder() {
       indicator: "RSI",
       period: 14,
       operator: ">",
+      scanners: "Select Scanner",
       value: 50,
     },
   ]);
@@ -26,6 +28,7 @@ export default function IndicatorRuleBuilder() {
       indicator: "RSI",
       period: 14,
       operator: ">",
+      scanners: "",
       value: 50,
     };
   }
@@ -107,26 +110,53 @@ export default function IndicatorRuleBuilder() {
     }
   }
 
- async function fetchIndicators() {
+async function fetchIndicators() {
   setLoading(true);
 
   try {
     const response = await apiService.post("getIndicators");
 
-    console.log(response.data, "indicators raw");
+    const raw = response.data;
 
-    // ✅ Ensure array (critical safety check)
-    const raw = Array.isArray(response.data) ? response.data : [];
+    console.log(raw, "indicators raw");
 
-    // ✅ Use API data directly
+    // ✅ API already returns array → use directly
+    const formatted = (raw ?? []).map((item) => ({
+      label: item.label,
+      value: item.label,   // store label for select matching
+      period: item.value,  // keep default period if needed
+    }));
+
     setIndicators([
       { label: "Select Indicator", value: "" },
-      ...raw,
+      ...formatted,
     ]);
 
+    console.log(formatted, "indicators formatted");
   } catch (err) {
     console.error("Indicator API Error:", err);
     setIndicators([]);
+  } finally {
+    setLoading(false);
+  }
+}
+
+ async function fetchScanners() {
+  setLoading(true);
+
+  try {
+    const response = await apiService.get("scanner");
+
+    const raw = response.data;
+
+    console.log(raw, "scanner raw");
+
+    // ✅ Directly use API result
+    setScannerOptions(raw ?? []);
+
+  } catch (err) {
+    console.error("Scanner API Error:", err);
+    setScannerOptions([]);
   } finally {
     setLoading(false);
   }
@@ -136,6 +166,8 @@ export default function IndicatorRuleBuilder() {
   useEffect(() => {
     fetchTimeframe();
     fetchIndicators();
+    fetchScanners();
+
   }, []);
 
   return (
@@ -151,13 +183,6 @@ export default function IndicatorRuleBuilder() {
             focus:outline-none focus:ring-2 focus:ring-purple-500
           "
         />
-
-        <button
-          onClick={prependRule}
-          className="w-10 h-10 rounded-lg bg-slate-200 hover:bg-slate-300 transition"
-        >
-          ↑
-        </button>
 
         <button
           onClick={appendRule}
@@ -182,15 +207,26 @@ export default function IndicatorRuleBuilder() {
             />
 
             <EditableSelect
-              value={rule.indicator}
-              options={indicators}
-              onChange={(v) => updateField(rule.id, "indicator", v)}
-            />
+  value={rule.indicator}
+  options={indicators}
+  onChange={(selectedValue) => {
+    const selected = indicators.find(
+      (opt) => opt.value === selectedValue
+    );
 
-            <EditableNumber
-              value={rule.period}
-              onChange={(v) => updateField(rule.id, "period", v)}
-            />
+    updateField(rule.id, "indicator", selectedValue);
+
+    // ✅ Auto set period from indicator config
+    if (selected?.period !== undefined) {
+      updateField(rule.id, "period", selected.period);
+    }
+  }}
+/>
+
+<EditableNumber
+  value={rule.period}
+  onChange={(v) => updateField(rule.id, "period", Math.max(0, v))}
+/>
 
             <EditableSelect
               value={rule.operator}
@@ -198,11 +234,18 @@ export default function IndicatorRuleBuilder() {
               onChange={(v) => updateField(rule.id, "operator", v)}
             />
 
+            <EditableSelect
+              value={rule.scanners}
+              options={scannerOptions}
+              onChange={(v) => updateField(rule.id, "scanners", v)}
+            />
+
             <EditableNumber
               value={rule.value}
               width="w-24"
               onChange={(v) => updateField(rule.id, "value", v)}
             />
+            
 
             {rules.length > 1 && (
               <button
@@ -223,10 +266,7 @@ export default function IndicatorRuleBuilder() {
           const payload = buildQueryPayload();
           console.log(payload, "FINAL QUERY");
         }}
-        className="
-    w-full px-4 py-3 rounded-xl text-sm font-medium
-    bg-purple-600 text-white hover:bg-purple-700
-  "
+        className=" w-fit px-4 py-3 rounded-xl text-sm font-medium bg-purple-600 text-white hover:bg-purple-700 "
       >
         Run Query
       </button>

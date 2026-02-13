@@ -16,7 +16,7 @@ export default function IndicatorBuildingListing({ selectedCurrency, timeframeVa
 async function fetchBinanceData(){
   try {
     const response = await apiService.post(`listing?symbol=${selectedCurrency}&interval=${timeframeValue}&limit=1000`);
-    console.log(response,"========================-0987564567876543567865434567865435678");
+    // console.log(response,"========================-0987564567876543567865434567865435678");
     
     setDUMMY_DATA(response?.data);
   } catch (err) {
@@ -36,7 +36,7 @@ async function fetchBinanceData(){
     }
   }
 
-  console.log(DUMMY_DATA,"========================-0987564567876543567865434567865435678");
+  // console.log(DUMMY_DATA,"========================-0987564567876543567865434567865435678");
 
   const sortedData = useMemo(() => {
     return [...DUMMY_DATA].sort((a, b) => {
