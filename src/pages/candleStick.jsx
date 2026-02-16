@@ -174,43 +174,55 @@ export default function Candlestick() {
     }
   };
 
-  useEffect(() => {
-    if (!chartRef.current) return;
+ useEffect(() => {
+  if (!chartRef.current) return;
 
-    const handler = (param) => {
-      const liveValues = {};
+  const handler = (param) => {
+    const liveValues = {};
 
-      // ✅ Cursor outside chart OR no data
-      if (!param.time || !param.seriesData || param.seriesData.size === 0) {
-        selectedIndicator.forEach((indicator) => {
-          const latest = latestIndicatorValuesRef.current[indicator];
-          if (latest !== undefined) {
-            liveValues[indicator] = latest;
-          }
-        });
-        setLiveIndicatorData(liveValues);
-        return;
-      }
-
-      // ✅ Cursor inside chart
+    // ✅ Cursor outside chart OR no data
+    if (!param.time || !param.seriesData || param.seriesData.size === 0) {
       selectedIndicator.forEach((indicator) => {
-        const series = indicatorSeriesRef.current[indicator];
-        if (!series) return;
-
-        const dataPoint = param.seriesData.get(series);
-
-        if (dataPoint?.value !== undefined) {
-          liveValues[indicator] = dataPoint.value;
+        const latest = latestIndicatorValuesRef.current[indicator];
+        if (latest !== undefined) {
+          liveValues[indicator] = latest;
         }
       });
 
       setLiveIndicatorData(liveValues);
-    };
+      return;
+    }
 
-    chartRef.current.subscribeCrosshairMove(handler);
+    // ✅ Cursor inside chart
+    selectedIndicator.forEach((indicator) => {
+      const series = indicatorSeriesRef.current[indicator];
+      if (!series) return;
 
-    return () => chartRef.current.unsubscribeCrosshairMove(handler);
-  }, [selectedIndicator]);
+      const dataPoint = param.seriesData.get(series);
+      if (!dataPoint) return;
+
+      const value = dataPoint.value;
+
+      // ✅ SINGLE VALUE INDICATORS (RSI, SMA, ADX, etc.)
+      if (typeof value === "number") {
+        liveValues[indicator] = value;
+        return;
+      }
+
+      // ✅ MULTI VALUE INDICATORS (Stochastic, MACD, BB, etc.)
+      if (typeof value === "object") {
+        liveValues[indicator] = { ...value };
+      }
+    });
+
+    setLiveIndicatorData(liveValues);
+  };
+
+  chartRef.current.subscribeCrosshairMove(handler);
+
+  return () => chartRef.current.unsubscribeCrosshairMove(handler);
+}, [selectedIndicator]);
+
 
   const removeIndicator = (indicator) => {
     const series = indicatorSeriesRef.current[indicator];

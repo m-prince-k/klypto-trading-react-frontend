@@ -93,9 +93,9 @@ function splitSymbol(symbol) {
     }
   }
 
-  useEffect(() => {
-    loadAllCoins();
-  }, []);
+  // useEffect(() => {
+  //   loadAllCoins();
+  // }, []);
 
   function handleSort(field) {
     if (sortField === field) {
