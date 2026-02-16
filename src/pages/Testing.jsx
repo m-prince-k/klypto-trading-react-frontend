@@ -1,251 +1,101 @@
-import React, { useState, useRef, useEffect } from "react";
-
-/* ---------------- Editable Select ---------------- */
-
-function EditableSelect({ value, options, onChange }) {
-  const [editing, setEditing] = useState(false);
-  const ref = useRef();
-
-  useEffect(() => {
-    if (editing && ref.current) ref.current.focus();
-  }, [editing]);
-
-  if (editing) {
-    return (
-      <select
-        ref={ref}
-        value={value}
-        onChange={(e) => {
-          onChange(e.target.value);
-          setEditing(false);
-        }}
-        onBlur={() => setEditing(false)}
-        className="px-2 py-1 text-sm border border-slate-200 rounded-md bg-white"
-      >
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-    );
-  }
-
-  const label =
-    options.find((o) => o.value === value)?.label ?? value;
-
-  return (
-    <span
-      onClick={() => setEditing(true)}
-      className="cursor-pointer text-sm px-2 py-1 rounded-md hover:bg-slate-100 transition"
-    >
-      {label}
-    </span>
-  );
-}
-
-/* ---------------- Editable Number ---------------- */
-
-function EditableNumber({ value, onChange, width = "w-20" }) {
-  const [editing, setEditing] = useState(false);
-  const ref = useRef();
-
-  useEffect(() => {
-    if (editing && ref.current) ref.current.focus();
-  }, [editing]);
-
-  if (editing) {
-    return (
-      <input
-        ref={ref}
-        type="number"
-        defaultValue={value}
-        onBlur={(e) => {
-          onChange(Number(e.target.value));
-          setEditing(false);
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            onChange(Number(e.target.value));
-            setEditing(false);
-          }
-        }}
-        className={`${width} px-2 py-1 text-sm border border-slate-200 rounded-md`}
-      />
-    );
-  }
-
-  return (
-    <span
-      onClick={() => setEditing(true)}
-      className={`${width} cursor-pointer text-sm px-2 py-1 rounded-md hover:bg-slate-100 transition text-center`}
-    >
-      {value}
-    </span>
-  );
-}
-
-/* ---------------- Operators ---------------- */
-
-const OPERATORS = [
-  { label: "Greater Than (>)", value: ">" },
-  { label: "Less Than (<)", value: "<" },
-  { label: "Greater Than or Equal (≥)", value: ">=" },
-  { label: "Less Than or Equal (≤)", value: "<=" },
-  { label: "Equal (=)", value: "=" },
-  { label: "Not Equal (≠)", value: "!=" },
-  { label: "Crosses Above ⤴", value: "crosses_above" },
-  { label: "Crosses Below ⤵", value: "crosses_below" },
-  { label: "Rising ↗", value: "rising" },
-  { label: "Falling ↘", value: "falling" },
-  { label: "Between ⇄", value: "between" },
-];
-
-/* ---------------- Main Component ---------------- */
+import React, { useEffect, useRef } from "react";
+import { createChart, LineSeries, CandlestickSeries } from "lightweight-charts";
 
 export default function Testing() {
-  const [rules, setRules] = useState([
-    {
-      id: 1,
-      timeframe: "Daily",
-      indicator: "RSI",
-      period: 14,
-      operator: ">",
-      value: 50,
-    },
-  ]);
+  const chartRef = useRef();
 
-  function newRule() {
-    return {
-      id: Date.now(),
-      timeframe: "Daily",
-      indicator: "RSI",
-      period: 14,
-      operator: ">",
-      value: 50,
-    };
-  }
+  useEffect(() => {
+    const chart = createChart(chartRef.current, {
+      width: 900,
+      height: 500,
 
-  function appendRule() {
-    setRules((prev) => [...prev, newRule()]);
-  }
+      layout: {
+        background: { type: "solid", color: "#ffffff" },
+        textColor: "#334155",
+      },
 
-  function prependRule() {
-    setRules((prev) => [newRule(), ...prev]);
-  }
+      grid: {
+        vertLines: { color: "#e2e8f0" },
+        horzLines: { color: "#e2e8f0" },
+      },
 
-  function removeRule(id) {
-    setRules((prev) => prev.filter((r) => r.id !== id));
-  }
+      rightPriceScale: {
+        scaleMargins: {
+          top: 0.05,
+          bottom: 0.05,
+        },
+      },
 
-  function updateField(id, field, value) {
-    setRules((prev) =>
-      prev.map((rule) =>
-        rule.id === id ? { ...rule, [field]: value } : rule
-      )
-    );
-  }
+      timeScale: {
+        timeVisible: true,
+        rightBarSpacing: 40,
+      },
+    });
 
-  return (
-    <div className="w-full max-w-5xl mx-auto flex flex-col gap-4">
+    const candleSeries = chart.addSeries(CandlestickSeries);
 
-      {/* Top Controls */}
-      <div className="flex flex-wrap items-center gap-3">
-        <input
-          placeholder="Search indicator or rule..."
-          className="
-            flex-1 min-w-[220px]
-            px-3 py-2 text-sm
-            border border-slate-200 rounded-lg
-            focus:outline-none focus:ring-2 focus:ring-purple-500
-          "
-        />
+    const smaSeries = chart.addSeries(LineSeries, {
+      color: "#0ea5e9",
+      lineWidth: 2,
+    });
 
-        <button
-          onClick={prependRule}
-          className="w-10 h-10 rounded-lg bg-slate-200 hover:bg-slate-300 transition"
-        >
-          ↑
-        </button>
+    const rsiSeries = chart.addSeries(LineSeries, {
+      color: "#f59e0b",
+      lineWidth: 2,
+      priceLineVisible: false,
+      lastValueVisible: false,
+    });
 
-        <button
-          onClick={appendRule}
-          className="w-10 h-10 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition"
-        >
-          +
-        </button>
-      </div>
+    /* ---------------- MOCK DATA ---------------- */
 
-      {/* Rules */}
-      {rules.map((rule) => (
-        <div
-          key={rule.id}
-          className="w-full bg-white border border-slate-200 rounded-2xl shadow-sm p-4"
-        >
-          <div className="flex flex-wrap items-center gap-2">
+    const candles = [
+      { time: 1700000000, open: 100, high: 110, low: 95, close: 105 },
+      { time: 1700000600, open: 105, high: 115, low: 100, close: 110 },
+      { time: 1700001200, open: 110, high: 118, low: 108, close: 112 },
+      { time: 1700001800, open: 112, high: 120, low: 109, close: 115 },
+    ];
 
-            <EditableSelect
-              value={rule.timeframe}
-              options={[
-                { label: "Daily", value: "Daily" },
-                { label: "Weekly", value: "Weekly" },
-                { label: "Monthly", value: "Monthly" },
-              ]}
-              onChange={(v) => updateField(rule.id, "timeframe", v)}
-            />
+    const sma = [
+      { time: 1700000000, value: 102 },
+      { time: 1700000600, value: 106 },
+      { time: 1700001200, value: 109 },
+      { time: 1700001800, value: 113 },
+    ];
 
-            <EditableSelect
-              value={rule.indicator}
-              options={[
-                { label: "RSI", value: "RSI" },
-                { label: "SMA", value: "SMA" },
-                { label: "EMA", value: "EMA" },
-                { label: "Bollinger Bands", value: "BB" },
-              ]}
-              onChange={(v) => updateField(rule.id, "indicator", v)}
-            />
+    const rsiRaw = [
+      { time: 1700000000, value: 45 },
+      { time: 1700000600, value: 52 },
+      { time: 1700001200, value: 48 },
+      { time: 1700001800, value: 60 },
+    ];
 
-            {/* Period as label-style number */}
-            <EditableNumber
-              value={rule.period}
-              onChange={(v) => updateField(rule.id, "period", v)}
-            />
+    candleSeries.setData(candles);
+    smaSeries.setData(sma);
 
-            <EditableSelect
-              value={rule.operator}
-              options={OPERATORS}
-              onChange={(v) => updateField(rule.id, "operator", v)}
-            />
+    /* ---------------- RSI SCALING MAGIC ---------------- */
 
-            {/* Value as label-style number */}
-            <EditableNumber
-              value={rule.value}
-              width="w-24"
-              onChange={(v) => updateField(rule.id, "value", v)}
-            />
+    const highs = candles.map(c => c.high);
+    const priceMax = Math.max(...highs);
 
-            {rules.length > 1 && (
-              <button
-                onClick={() => removeRule(rule.id)}
-                className="w-9 h-9 rounded-lg bg-red-500 text-white hover:bg-red-600 transition"
-              >
-                −
-              </button>
-            )}
-          </div>
-        </div>
-      ))}
+    const BAND_HEIGHT = 20; // visual thickness of RSI pane
+    const BAND_OFFSET = 10; // gap above candles
 
-      {/* Run Button */}
-      <button
-        className="
-          w-full px-4 py-3 rounded-xl text-sm font-medium
-          bg-purple-600 text-white hover:bg-purple-700
-          active:scale-[0.98] transition
-        "
-      >
-        Run Query
-      </button>
-    </div>
-  );
+    function scaleRSI(rsiValue) {
+      const bandLow = priceMax + BAND_OFFSET;
+      const bandHigh = bandLow + BAND_HEIGHT;
+
+      return bandLow + (rsiValue / 100) * BAND_HEIGHT;
+    }
+
+    const rsiScaled = rsiRaw.map(r => ({
+      time: r.time,
+      value: scaleRSI(r.value),
+    }));
+
+    rsiSeries.setData(rsiScaled);
+
+    return () => chart.remove();
+  }, []);
+
+  return <div ref={chartRef} />;
 }

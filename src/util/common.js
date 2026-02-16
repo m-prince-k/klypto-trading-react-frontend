@@ -9,37 +9,108 @@ import {
 
 export const ChartProprties = {
   width: 1200,
-  height: 400,
+  height: 500,
 
   layout: {
-    background: { type: "solid", color: "#fff" },
+    background: { type: "solid", color: "#ffffff" },
     textColor: "#334155",
     fontSize: 12,
     fontFamily: "Inter, sans-serif",
   },
 
+  localization: {
+    priceFormatter: price => price.toFixed(2), // TV-like formatting
+  },
+
   timeScale: {
     timeVisible: true,
     secondsVisible: false,
-    borderColor: "#cbd5e1",
-    fixLeftEdge: true,
-    fixRightEdge: true,
+
+    borderColor: "#e2e8f0",
+
+    rightBarStaysOnScroll: true,
+    rightBarStaysOnScale: true,
+
+    rightBarSpacing: 80,     // ✅ Future space
+    barSpacing: 10,          // Slightly tighter like TV
+
+    minBarSpacing: 5,        // Prevent over-zoom crush
+    fixLeftEdge: false,
+    fixRightEdge: false,
+
+    lockVisibleTimeRangeOnResize: true,
+    rightEdgeStaysOnScroll: true,
+  },
+
+  handleScroll: {
+    mouseWheel: true,
+    pressedMouseMove: true,
+    horzTouchDrag: true,
+    vertTouchDrag: true,
+  },
+
+  handleScale: {
+    mouseWheel: true,
+    pinch: true,
+    axisPressedMouseMove: true,
+    axisDoubleClickReset: true,  // ✅ TV behaviour
+  },
+
+  kineticScroll: {
+    mouse: true,     // ✅ Smooth inertial scrolling like TV
+    touch: true,
   },
 
   rightPriceScale: {
-    borderColor: "#cbd5e1",
-    scaleMargins: { top: 0.2, bottom: 0.2 },
+    visible: true,
+    borderColor: "#e2e8f0",
+
+    scaleMargins: {
+      top: 0.1,      // TV-like tighter margins
+      bottom: 0.1,
+    },
+
+    autoScale: true,
+    mode: 0,         // Normal (NOT log)
+    alignLabels: true,
+    entireTextOnly: true,
   },
 
   grid: {
-    vertLines: { color: "#cbd5e1" },
-    horzLines: { color: "#cbd5e1" },
+    vertLines: {
+      visible: true,
+      color: "#f1f5f9",
+      style: 0,
+    },
+    horzLines: {
+      visible: true,
+      color: "#f1f5f9",
+      style: 0,
+    },
   },
 
   crosshair: {
-    mode: 1,
-    vertLine: { color: "#64748b" },
-    horzLine: { color: "#64748b" },
+    mode: 1, // Normal crosshair
+
+    vertLine: {
+      visible: true,
+      labelVisible: true,
+      color: "#94a3b8",
+      width: 1,
+      style: 2, // Dotted like TV
+    },
+
+    horzLine: {
+      visible: true,
+      labelVisible: true,
+      color: "#94a3b8",
+      width: 1,
+      style: 2,
+    },
+  },
+
+  interaction: {
+    mode: 0, // Normal interaction
   },
 };
 

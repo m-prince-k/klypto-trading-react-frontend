@@ -28,8 +28,10 @@ import apiService from "../services/apiServices";
 import { IoCloseSharp, IoSettingsOutline } from "react-icons/io5";
 import { FiMoreHorizontal } from "react-icons/fi";
 import IndicatorAlert from "../components/indicator/IndicatorAlert";
-import { fetchDataByCurrency, fetchIndicatorData } from "../util/chartFunctions";
-
+import {
+  fetchDataByCurrency,
+  fetchIndicatorData,
+} from "../util/chartFunctions";
 
 export default function Candlestick() {
   const chartRef = useRef();
@@ -221,24 +223,27 @@ export default function Candlestick() {
     setSelectedIndicator((prev) => prev.filter((i) => i !== indicator));
   };
 
-  const toggleIndicator = async (indicator) => {
+  const toggleIndicator = (indicator) => {
     setSelectedIndicator((prev) => {
       const alreadySelected = prev.includes(indicator);
 
-      // ✅ UNCHECK → REMOVE FROM CHART
       if (alreadySelected) {
-        const series = indicatorSeriesRef.current[indicator];
+        // ✅ Remove ALL series belonging to indicator
+        Object.keys(indicatorSeriesRef.current).forEach((key) => {
+          if (key === indicator || key.startsWith(`${indicator}_`)) {
+            const series = indicatorSeriesRef.current[key];
 
-        if (series && chartRef.current) {
-          chartRef.current.removeSeries(series);
-        }
+            if (series && chartRef.current) {
+              chartRef.current.removeSeries(series);
+            }
 
-        delete indicatorSeriesRef.current[indicator];
+            delete indicatorSeriesRef.current[key];
+          }
+        });
 
         return prev.filter((i) => i !== indicator);
       }
 
-      // ✅ CHECK → ADD TO STATE (series added via effect / fetch)
       return [...prev, indicator];
     });
   };
@@ -255,7 +260,11 @@ export default function Candlestick() {
     switch (chartType) {
       case "line":
         async function LineData() {
-          const { data } = await fetchDataByCurrency(selectedCurrency, timeframeValue, chartType);
+          const { data } = await fetchDataByCurrency(
+            selectedCurrency,
+            timeframeValue,
+            chartType,
+          );
 
           if (seriesRef.current) {
             chartRef.current.removeSeries(seriesRef.current);
@@ -265,22 +274,33 @@ export default function Candlestick() {
             chartSeriesStyles.line,
           );
           seriesRef.current.setData(
-            data
-              ?.map((d) => ({
-                time: d.time,
-                value: d?.close != null ? Number(d.close) : null,
-              }))
-              // .filter((d) => d.close != null && !Number.isNaN(d.close)),
+            data?.map((d) => ({
+              time: d.time,
+              value: d?.close != null ? Number(d.close) : null,
+            })),
+            // .filter((d) => d.close != null && !Number.isNaN(d.close)),
           );
           chartRef.current.timeScale().fitContent();
-          await fetchIndicatorData(selectedIndicator, selectedCurrency, timeframeValue, chartRef, indicatorSeriesRef, latestIndicatorValuesRef, getIndicatorColor);
+          await fetchIndicatorData(
+            selectedIndicator,
+            selectedCurrency,
+            timeframeValue,
+            chartRef,
+            indicatorSeriesRef,
+            latestIndicatorValuesRef,
+            getIndicatorColor,
+          );
         }
         LineData();
         break;
 
       case "bar":
         async function BarData() {
-          const { data } = await fetchDataByCurrency(selectedCurrency, timeframeValue, chartType);
+          const { data } = await fetchDataByCurrency(
+            selectedCurrency,
+            timeframeValue,
+            chartType,
+          );
 
           if (seriesRef.current) {
             chartRef.current.removeSeries(seriesRef.current);
@@ -299,14 +319,26 @@ export default function Candlestick() {
             })),
           );
           chartRef.current.timeScale().fitContent();
-          await fetchIndicatorData(selectedIndicator,selectedCurrency, timeframeValue, chartRef, indicatorSeriesRef, latestIndicatorValuesRef, getIndicatorColor);
+          await fetchIndicatorData(
+            selectedIndicator,
+            selectedCurrency,
+            timeframeValue,
+            chartRef,
+            indicatorSeriesRef,
+            latestIndicatorValuesRef,
+            getIndicatorColor,
+          );
         }
         BarData();
         break;
 
       case "area":
         async function AreaData() {
-          const { data } = await fetchDataByCurrency(selectedCurrency, timeframeValue, chartType);
+          const { data } = await fetchDataByCurrency(
+            selectedCurrency,
+            timeframeValue,
+            chartType,
+          );
 
           if (seriesRef.current) {
             chartRef.current.removeSeries(seriesRef.current);
@@ -322,14 +354,26 @@ export default function Candlestick() {
             })),
           );
           chartRef.current.timeScale().fitContent();
-          await fetchIndicatorData(selectedIndicator, selectedCurrency,timeframeValue, chartRef, indicatorSeriesRef, latestIndicatorValuesRef, getIndicatorColor);
+          await fetchIndicatorData(
+            selectedIndicator,
+            selectedCurrency,
+            timeframeValue,
+            chartRef,
+            indicatorSeriesRef,
+            latestIndicatorValuesRef,
+            getIndicatorColor,
+          );
         }
         AreaData();
         break;
 
       case "baseline":
         async function BaseLineData() {
-          const { data } = await fetchDataByCurrency(selectedCurrency, timeframeValue, chartType);
+          const { data } = await fetchDataByCurrency(
+            selectedCurrency,
+            timeframeValue,
+            chartType,
+          );
           if (seriesRef.current) {
             chartRef.current.removeSeries(seriesRef.current);
           }
@@ -344,14 +388,26 @@ export default function Candlestick() {
             await data?.map((d) => ({ time: d.time, value: d.close })),
           );
           chartRef.current.timeScale().fitContent();
-          await fetchIndicatorData(selectedIndicator, selectedCurrency, timeframeValue, chartRef, indicatorSeriesRef, latestIndicatorValuesRef, getIndicatorColor);
+          await fetchIndicatorData(
+            selectedIndicator,
+            selectedCurrency,
+            timeframeValue,
+            chartRef,
+            indicatorSeriesRef,
+            latestIndicatorValuesRef,
+            getIndicatorColor,
+          );
         }
         BaseLineData();
         break;
 
       case "histogram":
         async function HistogramData() {
-          const { data } = await fetchDataByCurrency(selectedCurrency, timeframeValue, chartType);
+          const { data } = await fetchDataByCurrency(
+            selectedCurrency,
+            timeframeValue,
+            chartType,
+          );
           if (seriesRef.current) {
             chartRef.current.removeSeries(seriesRef.current);
           }
@@ -371,14 +427,26 @@ export default function Candlestick() {
             }),
           );
           chartRef.current.timeScale().fitContent();
-          await fetchIndicatorData(selectedIndicator,selectedCurrency, timeframeValue, chartRef, indicatorSeriesRef, latestIndicatorValuesRef, getIndicatorColor);
+          await fetchIndicatorData(
+            selectedIndicator,
+            selectedCurrency,
+            timeframeValue,
+            chartRef,
+            indicatorSeriesRef,
+            latestIndicatorValuesRef,
+            getIndicatorColor,
+          );
         }
         HistogramData();
         break;
 
       case "heikinashi":
         async function HeikinAshiData() {
-          const { data } = await fetchDataByCurrency(selectedCurrency, timeframeValue, chartType);
+          const { data } = await fetchDataByCurrency(
+            selectedCurrency,
+            timeframeValue,
+            chartType,
+          );
           if (seriesRef.current) {
             chartRef.current.removeSeries(seriesRef.current);
           }
@@ -387,32 +455,62 @@ export default function Candlestick() {
           seriesRef.current.setData(convertToHeikinAshi(await data));
 
           chartRef.current.timeScale().fitContent();
-          await fetchIndicatorData(selectedIndicator, selectedCurrency,timeframeValue, chartRef, indicatorSeriesRef, latestIndicatorValuesRef, getIndicatorColor);
+          await fetchIndicatorData(
+            selectedIndicator,
+            selectedCurrency,
+            timeframeValue,
+            chartRef,
+            indicatorSeriesRef,
+            latestIndicatorValuesRef,
+            getIndicatorColor,
+          );
         }
         HeikinAshiData();
         break;
 
       case "hollowcandles":
         async function HollowCandlesData() {
-          const { data } = await fetchDataByCurrency(selectedCurrency, timeframeValue, chartType);
+          const { data } = await fetchDataByCurrency(
+            selectedCurrency,
+            timeframeValue,
+            chartType,
+          );
           if (seriesRef.current) {
             chartRef.current.removeSeries(seriesRef.current);
           }
-          seriesRef.current = chartRef.current.addSeries(CandlestickSeries, chartSeriesStyles.hollowcandles);
+          seriesRef.current = chartRef.current.addSeries(
+            CandlestickSeries,
+            chartSeriesStyles.hollowcandles,
+          );
           seriesRef.current.setData(await data);
           chartRef.current.timeScale().fitContent();
-          await fetchIndicatorData(selectedIndicator,selectedCurrency, timeframeValue, chartRef, indicatorSeriesRef, latestIndicatorValuesRef, getIndicatorColor);
+          await fetchIndicatorData(
+            selectedIndicator,
+            selectedCurrency,
+            timeframeValue,
+            chartRef,
+            indicatorSeriesRef,
+            latestIndicatorValuesRef,
+            getIndicatorColor,
+          );
         }
         HollowCandlesData();
         break;
 
       default:
         async function fetchCandeStickData() {
-          const { data } = await fetchDataByCurrency(selectedCurrency, timeframeValue, chartType);
+          const { data } = await fetchDataByCurrency(
+            selectedCurrency,
+            timeframeValue,
+            chartType,
+          );
           if (seriesRef.current) {
             chartRef.current.removeSeries(seriesRef.current);
           }
-          seriesRef.current = chartRef.current.addSeries(CandlestickSeries, chartSeriesStyles.candlestick);
+          seriesRef.current = chartRef.current.addSeries(
+            CandlestickSeries,
+            chartSeriesStyles.candlestick,
+          );
           seriesRef.current.setData(await data);
           chartRef.current.subscribeCrosshairMove((param) => {
             if (!param.time || !param.seriesData) {
@@ -424,7 +522,15 @@ export default function Candlestick() {
             setLiveOhlcv(candle);
           });
           chartRef.current.timeScale().fitContent();
-          await fetchIndicatorData(selectedIndicator,selectedCurrency, timeframeValue, chartRef, indicatorSeriesRef, latestIndicatorValuesRef, getIndicatorColor);
+          await fetchIndicatorData(
+            selectedIndicator,
+            selectedCurrency,
+            timeframeValue,
+            chartRef,
+            indicatorSeriesRef,
+            latestIndicatorValuesRef,
+            getIndicatorColor,
+          );
         }
         fetchCandeStickData();
     }
@@ -797,30 +903,44 @@ export default function Candlestick() {
         )}
       </div>
 
-      <div className="flex justify-center text-sm ml-3 text-slate-950">
+      <div className="flex justify-center items-center gap-2 px-4  w-fit mx-auto">
         <button
           onClick={zoomIn}
-          className="flex items-center gap-1 px-2 py-1 bg-slate-200 rounded-md"
+          className="group relative flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-slate-50 to-slate-100 hover:from-purple-50 hover:to-indigo-50 text-slate-700 hover:text-purple-700 font-semibold rounded-xl shadow-sm hover:shadow-md border border-slate-200/50 hover:border-purple-300/50 transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
         >
-          <LuCirclePlus /> Zoom In
+          <LuCirclePlus className="w-4 h-4 group-hover:scale-110 group-hover:rotate-90 transition-all duration-300" />
+          <span className="text-sm">Zoom In</span>
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-100 to-indigo-100 opacity-0 group-hover:opacity-30 transition-opacity duration-200" />
         </button>
+
+        {/* Divider */}
+        <div className="h-6 w-px bg-gradient-to-b from-transparent via-slate-300 to-transparent" />
+
         <button
           onClick={zoomOut}
-          className="flex items-center gap-1 px-2 py-1 bg-slate-200 rounded-md ml-2"
+          className="group relative flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-slate-50 to-slate-100 hover:from-purple-50 hover:to-indigo-50 text-slate-700 hover:text-purple-700 font-semibold rounded-xl shadow-sm hover:shadow-md border border-slate-200/50 hover:border-purple-300/50 transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
         >
-          <LuCircleMinus /> Zoom Out
+          <LuCircleMinus className="w-4 h-4 group-hover:scale-110 group-hover:rotate-90 transition-all duration-300" />
+          <span className="text-sm">Zoom Out</span>
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-100 to-indigo-100 opacity-0 group-hover:opacity-30 transition-opacity duration-200" />
         </button>
+
+        {/* Divider */}
+        <div className="h-6 w-px bg-gradient-to-b from-transparent via-slate-300 to-transparent" />
+
         <button
           onClick={resetZoom}
-          className="flex items-center gap-1 px-2 py-1 bg-slate-200 rounded-md ml-2"
+          className="group relative flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
         >
-          <RiResetRightLine /> Reset
+          <RiResetRightLine className="w-4 h-4 group-hover:rotate-[360deg] transition-transform duration-500" />
+          <span className="text-sm">Reset</span>
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-indigo-400 opacity-0 group-hover:opacity-20 transition-opacity duration-200" />
         </button>
       </div>
 
       <div
         className={`
-                    fixed top-0 right-0 h-screen w-[400px] bg-white shadow-xl z-50
+                    fixed top-0 right-0 h-screen w-[400px] shadow-xl z-50
                     transform transition-transform duration-300 ease-in-out
                     ${openForm ? "translate-x-0" : "translate-x-full hidden"}
                   `}
@@ -839,10 +959,16 @@ export default function Candlestick() {
         </button>
       )}
 
-
       {/* ------------Start Indicator Rule Builder for Caluculating Indicators along with condition---------------- */}
-      <IndicatorRuleBuilder />
-      <IndicatorBuildingListing selectedCurrency={selectedCurrency} timeframeValue={timeframeValue} />
+      <div className="bg-slate-50">
+        <IndicatorRuleBuilder />
+      <IndicatorBuildingListing
+        selectedCurrency={selectedCurrency}
+        timeframeValue={timeframeValue}
+      />
+
+      </div>
+      
       {/* ------End of indicator rule builder */}
     </div>
   );
