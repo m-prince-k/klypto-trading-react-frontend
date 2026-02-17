@@ -1,5 +1,9 @@
 import React, { useEffect, useRef } from "react";
-import { createChart, LineSeries, CandlestickSeries } from "lightweight-charts";
+import {
+  createChart,
+  LineSeries,
+  CandlestickSeries,
+} from "lightweight-charts";
 
 export default function Testing() {
   const chartRef = useRef();
@@ -22,7 +26,7 @@ export default function Testing() {
       rightPriceScale: {
         scaleMargins: {
           top: 0.05,
-          bottom: 0.05,
+          bottom: 0.25, // ✅ leave space for RSI
         },
       },
 
@@ -32,6 +36,8 @@ export default function Testing() {
       },
     });
 
+    /* ---------------- SERIES ---------------- */
+
     const candleSeries = chart.addSeries(CandlestickSeries);
 
     const smaSeries = chart.addSeries(LineSeries, {
@@ -39,30 +45,38 @@ export default function Testing() {
       lineWidth: 2,
     });
 
+    // ✅ RSI ON SEPARATE SCALE
     const rsiSeries = chart.addSeries(LineSeries, {
       color: "#f59e0b",
       lineWidth: 2,
-      priceLineVisible: false,
-      lastValueVisible: false,
+      priceScaleId: "rsi", // ⭐ MAGIC LINE
+    });
+
+    // ✅ Configure RSI scale
+    chart.priceScale("rsi").applyOptions({
+      scaleMargins: {
+        top: 0.75,   // push to bottom
+        bottom: 0.05,
+      },
     });
 
     /* ---------------- MOCK DATA ---------------- */
 
     const candles = [
-      { time: 1700000000, open: 100, high: 110, low: 95, close: 105 },
-      { time: 1700000600, open: 105, high: 115, low: 100, close: 110 },
-      { time: 1700001200, open: 110, high: 118, low: 108, close: 112 },
-      { time: 1700001800, open: 112, high: 120, low: 109, close: 115 },
+      { time: 1700000000, open: 70000, high: 71000, low: 69500, close: 70500 },
+      { time: 1700000600, open: 70500, high: 71500, low: 70000, close: 71000 },
+      { time: 1700001200, open: 71000, high: 71800, low: 70800, close: 71200 },
+      { time: 1700001800, open: 71200, high: 72000, low: 70900, close: 71500 },
     ];
 
     const sma = [
-      { time: 1700000000, value: 102 },
-      { time: 1700000600, value: 106 },
-      { time: 1700001200, value: 109 },
-      { time: 1700001800, value: 113 },
+      { time: 1700000000, value: 70200 },
+      { time: 1700000600, value: 70600 },
+      { time: 1700001200, value: 70900 },
+      { time: 1700001800, value: 71300 },
     ];
 
-    const rsiRaw = [
+    const rsi = [
       { time: 1700000000, value: 45 },
       { time: 1700000600, value: 52 },
       { time: 1700001200, value: 48 },
@@ -71,28 +85,7 @@ export default function Testing() {
 
     candleSeries.setData(candles);
     smaSeries.setData(sma);
-
-    /* ---------------- RSI SCALING MAGIC ---------------- */
-
-    const highs = candles.map(c => c.high);
-    const priceMax = Math.max(...highs);
-
-    const BAND_HEIGHT = 20; // visual thickness of RSI pane
-    const BAND_OFFSET = 10; // gap above candles
-
-    function scaleRSI(rsiValue) {
-      const bandLow = priceMax + BAND_OFFSET;
-      const bandHigh = bandLow + BAND_HEIGHT;
-
-      return bandLow + (rsiValue / 100) * BAND_HEIGHT;
-    }
-
-    const rsiScaled = rsiRaw.map(r => ({
-      time: r.time,
-      value: scaleRSI(r.value),
-    }));
-
-    rsiSeries.setData(rsiScaled);
+    rsiSeries.setData(rsi);
 
     return () => chart.remove();
   }, []);

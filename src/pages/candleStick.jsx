@@ -60,12 +60,6 @@ export default function Candlestick() {
   const closeAlert = () => {
     setShowAlertForm(false);
   };
-  // console.log(
-  //   liveIndicatorData,
-  //   "live indicator data-----------------------------",
-  // );
-
-  const [indicatorVisible, setIndicatorVisible] = useState(true);
 
   const isUp = liveOhlcv?.close >= liveOhlcv?.open;
   const valueColor = isUp ? "text-green-500" : "text-red-500";
@@ -223,17 +217,6 @@ export default function Candlestick() {
   return () => chartRef.current.unsubscribeCrosshairMove(handler);
 }, [selectedIndicator]);
 
-
-  const removeIndicator = (indicator) => {
-    const series = indicatorSeriesRef.current[indicator];
-    if (!series) return;
-
-    chartRef.current.removeSeries(series);
-
-    delete indicatorSeriesRef.current[indicator];
-
-    setSelectedIndicator((prev) => prev.filter((i) => i !== indicator));
-  };
 
   const toggleIndicator = (indicator) => {
     setSelectedIndicator((prev) => {
@@ -555,8 +538,6 @@ export default function Candlestick() {
     selectedIndicator,
   ]);
 
-  // console.log(liveOhlcv, "live ohlcv-----------------------------");
-
   const convertToHeikinAshi = (data) => {
     if (!data.length) return [];
 
@@ -574,7 +555,6 @@ export default function Candlestick() {
 
       prevOpen = haOpen;
       prevClose = haClose;
-
       return {
         time: candle.time,
         open: haOpen,
@@ -629,80 +609,50 @@ export default function Candlestick() {
     seriesRef.current = null;
   };
 
-  const loadSeries = (type) => {
+  function getPivotColor(label) {
+  if (label === "P") return "#eab308";      // Yellow pivot
+  if (label.startsWith("R")) return "#ef4444"; // Red resistance
+  if (label.startsWith("S")) return "#22c55e"; // Green support
+  return "#94a3b8";
+}
+
+function safeRemoveSeries(chart, series) {
+  try {
+    if (!chart || !series) return;
+    chart.removeSeries(series);
+  } catch (e) {}
+}
+
+ function plotPivotLevels(levels) {
     const chart = chartRef.current;
-    if (!chart) return;
-
-    clearSeries();
-
-    let series;
-
-    if (type === "line") {
-      series = chart.addSeries(LineSeries, { color: "#38bdf8" });
-      series.setData(
-        historicalData.map((d) => ({ time: d.time, value: d.close })),
-      );
-    }
-
-    if (type === "bar") {
-      series = chart.addSeries(BarSeries, {});
-      series.setData(historicalData);
-    }
-
-    if (type === "area") {
-      series = chart.addSeries(AreaSeries, {
-        topColor: "rgba(56,189,248,0.4)",
-        bottomColor: "rgba(56,189,248,0)",
-        lineColor: "#38bdf8",
+    if (!chart || !liveOhlcv?.length) return;
+  
+    const firstTime = Number(liveOhlcv[0].time);
+    const lastTime = Number(liveOhlcv[liveOhlcv.length - 1].time);
+  
+    Object.entries(levels).forEach(([label, value]) => {
+      const price = Number(value);
+      if (!price || isNaN(price)) return;
+  
+      const key = `pivot_${label}`;
+  
+      safeRemoveSeries(chart, indicatorSeriesRef.current[key]);
+  
+      const series = chart.addSeries(LineSeries, {
+        color: getPivotColor(label),
+        lineWidth: 1,
+        lastValueVisible: false,
+        priceLineVisible: false,
       });
-      series.setData(
-        historicalData.map((d) => ({ time: d.time, value: d.close })),
-      );
-    }
-
-    if (type === "candlestick") {
-      series = chart.addSeries(CandlestickSeries, {
-        upColor: "#22c55e",
-        downColor: "#ef4444",
-        borderUpColor: "#22c55e",
-        borderDownColor: "#ef4444",
-        wickUpColor: "#22c55e",
-        wickDownColor: "#ef4444",
-      });
-      series.setData(historicalData);
-      chartRef.current.timeScale().fitContent();
-    }
-
-    if (type === "baseline") {
-      series = chart.addSeries(BaselineSeries, {
-        baseValue: { type: "price", price: +historicalData[0]?.close || 0 },
-        topLineColor: "#22c55e",
-        bottomLineColor: "#ef4444",
-        topFillColor1: "rgba(34,197,94,0.3)",
-        bottomFillColor1: "rgba(239,68,68,0.3)",
-      });
-      series.setData(
-        historicalData.map((d) => ({ time: d.time, value: d.close })),
-      );
-    }
-
-    if (type === "histogram") {
-      series = chart.addSeries(HistogramSeries, {
-        priceFormat: { type: "volume" },
-        priceScaleId: "",
-      });
-      series.setData(
-        historicalData.map((d) => ({
-          time: d.time,
-          value: Math.floor(Math.random() * 3000 + 1000),
-          color: d.close >= d.open ? "#22c55e" : "#ef4444",
-        })),
-      );
-    }
-
-    seriesRef.current = series;
-    chart.timeScale().fitContent();
-  };
+  
+      series.setData([
+        { time: firstTime, value: price },
+        { time: lastTime, value: price },
+      ]);
+  
+      indicatorSeriesRef.current[key] = series;
+    });
+  }
 
   return (
     <div className="w-full h-screen flex flex-col bg-slate-50">
@@ -915,7 +865,7 @@ export default function Candlestick() {
         )}
       </div>
 
-      <div className="flex justify-center items-center gap-2 px-4  w-fit mx-auto">
+      <div className="flex justify-center items-center gap-2 px-4 pb-4 w-fit mx-auto">
         <button
           onClick={zoomIn}
           className="group relative flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-slate-50 to-slate-100 hover:from-purple-50 hover:to-indigo-50 text-slate-700 hover:text-purple-700 font-semibold rounded-xl shadow-sm hover:shadow-md border border-slate-200/50 hover:border-purple-300/50 transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"

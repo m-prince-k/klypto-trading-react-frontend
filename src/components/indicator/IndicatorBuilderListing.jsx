@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import apiService from "../../services/apiServices";
+import { Spinner } from "../tradingModals/Spinner";
 
 const PAGE_SIZE = 5;
 
@@ -17,24 +18,25 @@ export default function IndicatorBuildingListing({
 
   const ONE_YEAR = 365 * 24 * 60 * 60 * 1000;
   const QUOTES = ["USDT", "BTC", "ETH", "BNB", "FDUSD", "TRY"];
-function splitSymbol(symbol) {
-  const quote = QUOTES.find((q) => symbol.endsWith(q));
-  if (!quote) return { base: symbol, quote: "UNKNOWN" };
 
-  return {
-    base: symbol.slice(0, -quote.length),
-    quote,
-  };
-}
+  function splitSymbol(symbol) {
+    const quote = QUOTES.find((q) => symbol.endsWith(q));
+    if (!quote) return { base: symbol, quote: "UNKNOWN" };
 
- async function fetchAllSymbols() {
-  const res = await fetch("https://api.binance.com/api/v3/exchangeInfo");
-  const data = await res.json();
+    return {
+      base: symbol.slice(0, -quote.length),
+      quote,
+    };
+  }
 
-  return data.symbols
-    .filter((s) => s.status === "TRADING")
-    .map((s) => s.symbol);
-}
+  async function fetchAllSymbols() {
+    const res = await fetch("https://api.binance.com/api/v3/exchangeInfo");
+    const data = await res.json();
+
+    return data.symbols
+      .filter((s) => s.status === "TRADING")
+      .map((s) => s.symbol);
+  }
 
   // 2️⃣ Fetch OHLC for single symbol
   async function fetchOHLC(symbol) {
@@ -111,7 +113,7 @@ function splitSymbol(symbol) {
 
     return coins.map((item, index) => {
       const lastCandle = item.ohlc?.[item.ohlc.length - 1];
-      console.log()
+      console.log();
 
       return {
         id: index + 1,
@@ -180,79 +182,91 @@ function splitSymbol(symbol) {
             </div>
 
             {/* Toggles */}
-            {/* <div className="flex gap-6">
-            <Toggle label="Show Favorites" />
-            <Toggle label="Dark Mode"  />
-          </div> */}
+            <div className="flex gap-6">
+            <Toggle label="Open New Charts" />
+            <Toggle label="Show Chart Preview"  />
+          </div>
           </div>
 
           {/* Table */}
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
-                  <Header label="ID" onClick={() => handleSort("id")} />
-                  <Header label="Name" onClick={() => handleSort("name")} />
-                  <Header label="Symbol" onClick={() => handleSort("symbol")} />
-                  <Header label="Price" onClick={() => handleSort("price")} />
-                  <Header label="Volume" onClick={() => handleSort("volume")} />
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedData.map((row, index) => (
-                  <tr
-                    key={row.id}
-                    className="group border-b border-slate-100 hover:bg-gradient-to-r hover:from-purple-50/50 hover:to-indigo-50/50 transition-all duration-200"
-                    style={{
-                      animation: `fadeIn 0.3s ease-out ${index * 0.05}s both`,
-                    }}
-                  >
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 font-semibold text-sm group-hover:from-purple-100 group-hover:to-indigo-100 group-hover:text-purple-700 transition-all duration-200">
-                        {row.id}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-purple-500/30">
-                          {(row.name ?? "--").slice(0, 2)}
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-slate-900 text-base">
-                            {row.name}
-                          </span>
-                          <span className="text-slate-300 font-light">/</span>
-                          <span className="text-slate-600 font-medium">
-                            {row.quote}
-                          </span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex gap-2">
-                        <button className="px-3 py-1.5 text-xs font-semibold bg-gradient-to-r from-purple-100 to-purple-50 text-purple-700 rounded-lg hover:from-purple-200 hover:to-purple-100 transition-all duration-200 border border-purple-200/50 hover:shadow-md hover:shadow-purple-500/20 hover:-translate-y-0.5">
-                          {row.symbol}
-                        </button>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-left">
-                      <span className="font-bold text-slate-900 ">
-                        ${row.price}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-left">
-                      <div className="flex flex-col">
-                        <span className="text-slate-900 font-semibold">
-                          {row.volume.toLocaleString()}
-                        </span>
-                        {/* <span className="text-xs text-slate-500">Volume</span> */}
-                      </div>
-                    </td>
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <Spinner />
+              </div>
+            ) : (
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
+                    <Header label="ID" onClick={() => handleSort("id")} />
+                    <Header label="Name" onClick={() => handleSort("name")} />
+                    <Header
+                      label="Symbol"
+                      onClick={() => handleSort("symbol")}
+                    />
+                    <Header label="Price" onClick={() => handleSort("price")} />
+                    <Header
+                      label="Volume"
+                      onClick={() => handleSort("volume")}
+                    />
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {paginatedData.map((row, index) => (
+                    <tr
+                      key={row.id}
+                      className="group border-b border-slate-100 hover:bg-gradient-to-r hover:from-purple-50/50 hover:to-indigo-50/50 transition-all duration-200"
+                      style={{
+                        animation: `fadeIn 0.3s ease-out ${index * 0.05}s both`,
+                      }}
+                    >
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 font-semibold text-sm group-hover:from-purple-100 group-hover:to-indigo-100 group-hover:text-purple-700 transition-all duration-200">
+                          {row.id}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-purple-500/30">
+                            {(row.name ?? "--").slice(0, 2)}
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-slate-900 text-base">
+                              {row.name}
+                            </span>
+                            <span className="text-slate-300 font-light">/</span>
+                            <span className="text-slate-600 font-medium">
+                              {row.quote}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-2">
+                          <button className="px-3 py-1.5 text-xs font-semibold bg-gradient-to-r from-purple-100 to-purple-50 text-purple-700 rounded-lg hover:from-purple-200 hover:to-purple-100 transition-all duration-200 border border-purple-200/50 hover:shadow-md hover:shadow-purple-500/20 hover:-translate-y-0.5">
+                            {row.symbol}
+                          </button>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-left">
+                        <span className="font-bold text-slate-900 ">
+                          {row.price}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-left">
+                        <div className="flex flex-col">
+                          <span className="text-slate-900 font-semibold">
+                            {row.volume.toLocaleString()}
+                          </span>
+                          {/* <span className="text-xs text-slate-500">Volume</span> */}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
 
           {/* Pagination */}

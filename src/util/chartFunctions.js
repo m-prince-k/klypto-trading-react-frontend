@@ -1,6 +1,7 @@
 import { LineSeries } from "lightweight-charts";
 
 import apiService from "../services/apiServices";
+import { useEffect } from "react";
 
 export async function fetchDataByCurrency(selectedCurrency, timeframeValue) {
   let response;
@@ -15,6 +16,7 @@ export async function fetchDataByCurrency(selectedCurrency, timeframeValue) {
   }
   return response;
 }
+
 
 export async function fetchIndicatorData(
   selectedIndicator,
@@ -69,11 +71,12 @@ export async function fetchIndicatorData(
             color: getIndicatorColor(i),
             lineWidth: 2,
           });
-
           series.setData(lineData);
-
           indicatorSeriesRef.current[key] = series;
         });
+      }
+      if (result.type === "pivot") {
+        plotPivotLevels(result.data, chartRef, indicatorSeriesRef);
       }
     } catch (error) {
       console.log(error, "Indicator loading error");
@@ -82,7 +85,7 @@ export async function fetchIndicatorData(
 }
 
 async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
-  const normalizedType = type.replace(/\s+/g, "");
+  const normalizedType = type.replace(/[\s/]+/g, "");
 
   const response = await apiService.post(
     `indicatorDetails?symbol=${selectedCurrency}&interval=${timeframeValue}&type=${normalizedType}`,
@@ -98,7 +101,6 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
 
   switch (normalizedType) {
     /* ---------------- SINGLE VALUE ---------------- */
-
     case "SMA":
     case "EMA":
     case "DEMA":
@@ -106,6 +108,7 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
     case "ADX":
     case "RSI":
     case "SuperTrend":
+    case "Aroon":
     case "AroonOscillator":
     case "ROC":
     case "AwesomeOscillator":
@@ -123,6 +126,12 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
     case "ATR":
     case "HistoricalVolatility":
     case "ChoppinessIndex":
+    case "AccumulationDistribution":
+    case "Williams%R":
+    case "UltimateOscillator":
+    case "StochasticRSI":
+    case "ParabolicSAR":
+    case "ChandeMomentumOscillator":
       return {
         type: "single",
         data:
@@ -133,6 +142,22 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
               value: Number(d.value),
             })) ?? [],
       };
+      case "ZigZag": {
+  const rows = response?.data ?? [];
+
+  console.log("ZigZag:", rows.length);
+
+  return {
+    type: "single",
+    data: rows
+      .filter(d => d.value != null)
+      .map(d => ({
+        time: Number(d.time),
+        value: Number(d.value),
+      })),
+  };
+}
+
 
     /* ---------------- NESTED VALUE ---------------- */
 
@@ -171,6 +196,99 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
               value: Number(d.value.ama),
             })) ?? [],
       };
+
+    case "CCI": {
+      const rows = Array.isArray(response?.data) ? response.data : [];
+
+      console.log("CCI rows:", rows.length);
+      console.log("CCI sample:", rows[0]);
+
+      return {
+        type: "single",
+        data: rows.map((d) => ({
+          time: Number(d.time),
+          value: Number(d.cci),
+        })),
+      };
+    }
+
+    case "PivotPoints(Standard)": {
+      const d = response?.data ?? {};
+
+      console.log("Pivot Standard:", d);
+
+      return {
+        type: "pivot",
+        data: [
+          { label: "P", value: Number(d.P) },
+          { label: "R1", value: Number(d.R1) },
+          { label: "R2", value: Number(d.R2) },
+          { label: "R3", value: Number(d.R3) },
+          { label: "S1", value: Number(d.S1) },
+          { label: "S2", value: Number(d.S2) },
+          { label: "S3", value: Number(d.S3) },
+        ].filter((level) => !Number.isNaN(level.value)),
+      };
+    }
+
+    case "PivotPoints(Fibonacci)": {
+      const d = response?.data ?? {};
+
+      console.log("PivotFibonacci:", d);
+
+      return {
+        type: "pivot",
+        data: [
+          { label: "P", value: Number(d.P) },
+          { label: "R1", value: Number(d.R1) },
+          { label: "R2", value: Number(d.R2) },
+          { label: "R3", value: Number(d.R3) },
+          { label: "S1", value: Number(d.S1) },
+          { label: "S2", value: Number(d.S2) },
+          { label: "S3", value: Number(d.S3) },
+        ].filter((level) => !Number.isNaN(level.value)),
+      };
+    }
+    case "PivotPoints(Camarilla)": {
+  const d = response?.data ?? {};
+
+  console.log("Pivot Camarilla:", d);
+
+  return {
+    type: "pivot",
+    data: [
+      { label: "P", value: Number(d.P) },
+      { label: "R1", value: Number(d.R1) },
+      { label: "R2", value: Number(d.R2) },
+      { label: "R3", value: Number(d.R3) },
+      { label: "R4", value: Number(d.R4) }, // Camarilla often has R4/S4
+      { label: "S1", value: Number(d.S1) },
+      { label: "S2", value: Number(d.S2) },
+      { label: "S3", value: Number(d.S3) },
+      { label: "S4", value: Number(d.S4) },
+    ].filter(level => !Number.isNaN(level.value)),
+  };
+}
+
+case "PivotPoints(Classic)": {
+  const d = response?.data ?? {};
+
+  console.log("Pivot Classic:", d);
+
+  return {
+    type: "pivot",
+    data: [
+      { label: "P", value: Number(d.P) },
+      { label: "R1", value: Number(d.R1) },
+      { label: "R2", value: Number(d.R2) },
+      { label: "R3", value: Number(d.R3) },
+      { label: "S1", value: Number(d.S1) },
+      { label: "S2", value: Number(d.S2) },
+      { label: "S3", value: Number(d.S3) },
+    ].filter(level => !Number.isNaN(level.value)),
+  };
+}
+
 
     /* ---------------- MULTI LINE ---------------- */
 
@@ -282,35 +400,58 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
         },
       };
 
-    case "BollingerBands":
+    case "BollingerBands": {
+      const rows = response?.data ?? [];
+
       return {
         type: "multi",
         data: {
-          upper:
-            response.data
-              ?.filter((d) => d.value?.upper != null)
-              .map((d) => ({
-                time: Number(d.time),
-                value: Number(d.value.upper),
-              })) ?? [],
+          upper: rows
+            .filter((d) => d.upper != null)
+            .map((d) => ({
+              time: Number(d.time),
+              value: Number(d.upper),
+            })),
 
-          middle:
-            response.data
-              ?.filter((d) => d.value?.middle != null)
-              .map((d) => ({
-                time: Number(d.time),
-                value: Number(d.value.middle),
-              })) ?? [],
+          middle: rows
+            .filter((d) => d.middle != null)
+            .map((d) => ({
+              time: Number(d.time),
+              value: Number(d.middle),
+            })),
 
-          lower:
-            response.data
-              ?.filter((d) => d.value?.lower != null)
-              .map((d) => ({
-                time: Number(d.time),
-                value: Number(d.value.lower),
-              })) ?? [],
+          lower: rows
+            .filter((d) => d.lower != null)
+            .map((d) => ({
+              time: Number(d.time),
+              value: Number(d.lower),
+            })),
         },
       };
+    }
+
+    case "FisherTransform": {
+      const rows = response?.data ?? [];
+
+      return {
+        type: "multi",
+        data: {
+          fisher: rows
+            .filter((d) => d.value?.fisher != null)
+            .map((d) => ({
+              time: Number(d.time),
+              value: Number(d.value.fisher),
+            })),
+
+          trigger: rows
+            .filter((d) => d.value?.trigger != null)
+            .map((d) => ({
+              time: Number(d.time),
+              value: Number(d.value.trigger),
+            })),
+        },
+      };
+    }
 
     case "KeltnerChannels":
       return {
@@ -379,6 +520,52 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
       };
   }
 }
+function plotPivotLevels(pivotLevels, chartRef, indicatorSeriesRef) {
+  const chart = chartRef.current;
+  if (!chart || !pivotLevels?.length) return;
+
+  const visibleRange = chart.timeScale().getVisibleRange();
+  if (!visibleRange) return;
+
+  const { from, to } = visibleRange;
+
+  pivotLevels.forEach(({ label, value }) => {
+    const price = Number(value);
+    if (!price || isNaN(price)) return;
+
+    const key = `pivot_${label}`;
+
+    safeRemoveSeries(chart, indicatorSeriesRef.current[key]);
+
+    const series = chart.addSeries(LineSeries, {
+      color: getPivotColor(label),
+      lineWidth: 1,
+      lastValueVisible: false,
+      priceLineVisible: false,
+    });
+
+    series.setData([
+      { time: from, value: price },
+      { time: to, value: price },
+    ]);
+
+    indicatorSeriesRef.current[key] = series;
+  });
+}
+function safeRemoveSeries(chart, series) {
+  try {
+    if (!chart || !series) return;
+    chart.removeSeries(series);
+  } catch (e) {}
+}
+
+function getPivotColor(label) {
+  if (label === "P") return "#eab308"; // Pivot → Yellow
+  if (label.startsWith("R")) return "#44d5ef"; // Resistance → Red
+  if (label.startsWith("S")) return "#9722c5"; // Support → Green
+  return "#94a3b8";
+}
+
 function removeSeries(indicatorSeriesRef, chartRef, key) {
   if (indicatorSeriesRef.current[key]) {
     chartRef.current.removeSeries(indicatorSeriesRef.current[key]);

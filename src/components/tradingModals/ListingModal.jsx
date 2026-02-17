@@ -25,11 +25,8 @@ export const ListingModal = ({
   const [error, setError] = useState(null);
   const [searchIndicator, setSearchIndicator] = useState("");
   const [searchCurrency, setSearchCurrency] = useState("");
-  // const TABS = ["Indicators", "Strategies", "Profiles", "Patterns"];
   const debouncedCurrency = useDebounce(selectedCurrency, 500);
   const debouncedIndicator = useDebounce(selectedIndicator, 500);
-
-
 
   // API calling- Indicators
   async function fetchIndicators() {
@@ -45,6 +42,7 @@ export const ListingModal = ({
         response = await apiService.post(`getIndicators`);
       }
       setIndicators(response?.data);
+      console.log(response?.data, "-----------");
     } catch (err) {
       console.error(err);
       setError(err?.message || "Failed to fetch indicators");
@@ -67,11 +65,6 @@ export const ListingModal = ({
         response = await apiService.post(`getCurrencies`);
       }
       setCurrencies(await response?.data);
-
-      // const result = await response?.data?.filter((item) =>
-      //   item.toLowerCase().includes(selectedCurrency.toLowerCase()),
-      // );
-      // setCurrencies(result?.data);
       console.log(currencies, "currencies-------------");
     } catch (err) {
       setError(err.message);
@@ -82,7 +75,6 @@ export const ListingModal = ({
 
   useEffect(() => {
     if (title === "Indicators") {
-      // setSearchIndicator("");
       fetchIndicators();
     }
     if (title === "Symbol Search") {
@@ -90,23 +82,13 @@ export const ListingModal = ({
     }
   }, [title]);
 
-  const filteredIndicators = Object.entries(indicators || {})
-    .map(([category, items]) => {
-      if (!searchIndicator) {
-        return { category, items }; // ✅ full list when empty
-      }
+  const filteredIndicators = (indicators ?? []).filter((item) => {
+    if (!searchIndicator) return true;
 
-      const search = searchIndicator.toLowerCase();
-      console.log(search, "searchIndicator");
+    const search = searchIndicator.toLowerCase();
 
-      const filteredItems = items?.filter((item) =>
-        item?.toLowerCase().includes(search),
-      );
-      // console.log(filteredItems, "filteredIndicators");
-
-      return { category, items: filteredItems };
-    })
-    .filter((section) => section.items?.length > 0);
+    return item.label?.toLowerCase().includes(search);
+  });
 
   // console.log(searchIndicator, "searchIndicator");
   // console.log(selectedIndicator, "indicators");
@@ -224,36 +206,25 @@ export const ListingModal = ({
                   <div className="flex items-center justify-center h-40">
                     <div className="w-8 h-8 border-4 border-slate-300 border-t-purple-600 rounded-full animate-spin"></div>
                   </div>
-                ) : filteredIndicators?.length > 0 ? (
-                  filteredIndicators?.map(({ category, items }) => (
-                    <div key={category} className="text-left pl-3 py-2">
-                      <h3 className="font-semibold text-slate-950 mb-2">
-                        {category}
-                      </h3>
-
-                      <ul className="grid pl-3 grid-cols-1 text-slate-700 gap-2 text-sm">
-                        {items.map((item) => (
-                          <label
-                            key={item}
-                            className="flex items-center gap-2 px-2 py-1 rounded cursor-pointer hover:bg-slate-100"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={selectedIndicator.includes(item)}
-                              onChange={() => toggleIndicator(item)}
-                              className="accent-slate-900 cursor-pointer"
-                            />
-
-                            <span>{item}</span>
-                          </label>
-                        ))}
-                      </ul>
-                    </div>
-                  ))
+                ) : filteredIndicators.length > 0 ? (
+                  <ul className="grid pl-3 grid-cols-1 text-slate-700 gap-2 text-sm">
+                    {filteredIndicators.map((item) => (
+                      <label
+                        key={item.label}
+                        className="flex items-center gap-2 px-2 py-1 rounded cursor-pointer hover:bg-slate-100"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedIndicator.includes(item.label)}
+                          onChange={() => toggleIndicator(item.label)}
+                          className="accent-slate-900 cursor-pointer"
+                        />
+                        <span>{item.label}</span>
+                      </label>
+                    ))}
+                  </ul>
                 ) : (
-                  <p className="text-sm text-slate-900 text-center py-6">
-                    No Data found
-                  </p>
+                  <p>No Data found</p>
                 )}
               </div>
             )}
