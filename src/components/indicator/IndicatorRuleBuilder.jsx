@@ -1,13 +1,70 @@
 import { useState, useEffect, useRef } from "react";
-import { EditableSelect, EditableNumber, OPERATORS } from "./EditTableLabel";
-import EditableLabel from "../../components/indicator/EditTableLabel";
+import { GoAlertFill } from "react-icons/go";
+import EditableMultiSelect, {
+  EditableSelect,
+  EditableNumber,
+  OPERATORS,
+} from "./EditTableLabel";
+import { HiOutlineSave } from "react-icons/hi";
 import apiService from "../../services/apiServices";
+import { IndicatorRuleModals } from "./indicatorModals/IndicatorRuleModals";
+import { FaCirclePlay, FaPlus } from "react-icons/fa6";
+import { RiLoopLeftLine } from "react-icons/ri";
 
 export default function IndicatorRuleBuilder() {
   const [timeframeOptions, setTimeframeOptions] = useState([]);
   const [scannerOptions, setScannerOptions] = useState([]);
   const [indicators, setIndicators] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalType, setModalType] = useState(null);
+  const [currencies, setCurrencies] = useState([]);
+  const [selectedCurrency, setSelectedCurrency] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [selectedCurrencies, setSelectedCurrencies] = useState([]);
+
+  const openModal = (type) => {
+    setModalType(type);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setModalType(null);
+  };
+
+  async function fetchCurrencies() {
+    setLoading(true);
+    setError(null);
+
+    try {
+      let response = await apiService.post(`getCurrencies`);
+      const raw = response?.data ?? [];
+
+      const formatted = [
+        { label: "Select Currency", value: "" },
+        ...raw.map((item) => ({
+          label: item.label ?? item.name ?? item.symbol,
+          value: item.value ?? item.symbol ?? item.label,
+        })),
+      ];
+
+      setCurrencies(formatted);
+    } catch (err) {
+      console.error("Currency API Error:", err);
+      setError(err.message);
+
+      /* Always keep dropdown usable */
+      setCurrencies([{ label: "Select Currency", value: "" }]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  /* Fetch once on mount OR when symbol changes */
+  useEffect(() => {
+    fetchCurrencies();
+  }, []);
 
   /* ================= NATURAL LANGUAGE STATE ================= */
   const [input, setInput] = useState("");
@@ -23,48 +80,45 @@ export default function IndicatorRuleBuilder() {
   const operatorMap = {
     "greater than": ">",
     "more than": ">",
-    "above": ">",
+    above: ">",
     "less than": "<",
-    "below": "<",
+    below: "<",
     "equal to": "==",
     "not equal to": "!=",
   };
 
   /* ================= PARSER ================= */
- function parseNaturalConditions(text) {
-  const clean = text.toLowerCase().replace("if", "").trim();
+  function parseNaturalConditions(text) {
+    const clean = text.toLowerCase().replace("if", "").trim();
 
-  // Split on " and "
-  const parts = clean.split(/\s+and\s+/);
+    // Split on " and "
+    const parts = clean.split(/\s+and\s+/);
 
-  const results = [];
+    const results = [];
 
-  for (const segment of parts) {
-    for (const phrase in operatorMap) {
-      if (segment.includes(phrase)) {
-        const pieces = segment.split(phrase);
-        if (pieces.length !== 2) continue;
+    for (const segment of parts) {
+      for (const phrase in operatorMap) {
+        if (segment.includes(phrase)) {
+          const pieces = segment.split(phrase);
+          if (pieces.length !== 2) continue;
 
-        const leftRaw = pieces[0].replace("is", "").trim();
-        const rightRaw = pieces[1].trim();
+          const leftRaw = pieces[0].replace("is", "").trim();
+          const rightRaw = pieces[1].trim();
 
-        const value = isNaN(rightRaw)
-          ? rightRaw
-          : Number(rightRaw);
+          const value = isNaN(rightRaw) ? rightRaw : Number(rightRaw);
 
-        results.push({
-          indicator: leftRaw.toUpperCase(),
-          operator: operatorMap[phrase],
-          value,
-        });
-
-        break;
+          results.push({
+            indicator: leftRaw.toUpperCase(),
+            operator: operatorMap[phrase],
+            value,
+          });
+          break;
+        }
       }
     }
-  }
 
-  return results.length ? results : null;
-}
+    return results.length ? results : null;
+  }
 
   /* ================= RULE FACTORY ================= */
   function newRule() {
@@ -74,42 +128,39 @@ export default function IndicatorRuleBuilder() {
       indicator: "",
       period: 14,
       operator: ">",
-      scanner: "Select Scanner",
+      scanner: "",
       value: 0,
     };
   }
 
   /* ================= ADD RULE FROM INPUT ================= */
- const addCondition = () => {
-  if (!input.trim()) return;
+  const addCondition = () => {
+    if (!input.trim()) return;
 
-  const parsedConditions = parseNaturalConditions(input);
+    const parsedConditions = parseNaturalConditions(input);
 
-  if (!parsedConditions) {
-    alert("Could not understand condition");
-    return;
-  }
+    if (!parsedConditions) {
+      alert("Could not understand condition");
+      return;
+    }
 
-  const generatedRules = parsedConditions.map((parsed) => {
-    const selected = indicators.find(
-      (opt) => opt.value === parsed.indicator
-    );
+    const generatedRules = parsedConditions.map((parsed) => {
+      const selected = indicators.find((opt) => opt.value === parsed.indicator);
 
-    return {
-      id: Date.now() + Math.random(), // ensure uniqueness
-      timeframe: "Daily",
-      indicator: parsed.indicator,
-      period: selected?.period ?? 14,
-      operator: parsed.operator,
-      scanner: "Select Scanner",
-      value: parsed.value,
-    };
-  });
+      return {
+        id: Date.now() + Math.random(), // ensure uniqueness
+        timeframe: "Daily",
+        indicator: parsed.indicator,
+        period: selected?.period ?? 14,
+        operator: parsed.operator,
+        scanner: "",
+        value: parsed.value,
+      };
+    });
 
-  setRules((prev) => [...prev, ...generatedRules]);
-  setInput("");
-};
-
+    setRules((prev) => [...prev, ...generatedRules]);
+    setInput("");
+  };
 
   /* ================= APPEND EMPTY RULE (+ BUTTON) ================= */
   function appendRule() {
@@ -134,9 +185,8 @@ export default function IndicatorRuleBuilder() {
   }
 
   async function buildQueryPayload() {
-
-    console.log(rules,"--------------------------------->>>>>>>>>>>>>>")
-    let payload = {rules};
+    console.log(rules, "--------------------------------->>>>>>>>>>>>>>");
+    let payload = { rules };
 
     // let payload =  {
     //   rules: rules.map((rule) => ({
@@ -147,72 +197,83 @@ export default function IndicatorRuleBuilder() {
     //     scanner: rule.scanner,
     //     value: Number(rule.value),
     //   })),
-      
+
     // };
 
     try {
-      const data = await apiService.post(`scannerIndicator`, payload)
+      const data = await apiService.post(`scannerIndicator`, payload);
       return data;
     } catch (error) {
-      throw new Error(error);      
+      throw new Error(error);
     }
   }
 
   /* ================= API CALLS ================= */
 
- async function fetchTimeframe() {
-  setLoading(true);
+  async function fetchTimeframe() {
+    setLoading(true);
 
-  try {
-    const response = await apiService.post("getTimeFrames");
-    const data = response.data;
+    try {
+      const response = await apiService.post("getTimeFrames");
+      const data = response.data;
 
-    const flattened = [
-      { label: "Daily", value: "1d" },   // ✅ ADD THIS
-      ...(data.minutes || []),
-      ...(data.hours || []),
-      ...(data.days || []),
-    ];
+      const flattened = [
+        { label: "Daily", value: "1d" }, // ✅ ADD THIS
+        ...(data.minutes || []),
+        ...(data.hours || []),
+        ...(data.days || []),
+      ];
 
-    setTimeframeOptions(flattened);
-  } catch (err) {
-    console.error(err);
-    setTimeframeOptions([{ label: "Select Timeframe", value: "" }]); // safety
-  } finally {
-    setLoading(false);
+      setTimeframeOptions(flattened);
+    } catch (err) {
+      console.error(err);
+      setTimeframeOptions([{ label: "Select Timeframe", value: "" }]); // safety
+    } finally {
+      setLoading(false);
+    }
   }
-}
-
 
   async function fetchIndicators() {
-  try {
-    const response = await apiService.post("getIndicators");
-    const raw = response.data;
+    try {
+      const response = await apiService.post("getIndicators");
+      const raw = response.data;
 
-    const formatted = [
-      { label: "Add Indicator", value: "" },   
-      ...(raw ?? []).map((item) => ({
-        label: item.label,
-        value: item.label.toUpperCase(),
-        period: item.value,
-      })),
-    ];
+      const formatted = [
+        { label: "Add Indicator", value: "" },
+        ...(raw ?? []).map((item) => ({
+          label: item.label,
+          value: item.label.toUpperCase(),
+          period: item.value,
+        })),
+      ];
 
-    setIndicators(formatted);
-  } catch (err) {
-    console.error("Indicator API Error:", err);
-    setIndicators([{ label: "Add Indicator", value: "" }]); // optional safety
+      setIndicators(formatted);
+    } catch (err) {
+      console.error("Indicator API Error:", err);
+      setIndicators([{ label: "Add Indicator", value: "" }]); // optional safety
+    }
   }
-}
-
 
   async function fetchScanners() {
     try {
       const response = await apiService.get("scanner");
-      setScannerOptions(response.data ?? []);
+      const raw = response.data;
+
+      const formatted = [
+        { label: "Select Scanner", value: "" }, // ⭐ DEFAULT OPTION
+        ...(raw ?? []).map((item) => ({
+          label: item.label, // adjust if API differs
+          value: item.value ?? item.label, // safe fallback
+        })),
+      ];
+
+      setScannerOptions(formatted);
     } catch (err) {
       console.error("Scanner API Error:", err);
-      setScannerOptions([]);
+
+      setScannerOptions([
+        { label: "Select Scanner", value: "" }, // ⭐ SAFETY DEFAULT
+      ]);
     } finally {
       setLoading(false);
     }
@@ -235,6 +296,12 @@ export default function IndicatorRuleBuilder() {
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addCondition();
+                }
+              }}
               placeholder="Scan stocks using simple language like 'stocks up by 4% and rising volume'"
               className="
             flex-1 min-w-[320px]
@@ -279,6 +346,27 @@ export default function IndicatorRuleBuilder() {
             </button>
           </div>
 
+          <div className="flex items-center gap-2 text-sm  font-medium">
+            <h2 className="text-slate-700">
+              Stock passes all of the below filters in
+            </h2>
+
+            {/* <EditableMultiSelect
+              value={selectedCurrencies}
+              options={currencies}
+              onChange={setSelectedCurrencies}
+              placeholder="Select Currency"
+            /> */}
+
+            <EditableSelect
+              value={selectedCurrency}
+              options={currencies}
+              onChange={(v) => setSelectedCurrency(v)}
+            />
+
+            <span className="text-slate-700">segment</span>
+          </div>
+
           {/* EMPTY STATE */}
           {rules.length === 0 && (
             <div className="text-sm text-slate-400">
@@ -287,12 +375,22 @@ export default function IndicatorRuleBuilder() {
           )}
 
           {/* RULES */}
-          {rules.map((rule) => (
-            <div key={rule.id} className="flex flex-wrap gap-2">
+          {rules.map((rule, index) => (
+            <div
+              key={rule.id}
+              className="group flex flex-wrap items-center gap-1.5 px-4 py-1"
+            >
+              {/* Row index badge */}
+              <span className="text-xs font-mono text-gray-600 w-5 text-center select-none shrink-0">
+                {index + 1}
+              </span>
+
+              <div className="w-px h-4 bg-gray-700 shrink-0" />
+
               <EditableSelect
                 value={rule.timeframe}
                 options={timeframeOptions}
-                onChange={(v) => updateField(rule.id, "timeframe",v)}
+                onChange={(v) => updateField(rule.id, "timeframe", v)}
               />
 
               <EditableSelect
@@ -302,9 +400,7 @@ export default function IndicatorRuleBuilder() {
                   const selected = indicators.find(
                     (opt) => opt.value === selectedValue,
                   );
-
                   updateField(rule.id, "indicator", selectedValue);
-
                   if (selected?.period !== undefined) {
                     updateField(rule.id, "period", selected.period);
                   }
@@ -316,11 +412,14 @@ export default function IndicatorRuleBuilder() {
                 onChange={(v) => updateField(rule.id, "period", Math.max(0, v))}
               />
 
-              <EditableSelect
-                value={rule.operator}
-                options={OPERATORS}
-                onChange={(v) => updateField(rule.id, "operator", v)}
-              />
+              {/* Operator divider */}
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg ">
+                <EditableSelect
+                  value={rule.operator}
+                  options={OPERATORS}
+                  onChange={(v) => updateField(rule.id, "operator", v)}
+                />
+              </div>
 
               <EditableSelect
                 value={rule.scanner}
@@ -333,10 +432,14 @@ export default function IndicatorRuleBuilder() {
                 onChange={(v) => updateField(rule.id, "value", v)}
               />
 
-              <button onClick={() => removeRule(rule.id)}>×</button>
+              <button
+                onClick={() => removeRule(rule.id)}
+                className=" w-6 h-6 rounded-md text-gray-600 text-base leading-none border border-transparent bg-transparent"
+              >
+                ×
+              </button>
             </div>
           ))}
-
           <div className="flex gap-2">
             <button
               onClick={appendRule}
@@ -351,19 +454,7 @@ export default function IndicatorRuleBuilder() {
               overflow-hidden
             "
             >
-              <svg
-                className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
+              <FaPlus />
               <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-indigo-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
             </button>
           </div>
@@ -387,31 +478,15 @@ export default function IndicatorRuleBuilder() {
             flex items-center gap-2
           "
             >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
+              <FaCirclePlay />
               <span className="relative z-10">Run Scan</span>
               <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-indigo-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
             </button>
 
+            {/* Save Scan  */}
             <button
               title="Save this scan for future use"
+              onClick={() => openModal("saveScan")}
               className="
             px-6 py-3 rounded-xl text-sm font-semibold
             bg-white text-purple-600 border-2 border-purple-200
@@ -420,50 +495,23 @@ export default function IndicatorRuleBuilder() {
             flex items-center gap-2
           "
             >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
-                />
-              </svg>
+              <HiOutlineSave />
               Save Scan
             </button>
-
+            {/* Backtest Results */}
             <button
               title="View historical backtest results"
-              className="
-            px-6 py-3 rounded-xl text-sm font-semibold
-            bg-white text-indigo-600 border-2 border-indigo-200
-            hover:bg-indigo-50 hover:border-indigo-300
-            transition-all duration-200
-            flex items-center gap-2
-          "
+              onClick={() => openModal("backtestResult")}
+              className=" px-6 py-3 rounded-xl text-sm font-semibold bg-white text-indigo-600 border-2 border-indigo-200
+            hover:bg-indigo-50 hover:border-indigo-300 transition-all duration-200 flex items-center gap-2"
             >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
+              <RiLoopLeftLine />
               Backtest Results
             </button>
-
+            {/* Create Alert */}
             <button
               title="Create alert based on these conditions"
+              onClick={() => openModal("createAlert")}
               className="
             px-6 py-3 rounded-xl text-sm font-semibold
             bg-white text-amber-600 border-2 border-amber-200
@@ -472,24 +520,20 @@ export default function IndicatorRuleBuilder() {
             flex items-center gap-2
           "
             >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                />
-              </svg>
+              <GoAlertFill />
               Create Alert
             </button>
           </div>
         </div>
       </div>
+      {isModalOpen && (
+        <IndicatorRuleModals
+          type={modalType}
+          onClose={closeModal}
+          rules={rules}
+          timeframeOptions={timeframeOptions}
+        />
+      )}
     </div>
   );
 }
