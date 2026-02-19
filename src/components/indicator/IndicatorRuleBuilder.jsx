@@ -23,37 +23,48 @@ export default function IndicatorRuleBuilder() {
   const operatorMap = {
     "greater than": ">",
     "more than": ">",
-    above: ">",
+    "above": ">",
     "less than": "<",
-    below: "<",
+    "below": "<",
     "equal to": "==",
     "not equal to": "!=",
   };
 
   /* ================= PARSER ================= */
-  function parseNaturalCondition(text) {
-    const clean = text.toLowerCase().replace("if", "").trim();
+ function parseNaturalConditions(text) {
+  const clean = text.toLowerCase().replace("if", "").trim();
 
+  // Split on " and "
+  const parts = clean.split(/\s+and\s+/);
+
+  const results = [];
+
+  for (const segment of parts) {
     for (const phrase in operatorMap) {
-      if (clean.includes(phrase)) {
-        const parts = clean.split(phrase);
-        if (parts.length !== 2) return null;
+      if (segment.includes(phrase)) {
+        const pieces = segment.split(phrase);
+        if (pieces.length !== 2) continue;
 
-        const leftRaw = parts[0].replace("is", "").trim();
-        const rightRaw = parts[1].trim();
+        const leftRaw = pieces[0].replace("is", "").trim();
+        const rightRaw = pieces[1].trim();
 
-        const value = isNaN(rightRaw) ? rightRaw : Number(rightRaw);
+        const value = isNaN(rightRaw)
+          ? rightRaw
+          : Number(rightRaw);
 
-        return {
+        results.push({
           indicator: leftRaw.toUpperCase(),
           operator: operatorMap[phrase],
           value,
-        };
+        });
+
+        break;
       }
     }
-
-    return null;
   }
+
+  return results.length ? results : null;
+}
 
   /* ================= RULE FACTORY ================= */
   function newRule() {
@@ -63,36 +74,42 @@ export default function IndicatorRuleBuilder() {
       indicator: "",
       period: 14,
       operator: ">",
-      scanners: "",
-      value: 50,
+      scanner: "Select Scanner",
+      value: 0,
     };
   }
 
   /* ================= ADD RULE FROM INPUT ================= */
-  const addCondition = () => {
-    if (!input.trim()) return;
+ const addCondition = () => {
+  if (!input.trim()) return;
 
-    const parsed = parseNaturalCondition(input);
+  const parsedConditions = parseNaturalConditions(input);
 
-    if (!parsed) {
-      alert("Could not understand condition");
-      return;
-    }
+  if (!parsedConditions) {
+    alert("Could not understand condition");
+    return;
+  }
 
-    const selected = indicators.find((opt) => opt.value === parsed.indicator);
+  const generatedRules = parsedConditions.map((parsed) => {
+    const selected = indicators.find(
+      (opt) => opt.value === parsed.indicator
+    );
 
-    const newGeneratedRule = {
-      id: Date.now(),
+    return {
+      id: Date.now() + Math.random(), // ensure uniqueness
       timeframe: "Daily",
       indicator: parsed.indicator,
       period: selected?.period ?? 14,
       operator: parsed.operator,
+      scanner: "Select Scanner",
       value: parsed.value,
     };
+  });
 
-    setRules((prev) => [...prev, newGeneratedRule]);
-    setInput("");
-  };
+  setRules((prev) => [...prev, ...generatedRules]);
+  setInput("");
+};
+
 
   /* ================= APPEND EMPTY RULE (+ BUTTON) ================= */
   function appendRule() {
@@ -116,60 +133,78 @@ export default function IndicatorRuleBuilder() {
     );
   }
 
-  function buildQueryPayload() {
-    return {
-      rules: rules.map((rule) => ({
-        timeframe: rule.timeframe,
-        indicator: rule.indicator,
-        period: Number(rule.period),
-        operator: rule.operator,
-        value: Number(rule.value),
-      })),
-    };
+  async function buildQueryPayload() {
+
+    console.log(rules,"--------------------------------->>>>>>>>>>>>>>")
+    let payload = {rules};
+
+    // let payload =  {
+    //   rules: rules.map((rule) => ({
+    //     timeframe: rule.timeframe,
+    //     indicator: rule.indicator,
+    //     period: Number(rule.period),
+    //     operator: rule.operator,
+    //     scanner: rule.scanner,
+    //     value: Number(rule.value),
+    //   })),
+      
+    // };
+
+    try {
+      const data = await apiService.post(`scannerIndicator`, payload)
+      return data;
+    } catch (error) {
+      throw new Error(error);      
+    }
   }
 
   /* ================= API CALLS ================= */
 
-  async function fetchTimeframe() {
-    try {
-      const response = await apiService.post("getTimeFrames");
-      const raw = response.data;
+ async function fetchTimeframe() {
+  setLoading(true);
 
-      const formatted = Object.entries(raw ?? {}).flatMap(([group, values]) =>
-        (values ?? []).map((item) => {
-          const val = item.value ?? item.interval ?? item.timeframe ?? item.id;
+  try {
+    const response = await apiService.post("getTimeFrames");
+    const data = response.data;
 
-          return {
-            label: item.label ?? `${val} (${group})`,
-            value: `${group}_${val}`,
-          };
-        }),
-      );
+    const flattened = [
+      { label: "Daily", value: "1d" },   // ✅ ADD THIS
+      ...(data.minutes || []),
+      ...(data.hours || []),
+      ...(data.days || []),
+    ];
 
-      setTimeframeOptions(formatted);
-    } catch (err) {
-      console.error("Timeframe API Error:", err);
-      setTimeframeOptions([]);
-    }
+    setTimeframeOptions(flattened);
+  } catch (err) {
+    console.error(err);
+    setTimeframeOptions([{ label: "Select Timeframe", value: "" }]); // safety
+  } finally {
+    setLoading(false);
   }
+}
+
 
   async function fetchIndicators() {
-    try {
-      const response = await apiService.post("getIndicators");
-      const raw = response.data;
+  try {
+    const response = await apiService.post("getIndicators");
+    const raw = response.data;
 
-      const formatted = (raw ?? []).map((item) => ({
+    const formatted = [
+      { label: "Add Indicator", value: "" },   
+      ...(raw ?? []).map((item) => ({
         label: item.label,
         value: item.label.toUpperCase(),
         period: item.value,
-      }));
+      })),
+    ];
 
-      setIndicators(formatted);
-    } catch (err) {
-      console.error("Indicator API Error:", err);
-      setIndicators([]);
-    }
+    setIndicators(formatted);
+  } catch (err) {
+    console.error("Indicator API Error:", err);
+    setIndicators([{ label: "Add Indicator", value: "" }]); // optional safety
   }
+}
+
 
   async function fetchScanners() {
     try {
@@ -257,7 +292,7 @@ export default function IndicatorRuleBuilder() {
               <EditableSelect
                 value={rule.timeframe}
                 options={timeframeOptions}
-                onChange={(v) => updateField(rule.id, "timeframe", v)}
+                onChange={(v) => updateField(rule.id, "timeframe",v)}
               />
 
               <EditableSelect
@@ -285,6 +320,12 @@ export default function IndicatorRuleBuilder() {
                 value={rule.operator}
                 options={OPERATORS}
                 onChange={(v) => updateField(rule.id, "operator", v)}
+              />
+
+              <EditableSelect
+                value={rule.scanner}
+                options={scannerOptions}
+                onChange={(v) => updateField(rule.id, "scanner", v)}
               />
 
               <EditableNumber

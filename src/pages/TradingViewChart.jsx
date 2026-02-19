@@ -1,141 +1,340 @@
-import React, { useState } from "react";
+import {
+  createChart,
+  CandlestickSeries,
+  LineSeries,
+  BarSeries,
+  AreaSeries,
+  HistogramSeries,
+  BaselineSeries,
+} from "lightweight-charts";
 
-/**
- * SINGLE FILE
- * Natural Language → Trading Scanner Conditions
- */
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { useEffect, useRef, useState, useCallback } from "react";
 
-export default function NaturalLanguageScanner() {
-  const [input, setInput] = useState("");
-  const [conditions, setConditions] = useState([]);
+import ChartHeader from "../components/tradingModals/ChartHeader";
+import IndicatorRuleBuilder from "../components/indicator/IndicatorRuleBuilder";
+import IndicatorBuildingListing from "../components/indicator/IndicatorBuilderListing";
+import IndicatorAlert from "../components/indicator/IndicatorAlert";
 
-  /* ================= OPERATOR MAP ================= */
-  const operatorMap = {
-    "greater than": ">",
-    "more than": ">",
-    "above": ">",
-    "less than": "<",
-    "below": "<",
-    "equal to": "==",
-    "not equal to": "!="
-  };
+import { LuCirclePlus, LuCircleMinus } from "react-icons/lu";
+import { RiResetRightLine } from "react-icons/ri";
+import { IoCloseSharp, IoSettingsOutline } from "react-icons/io5";
+import { FiMoreHorizontal } from "react-icons/fi";
+import { FaCode, FaFileWaveform } from "react-icons/fa6";
 
-  /* ================= PARSER ================= */
-  function parseNaturalCondition(text) {
-    const clean = text.toLowerCase().replace("if", "").trim();
+import {
+  ChartProprties,
+  TIMEFRAME_TO_SECONDS,
+  SINGLE_VALUE_CHARTS,
+  INDICATOR_COLORS,
+  chartSeriesStyles,
+  getSeriesColor,
+  convertToHeikinAshi,
+} from "../util/common";
 
-    for (const phrase in operatorMap) {
-      if (clean.includes(phrase)) {
-        const parts = clean.split(phrase);
+import {
+  fetchDataByCurrency,
+  fetchIndicatorData,
+} from "../util/chartFunctions";
 
-        if (parts.length !== 2) return null;
+export default function Candlestick() {
+  const chartRef = useRef(null);
+  const containerRef = useRef(null);
+  const seriesRef = useRef(null);
+  const indicatorSeriesRef = useRef({});
+  const latestIndicatorValuesRef = useRef({});
 
-        const left = parts[0].replace("is", "").trim();
-        const rightRaw = parts[1].trim();
+  const [openForm, setOpenForm] = useState(false);
+  const [timeframeValue, setTimeframeValue] = useState("1m");
+  const [selectedCurrency, setSelectedCurrency] = useState("BTCUSDT");
+  const [selectedIndicator, setSelectedIndicator] = useState([]);
+  const [rangeValue, setRangeValue] = useState("1000");
+  const [chartType, setChartType] = useState("candlestick");
+  const [liveOhlcv, setLiveOhlcv] = useState(null);
+  const [liveIndicatorData, setLiveIndicatorData] = useState({});
+  const [showAlertForm, setShowAlertForm] = useState(false);
 
-        const right = isNaN(rightRaw) ? rightRaw : Number(rightRaw);
+  const getIndicatorColor = useCallback(
+    (index) => INDICATOR_COLORS[index % INDICATOR_COLORS.length],
+    []
+  );
 
-        return {
-          left,
-          operator: operatorMap[phrase],
-          right
-        };
+  /* -------------------- CREATE CHART ONCE -------------------- */
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const chart = createChart(containerRef.current, ChartProprties);
+    chartRef.current = chart;
+
+    return () => chart.remove();
+  }, []);
+
+  /* -------------------- CROSSHAIR HANDLER -------------------- */
+
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+
+    const handler = (param) => {
+      if (!param.time || !param.seriesData) {
+        setLiveOhlcv(null);
+        return;
       }
-    }
-    return null;
-  }
 
-  /* ================= ADD CONDITION ================= */
-  const addCondition = () => {
-    if (!input.trim()) return;
+      const candle = param.seriesData.get(seriesRef.current);
+      if (candle) setLiveOhlcv(candle);
 
-    const parsed = parseNaturalCondition(input);
+      const values = {};
 
-    if (!parsed) {
-      alert("Could not understand condition");
-      return;
-    }
+      selectedIndicator.forEach((indicator) => {
+        const entry = indicatorSeriesRef.current[indicator];
+        if (!entry) return;
 
-    setConditions([...conditions, parsed]);
-    setInput("");
+        const isGrouped =
+          typeof entry === "object" && !("setData" in entry);
+
+        if (isGrouped) {
+          const groupedValues = {};
+
+          Object.entries(entry).forEach(([line, series]) => {
+            const point = param.seriesData.get(series);
+            if (point?.value !== undefined) {
+              groupedValues[line] = point.value;
+            }
+          });
+
+          if (Object.keys(groupedValues).length) {
+            values[indicator] = groupedValues;
+          }
+        } else {
+          const point = param.seriesData.get(entry);
+          if (point?.value !== undefined) {
+            values[indicator] = point.value;
+          }
+        }
+      });
+
+      setLiveIndicatorData(values);
+    };
+
+    chart.subscribeCrosshairMove(handler);
+    return () => chart.unsubscribeCrosshairMove(handler);
+  }, [selectedIndicator]);
+
+  /* -------------------- SERIES CLEANUP -------------------- */
+
+  const removeMainSeries = () => {
+    if (!seriesRef.current || !chartRef.current) return;
+
+    try {
+      chartRef.current.removeSeries(seriesRef.current);
+    } catch {}
+    seriesRef.current = null;
   };
 
-  /* ================= REMOVE CONDITION ================= */
-  const removeCondition = (index) => {
-    const updated = [...conditions];
-    updated.splice(index, 1);
-    setConditions(updated);
+  /* -------------------- LOAD CHART DATA -------------------- */
+
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+
+    removeMainSeries();
+
+    async function load() {
+      const { data } = await fetchDataByCurrency(
+        selectedCurrency,
+        timeframeValue,
+        chartType
+      );
+
+      switch (chartType) {
+        case "line":
+          seriesRef.current = chart.addSeries(
+            LineSeries,
+            chartSeriesStyles.line
+          );
+          seriesRef.current.setData(
+            data.map((d) => ({ time: d.time, value: Number(d.close) }))
+          );
+          break;
+
+        case "bar":
+          seriesRef.current = chart.addSeries(
+            BarSeries,
+            chartSeriesStyles.bar
+          );
+          seriesRef.current.setData(data);
+          break;
+
+        case "area":
+          seriesRef.current = chart.addSeries(
+            AreaSeries,
+            chartSeriesStyles.area
+          );
+          seriesRef.current.setData(
+            data.map((d) => ({ time: d.time, value: Number(d.close) }))
+          );
+          break;
+
+        case "baseline":
+          seriesRef.current = chart.addSeries(BaselineSeries, {
+            ...chartSeriesStyles.baseline,
+            baseValue: { type: "price", price: Number(data[0]?.close ?? 0) },
+          });
+          seriesRef.current.setData(
+            data.map((d) => ({ time: d.time, value: d.close }))
+          );
+          break;
+
+        case "histogram":
+          seriesRef.current = chart.addSeries(
+            HistogramSeries,
+            chartSeriesStyles.histogram
+          );
+          seriesRef.current.setData(
+            data.map((d) => ({ time: d.time, value: d.volume }))
+          );
+          break;
+
+        case "heikinashi":
+          seriesRef.current = chart.addSeries(CandlestickSeries);
+          seriesRef.current.setData(convertToHeikinAshi(data));
+          break;
+
+        default:
+          seriesRef.current = chart.addSeries(
+            CandlestickSeries,
+            chartSeriesStyles.candlestick
+          );
+          seriesRef.current.setData(data);
+      }
+
+      chart.timeScale().fitContent();
+
+      await fetchIndicatorData(
+        selectedIndicator,
+        selectedCurrency,
+        timeframeValue,
+        chartRef,
+        indicatorSeriesRef,
+        latestIndicatorValuesRef,
+        getIndicatorColor
+      );
+    }
+
+    load();
+  }, [chartType, timeframeValue, selectedCurrency, rangeValue, selectedIndicator]);
+
+  /* -------------------- INDICATOR TOGGLE -------------------- */
+
+  const toggleIndicator = (indicator) => {
+    setSelectedIndicator((prev) =>
+      prev.includes(indicator)
+        ? prev.filter((i) => i !== indicator)
+        : [...prev, indicator]
+    );
   };
 
-  /* ================= UI ================= */
+  const removeIndicator = (indicator) => {
+    const series = indicatorSeriesRef.current[indicator];
+    if (series && chartRef.current) {
+      chartRef.current.removeSeries(series);
+    }
+    delete indicatorSeriesRef.current[indicator];
+
+    setSelectedIndicator((prev) => prev.filter((i) => i !== indicator));
+  };
+
+  /* -------------------- ZOOM -------------------- */
+
+  const zoomIn = () => {
+    const chart = chartRef.current;
+    const range = chart?.timeScale().getVisibleLogicalRange();
+    if (!range) return;
+
+    chart.timeScale().setVisibleLogicalRange({
+      from: range.from + 5,
+      to: range.to - 5,
+    });
+  };
+
+  const zoomOut = () => {
+    const chart = chartRef.current;
+    const range = chart?.timeScale().getVisibleLogicalRange();
+    if (!range) return;
+
+    chart.timeScale().setVisibleLogicalRange({
+      from: range.from - 5,
+      to: range.to + 5,
+    });
+  };
+
+  const resetZoom = () => chartRef.current?.timeScale().fitContent();
+
+  const isUp =
+    SINGLE_VALUE_CHARTS.includes(chartType)
+      ? true
+      : liveOhlcv?.close >= liveOhlcv?.open;
+
+  const valueColor = isUp ? "text-green-500" : "text-red-500";
+
   return (
-    <div style={{ padding: 20, fontFamily: "Arial", maxWidth: 750 }}>
-      <h2>🧠 Natural Language Trading Scanner</h2>
+    <div className="w-full h-screen z-999 flex flex-col bg-slate-50">
+      <ChartHeader
+        timeframeValue={timeframeValue}
+        setTimeframeValue={setTimeframeValue}
+        rangeValue={rangeValue}
+        setRangeValue={setRangeValue}
+        selectedCurrency={selectedCurrency}
+        setSelectedCurrency={setSelectedCurrency}
+        setChartType={setChartType}
+        chartType={chartType}
+        selectedIndicator={selectedIndicator}
+        setSelectedIndicator={setSelectedIndicator}
+        toggleIndicator={toggleIndicator}
+      />
 
-      {/* ===== INPUT ===== */}
-      <div style={{ display: "flex", gap: 10 }}>
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Example: if rsi is greater than 60"
-          style={{ flex: 1, padding: 8 }}
-        />
-        <button onClick={addCondition}>Add</button>
-      </div>
+      <div ref={containerRef} className="relative z-0 m-2 rounded-md bg-white" />
 
-      <p style={{ fontSize: 12, color: "#666", marginTop: 6 }}>
-        Examples: <br />
-        <code>if rsi is greater than 60</code> <br />
-        <code>close is above ema20</code>
-      </p>
+      {selectedIndicator.length > 0 && (
+        <div className="absolute top-20 left-4 flex flex-col gap-2">
+          {selectedIndicator.map((indicator, index) => (
+            <div key={indicator} className="flex items-center gap-2 text-xs bg-white shadow px-3 h-8 rounded">
+              <span
+                className="w-2 h-2 rounded-full"
+                style={{ background: getIndicatorColor(index) }}
+              />
+              {indicator}
+              <span style={{ color: getSeriesColor(indicatorSeriesRef.current[indicator]) }}>
+                {liveIndicatorData?.[indicator]?.toFixed?.(2) ?? "--"}
+              </span>
 
-      {/* ===== CONDITIONS LIST ===== */}
-      <h3 style={{ marginTop: 20 }}>📌 Scanner Conditions</h3>
+              <button onClick={() => removeIndicator(indicator)}>
+                <IoCloseSharp />
+              </button>
 
-      {conditions.length === 0 && (
-        <p style={{ color: "#999" }}>No conditions added</p>
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger asChild>
+                  <button><FiMoreHorizontal /></button>
+                </DropdownMenu.Trigger>
+              </DropdownMenu.Root>
+            </div>
+          ))}
+        </div>
       )}
 
-      {conditions.map((c, index) => (
-        <div
-          key={index}
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            padding: "8px 12px",
-            marginBottom: 8,
-            border: "1px solid #ddd",
-            borderRadius: 6,
-            background: "#f9f9f9"
-          }}
-        >
-          <span>
-            <b>{c.left}</b>{" "}
-            <span style={{ color: "#007bff" }}>{c.operator}</span>{" "}
-            <b>{c.right}</b>
-          </span>
+      <div className="flex gap-2 p-4">
+        <button onClick={zoomIn}><LuCirclePlus /></button>
+        <button onClick={zoomOut}><LuCircleMinus /></button>
+        <button onClick={resetZoom}><RiResetRightLine /></button>
+      </div>
 
-          <button
-            onClick={() => removeCondition(index)}
-            style={{
-              background: "red",
-              color: "#fff",
-              border: "none",
-              padding: "4px 8px",
-              cursor: "pointer"
-            }}
-          >
-            ✕
-          </button>
-        </div>
-      ))}
-
-      {/* ===== JSON OUTPUT ===== */}
-      <h4 style={{ marginTop: 20 }}>🧪 Scanner JSON</h4>
-      <pre style={{ background: "#111", color: "#0f0", padding: 10 }}>
-        {JSON.stringify(conditions, null, 2)}
-      </pre>
+      <IndicatorRuleBuilder />
+      <IndicatorBuildingListing
+        selectedCurrency={selectedCurrency}
+        timeframeValue={timeframeValue}
+      />
     </div>
   );
 }

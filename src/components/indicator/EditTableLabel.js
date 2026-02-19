@@ -93,7 +93,5 @@ export const OPERATORS = [
   { label: "Not Equal (≠)", value: "!=" },
   { label: "Crosses Above ⤴", value: "crosses_above" },
   { label: "Crosses Below ⤵", value: "crosses_below" },
-  { label: "Rising ↗", value: "rising" },
-  { label: "Falling ↘", value: "falling" },
-  { label: "Between ⇄", value: "between" },
+
 ];

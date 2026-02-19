@@ -7,6 +7,7 @@ import { MdAlarmAdd } from "react-icons/md";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { FiChevronDown } from "react-icons/fi";
 import { chartOptions } from "../../util/common";
+import { EditableNumber } from "../indicator/EditTableLabel";
 
 export default function ChartHeader({
   timeframeValue,
@@ -71,7 +72,7 @@ return (
       <button
         title={"Symbol Search"}
         onClick={() => openModal("Symbol Search")}
-        className="group relative h-10 px-5 bg-gradient-to-r from-slate-100 to-slate-50 hover:from-slate-200 hover:to-slate-100 text-slate-900 font-bold rounded-full transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5 border border-slate-200/50 overflow-hidden"
+        className="group relative h-10 px-5 bg-gradient-to-r from-slate-100 to-slate-50 text-slate-900 font-bold rounded-full transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5 border border-slate-200/50 overflow-hidden"
       >
         <span className="relative z-10 flex items-center gap-2">
           <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -79,7 +80,7 @@ return (
           </svg>
           {selectedCurrency || "BTCUSDT"}
         </span>
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-100 to-indigo-100 opacity-0 group-hover:opacity-30 transition-opacity duration-200" />
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-100 to-indigo-100 opacity-0 " />
       </button>
 
       {/* Divider */}
@@ -93,12 +94,7 @@ return (
             onChange={(e) => setTimeframeValue(e.target.value)}
             className="
               appearance-none h-10 pl-4 pr-10 text-sm font-semibold rounded-xl 
-              bg-white text-slate-900 
-              border-2 border-slate-200 
-              hover:border-purple-300 hover:bg-purple-50/30
-              focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-300
-              cursor-pointer transition-all duration-200
-              shadow-sm hover:shadow-md"
+              bg-white text-slate-900 border-2 border-slate-200 shadow-sm "
           >
             {!timeframe && <option value="1m">1 Minute</option>}
 
@@ -139,10 +135,7 @@ return (
         <DropdownMenu.Trigger asChild>
           <button
             className="group h-10 z-0 flex items-center gap-2 px-4 rounded-xl bg-white 
-              border-2 border-slate-200 hover:bg-purple-50/30 hover:border-purple-300
-              text-sm font-semibold text-slate-800 hover:text-purple-700
-              transition-all duration-200 focus:outline-none
-              shadow-sm hover:shadow-md"
+              border-2 border-slate-200 text-sm font-semibold text-slate-800 shadow-sm "
           >
             {active?.icon && <active.icon size={16} />}
             <span>{active?.label}</span>
@@ -164,7 +157,7 @@ return (
                   text-slate-700 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50
                   hover:text-purple-700 cursor-pointer outline-none transition-all duration-150"
               >
-                <item.icon size={16} className="group-hover:scale-110 transition-transform" />
+                <item.icon size={16} className="" />
 
                 <span className="flex-1">{item.label}</span>
 
@@ -184,21 +177,24 @@ return (
 
       {/* Action Buttons */}
       <div className="flex items-center gap-2">
+        {/* Range input */}
+        <div className="flex items-center gap-2">
+          <label>Range:</label>
+        <input type="number" min="10" defaultValue="10" className=" max-w-24 w-fit  h-10 px-4 bg-white text-slate-700 rounded-xl font-semibold border-2 border-transparent shadow-sm " />
+
+        </div>
+        
+
         {/* Indicators Button */}
         <button
           title="Indicators"
           onClick={() => openModal("Indicators")}
           className="
             group h-10 px-4
-            flex items-center gap-2
-            rounded-xl font-semibold
-            bg-white hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50
-            text-slate-700 hover:text-purple-700
-            border-2 border-transparent hover:border-purple-200
-            transition-all duration-200
-            shadow-sm hover:shadow-md"
+            flex items-center gap-2 rounded-xl font-semibold
+            bg-white text-slate-700 border-2 border-transparent shadow-sm "
         >
-          <VscGraphLine className="text-lg group-hover:scale-110 transition-transform" />
+          <VscGraphLine className="text-lg " />
           <span className="hidden sm:inline">Indicators</span>
         </button>
 
@@ -207,13 +203,10 @@ return (
           title="Create Alert"
           onClick={() => openModal("Alerts")}
           className="group h-10 px-4 flex items-center gap-2 rounded-xl font-semibold
-            bg-white hover:bg-gradient-to-r hover:from-amber-50 hover:to-orange-50
-            text-slate-700 hover:text-amber-700
-            border-2 border-transparent hover:border-amber-200
-            transition-all duration-200
-            shadow-sm hover:shadow-md"
+            bg-white text-slate-700 border-2 border-transparent 
+            shadow-sm "
         >
-          <MdAlarmAdd className="text-lg group-hover:scale-110 group-hover:rotate-12 transition-all" />
+          <MdAlarmAdd className="text-lg " />
           <span className="hidden sm:inline">Alert</span>
         </button>
 
@@ -223,13 +216,9 @@ return (
           onClick={() => openModal("Simulation")}
           className="group h-10 px-4 flex items-center gap-2 rounded-xl font-semibold
             bg-gradient-to-r from-purple-600 to-indigo-600
-            hover:from-purple-700 hover:to-indigo-700
-            text-white
-            transition-all duration-200
-            shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40
-            hover:-translate-y-0.5"
+            text-white shadow-lg shadow-purple-500/30 "
         >
-          <FiPlus className="text-lg group-hover:rotate-90 transition-transform duration-300" />
+          <FiPlus className="text-lg " />
           <span className="hidden sm:inline">Simulation</span>
         </button>
       </div>

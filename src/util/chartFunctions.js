@@ -1,7 +1,5 @@
 import { LineSeries } from "lightweight-charts";
-
 import apiService from "../services/apiServices";
-import { useEffect } from "react";
 
 export async function fetchDataByCurrency(selectedCurrency, timeframeValue) {
   let response;
@@ -16,7 +14,6 @@ export async function fetchDataByCurrency(selectedCurrency, timeframeValue) {
   }
   return response;
 }
-
 
 export async function fetchIndicatorData(
   selectedIndicator,
@@ -47,7 +44,7 @@ export async function fetchIndicatorData(
 
         const series = chartRef.current.addSeries(LineSeries, {
           color: getIndicatorColor(index),
-          lineWidth: 2,
+          lineWidth: 1,
         });
 
         series.setData(result.data);
@@ -60,21 +57,44 @@ export async function fetchIndicatorData(
         indicatorSeriesRef.current[indicator] = series;
       }
 
-      // ✅ MULTI LINE INDICATORS
+      // ✅ MULTI LINE INDICATORS (FIXED)
       if (result.type === "multi") {
+        const indicatorKey = indicator;
+
+        // ⭐ Remove OLD grouped series safely
+        const oldEntry = indicatorSeriesRef.current[indicatorKey];
+        if (oldEntry && typeof oldEntry === "object") {
+          Object.values(oldEntry).forEach((series) => {
+            chartRef.current.removeSeries(series);
+          });
+        }
+
+        const groupedSeries = {};
+
         Object.entries(result.data).forEach(([lineName, lineData], i) => {
-          const key = `${indicator}_${lineName}`;
-
-          removeSeries(indicatorSeriesRef, chartRef, key);
-
           const series = chartRef.current.addSeries(LineSeries, {
             color: getIndicatorColor(i),
-            lineWidth: 2,
+            lineWidth: 1,
           });
+
           series.setData(lineData);
-          indicatorSeriesRef.current[key] = series;
+
+          // ⭐ Store INSIDE indicator object
+          groupedSeries[lineName] = series;
+
+          // ⭐ Store latest value correctly
+          if (lineData.length) {
+            latestIndicatorValuesRef.current[indicatorKey] = {
+              ...(latestIndicatorValuesRef.current[indicatorKey] || {}),
+              [lineName]: lineData[lineData.length - 1].value,
+            };
+          }
         });
+
+        // ⭐ CRITICAL LINE (THIS FIXES CROSSHAIR)
+        indicatorSeriesRef.current[indicatorKey] = groupedSeries;
       }
+
       if (result.type === "pivot") {
         plotPivotLevels(result.data, chartRef, indicatorSeriesRef);
       }
@@ -103,16 +123,21 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
     /* ---------------- SINGLE VALUE ---------------- */
     case "SMA":
     case "EMA":
+    case "HMA":
     case "DEMA":
     case "TEMA":
+    case "AMA":
     case "ADX":
     case "RSI":
     case "SuperTrend":
     case "Aroon":
     case "AroonOscillator":
+    case "Momentum":
     case "ROC":
     case "AwesomeOscillator":
+      case "MACDHistogram":
     case "TRIX":
+    case "StandardDeviation":
     case "Volume":
     case "OBV":
     case "VolumeOscillator":
@@ -136,28 +161,27 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
         type: "single",
         data:
           response.data
-            ?.filter((d) => d.value != null)
+            ?.filter((d) => d.value != null && d.time != null)
             .map((d) => ({
-              time: Number(d.time),
-              value: Number(d.value),
+              time: d.time,
+              value: d.value,
             })) ?? [],
       };
-      case "ZigZag": {
-  const rows = response?.data ?? [];
+    case "ZigZag": {
+      const rows = response?.data ?? [];
 
-  console.log("ZigZag:", rows.length);
+      console.log("ZigZag:", rows.length);
 
-  return {
-    type: "single",
-    data: rows
-      .filter(d => d.value != null)
-      .map(d => ({
-        time: Number(d.time),
-        value: Number(d.value),
-      })),
-  };
-}
-
+      return {
+        type: "single",
+        data: rows
+          .filter((d) => d.value != null && d.time != null)
+          .map((d) => ({
+            time: d.time,
+            value: d.value,
+          })),
+      };
+    }
 
     /* ---------------- NESTED VALUE ---------------- */
 
@@ -166,34 +190,10 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
         type: "single",
         data:
           response.data
-            ?.filter((d) => d.value?.wma != null)
+            ?.filter((d) => d.wma != null && d.time != null)
             .map((d) => ({
-              time: Number(d.time),
-              value: Number(d.value.wma),
-            })) ?? [],
-      };
-
-    case "HMA":
-      return {
-        type: "single",
-        data:
-          response.data
-            ?.filter((d) => d.value?.hma != null)
-            .map((d) => ({
-              time: Number(d.time),
-              value: Number(d.value.hma),
-            })) ?? [],
-      };
-
-    case "AMA":
-      return {
-        type: "single",
-        data:
-          response.data
-            ?.filter((d) => d.value?.ama != null)
-            .map((d) => ({
-              time: Number(d.time),
-              value: Number(d.value.ama),
+              time: d.time,
+              value: d.wma,
             })) ?? [],
       };
 
@@ -206,8 +206,8 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
       return {
         type: "single",
         data: rows.map((d) => ({
-          time: Number(d.time),
-          value: Number(d.cci),
+          time: d.time,
+          value: d.cci,
         })),
       };
     }
@@ -250,45 +250,44 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
       };
     }
     case "PivotPoints(Camarilla)": {
-  const d = response?.data ?? {};
+      const d = response?.data ?? {};
 
-  console.log("Pivot Camarilla:", d);
+      console.log("Pivot Camarilla:", d);
 
-  return {
-    type: "pivot",
-    data: [
-      { label: "P", value: Number(d.P) },
-      { label: "R1", value: Number(d.R1) },
-      { label: "R2", value: Number(d.R2) },
-      { label: "R3", value: Number(d.R3) },
-      { label: "R4", value: Number(d.R4) }, // Camarilla often has R4/S4
-      { label: "S1", value: Number(d.S1) },
-      { label: "S2", value: Number(d.S2) },
-      { label: "S3", value: Number(d.S3) },
-      { label: "S4", value: Number(d.S4) },
-    ].filter(level => !Number.isNaN(level.value)),
-  };
-}
+      return {
+        type: "pivot",
+        data: [
+          { label: "P", value: Number(d.P) },
+          { label: "R1", value: Number(d.R1) },
+          { label: "R2", value: Number(d.R2) },
+          { label: "R3", value: Number(d.R3) },
+          { label: "R4", value: Number(d.R4) }, // Camarilla often has R4/S4
+          { label: "S1", value: Number(d.S1) },
+          { label: "S2", value: Number(d.S2) },
+          { label: "S3", value: Number(d.S3) },
+          { label: "S4", value: Number(d.S4) },
+        ].filter((level) => !Number.isNaN(level.value)),
+      };
+    }
 
-case "PivotPoints(Classic)": {
-  const d = response?.data ?? {};
+    case "PivotPoints(Classic)": {
+      const d = response?.data ?? {};
 
-  console.log("Pivot Classic:", d);
+      console.log("Pivot Classic:", d);
 
-  return {
-    type: "pivot",
-    data: [
-      { label: "P", value: Number(d.P) },
-      { label: "R1", value: Number(d.R1) },
-      { label: "R2", value: Number(d.R2) },
-      { label: "R3", value: Number(d.R3) },
-      { label: "S1", value: Number(d.S1) },
-      { label: "S2", value: Number(d.S2) },
-      { label: "S3", value: Number(d.S3) },
-    ].filter(level => !Number.isNaN(level.value)),
-  };
-}
-
+      return {
+        type: "pivot",
+        data: [
+          { label: "P", value: Number(d.P) },
+          { label: "R1", value: Number(d.R1) },
+          { label: "R2", value: Number(d.R2) },
+          { label: "R3", value: Number(d.R3) },
+          { label: "S1", value: Number(d.S1) },
+          { label: "S2", value: Number(d.S2) },
+          { label: "S3", value: Number(d.S3) },
+        ].filter((level) => !Number.isNaN(level.value)),
+      };
+    }
 
     /* ---------------- MULTI LINE ---------------- */
 
@@ -310,18 +309,18 @@ case "PivotPoints(Classic)": {
         data: {
           longStop:
             response.data
-              ?.filter((d) => d.longStop != null)
+              ?.filter((d) => d.longStop != null && d.time != null)
               .map((d) => ({
-                time: Number(d.time),
-                value: Number(d.longStop),
+                time: d.time,
+                value: d.longStop,
               })) ?? [],
 
           shortStop:
             response.data
-              ?.filter((d) => d.shortStop != null)
+              ?.filter((d) => d.shortStop != null && d.time != null)
               .map((d) => ({
-                time: Number(d.time),
-                value: Number(d.shortStop),
+                time: d.time,
+                value: d.shortStop,
               })) ?? [],
         },
       };
@@ -332,18 +331,18 @@ case "PivotPoints(Classic)": {
         data: {
           k:
             response.data
-              ?.filter((d) => d.value?.k != null)
+              ?.filter((d) => d.k != null && d.time != null)
               .map((d) => ({
-                time: Number(d.time),
-                value: Number(d.value.k),
+                time: d.time,
+                value: d.k,
               })) ?? [],
 
           d:
             response.data
-              ?.filter((d) => d.value?.d != null)
+              ?.filter((d) => d.d != null && d.time != null)
               .map((d) => ({
-                time: Number(d.time),
-                value: Number(d.value.d),
+                time: d.time,
+                value: d.d,
               })) ?? [],
         },
       };
@@ -354,26 +353,26 @@ case "PivotPoints(Classic)": {
         data: {
           macd:
             response.data
-              ?.filter((d) => d.value?.MACD != null)
+              ?.filter((d) => d.macd != null && d.time != null)
               .map((d) => ({
-                time: Number(d.time),
-                value: Number(d.value.MACD),
+                time: d.time,
+                value: d.macd,
               })) ?? [],
 
           signal:
             response.data
-              ?.filter((d) => d.value?.signal != null)
+              ?.filter((d) => d.macdSignal != null && d.time != null)
               .map((d) => ({
-                time: Number(d.time),
-                value: Number(d.value.signal),
+                time: d.time,
+                value: d.macdSignal,
               })) ?? [],
 
           histogram:
             response.data
-              ?.filter((d) => d.value?.histogram != null)
+              ?.filter((d) => d.macdHistogram != null && d.time != null)
               .map((d) => ({
-                time: Number(d.time),
-                value: Number(d.value.histogram),
+                time: d.time,
+                value: d.macdHistogram,
               })) ?? [],
         },
       };
@@ -384,18 +383,18 @@ case "PivotPoints(Classic)": {
         data: {
           kvo:
             response.data
-              ?.filter((d) => d.kvo != null)
+              ?.filter((d) => d.kvo != null && d.time != null)
               .map((d) => ({
-                time: Number(d.time),
-                value: Number(d.kvo),
+                time: d.time,
+                value: d.kvo,
               })) ?? [],
 
           signal:
             response.data
-              ?.filter((d) => d.signal != null)
+              ?.filter((d) => d.signal != null && d.time != null)
               .map((d) => ({
-                time: Number(d.time),
-                value: Number(d.signal),
+                time: d.time,
+                value: d.signal,
               })) ?? [],
         },
       };
@@ -407,24 +406,24 @@ case "PivotPoints(Classic)": {
         type: "multi",
         data: {
           upper: rows
-            .filter((d) => d.upper != null)
+            .filter((d) => d.upper != null && d.time != null)
             .map((d) => ({
-              time: Number(d.time),
-              value: Number(d.upper),
+              time: d.time,
+              value: d.upper,
             })),
 
           middle: rows
-            .filter((d) => d.middle != null)
+            .filter((d) => d.middle != null && d.time != null)
             .map((d) => ({
-              time: Number(d.time),
-              value: Number(d.middle),
+              time: d.time,
+              value: d.middle,
             })),
 
           lower: rows
-            .filter((d) => d.lower != null)
+            .filter((d) => d.lower != null && d.time != null)
             .map((d) => ({
-              time: Number(d.time),
-              value: Number(d.lower),
+              time: d.time,
+              value: d.lower,
             })),
         },
       };
@@ -437,17 +436,17 @@ case "PivotPoints(Classic)": {
         type: "multi",
         data: {
           fisher: rows
-            .filter((d) => d.value?.fisher != null)
+            .filter((d) => d.fisher != null && d.time != null)
             .map((d) => ({
-              time: Number(d.time),
-              value: Number(d.value.fisher),
+              time: d.time,
+              value: d.fisher,
             })),
 
           trigger: rows
-            .filter((d) => d.value?.trigger != null)
+            .filter((d) => d.trigger != null && d.time != null)
             .map((d) => ({
-              time: Number(d.time),
-              value: Number(d.value.trigger),
+              time: d.time,
+              value: d.trigger,
             })),
         },
       };
@@ -459,26 +458,26 @@ case "PivotPoints(Classic)": {
         data: {
           upper:
             response.data
-              ?.filter((d) => d.upper != null)
+              ?.filter((d) => d.upper != null && d.time != null)
               .map((d) => ({
-                time: Number(d.time),
-                value: Number(d.upper),
+                time: d.time,
+                value: d.upper,
               })) ?? [],
 
           middle:
             response.data
-              ?.filter((d) => d.middle != null)
+              ?.filter((d) => d.middle != null && d.time != null)
               .map((d) => ({
-                time: Number(d.time),
-                value: Number(d.middle),
+                time: d.time,
+                value: d.middle,
               })) ?? [],
 
           lower:
             response.data
-              ?.filter((d) => d.lower != null)
+              ?.filter((d) => d.lower != null && d.time != null)
               .map((d) => ({
-                time: Number(d.time),
-                value: Number(d.lower),
+                time: d.time,
+                value: d.lower,
               })) ?? [],
         },
       };
@@ -489,26 +488,26 @@ case "PivotPoints(Classic)": {
         data: {
           upper:
             response.data
-              ?.filter((d) => d.upper != null)
+              ?.filter((d) => d.upper != null && d.time != null)
               .map((d) => ({
-                time: Number(d.time),
-                value: Number(d.upper),
+                time: d.time,
+                value: d.upper,
               })) ?? [],
 
           middle:
             response.data
-              ?.filter((d) => d.middle != null)
+              ?.filter((d) => d.middle != null && d.time != null)
               .map((d) => ({
-                time: Number(d.time),
-                value: Number(d.middle),
+                time: d.time,
+                value: d.middle,
               })) ?? [],
 
           lower:
             response.data
-              ?.filter((d) => d.lower != null)
+              ?.filter((d) => d.lower != null && d.time != null)
               .map((d) => ({
-                time: Number(d.time),
-                value: Number(d.lower),
+                time: d.time,
+                value: d.lower,
               })) ?? [],
         },
       };

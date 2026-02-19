@@ -11,18 +11,14 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import IndicatorRuleBuilder from "../components/indicator/IndicatorRuleBuilder";
 import { LuCirclePlus, LuCircleMinus } from "react-icons/lu";
 import { RiResetRightLine } from "react-icons/ri";
-import { useEffect, useRef, useState } from "react";
-import { FaCode, FaEye, FaEyeSlash, FaFileWaveform } from "react-icons/fa6";
+import { useEffect, useRef, useState, useCallback} from "react";
+import { FaCode, FaFileWaveform } from "react-icons/fa6";
 import { Form } from "../components/tradingModals/Form";
 import ChartHeader from "../components/tradingModals/ChartHeader";
 import IndicatorBuildingListing from "../components/indicator/IndicatorBuilderListing";
-
 import {
-  ChartProprties,
-  TIMEFRAME_TO_SECONDS,
-  SINGLE_VALUE_CHARTS,
-  INDICATOR_COLORS,
-  chartSeriesStyles,
+  ChartProprties, TIMEFRAME_TO_SECONDS, SINGLE_VALUE_CHARTS, INDICATOR_COLORS,
+  chartSeriesStyles, getSeriesColor,convertToHeikinAshi
 } from "../util/common";
 import apiService from "../services/apiServices";
 import { IoCloseSharp, IoSettingsOutline } from "react-icons/io5";
@@ -46,13 +42,16 @@ export default function Candlestick() {
   const [selectedIndicator, setSelectedIndicator] = useState([]);
   const [rangeValue, setRangeValue] = useState("1000");
   const [chartType, setChartType] = useState("candlestick");
-  const [historicalData, setHistoricalData] = useState([]);
+  // const [historicalData, setHistoricalData] = useState([]);
   const [isMarketOpen, setIsMarketOpen] = useState(true);
   const [liveOhlcv, setLiveOhlcv] = useState({});
   const [liveIndicatorData, setLiveIndicatorData] = useState({});
   const [showAlertForm, setShowAlertForm] = useState(false);
-  const getIndicatorColor = (index) =>
-    INDICATOR_COLORS[index % INDICATOR_COLORS.length];
+
+const getIndicatorColor = useCallback(
+  (index) => INDICATOR_COLORS[index % INDICATOR_COLORS.length],
+  []
+);
   const openAlert = () => {
     setShowAlertForm(true);
   };
@@ -65,6 +64,7 @@ export default function Candlestick() {
   const valueColor = isUp ? "text-green-500" : "text-red-500";
 
   useEffect(() => {
+
     chartRef.current = createChart(containerRef.current, ChartProprties);
 
     /* =======================
@@ -168,55 +168,89 @@ export default function Candlestick() {
     }
   };
 
- useEffect(() => {
-  if (!chartRef.current) return;
+  const renderValue = (indicator, value) => {
+    if (value == null) return "--";
 
-  const handler = (param) => {
-    const liveValues = {};
+    /* -------- SINGLE VALUE -------- */
+    if (typeof value === "number") {
+      const series = indicatorSeriesRef.current[indicator];
+      const color = getSeriesColor(series);
 
-    // ✅ Cursor outside chart OR no data
-    if (!param.time || !param.seriesData || param.seriesData.size === 0) {
-      selectedIndicator.forEach((indicator) => {
-        const latest = latestIndicatorValuesRef.current[indicator];
-        if (latest !== undefined) {
-          liveValues[indicator] = latest;
-        }
-      });
-
-      setLiveIndicatorData(liveValues);
-      return;
+      return (
+        <span style={{ color }}>
+          {isFinite(value) ? value.toFixed(2) : "--"}
+        </span>
+      );
     }
 
-    // ✅ Cursor inside chart
-    selectedIndicator.forEach((indicator) => {
-      const series = indicatorSeriesRef.current[indicator];
-      if (!series) return;
+    /* -------- MULTI VALUE -------- */
+    if (typeof value === "object") {
+      const grouped = indicatorSeriesRef.current[indicator];
 
-      const dataPoint = param.seriesData.get(series);
-      if (!dataPoint) return;
+      return Object.entries(value).map(([lineName, val]) => {
+        const series = grouped?.[lineName];
+        const color = getSeriesColor(series);
 
-      const value = dataPoint.value;
+        return (
+          <span key={lineName} style={{ color, marginRight: 8 }}>
+            {lineName}: {isFinite(val) ? Number(val).toFixed(2) : "--"}
+          </span>
+        );
+      });
+    }
+    return "";
+  };
 
-      // ✅ SINGLE VALUE INDICATORS (RSI, SMA, ADX, etc.)
-      if (typeof value === "number") {
-        liveValues[indicator] = value;
+  /* -----------Cross Handler----------- */
+    useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+
+    const handler = (param) => {
+      if (!param.time || !param.seriesData) {
+        setLiveOhlcv(null);
         return;
       }
 
-      // ✅ MULTI VALUE INDICATORS (Stochastic, MACD, BB, etc.)
-      if (typeof value === "object") {
-        liveValues[indicator] = { ...value };
-      }
-    });
+      const candle = param.seriesData.get(seriesRef.current);
+      if (candle) setLiveOhlcv(candle);
 
-    setLiveIndicatorData(liveValues);
-  };
+      const values = {};
 
-  chartRef.current.subscribeCrosshairMove(handler);
+      selectedIndicator.forEach((indicator) => {
+        const entry = indicatorSeriesRef.current[indicator];
+        if (!entry) return;
 
-  return () => chartRef.current.unsubscribeCrosshairMove(handler);
-}, [selectedIndicator]);
+        const isGrouped =
+          typeof entry === "object" && !("setData" in entry);
 
+        if (isGrouped) {
+          const groupedValues = {};
+
+          Object.entries(entry).forEach(([line, series]) => {
+            const point = param.seriesData.get(series);
+            if (point?.value !== undefined) {
+              groupedValues[line] = point.value;
+            }
+          });
+
+          if (Object.keys(groupedValues).length) {
+            values[indicator] = groupedValues;
+          }
+        } else {
+          const point = param.seriesData.get(entry);
+          if (point?.value !== undefined) {
+            values[indicator] = point.value;
+          }
+        }
+      });
+
+      setLiveIndicatorData(values);
+    };
+
+    chart.subscribeCrosshairMove(handler);
+    return () => chart.unsubscribeCrosshairMove(handler);
+  }, [selectedIndicator]);
 
   const toggleIndicator = (indicator) => {
     setSelectedIndicator((prev) => {
@@ -243,14 +277,39 @@ export default function Candlestick() {
     });
   };
 
+  // Separate useEffect for crosshair - runs once on mount
   useEffect(() => {
-    try {
-      chartRef.current.removeSeries(seriesRef.current);
-    } catch (e) {
-      console.warn("Series already removed");
-    }
+    if (!chartRef.current) return;
 
-    seriesRef.current = null;
+    const crosshairHandler = (param) => {
+      if (!param.time || !param.seriesData) {
+        setLiveOhlcv(null);
+        return;
+      }
+      const candle = param.seriesData?.get(seriesRef.current);
+      if (!candle) return;
+      setLiveOhlcv(candle);
+    };
+
+    chartRef.current.subscribeCrosshairMove(crosshairHandler);
+
+    return () => {
+      chartRef.current.unsubscribeCrosshairMove(crosshairHandler);
+    };
+  }, []);
+
+  // Main useEffect for chart type/data changes
+  useEffect(() => {
+    if (!chartRef.current) return;
+
+    if (seriesRef.current) {
+      try {
+        chartRef.current.removeSeries(seriesRef.current);
+      } catch (e) {
+        console.warn("Series already removed");
+      }
+      seriesRef.current = null;
+    }
 
     switch (chartType) {
       case "line":
@@ -260,10 +319,6 @@ export default function Candlestick() {
             timeframeValue,
             chartType,
           );
-
-          if (seriesRef.current) {
-            chartRef.current.removeSeries(seriesRef.current);
-          }
           seriesRef.current = chartRef.current.addSeries(
             LineSeries,
             chartSeriesStyles.line,
@@ -273,7 +328,6 @@ export default function Candlestick() {
               time: d.time,
               value: d?.close != null ? Number(d.close) : null,
             })),
-            // .filter((d) => d.close != null && !Number.isNaN(d.close)),
           );
           chartRef.current.timeScale().fitContent();
           await fetchIndicatorData(
@@ -296,16 +350,12 @@ export default function Candlestick() {
             timeframeValue,
             chartType,
           );
-
-          if (seriesRef.current) {
-            chartRef.current.removeSeries(seriesRef.current);
-          }
           seriesRef.current = chartRef.current.addSeries(
             BarSeries,
             chartSeriesStyles.bar,
           );
           seriesRef.current.setData(
-            await data?.map((d) => ({
+            data?.map((d) => ({
               time: d.time,
               open: d.open,
               high: d.high,
@@ -334,16 +384,12 @@ export default function Candlestick() {
             timeframeValue,
             chartType,
           );
-
-          if (seriesRef.current) {
-            chartRef.current.removeSeries(seriesRef.current);
-          }
           seriesRef.current = chartRef.current.addSeries(
             AreaSeries,
             chartSeriesStyles.area,
           );
           seriesRef.current.setData(
-            await data?.map((d) => ({
+            data?.map((d) => ({
               time: d?.time,
               value: Number(d?.close),
             })),
@@ -369,9 +415,6 @@ export default function Candlestick() {
             timeframeValue,
             chartType,
           );
-          if (seriesRef.current) {
-            chartRef.current.removeSeries(seriesRef.current);
-          }
           seriesRef.current = chartRef.current.addSeries(BaselineSeries, {
             ...chartSeriesStyles.baseline,
             baseValue: {
@@ -380,7 +423,7 @@ export default function Candlestick() {
             },
           });
           seriesRef.current.setData(
-            await data?.map((d) => ({ time: d.time, value: d.close })),
+            data?.map((d) => ({ time: d.time, value: d.close })),
           );
           chartRef.current.timeScale().fitContent();
           await fetchIndicatorData(
@@ -403,9 +446,6 @@ export default function Candlestick() {
             timeframeValue,
             chartType,
           );
-          if (seriesRef.current) {
-            chartRef.current.removeSeries(seriesRef.current);
-          }
           seriesRef.current = chartRef.current.addSeries(
             HistogramSeries,
             chartSeriesStyles.histogram,
@@ -442,13 +482,8 @@ export default function Candlestick() {
             timeframeValue,
             chartType,
           );
-          if (seriesRef.current) {
-            chartRef.current.removeSeries(seriesRef.current);
-          }
           seriesRef.current = chartRef.current.addSeries(CandlestickSeries);
-
-          seriesRef.current.setData(convertToHeikinAshi(await data));
-
+          seriesRef.current.setData(convertToHeikinAshi(data));
           chartRef.current.timeScale().fitContent();
           await fetchIndicatorData(
             selectedIndicator,
@@ -470,14 +505,11 @@ export default function Candlestick() {
             timeframeValue,
             chartType,
           );
-          if (seriesRef.current) {
-            chartRef.current.removeSeries(seriesRef.current);
-          }
           seriesRef.current = chartRef.current.addSeries(
             CandlestickSeries,
             chartSeriesStyles.hollowcandles,
           );
-          seriesRef.current.setData(await data);
+          seriesRef.current.setData(data);
           chartRef.current.timeScale().fitContent();
           await fetchIndicatorData(
             selectedIndicator,
@@ -493,29 +525,17 @@ export default function Candlestick() {
         break;
 
       default:
-        async function fetchCandeStickData() {
+        async function fetchCandleStickData() {
           const { data } = await fetchDataByCurrency(
             selectedCurrency,
             timeframeValue,
             chartType,
           );
-          if (seriesRef.current) {
-            chartRef.current.removeSeries(seriesRef.current);
-          }
           seriesRef.current = chartRef.current.addSeries(
             CandlestickSeries,
             chartSeriesStyles.candlestick,
           );
-          seriesRef.current.setData(await data);
-          chartRef.current.subscribeCrosshairMove((param) => {
-            if (!param.time || !param.seriesData) {
-              setLiveOhlcv(null);
-              return;
-            }
-            const candle = param.seriesData?.get(seriesRef.current);
-            if (!candle) return;
-            setLiveOhlcv(candle);
-          });
+          seriesRef.current.setData(data);
           chartRef.current.timeScale().fitContent();
           await fetchIndicatorData(
             selectedIndicator,
@@ -527,43 +547,312 @@ export default function Candlestick() {
             getIndicatorColor,
           );
         }
-        fetchCandeStickData();
+        fetchCandleStickData();
     }
   }, [
     chartType,
-    historicalData,
+    // historicalData,
     rangeValue,
     timeframeValue,
     selectedCurrency,
     selectedIndicator,
   ]);
 
-  const convertToHeikinAshi = (data) => {
-    if (!data.length) return [];
+  // useEffect(() => {
+  //    const crosshairHandler = (param) => {
+  //   if (!param.time || !param.seriesData) {
+  //     setLiveOhlcv(null);
+  //     return;
+  //   }
+  //   const candle = param.seriesData?.get(seriesRef.current);
+  //   if (!candle) return;
+  //   setLiveOhlcv(candle);
+  // };
 
-    let prevOpen = data[0].open;
-    let prevClose = data[0].close;
+  //   seriesRef.current = null;
 
-    return data.map((candle) => {
-      const haClose =
-        (candle.open + candle.high + candle.low + candle.close) / 4;
+  //   switch (chartType) {
+  //     case "line":
+  //       async function LineData() {
+  //         const { data } = await fetchDataByCurrency(
+  //           selectedCurrency,
+  //           timeframeValue,
+  //           chartType,
+  //         );
 
-      const haOpen = (prevOpen + prevClose) / 2;
+  //         if (seriesRef.current) {
+  //           chartRef.current.removeSeries(seriesRef.current);
+  //         }
+  //         seriesRef.current = chartRef.current.addSeries(
+  //           LineSeries,
+  //           chartSeriesStyles.line,
+  //         );
+  //         seriesRef.current.setData(
+  //           data?.map((d) => ({
+  //             time: d.time,
+  //             value: d?.close != null ? Number(d.close) : null,
+  //           })),
+  //           // .filter((d) => d.close != null && !Number.isNaN(d.close)),
+  //         );
+  //         chartRef.current.timeScale().fitContent();
+  //         await fetchIndicatorData(
+  //           selectedIndicator,
+  //           selectedCurrency,
+  //           timeframeValue,
+  //           chartRef,
+  //           indicatorSeriesRef,
+  //           latestIndicatorValuesRef,
+  //           getIndicatorColor,
+  //         );
+  //       }
+  //       LineData();
+  //       break;
 
-      const haHigh = Math.max(candle.high, haOpen, haClose);
-      const haLow = Math.min(candle.low, haOpen, haClose);
+  //     case "bar":
+  //       async function BarData() {
+  //         const { data } = await fetchDataByCurrency(
+  //           selectedCurrency,
+  //           timeframeValue,
+  //           chartType,
+  //         );
 
-      prevOpen = haOpen;
-      prevClose = haClose;
-      return {
-        time: candle.time,
-        open: haOpen,
-        high: haHigh,
-        low: haLow,
-        close: haClose,
-      };
-    });
-  };
+  //         if (seriesRef.current) {
+  //           chartRef.current.removeSeries(seriesRef.current);
+  //         }
+  //         seriesRef.current = chartRef.current.addSeries(
+  //           BarSeries,
+  //           chartSeriesStyles.bar,
+  //         );
+  //         seriesRef.current.setData(
+  //           await data?.map((d) => ({
+  //             time: d.time,
+  //             open: d.open,
+  //             high: d.high,
+  //             low: d.low,
+  //             close: d.close,
+  //           })),
+  //         );
+  //         chartRef.current.timeScale().fitContent();
+  //         await fetchIndicatorData(
+  //           selectedIndicator,
+  //           selectedCurrency,
+  //           timeframeValue,
+  //           chartRef,
+  //           indicatorSeriesRef,
+  //           latestIndicatorValuesRef,
+  //           getIndicatorColor,
+  //         );
+  //       }
+  //       BarData();
+  //       break;
+
+  //     case "area":
+  //       async function AreaData() {
+  //         const { data } = await fetchDataByCurrency(
+  //           selectedCurrency,
+  //           timeframeValue,
+  //           chartType,
+  //         );
+
+  //         if (seriesRef.current) {
+  //           chartRef.current.removeSeries(seriesRef.current);
+  //         }
+  //         seriesRef.current = chartRef.current.addSeries(
+  //           AreaSeries,
+  //           chartSeriesStyles.area,
+  //         );
+  //         seriesRef.current.setData(
+  //           await data?.map((d) => ({
+  //             time: d?.time,
+  //             value: Number(d?.close),
+  //           })),
+  //         );
+  //         chartRef.current.timeScale().fitContent();
+  //         await fetchIndicatorData(
+  //           selectedIndicator,
+  //           selectedCurrency,
+  //           timeframeValue,
+  //           chartRef,
+  //           indicatorSeriesRef,
+  //           latestIndicatorValuesRef,
+  //           getIndicatorColor,
+  //         );
+  //       }
+  //       AreaData();
+  //       break;
+
+  //     case "baseline":
+  //       async function BaseLineData() {
+  //         const { data } = await fetchDataByCurrency(
+  //           selectedCurrency,
+  //           timeframeValue,
+  //           chartType,
+  //         );
+  //         if (seriesRef.current) {
+  //           chartRef.current.removeSeries(seriesRef.current);
+  //         }
+  //         seriesRef.current = chartRef.current.addSeries(BaselineSeries, {
+  //           ...chartSeriesStyles.baseline,
+  //           baseValue: {
+  //             type: "price",
+  //             price: Number(data?.[0]?.close ?? 0),
+  //           },
+  //         });
+  //         seriesRef.current.setData(
+  //           await data?.map((d) => ({ time: d.time, value: d.close })),
+  //         );
+  //         chartRef.current.timeScale().fitContent();
+  //         await fetchIndicatorData(
+  //           selectedIndicator,
+  //           selectedCurrency,
+  //           timeframeValue,
+  //           chartRef,
+  //           indicatorSeriesRef,
+  //           latestIndicatorValuesRef,
+  //           getIndicatorColor,
+  //         );
+  //       }
+  //       BaseLineData();
+  //       break;
+
+  //     case "histogram":
+  //       async function HistogramData() {
+  //         const { data } = await fetchDataByCurrency(
+  //           selectedCurrency,
+  //           timeframeValue,
+  //           chartType,
+  //         );
+  //         if (seriesRef.current) {
+  //           chartRef.current.removeSeries(seriesRef.current);
+  //         }
+  //         seriesRef.current = chartRef.current.addSeries(
+  //           HistogramSeries,
+  //           chartSeriesStyles.histogram,
+  //         );
+  //         seriesRef.current.setData(
+  //           data?.map((d, index, arr) => {
+  //             const prev = arr[index - 1];
+  //             const isUp = prev ? d.close >= prev.close : true;
+  //             return {
+  //               time: d.time,
+  //               value: d.volume,
+  //               color: isUp ? "#22c55e" : "#ef4444",
+  //             };
+  //           }),
+  //         );
+  //         chartRef.current.timeScale().fitContent();
+  //         await fetchIndicatorData(
+  //           selectedIndicator,
+  //           selectedCurrency,
+  //           timeframeValue,
+  //           chartRef,
+  //           indicatorSeriesRef,
+  //           latestIndicatorValuesRef,
+  //           getIndicatorColor,
+  //         );
+  //       }
+  //       HistogramData();
+  //       break;
+
+  //     case "heikinashi":
+  //       async function HeikinAshiData() {
+  //         const { data } = await fetchDataByCurrency(
+  //           selectedCurrency,
+  //           timeframeValue,
+  //           chartType,
+  //         );
+  //         if (seriesRef.current) {
+  //           chartRef.current.removeSeries(seriesRef.current);
+  //         }
+  //         seriesRef.current = chartRef.current.addSeries(CandlestickSeries);
+
+  //         seriesRef.current.setData(convertToHeikinAshi(await data));
+
+  //         chartRef.current.timeScale().fitContent();
+  //         await fetchIndicatorData(
+  //           selectedIndicator,
+  //           selectedCurrency,
+  //           timeframeValue,
+  //           chartRef,
+  //           indicatorSeriesRef,
+  //           latestIndicatorValuesRef,
+  //           getIndicatorColor,
+  //         );
+  //       }
+  //       HeikinAshiData();
+  //       break;
+
+  //     case "hollowcandles":
+  //       async function HollowCandlesData() {
+  //         const { data } = await fetchDataByCurrency(
+  //           selectedCurrency,
+  //           timeframeValue,
+  //           chartType,
+  //         );
+  //         if (seriesRef.current) {
+  //           chartRef.current.removeSeries(seriesRef.current);
+  //         }
+  //         seriesRef.current = chartRef.current.addSeries(
+  //           CandlestickSeries,
+  //           chartSeriesStyles.hollowcandles,
+  //         );
+  //         seriesRef.current.setData(await data);
+  //         chartRef.current.timeScale().fitContent();
+  //         await fetchIndicatorData(
+  //           selectedIndicator,
+  //           selectedCurrency,
+  //           timeframeValue,
+  //           chartRef,
+  //           indicatorSeriesRef,
+  //           latestIndicatorValuesRef,
+  //           getIndicatorColor,
+  //         );
+  //       }
+  //       HollowCandlesData();
+  //       break;
+
+  //     default:
+  //       async function fetchCandeStickData() {
+  //         const { data } = await fetchDataByCurrency(
+  //           selectedCurrency,
+  //           timeframeValue,
+  //           chartType,
+  //         );
+  //         if (seriesRef.current) {
+  //           chartRef.current.removeSeries(seriesRef.current);
+  //         }
+  //         seriesRef.current = chartRef.current.addSeries(
+  //           CandlestickSeries,
+  //           chartSeriesStyles.candlestick,
+  //         );
+  //         seriesRef.current.setData(await data);
+  //         chartRef.current.subscribeCrosshairMove(crosshairHandler);
+  //         chartRef.current.timeScale().fitContent();
+  //         await fetchIndicatorData(
+  //           selectedIndicator,
+  //           selectedCurrency,
+  //           timeframeValue,
+  //           chartRef,
+  //           indicatorSeriesRef,
+  //           latestIndicatorValuesRef,
+  //           getIndicatorColor,
+  //         );
+  //       }
+  //       fetchCandeStickData();
+  //   }
+  //   return () => {
+  //   // cleanup on every re-run
+  //   chartRef.current.unsubscribeCrosshairMove(crosshairHandler);
+  // };
+  // }, [
+  //   chartType,
+  //   historicalData,
+  //   rangeValue,
+  //   timeframeValue,
+  //   selectedCurrency,
+  //   selectedIndicator,
+  // ]);
+
 
   const zoomIn = () => {
     const chart = chartRef.current;
@@ -596,63 +885,6 @@ export default function Candlestick() {
   const resetZoom = () => {
     chartRef.current?.timeScale().fitContent();
   };
-
-  const clearSeries = () => {
-    if (!chartRef.current || !seriesRef.current) return;
-
-    try {
-      chartRef.current.removeSeries(seriesRef.current);
-    } catch (e) {
-      console.warn("Series already removed");
-    }
-
-    seriesRef.current = null;
-  };
-
-  function getPivotColor(label) {
-  if (label === "P") return "#eab308";      // Yellow pivot
-  if (label.startsWith("R")) return "#ef4444"; // Red resistance
-  if (label.startsWith("S")) return "#22c55e"; // Green support
-  return "#94a3b8";
-}
-
-function safeRemoveSeries(chart, series) {
-  try {
-    if (!chart || !series) return;
-    chart.removeSeries(series);
-  } catch (e) {}
-}
-
- function plotPivotLevels(levels) {
-    const chart = chartRef.current;
-    if (!chart || !liveOhlcv?.length) return;
-  
-    const firstTime = Number(liveOhlcv[0].time);
-    const lastTime = Number(liveOhlcv[liveOhlcv.length - 1].time);
-  
-    Object.entries(levels).forEach(([label, value]) => {
-      const price = Number(value);
-      if (!price || isNaN(price)) return;
-  
-      const key = `pivot_${label}`;
-  
-      safeRemoveSeries(chart, indicatorSeriesRef.current[key]);
-  
-      const series = chart.addSeries(LineSeries, {
-        color: getPivotColor(label),
-        lineWidth: 1,
-        lastValueVisible: false,
-        priceLineVisible: false,
-      });
-  
-      series.setData([
-        { time: firstTime, value: price },
-        { time: lastTime, value: price },
-      ]);
-  
-      indicatorSeriesRef.current[key] = series;
-    });
-  }
 
   return (
     <div className="w-full h-screen flex flex-col bg-slate-50">
@@ -740,27 +972,24 @@ function safeRemoveSeries(chart, series) {
               return (
                 <div
                   key={indicator}
-                  className="flex justify-between items-center gap-3 bg-white shadow-sm border border-slate-200 rounded-md px-3 h-8 text-xs min-w-[260px]"
+                  className="flex w-full justify-between items-center gap-3 bg-white shadow-sm border border-slate-200 rounded-md px-3 h-8 text-xs "
                 >
                   {/* LEFT SIDE */}
-                  <span className="font-medium text-slate-800 flex items-center gap-2">
-                    {/* Color Dot */}
+                  <span className="font-medium w-full text-slate-800 flex items-center gap-2">
                     <span
                       className="w-2 h-2 rounded-full"
                       style={{ background: getIndicatorColor(index) }}
                     />
                     {indicator} : {timeframeValue} :
-                    {value !== undefined && (
-                      <span style={{ color: getIndicatorColor(index) }}>
-                        {Number(value).toFixed(2)}
-                      </span>
-                    )}
+                    <span style={{ display: "flex", gap: 6 }}>
+                      {renderValue(indicator, liveIndicatorData[indicator])}
+                    </span>
                   </span>
 
                   {/* RIGHT SIDE */}
                   <div className="flex items-center gap-2">
                     {/* Visibility Toggle */}
-                    <button
+                    {/* <button
                       onClick={() => {
                         if (!series) return;
 
@@ -775,7 +1004,7 @@ function safeRemoveSeries(chart, series) {
                       ) : (
                         <FaEyeSlash />
                       )}
-                    </button>
+                    </button> */}
 
                     {/* Settings */}
                     <button
@@ -924,13 +1153,12 @@ function safeRemoveSeries(chart, series) {
       {/* ------------Start Indicator Rule Builder for Caluculating Indicators along with condition---------------- */}
       <div className="bg-slate-50">
         <IndicatorRuleBuilder />
-      <IndicatorBuildingListing
-        selectedCurrency={selectedCurrency}
-        timeframeValue={timeframeValue}
-      />
-
+        <IndicatorBuildingListing
+          selectedCurrency={selectedCurrency}
+          timeframeValue={timeframeValue}
+        />
       </div>
-      
+
       {/* ------End of indicator rule builder */}
     </div>
   );

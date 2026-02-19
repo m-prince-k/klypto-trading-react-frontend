@@ -168,6 +168,12 @@ export const INDICATOR_COLORS = [
   "#f83838", // red
 ];
 
+export const getSeriesColor = (series) => {
+    if (!series || !series.options) return "#999";
+
+    return series.options().color || "#999";
+  };
+
 export const chartSeriesStyles = {
   candlestick: {
     upColor: "#22c55e",
@@ -239,3 +245,33 @@ export const OPERATORS = [
   { label: "Falling ↘", value: "falling" },
   { label: "Between ⇄", value: "between" },
 ];
+
+
+export const convertToHeikinAshi = (data) => {
+    if (!data.length) return [];
+
+    let prevOpen = data[0].open;
+    let prevClose = data[0].close;
+
+    return data.map((candle) => {
+      const haClose =
+        (candle.open + candle.high + candle.low + candle.close) / 4;
+
+      const haOpen = (prevOpen + prevClose) / 2;
+      const haHigh = Math.max(candle.high, haOpen, haClose);
+      const haLow = Math.min(candle.low, haOpen, haClose);
+
+      prevOpen = haOpen;
+      prevClose = haClose;
+      return {
+        time: candle.time,
+        open: haOpen,
+        high: haHigh,
+        low: haLow,
+        close: haClose,
+      };
+    });
+  };
+
+
+

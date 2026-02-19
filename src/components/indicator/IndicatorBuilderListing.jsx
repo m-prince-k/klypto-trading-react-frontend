@@ -88,6 +88,7 @@ export default function IndicatorBuildingListing({
       }
 
       setCoins(finalData);
+      console.log(finalData, "listing data")
     } catch (err) {
       console.error("Load error:", err);
     } finally {
@@ -113,7 +114,6 @@ export default function IndicatorBuildingListing({
 
     return coins.map((item, index) => {
       const lastCandle = item.ohlc?.[item.ohlc.length - 1];
-      console.log();
 
       return {
         id: index + 1,
@@ -123,7 +123,10 @@ export default function IndicatorBuildingListing({
         price: Number(lastCandle?.close ?? 0),
         volume: Number(lastCandle?.volume ?? 0),
       };
+      
     });
+
+    
   }, [coins]);
 
   const sortedData = useMemo(() => {
@@ -141,6 +144,7 @@ export default function IndicatorBuildingListing({
     });
   }, [formattedData, sortField, sortAsc]);
 
+  
   const ITEMS_PER_PAGE = 20;
 
   const totalPages = Math.ceil(sortedData.length / ITEMS_PER_PAGE);

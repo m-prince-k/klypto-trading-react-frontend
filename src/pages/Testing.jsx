@@ -3,15 +3,53 @@ import {
   createChart,
   LineSeries,
   CandlestickSeries,
+  CrosshairMode,
 } from "lightweight-charts";
 
 export default function Testing() {
-  const chartRef = useRef();
+  const mainChartRef = useRef(null);
+  const rsiChartRef = useRef(null);
 
   useEffect(() => {
-    const chart = createChart(chartRef.current, {
+    if (!mainChartRef.current || !rsiChartRef.current) return;
+
+    /* ================= MAIN CHART ================= */
+
+    const mainChart = createChart(mainChartRef.current, {
       width: 900,
-      height: 500,
+      height: 400,
+
+      layout: {
+        background: { type: "solid", color: "#ffffff" },
+        textColor: "#334155",
+      },
+
+      grid: {
+        vertLines: { color: "#e2e8f0" },
+        horzLines: { color: "#e2e8f0" },
+      },
+
+      crosshair: {
+        mode: CrosshairMode.Normal,
+      },
+
+      // ✅ HIDE X AXIS HERE
+      timeScale: {
+        visible: false,
+      },
+    });
+
+    const candleSeries = mainChart.addSeries(CandlestickSeries);
+    const smaSeries = mainChart.addSeries(LineSeries, {
+      color: "#0ea5e9",
+      lineWidth: 2,
+    });
+
+    /* ================= RSI CHART ================= */
+
+    const rsiChart = createChart(rsiChartRef.current, {
+      width: 900,
+      height: 150,
 
       layout: {
         background: { type: "solid", color: "#ffffff" },
@@ -25,42 +63,43 @@ export default function Testing() {
 
       rightPriceScale: {
         scaleMargins: {
-          top: 0.05,
-          bottom: 0.25, // ✅ leave space for RSI
+          top: 0.1,
+          bottom: 0.1,
         },
       },
 
+      // ✅ SHOW X AXIS ONLY HERE
       timeScale: {
+        visible: true,
         timeVisible: true,
         rightBarSpacing: 40,
       },
     });
 
-    /* ---------------- SERIES ---------------- */
-
-    const candleSeries = chart.addSeries(CandlestickSeries);
-
-    const smaSeries = chart.addSeries(LineSeries, {
-      color: "#0ea5e9",
-      lineWidth: 2,
-    });
-
-    // ✅ RSI ON SEPARATE SCALE
-    const rsiSeries = chart.addSeries(LineSeries, {
+    const rsiSeries = rsiChart.addSeries(LineSeries, {
       color: "#f59e0b",
       lineWidth: 2,
-      priceScaleId: "rsi", // ⭐ MAGIC LINE
     });
 
-    // ✅ Configure RSI scale
-    chart.priceScale("rsi").applyOptions({
-      scaleMargins: {
-        top: 0.75,   // push to bottom
-        bottom: 0.05,
-      },
+    // ✅ Lock RSI scale
+    rsiChart.priceScale("right").applyOptions({
+      autoScale: false,
+      minValue: 0,
+      maxValue: 100,
     });
 
-    /* ---------------- MOCK DATA ---------------- */
+    /* ================= SYNC SCROLL / ZOOM ================= */
+
+    const syncCharts = (source, target) => {
+      source.timeScale().subscribeVisibleLogicalRangeChange((range) => {
+        if (range) target.timeScale().setVisibleLogicalRange(range);
+      });
+    };
+
+    syncCharts(mainChart, rsiChart);
+    syncCharts(rsiChart, mainChart);
+
+    /* ================= DATA ================= */
 
     const candles = [
       { time: 1700000000, open: 70000, high: 71000, low: 69500, close: 70500 },
@@ -87,8 +126,16 @@ export default function Testing() {
     smaSeries.setData(sma);
     rsiSeries.setData(rsi);
 
-    return () => chart.remove();
+    return () => {
+      mainChart.remove();
+      rsiChart.remove();
+    };
   }, []);
 
-  return <div ref={chartRef} />;
+  return (
+    <div>
+      <div ref={mainChartRef} />
+      <div ref={rsiChartRef} style={{ marginTop: 2 }} />
+    </div>
+  );
 }
