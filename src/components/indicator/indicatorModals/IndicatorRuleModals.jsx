@@ -334,7 +334,7 @@ function BacktestResultContent({
             const active = isActive(frame);
 
             return (
-              <button
+              <Link
                 key={rule.id ?? index}
                 onClick={() => toggleFrame(frame)}
                 className={`
@@ -348,7 +348,7 @@ function BacktestResultContent({
                 `}
               >
                 {resolveTimeframeLabel(frame)}
-              </button>
+              </Link>
             );
           })}
 
@@ -356,7 +356,7 @@ function BacktestResultContent({
           <button
             onClick={() => setActiveFrames(rules.map((rule) => rule.timeframe))}
             className="
-              px-4 py-1.5 rounded-lg  font-semibold
+              px-4 py-1.5 rounded-lg font-semibold
               bg-slate-900 text-white
               hover:bg-slate-700 transition
             "

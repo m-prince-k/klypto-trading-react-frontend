@@ -8,7 +8,7 @@ import {
 } from "react-icons/md";
 
 export const ChartProprties = {
-  width: 1200,
+  width: 1300,
   height: 500,
 
   layout: {
@@ -108,11 +108,47 @@ export const ChartProprties = {
       style: 2,
     },
   },
+  attributionLogo: false,   
 
   interaction: {
     mode: 0, // Normal interaction
   },
 };
+
+export function getIndicatorChartProperties(height = 140) {
+  return {
+    ...ChartProprties,
+
+    height,
+
+    layout: {
+      ...ChartProprties.layout,
+    },
+
+    // ✅ CRITICAL: IDENTICAL TIME SCALE
+    timeScale: {
+      ...ChartProprties.timeScale,
+
+      // ✅ Prevent duplicate axis rendering glitches
+      visible: false,              // Hide pane time axis (TV style)
+      borderVisible: false,
+    },
+
+    rightPriceScale: {
+      ...ChartProprties.rightPriceScale,
+
+    },
+
+    grid: {
+      ...ChartProprties.grid,
+    },
+
+    crosshair: {
+      ...ChartProprties.crosshair,
+    },
+    attributionLogo: false,   
+  };
+}
 
 export function useDebounce(value, delay) {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -167,6 +203,7 @@ export const INDICATOR_COLORS = [
   "#71e6fb", // blue
   "#f83838", // red
 ];
+
 
 export const getSeriesColor = (series) => {
     if (!series || !series.options) return "#999";

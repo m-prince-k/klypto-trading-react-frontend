@@ -20,6 +20,7 @@ export async function fetchIndicatorData(
   selectedCurrency,
   timeframeValue,
   chartRef,
+  addSeries,
   indicatorSeriesRef,
   latestIndicatorValuesRef,
   getIndicatorColor,
@@ -34,22 +35,23 @@ export async function fetchIndicatorData(
         timeframeValue,
       );
 
-      console.log("Formatted:", indicator, result);
-
       if (!result) continue;
 
-      // ✅ SINGLE LINE INDICATORS
+      /* ================= SINGLE LINE ================= */
+
       if (result.type === "single") {
         removeSeries(indicatorSeriesRef, chartRef, indicator);
 
-        const series = chartRef.current.addSeries(LineSeries, {
+        const series = addSeries(indicator, LineSeries, {
           color: getIndicatorColor(index),
           lineWidth: 1,
         });
 
+        if (!series) continue;
+
         series.setData(result.data);
 
-        if (result.data.length) {
+        if (result.data?.length) {
           latestIndicatorValuesRef.current[indicator] =
             result.data[result.data.length - 1].value;
         }
@@ -57,43 +59,50 @@ export async function fetchIndicatorData(
         indicatorSeriesRef.current[indicator] = series;
       }
 
-      // ✅ MULTI LINE INDICATORS (FIXED)
+      /* ================= MULTI LINE ================= */
+
       if (result.type === "multi") {
         const indicatorKey = indicator;
 
-        // ⭐ Remove OLD grouped series safely
+        // ✅ Remove OLD grouped series safely
         const oldEntry = indicatorSeriesRef.current[indicatorKey];
+
         if (oldEntry && typeof oldEntry === "object") {
           Object.values(oldEntry).forEach((series) => {
-            chartRef.current.removeSeries(series);
+            try {
+              series?.remove?.();
+            } catch (e) {}
           });
         }
 
         const groupedSeries = {};
 
-        Object.entries(result.data).forEach(([lineName, lineData], i) => {
-          const series = chartRef.current.addSeries(LineSeries, {
-            color: getIndicatorColor(i),
-            lineWidth: 1,
-          });
+        Object.entries(result.data).forEach(
+          ([lineName, lineData], lineIndex) => {
+            const series = addSeries(indicator, LineSeries, {
+              color: getIndicatorColor(lineIndex), // ✅ FIXED COLOR
+              lineWidth: 1,
+            });
 
-          series.setData(lineData);
+            if (!series) return;
 
-          // ⭐ Store INSIDE indicator object
-          groupedSeries[lineName] = series;
+            series.setData(lineData);
 
-          // ⭐ Store latest value correctly
-          if (lineData.length) {
-            latestIndicatorValuesRef.current[indicatorKey] = {
-              ...(latestIndicatorValuesRef.current[indicatorKey] || {}),
-              [lineName]: lineData[lineData.length - 1].value,
-            };
-          }
-        });
+            groupedSeries[lineName] = series;
 
-        // ⭐ CRITICAL LINE (THIS FIXES CROSSHAIR)
+            if (lineData?.length) {
+              latestIndicatorValuesRef.current[indicatorKey] = {
+                ...(latestIndicatorValuesRef.current[indicatorKey] || {}),
+                [lineName]: lineData[lineData.length - 1].value,
+              };
+            }
+          },
+        );
+
         indicatorSeriesRef.current[indicatorKey] = groupedSeries;
       }
+
+      /* ================= PIVOT ================= */
 
       if (result.type === "pivot") {
         plotPivotLevels(result.data, chartRef, indicatorSeriesRef);
@@ -103,7 +112,6 @@ export async function fetchIndicatorData(
     }
   }
 }
-
 async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
   const normalizedType = type.replace(/[\s/]+/g, "");
 
@@ -128,14 +136,13 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
     case "TEMA":
     case "AMA":
     case "ADX":
-    case "RSI":
     case "SuperTrend":
     case "Aroon":
     case "AroonOscillator":
     case "Momentum":
     case "ROC":
     case "AwesomeOscillator":
-      case "MACDHistogram":
+    case "MACDHistogram":
     case "TRIX":
     case "StandardDeviation":
     case "Volume":
@@ -148,7 +155,6 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
     case "PositiveVolumeIndex":
     case "VWAP":
     case "BollingerBandWidth":
-    case "ATR":
     case "HistoricalVolatility":
     case "ChoppinessIndex":
     case "AccumulationDistribution":
@@ -182,6 +188,32 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
           })),
       };
     }
+
+    case "ATR":
+      return {
+        type: "single",
+
+        data:
+          response.data
+            ?.filter((d) => d.ATR != null && d.time != null)
+            .map((d) => ({
+              time: d.time,
+              value: d.ATR,
+            })) ?? [],
+      };
+
+    case "RSI":
+      return {
+        type: "single",
+
+        data:
+          response.data
+            ?.filter((d) => d.rsi != null && d.time != null)
+            .map((d) => ({
+              time: d.time,
+              value: d.rsi,
+            })) ?? [],
+      };
 
     /* ---------------- NESTED VALUE ---------------- */
 
@@ -519,6 +551,27 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
       };
   }
 }
+
+export const PANE_INDICATORS = new Set([
+  "RSI",
+  "MACD",
+  "MACDHistogram",
+  "CCI",
+  "ROC",
+  "Williams%R",
+  "UltimateOscillator",
+  "AroonOscillator",
+  "ChandeMomentumOscillator", // CMO
+  "TRIX",
+  "FisherTransform",
+  "KlingerOscillator",
+  "ATR",
+  "ChoppinessIndex",
+  "Volume",
+  "ChaikinMoneyFlow",
+  "MFI",
+]);
+
 function plotPivotLevels(pivotLevels, chartRef, indicatorSeriesRef) {
   const chart = chartRef.current;
   if (!chart || !pivotLevels?.length) return;

@@ -11,14 +11,20 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import IndicatorRuleBuilder from "../components/indicator/IndicatorRuleBuilder";
 import { LuCirclePlus, LuCircleMinus } from "react-icons/lu";
 import { RiResetRightLine } from "react-icons/ri";
-import { useEffect, useRef, useState, useCallback} from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { FaCode, FaFileWaveform } from "react-icons/fa6";
 import { Form } from "../components/tradingModals/Form";
 import ChartHeader from "../components/tradingModals/ChartHeader";
 import IndicatorBuildingListing from "../components/indicator/IndicatorBuilderListing";
 import {
-  ChartProprties, TIMEFRAME_TO_SECONDS, SINGLE_VALUE_CHARTS, INDICATOR_COLORS,
-  chartSeriesStyles, getSeriesColor,convertToHeikinAshi
+  ChartProprties,
+  TIMEFRAME_TO_SECONDS,
+  SINGLE_VALUE_CHARTS,
+  INDICATOR_COLORS,
+  chartSeriesStyles,
+  getSeriesColor,
+  convertToHeikinAshi,
+  getIndicatorChartProperties,
 } from "../util/common";
 import apiService from "../services/apiServices";
 import { IoCloseSharp, IoSettingsOutline } from "react-icons/io5";
@@ -27,6 +33,7 @@ import IndicatorAlert from "../components/indicator/IndicatorAlert";
 import {
   fetchDataByCurrency,
   fetchIndicatorData,
+  PANE_INDICATORS,
 } from "../util/chartFunctions";
 
 export default function Candlestick() {
@@ -35,6 +42,8 @@ export default function Candlestick() {
   const seriesRef = useRef(null);
   const indicatorSeriesRef = useRef({});
   const latestIndicatorValuesRef = useRef({});
+  const panesRef = useRef({});
+  const syncingRef = useRef(false);
   const socketRef = useRef(null);
   const [openForm, setOpenForm] = useState(false);
   const [timeframeValue, setTimeframeValue] = useState("1m");
@@ -48,10 +57,11 @@ export default function Candlestick() {
   const [liveIndicatorData, setLiveIndicatorData] = useState({});
   const [showAlertForm, setShowAlertForm] = useState(false);
 
-const getIndicatorColor = useCallback(
-  (index) => INDICATOR_COLORS[index % INDICATOR_COLORS.length],
-  []
-);
+  const getIndicatorColor = useCallback(
+    (index) => INDICATOR_COLORS[index % INDICATOR_COLORS.length],
+    [],
+  );
+
   const openAlert = () => {
     setShowAlertForm(true);
   };
@@ -60,21 +70,184 @@ const getIndicatorColor = useCallback(
     setShowAlertForm(false);
   };
 
+  const TIME_AXIS_HEIGHT = 28;
+  const PANE_HEIGHT = 140;
+
+  const addSeries = (indicator, SeriesType, options) => {
+    if (!chartRef.current) return null;
+
+    const normalized = String(indicator).replace(/[\s/]+/g, "");
+
+    // Indicators that should go to panes
+    if (!PANE_INDICATORS.has(normalized)) {
+      return chartRef.current.addSeries(SeriesType, options);
+    }
+
+    const paneKey = resolvePaneKey(normalized);
+    const paneChart = ensurePane(paneKey);
+
+    return paneChart.addSeries(SeriesType, options);
+  };
+
+  /* =========================
+     ✅ CHART SYNC ENGINE
+  ========================== */
+
+  function syncCharts(sourceChart, logicalRange) {
+    if (!logicalRange || syncingRef.current) return;
+
+    syncingRef.current = true;
+
+    const charts = [
+      chartRef.current,
+      ...Object.values(panesRef.current).map((p) => p.chart),
+    ];
+
+    charts.forEach((chart) => {
+      if (!chart || chart === sourceChart) return;
+      chart.timeScale().setVisibleLogicalRange(logicalRange);
+    });
+
+    syncingRef.current = false;
+  }
+
+  function attachSync(chart) {
+    if (!chart) return;
+
+    chart.timeScale().subscribeVisibleLogicalRangeChange((range) => {
+      if (!range || syncingRef.current) return;
+      syncCharts(chart, range);
+    });
+  }
+
+  /* =========================
+     ✅ PANE MANAGEMENT
+  ========================== */
+
+  function resolvePaneKey(type) {
+    switch (type) {
+      case "MACD":
+        return "macd";
+      case "Volume":
+        return "volume";
+      default:
+        return "momentum";
+    }
+  }
+
+  function ensurePane(paneKey) {
+    if (panesRef.current[paneKey]) return panesRef.current[paneKey].chart;
+
+    const paneCount = Object.keys(panesRef.current).length;
+
+    const paneDiv = document.createElement("div");
+    paneDiv.style.position = "absolute";
+    paneDiv.style.left = "0";
+    paneDiv.style.width = "100%";
+    paneDiv.style.height = `${PANE_HEIGHT}px`;
+    paneDiv.style.bottom = `${TIME_AXIS_HEIGHT + paneCount * PANE_HEIGHT}px`;
+
+    containerRef.current.appendChild(paneDiv);
+
+    const paneChart = createChart(
+      paneDiv,
+      getIndicatorChartProperties(PANE_HEIGHT),
+    );
+
+    panesRef.current[paneKey] = { chart: paneChart, div: paneDiv };
+
+    attachSync(paneChart);
+
+    return paneChart;
+  }
+
+function cleanupPane(paneKey) {
+  const paneChart = panesRef.current[paneKey];
+  if (!paneChart) return;
+
+  const stillUsed = Object.keys(indicatorSeriesRef.current)
+    .some((key) => resolvePaneKey(key) === paneKey);
+
+  if (stillUsed) return;
+
+  try {
+    paneChart.remove();
+  } catch (e) {}
+
+  delete panesRef.current[paneKey];
+}
+
+  /* =========================
+     ✅ INDICATOR REMOVAL
+  ========================== */
+const removeIndicator = useCallback((indicator) => {
+  const entry = indicatorSeriesRef.current[indicator];
+  if (!entry) return;
+
+  /* ✅ MULTI-SERIES INDICATOR (MACD etc) */
+  if (typeof entry === "object" && !entry.setData) {
+    Object.values(entry).forEach((series) => {
+      try {
+        series?.remove();
+      } catch (e) {}
+    });
+  }
+
+  /* ✅ SINGLE SERIES */
+  else {
+    try {
+      entry.remove();
+    } catch (e) {}
+  }
+
+  delete indicatorSeriesRef.current[indicator];
+  delete latestIndicatorValuesRef.current[indicator];
+
+  const paneKey = resolvePaneKey(indicator);
+  cleanupPane(paneKey);
+
+  setSelectedIndicator((prev) => prev.filter((i) => i !== indicator));
+}, []);
+
   const isUp = liveOhlcv?.close >= liveOhlcv?.open;
   const valueColor = isUp ? "text-green-500" : "text-red-500";
 
   useEffect(() => {
+    if (!containerRef.current) return;
 
-    chartRef.current = createChart(containerRef.current, ChartProprties);
+    const chart = createChart(containerRef.current, ChartProprties);
+    chartRef.current = chart;
+    attachSync(chart);
 
     /* =======================
-       2️⃣ Load Historical OHLC
-    ======================== */
+     ✅ SYNC LOGIC (CRITICAL)
+  ======================== */
+
+    // const handleVisibleRangeChange = (range) => {
+    //   if (!range || syncingRef.current) return;
+
+    //   syncingRef.current = true;
+
+    //   // sync indicator panes
+    //   Object.values(panesRef.current).forEach((paneChart) => {
+    //     if (!paneChart || paneChart === chart) return;
+
+    //     try {
+    //       paneChart.timeScale().setVisibleLogicalRange(range);
+    //     } catch (err) {
+    //       console.warn("Pane sync skipped:", err);
+    //     }
+    //   });
+
+    //   syncingRef.current = false;
+    // };
+
+    /* =======================
+     2️⃣ Load Historical OHLC
+  ======================== */
 
     const end = Math.floor(Date.now() / 1000);
     const start = end - 60 * 60;
-
-    // --------------------------API calling for live records-current time Stamps-----------------------------
 
     fetch(
       `https://api.india.delta.exchange/v2/history/candles?symbol=${selectedCurrency}&resolution=${timeframeValue}&start=${start}&end=${end}`,
@@ -82,20 +255,22 @@ const getIndicatorColor = useCallback(
       .then((res) => res.json())
       .then(async (data) => {
         const candles = await data?.result?.map((c) => ({
-          time: c.time, // unix seconds
+          time: c.time,
           open: Number(c.open),
           high: Number(c.high),
           low: Number(c.low),
           close: Number(c.close),
         }));
 
-        // seriesRef.current.setData(candles);
-        // chartRef.current = candles[candles.length - 1];
+        if (seriesRef.current && candles?.length) {
+          seriesRef.current.setData(candles);
+        }
       });
 
     /* =======================
-       3️⃣ WebSocket Trades
-    ======================== */
+     3️⃣ WebSocket Trades
+  ======================== */
+
     const socket = new WebSocket("wss://socket.delta.exchange");
 
     socket.onopen = () => {
@@ -106,7 +281,7 @@ const getIndicatorColor = useCallback(
             channels: [
               {
                 name: "v2/ticker",
-                symbols: [selectedCurrency ? selectedCurrency : "BTCUSD"],
+                symbols: [selectedCurrency || "BTCUSD"],
               },
             ],
           },
@@ -119,24 +294,22 @@ const getIndicatorColor = useCallback(
     socket.onmessage = (event) => {
       const msg = JSON.parse(event.data);
       if (!msg?.mark_price || !msg?.timestamp) return;
-      const price = Number(msg?.mark_price);
+
+      const price = Number(msg.mark_price);
       const intervalSec = TIMEFRAME_TO_SECONDS[timeframeValue];
-      const time = Math.floor(msg?.timestamp / intervalSec) * intervalSec;
+      const time = Math.floor(msg.timestamp / intervalSec) * intervalSec;
 
       if (!currentCandle || currentCandle.time !== time) {
-        // 🔥 new candle
-        const date = new Date(time / 1000);
-
         currentCandle = {
-          time: time / 1000, // convert to unix seconds
+          time: time / 1000,
           open: price,
           high: price,
           low: price,
           close: price,
         };
+
         setLiveOhlcv(currentCandle);
       } else {
-        // 🔁 update candle
         currentCandle.high = Math.max(currentCandle.high, price);
         currentCandle.low = Math.min(currentCandle.low, price);
         currentCandle.close = price;
@@ -144,10 +317,16 @@ const getIndicatorColor = useCallback(
     };
 
     return () => {
+      // try {
+      //   chart.timeScale().unsubscribeVisibleLogicalRangeChange(
+      //     handleVisibleRangeChange
+      //   );
+      // } catch (e) {}
+
       socket.close();
-      chartRef.current.remove();
+      chart.remove();
     };
-  }, []);
+  }, [selectedCurrency, timeframeValue]);
 
   //  -------------------LOAD INDICATOR FROM API------------------------------
 
@@ -202,7 +381,7 @@ const getIndicatorColor = useCallback(
   };
 
   /* -----------Cross Handler----------- */
-    useEffect(() => {
+  useEffect(() => {
     const chart = chartRef.current;
     if (!chart) return;
 
@@ -221,8 +400,7 @@ const getIndicatorColor = useCallback(
         const entry = indicatorSeriesRef.current[indicator];
         if (!entry) return;
 
-        const isGrouped =
-          typeof entry === "object" && !("setData" in entry);
+        const isGrouped = typeof entry === "object" && !("setData" in entry);
 
         if (isGrouped) {
           const groupedValues = {};
@@ -542,9 +720,10 @@ const getIndicatorColor = useCallback(
             selectedCurrency,
             timeframeValue,
             chartRef,
+            addSeries, // ✅ REQUIRED
             indicatorSeriesRef,
             latestIndicatorValuesRef,
-            getIndicatorColor,
+            getIndicatorColor, // ✅ LAST
           );
         }
         fetchCandleStickData();
@@ -558,302 +737,7 @@ const getIndicatorColor = useCallback(
     selectedIndicator,
   ]);
 
-  // useEffect(() => {
-  //    const crosshairHandler = (param) => {
-  //   if (!param.time || !param.seriesData) {
-  //     setLiveOhlcv(null);
-  //     return;
-  //   }
-  //   const candle = param.seriesData?.get(seriesRef.current);
-  //   if (!candle) return;
-  //   setLiveOhlcv(candle);
-  // };
-
-  //   seriesRef.current = null;
-
-  //   switch (chartType) {
-  //     case "line":
-  //       async function LineData() {
-  //         const { data } = await fetchDataByCurrency(
-  //           selectedCurrency,
-  //           timeframeValue,
-  //           chartType,
-  //         );
-
-  //         if (seriesRef.current) {
-  //           chartRef.current.removeSeries(seriesRef.current);
-  //         }
-  //         seriesRef.current = chartRef.current.addSeries(
-  //           LineSeries,
-  //           chartSeriesStyles.line,
-  //         );
-  //         seriesRef.current.setData(
-  //           data?.map((d) => ({
-  //             time: d.time,
-  //             value: d?.close != null ? Number(d.close) : null,
-  //           })),
-  //           // .filter((d) => d.close != null && !Number.isNaN(d.close)),
-  //         );
-  //         chartRef.current.timeScale().fitContent();
-  //         await fetchIndicatorData(
-  //           selectedIndicator,
-  //           selectedCurrency,
-  //           timeframeValue,
-  //           chartRef,
-  //           indicatorSeriesRef,
-  //           latestIndicatorValuesRef,
-  //           getIndicatorColor,
-  //         );
-  //       }
-  //       LineData();
-  //       break;
-
-  //     case "bar":
-  //       async function BarData() {
-  //         const { data } = await fetchDataByCurrency(
-  //           selectedCurrency,
-  //           timeframeValue,
-  //           chartType,
-  //         );
-
-  //         if (seriesRef.current) {
-  //           chartRef.current.removeSeries(seriesRef.current);
-  //         }
-  //         seriesRef.current = chartRef.current.addSeries(
-  //           BarSeries,
-  //           chartSeriesStyles.bar,
-  //         );
-  //         seriesRef.current.setData(
-  //           await data?.map((d) => ({
-  //             time: d.time,
-  //             open: d.open,
-  //             high: d.high,
-  //             low: d.low,
-  //             close: d.close,
-  //           })),
-  //         );
-  //         chartRef.current.timeScale().fitContent();
-  //         await fetchIndicatorData(
-  //           selectedIndicator,
-  //           selectedCurrency,
-  //           timeframeValue,
-  //           chartRef,
-  //           indicatorSeriesRef,
-  //           latestIndicatorValuesRef,
-  //           getIndicatorColor,
-  //         );
-  //       }
-  //       BarData();
-  //       break;
-
-  //     case "area":
-  //       async function AreaData() {
-  //         const { data } = await fetchDataByCurrency(
-  //           selectedCurrency,
-  //           timeframeValue,
-  //           chartType,
-  //         );
-
-  //         if (seriesRef.current) {
-  //           chartRef.current.removeSeries(seriesRef.current);
-  //         }
-  //         seriesRef.current = chartRef.current.addSeries(
-  //           AreaSeries,
-  //           chartSeriesStyles.area,
-  //         );
-  //         seriesRef.current.setData(
-  //           await data?.map((d) => ({
-  //             time: d?.time,
-  //             value: Number(d?.close),
-  //           })),
-  //         );
-  //         chartRef.current.timeScale().fitContent();
-  //         await fetchIndicatorData(
-  //           selectedIndicator,
-  //           selectedCurrency,
-  //           timeframeValue,
-  //           chartRef,
-  //           indicatorSeriesRef,
-  //           latestIndicatorValuesRef,
-  //           getIndicatorColor,
-  //         );
-  //       }
-  //       AreaData();
-  //       break;
-
-  //     case "baseline":
-  //       async function BaseLineData() {
-  //         const { data } = await fetchDataByCurrency(
-  //           selectedCurrency,
-  //           timeframeValue,
-  //           chartType,
-  //         );
-  //         if (seriesRef.current) {
-  //           chartRef.current.removeSeries(seriesRef.current);
-  //         }
-  //         seriesRef.current = chartRef.current.addSeries(BaselineSeries, {
-  //           ...chartSeriesStyles.baseline,
-  //           baseValue: {
-  //             type: "price",
-  //             price: Number(data?.[0]?.close ?? 0),
-  //           },
-  //         });
-  //         seriesRef.current.setData(
-  //           await data?.map((d) => ({ time: d.time, value: d.close })),
-  //         );
-  //         chartRef.current.timeScale().fitContent();
-  //         await fetchIndicatorData(
-  //           selectedIndicator,
-  //           selectedCurrency,
-  //           timeframeValue,
-  //           chartRef,
-  //           indicatorSeriesRef,
-  //           latestIndicatorValuesRef,
-  //           getIndicatorColor,
-  //         );
-  //       }
-  //       BaseLineData();
-  //       break;
-
-  //     case "histogram":
-  //       async function HistogramData() {
-  //         const { data } = await fetchDataByCurrency(
-  //           selectedCurrency,
-  //           timeframeValue,
-  //           chartType,
-  //         );
-  //         if (seriesRef.current) {
-  //           chartRef.current.removeSeries(seriesRef.current);
-  //         }
-  //         seriesRef.current = chartRef.current.addSeries(
-  //           HistogramSeries,
-  //           chartSeriesStyles.histogram,
-  //         );
-  //         seriesRef.current.setData(
-  //           data?.map((d, index, arr) => {
-  //             const prev = arr[index - 1];
-  //             const isUp = prev ? d.close >= prev.close : true;
-  //             return {
-  //               time: d.time,
-  //               value: d.volume,
-  //               color: isUp ? "#22c55e" : "#ef4444",
-  //             };
-  //           }),
-  //         );
-  //         chartRef.current.timeScale().fitContent();
-  //         await fetchIndicatorData(
-  //           selectedIndicator,
-  //           selectedCurrency,
-  //           timeframeValue,
-  //           chartRef,
-  //           indicatorSeriesRef,
-  //           latestIndicatorValuesRef,
-  //           getIndicatorColor,
-  //         );
-  //       }
-  //       HistogramData();
-  //       break;
-
-  //     case "heikinashi":
-  //       async function HeikinAshiData() {
-  //         const { data } = await fetchDataByCurrency(
-  //           selectedCurrency,
-  //           timeframeValue,
-  //           chartType,
-  //         );
-  //         if (seriesRef.current) {
-  //           chartRef.current.removeSeries(seriesRef.current);
-  //         }
-  //         seriesRef.current = chartRef.current.addSeries(CandlestickSeries);
-
-  //         seriesRef.current.setData(convertToHeikinAshi(await data));
-
-  //         chartRef.current.timeScale().fitContent();
-  //         await fetchIndicatorData(
-  //           selectedIndicator,
-  //           selectedCurrency,
-  //           timeframeValue,
-  //           chartRef,
-  //           indicatorSeriesRef,
-  //           latestIndicatorValuesRef,
-  //           getIndicatorColor,
-  //         );
-  //       }
-  //       HeikinAshiData();
-  //       break;
-
-  //     case "hollowcandles":
-  //       async function HollowCandlesData() {
-  //         const { data } = await fetchDataByCurrency(
-  //           selectedCurrency,
-  //           timeframeValue,
-  //           chartType,
-  //         );
-  //         if (seriesRef.current) {
-  //           chartRef.current.removeSeries(seriesRef.current);
-  //         }
-  //         seriesRef.current = chartRef.current.addSeries(
-  //           CandlestickSeries,
-  //           chartSeriesStyles.hollowcandles,
-  //         );
-  //         seriesRef.current.setData(await data);
-  //         chartRef.current.timeScale().fitContent();
-  //         await fetchIndicatorData(
-  //           selectedIndicator,
-  //           selectedCurrency,
-  //           timeframeValue,
-  //           chartRef,
-  //           indicatorSeriesRef,
-  //           latestIndicatorValuesRef,
-  //           getIndicatorColor,
-  //         );
-  //       }
-  //       HollowCandlesData();
-  //       break;
-
-  //     default:
-  //       async function fetchCandeStickData() {
-  //         const { data } = await fetchDataByCurrency(
-  //           selectedCurrency,
-  //           timeframeValue,
-  //           chartType,
-  //         );
-  //         if (seriesRef.current) {
-  //           chartRef.current.removeSeries(seriesRef.current);
-  //         }
-  //         seriesRef.current = chartRef.current.addSeries(
-  //           CandlestickSeries,
-  //           chartSeriesStyles.candlestick,
-  //         );
-  //         seriesRef.current.setData(await data);
-  //         chartRef.current.subscribeCrosshairMove(crosshairHandler);
-  //         chartRef.current.timeScale().fitContent();
-  //         await fetchIndicatorData(
-  //           selectedIndicator,
-  //           selectedCurrency,
-  //           timeframeValue,
-  //           chartRef,
-  //           indicatorSeriesRef,
-  //           latestIndicatorValuesRef,
-  //           getIndicatorColor,
-  //         );
-  //       }
-  //       fetchCandeStickData();
-  //   }
-  //   return () => {
-  //   // cleanup on every re-run
-  //   chartRef.current.unsubscribeCrosshairMove(crosshairHandler);
-  // };
-  // }, [
-  //   chartType,
-  //   historicalData,
-  //   rangeValue,
-  //   timeframeValue,
-  //   selectedCurrency,
-  //   selectedIndicator,
-  // ]);
-
-
+  // Zoom In
   const zoomIn = () => {
     const chart = chartRef.current;
     if (!chart) return;
@@ -909,6 +793,10 @@ const getIndicatorColor = useCallback(
       <div
         ref={containerRef}
         className="p-2 z-0 relative m-2 rounded-md bg-white w-fit"
+        style={{
+          width: ChartProprties.width,
+          // height: ChartProprties.height,
+        }}
       >
         {/* -------------------------------sub-header live Values----------------------- */}
         <div className="flex px-2 top-2 z-10 absolute items-center gap-2 bg-slate-100 justify-start">
@@ -988,24 +876,6 @@ const getIndicatorColor = useCallback(
 
                   {/* RIGHT SIDE */}
                   <div className="flex items-center gap-2">
-                    {/* Visibility Toggle */}
-                    {/* <button
-                      onClick={() => {
-                        if (!series) return;
-
-                        const visible = series.options().visible ?? true;
-
-                        series.applyOptions({ visible: !visible });
-                      }}
-                      className="text-slate-500 hover:text-slate-800"
-                    >
-                      {(series?.options()?.visible ?? true) ? (
-                        <FaEye />
-                      ) : (
-                        <FaEyeSlash />
-                      )}
-                    </button> */}
-
                     {/* Settings */}
                     <button
                       title="Indicator Settings"
@@ -1024,17 +894,7 @@ const getIndicatorColor = useCallback(
 
                     {/* Remove Indicator */}
                     <button
-                      onClick={() => {
-                        if (!series) return;
-
-                        chartRef.current.removeSeries(series);
-
-                        delete indicatorSeriesRef.current[indicator];
-
-                        setSelectedIndicator((prev) =>
-                          prev.filter((i) => i !== indicator),
-                        );
-                      }}
+                      onClick={() => removeIndicator(indicator)}
                       className="text-slate-500 hover:text-red-500"
                     >
                       <IoCloseSharp />
