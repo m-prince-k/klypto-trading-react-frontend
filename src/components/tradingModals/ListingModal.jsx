@@ -42,7 +42,7 @@ export const ListingModal = ({
         response = await apiService.post(`getIndicators`);
       }
       setIndicators(response?.data);
-      console.log(response?.data, "-----------");
+      // console.log(response?.data, "-----------");
     } catch (err) {
       console.error(err);
       setError(err?.message || "Failed to fetch indicators");
@@ -65,7 +65,7 @@ export const ListingModal = ({
         response = await apiService.post(`getCurrencies`);
       }
       setCurrencies(await response?.data);
-      console.log(currencies, "currencies-------------");
+      // console.log(currencies, "currencies-------------");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -90,13 +90,10 @@ export const ListingModal = ({
     return item.label?.toLowerCase().includes(search);
   });
 
-  // console.log(searchIndicator, "searchIndicator");
-  // console.log(selectedIndicator, "indicators");
-
   const filteredCurrencies = currencies?.filter((curr) => {
     if (!searchCurrency) return true;
     const search = searchCurrency.toLowerCase();
-    console.log(search, "searchCurrency");
+    // console.log(search, "searchCurrency");
 
     return (
       curr?.raw?.toLowerCase().includes(search) ||
@@ -143,7 +140,7 @@ export const ListingModal = ({
                 filteredCurrencies?.map((curr, index) => (
                   <Link
                     to="#"
-                    key={index}
+                    // key={curr.id}
                     onClick={() => {
                       setSelectedCurrency(curr?.symbol);
                       onClose();
@@ -201,33 +198,44 @@ export const ListingModal = ({
             ))} */}
             {/* Indicators tab */}
             {activeTab === "Indicators" && (
-              <div className="overflow-y-auto flex-1 max-h-[68vh]">
+              <div
+                className="flex-grow overflow-auto"
+                style={{ maxHeight: "68vh" }}
+              >
                 {loading ? (
-                  <div className="flex items-center justify-center h-40">
-                    <div className="w-8 h-8 border-4 border-slate-300 border-t-purple-600 rounded-full animate-spin"></div>
+                  <div
+                    className="d-flex align-items-center justify-content-center"
+                    style={{ height: "10rem" }}
+                  >
+                    <div
+                      className="spinner-border text-secondary"
+                      role="status"
+                    >
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
                   </div>
                 ) : filteredIndicators.length > 0 ? (
-                  <ul className="grid pl-3 grid-cols-1 text-slate-700 gap-2 text-sm">
-                    {filteredIndicators.map((item) => (
-                      <label
-                        key={item.label}
-                        className="flex items-center gap-2 px-2 py-1 rounded cursor-pointer hover:bg-slate-100"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedIndicator.includes(item.label)}
-                          onChange={() => toggleIndicator(item.label)}
-                          className="accent-slate-900 cursor-pointer"
-                        />
-                        <span>{item.label}</span>
-                      </label>
+                  <ul className="list-unstyled ps-7 text-secondary fs-6">
+                    {filteredIndicators.map((item, index) => (
+                      <li key={index}>
+                        <label className="d-flex align-items-center gap-2 px-2 py-1 rounded">
+                          <input
+                            type="checkbox"
+                            checked={selectedIndicator.includes(item.label)}
+                            onChange={() => toggleIndicator(item.label)}
+                            className="form-check-input cursor-pointer"
+                          />
+                          <span>{item.label}</span>
+                        </label>
+                      </li>
                     ))}
                   </ul>
                 ) : (
-                  <p>No Data found</p>
+                  <p className="text-muted">No Data found</p>
                 )}
               </div>
             )}
+
             {/* Other tabs */}
             {activeTab !== "Indicators" && !loading && (
               <p className="text-sm text-slate-500 text-center">

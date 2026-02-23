@@ -205,7 +205,6 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
     case "RSI":
       return {
         type: "single",
-
         data:
           response.data
             ?.filter((d) => d.rsi != null && d.time != null)

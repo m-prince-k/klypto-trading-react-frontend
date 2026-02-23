@@ -351,18 +351,18 @@ export default function IndicatorRuleBuilder() {
               Stock passes all of the below filters in
             </h2>
 
-            {/* <EditableMultiSelect
+            <EditableMultiSelect
               value={selectedCurrencies}
               options={currencies}
               onChange={setSelectedCurrencies}
               placeholder="Select Currency"
-            /> */}
+            />
 
-            <EditableSelect
+            {/* <EditableSelect
               value={selectedCurrency}
               options={currencies}
               onChange={(v) => setSelectedCurrency(v)}
-            />
+            /> */}
 
             <span className="text-slate-700">segment</span>
           </div>

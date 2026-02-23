@@ -68,7 +68,7 @@ export const Form = ({onClose}) => {
   const [isRight, setIsRight] = useState(false);
 
   return (
-    <div className="overflow-hidden px-6 py-4">
+    <div className="overflow-hidden bg-white px-6 py-4">
       <form onSubmit={handleSubmit}>
         <div className="flex justify-between">
           <h1 className="text-2xl font-bold mb-4">Trading Form</h1>

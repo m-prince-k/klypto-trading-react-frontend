@@ -66,7 +66,7 @@ export default function IndicatorAlert({ onClose, value, symbol, liveOhlcv }) {
                   </select>
                   <input
                     type="number"
-                    value={value.toFixed(2)}
+                    value={value}
                     // onChange={(e) => setValue(e.target.value)}
                     className="border border-slate-300 rounded-lg px-2 py-2"
                   />

@@ -66,176 +66,148 @@ export default function ChartHeader({
   }, []);
 
 return (
-  <div className="w-full justify-start flex flex-col gap-3 text-sm">
-    <div className="flex items-center gap-2 px-6 py-2 bg-white shadow-sm ">
-      {/* Name/Symbol Button */}
-      <button
-        title={"Symbol Search"}
-        onClick={() => openModal("Symbol Search")}
-        className="group relative h-10 px-5 bg-gradient-to-r from-slate-100 to-slate-50 text-slate-900 font-bold rounded-full transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5 border border-slate-200/50 overflow-hidden"
+  <div className="w-100 d-flex flex-column gap-3 small">
+
+  <div className="d-flex align-items-center gap-3 px-3 py-2 bg-white shadow-sm">
+
+    {/* Name/Symbol Button */}
+    <button
+      title="Symbol Search"
+      onClick={() => openModal("Symbol Search")}
+      className="btn btn-light fw-bold rounded-pill px-4"
+      style={{ height: 40 }}
+    >
+      {selectedCurrency || "BTCUSDT"}
+    </button>
+
+    {/* Divider */}
+    <div className="vr" />
+
+    {/* TimeFrame Dropdown */}
+    <div title={timeframeValue}>
+      <select
+        value={timeframeValue ? timeframeValue : "1m"}
+        onChange={(e) => setTimeframeValue(e.target.value)}
+        className="form-select form-select-sm"
+        style={{ height: 40 }}
       >
-        <span className="relative z-10 flex items-center gap-2">
-          <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
-          </svg>
-          {selectedCurrency || "BTCUSDT"}
-        </span>
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-100 to-indigo-100 opacity-0 " />
-      </button>
+        {!timeframe && <option value="1m">1 Minute</option>}
 
-      {/* Divider */}
-      <div className="h-8 w-px bg-gradient-to-b from-transparent via-slate-300 to-transparent" />
+        {timeframe && Object.keys(timeframe).length === 0 && (
+          <option value="1m">1 Minute</option>
+        )}
 
-      {/* TimeFrame Dropdown */}
-      <div title={timeframeValue} className="inline-flex items-center">
-        <div className="relative inline-block group">
-          <select
-            value={timeframeValue ? timeframeValue : "1m"}
-            onChange={(e) => setTimeframeValue(e.target.value)}
-            className="
-              appearance-none h-10 pl-4 pr-10 text-sm font-semibold rounded-xl 
-              bg-white text-slate-900 border-2 border-slate-200 shadow-sm "
-          >
-            {!timeframe && <option value="1m">1 Minute</option>}
-
-            {/* ✅ Fallback if API returned empty object */}
-            {timeframe && Object.keys(timeframe).length === 0 && (
-              <option value="1m">1 Minute</option>
-            )}
-            {timeframe &&
-              Object.entries(timeframe)?.map(([group, items]) => (
-                <optgroup
-                  className="text-slate-500 text-xs font-semibold"
-                  key={group}
-                  label={`${group?.toUpperCase()} `}
-                >
-                  {items?.map((item) => (
-                    <option key={item?.seconds} value={item?.value}>
-                      {item?.label}
-                    </option>
-                  ))}
-                </optgroup>
+        {timeframe &&
+          Object.entries(timeframe)?.map(([group, items]) => (
+            <optgroup key={group} label={group?.toUpperCase()}>
+              {items?.map((item) => (
+                <option key={item?.seconds} value={item?.value}>
+                  {item?.label}
+                </option>
               ))}
-          </select>
-
-          {/* Custom Arrow */}
-          <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-600 group-hover:text-purple-600 transition-colors duration-200">
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      {/* Divider */}
-      <div className="h-8 w-px bg-gradient-to-b from-transparent via-slate-300 to-transparent" />
-
-      {/* Chart Type Dropdown */}
-      <DropdownMenu.Root>
-        <DropdownMenu.Trigger asChild>
-          <button
-            className="group h-10 z-0 flex items-center gap-2 px-4 rounded-xl bg-white 
-              border-2 border-slate-200 text-sm font-semibold text-slate-800 shadow-sm "
-          >
-            {active?.icon && <active.icon size={16} />}
-            <span>{active?.label}</span>
-            <FiChevronDown size={14} className="text-slate-400 group-hover:text-purple-500 transition-colors" />
-          </button>
-        </DropdownMenu.Trigger>
-
-        <DropdownMenu.Portal>
-          <DropdownMenu.Content
-            sideOffset={8}
-            className="min-w-48 bg-white/95 backdrop-blur-xl rounded-xl border-2 border-slate-200/50 
-              shadow-2xl p-2 animate-in fade-in zoom-in-95 duration-200"
-          >
-            {chartOptions.map((item) => (
-              <DropdownMenu.Item
-                key={item.value}
-                onClick={() => setChartType(item.value)}
-                className="group flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg
-                  text-slate-700 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50
-                  hover:text-purple-700 cursor-pointer outline-none transition-all duration-150"
-              >
-                <item.icon size={16} className="" />
-
-                <span className="flex-1">{item.label}</span>
-
-                {chartType === item.value && (
-                  <span className="flex items-center justify-center w-5 h-5 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-bold shadow-lg shadow-purple-500/30">
-                    ✓
-                  </span>
-                )}
-              </DropdownMenu.Item>
-            ))}
-          </DropdownMenu.Content>
-        </DropdownMenu.Portal>
-      </DropdownMenu.Root>
-
-      {/* Divider */}
-      <div className="h-8 w-px bg-gradient-to-b from-transparent via-slate-300 to-transparent" />
-
-      {/* Action Buttons */}
-      <div className="flex items-center gap-2">
-        {/* Range input */}
-        <div className="flex items-center gap-2">
-          <label>Range:</label>
-        <input type="number" min="10" defaultValue="10" className=" max-w-24 w-fit  h-10 px-4 bg-white text-slate-700 rounded-xl font-semibold border-2 border-transparent shadow-sm " />
-
-        </div>
-        
-
-        {/* Indicators Button */}
-        <button
-          title="Indicators"
-          onClick={() => openModal("Indicators")}
-          className="
-            group h-10 px-4
-            flex items-center gap-2 rounded-xl font-semibold
-            bg-white text-slate-700 border-2 border-transparent shadow-sm "
-        >
-          <VscGraphLine className="text-lg " />
-          <span className="hidden sm:inline">Indicators</span>
-        </button>
-
-        {/* Alert Button */}
-        <button
-          title="Create Alert"
-          onClick={() => openModal("Alerts")}
-          className="group h-10 px-4 flex items-center gap-2 rounded-xl font-semibold
-            bg-white text-slate-700 border-2 border-transparent 
-            shadow-sm "
-        >
-          <MdAlarmAdd className="text-lg " />
-          <span className="hidden sm:inline">Alert</span>
-        </button>
-
-        {/* Simulation Button */}
-        <button
-          title="Simulation"
-          onClick={() => openModal("Simulation")}
-          className="group h-10 px-4 flex items-center gap-2 rounded-xl font-semibold
-            bg-gradient-to-r from-purple-600 to-indigo-600
-            text-white shadow-lg shadow-purple-500/30 "
-        >
-          <FiPlus className="text-lg " />
-          <span className="hidden sm:inline">Simulation</span>
-        </button>
-      </div>
+            </optgroup>
+          ))}
+      </select>
     </div>
 
-    {/* MODAL */}
-    <ListingModal
-      isOpen={modalConfig.open}
-      onClose={closeModal}
-      title={modalConfig.title}
-      selectedCurrency={selectedCurrency}
-      setSelectedCurrency={setSelectedCurrency}
-      selectedIndicator={selectedIndicator}
-      setSelectedIndicator={setSelectedIndicator}
-      toggleIndicator={toggleIndicator}
-      loadIndicator={loadIndicator}
-    />
+    {/* Divider */}
+    <div className="vr" />
+
+    {/* Chart Type Dropdown (UNCHANGED LOGIC) */}
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger asChild>
+        <button className="btn btn-light d-flex align-items-center gap-2">
+          {active?.icon && <active.icon size={16} />}
+          <span>{active?.label}</span>
+          <FiChevronDown size={14} />
+        </button>
+      </DropdownMenu.Trigger>
+
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content
+          sideOffset={8}
+          className="bg-white border rounded shadow p-2"
+        >
+          {chartOptions.map((item) => (
+            <DropdownMenu.Item
+              key={item.value}
+              onClick={() => setChartType(item.value)}
+              className="d-flex align-items-center gap-2 px-3 py-2 rounded"
+            >
+              <item.icon size={16} />
+              <span className="flex-grow-1">{item.label}</span>
+
+              {chartType === item.value && (
+                <span className="badge bg-primary">✓</span>
+              )}
+            </DropdownMenu.Item>
+          ))}
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
+
+    {/* Divider */}
+    <div className="vr" />
+
+    {/* Action Buttons */}
+    <div className="d-flex align-items-center gap-2">
+
+      {/* Range */}
+      <div className="d-flex align-items-center gap-2">
+        <label className="mb-0">Range:</label>
+        <input
+          type="number"
+          min="10"
+          defaultValue="10"
+          className="form-control form-control-sm"
+          style={{ width: 90, height: 40 }}
+        />
+      </div>
+
+      {/* Indicators */}
+      <button
+        title="Indicators"
+        onClick={() => openModal("Indicators")}
+        className="btn btn-light d-flex align-items-center gap-2"
+      >
+        <VscGraphLine />
+        <span>Indicators</span>
+      </button>
+
+      {/* Alert */}
+      <button
+        title="Create Alert"
+        onClick={() => openModal("Alerts")}
+        className="btn btn-light d-flex align-items-center gap-2"
+      >
+        <MdAlarmAdd />
+        <span>Alert</span>
+      </button>
+
+      {/* Simulation */}
+      <button
+        title="Simulation"
+        onClick={() => openModal("Simulation")}
+        className="btn btn-primary d-flex align-items-center gap-2"
+      >
+        <FiPlus />
+        <span>Simulation</span>
+      </button>
+    </div>
   </div>
+
+  {/* MODAL (UNCHANGED) */}
+  <ListingModal
+    isOpen={modalConfig.open}
+    onClose={closeModal}
+    title={modalConfig.title}
+    selectedCurrency={selectedCurrency}
+    setSelectedCurrency={setSelectedCurrency}
+    selectedIndicator={selectedIndicator}
+    setSelectedIndicator={setSelectedIndicator}
+    toggleIndicator={toggleIndicator}
+    loadIndicator={loadIndicator}
+  />
+</div>
 );
 }

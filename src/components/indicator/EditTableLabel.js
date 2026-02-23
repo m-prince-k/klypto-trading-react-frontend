@@ -173,7 +173,7 @@ export default function EditableMultiSelect({
       <div
         onClick={() => setOpen(o => !o)}
         className="
-          min-h-[36px] w-full px-3 py-1.5 rounded-lg cursor-pointer
+          min-h-[36px] w-fit px-3 py-1.5 rounded-lg cursor-pointer
           bg-white border border-slate-200
           hover:border-purple-300
           flex items-center
@@ -197,7 +197,7 @@ export default function EditableMultiSelect({
       {open && (
         <div
           className="
-            absolute z-50 mt-1 w-full bg-white
+            absolute z-50 mt-1 w-xs bg-white
             border border-slate-200 rounded-lg shadow-lg
             overflow-hidden
           "
