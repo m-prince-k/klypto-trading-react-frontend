@@ -40,6 +40,7 @@ import {
   IoCloseSharp,
   IoEyeOffOutline,
   IoEyeOutline,
+  IoLink,
   IoSettingsOutline,
 } from "react-icons/io5";
 import { FiMoreHorizontal } from "react-icons/fi";
@@ -264,50 +265,50 @@ export default function Candlestick() {
      3️⃣ WebSocket Trades
   ======================== */
 
-    // const socket = new WebSocket("wss://socket.delta.exchange");
+    const socket = new WebSocket("wss://socket.delta.exchange");
 
-    // socket.onopen = () => {
-    //   socket.send(
-    //     JSON.stringify({
-    //       type: "subscribe",
-    //       payload: {
-    //         channels: [
-    //           {
-    //             name: "v2/ticker",
-    //             symbols: [selectedCurrency || "BTCUSD"],
-    //           },
-    //         ],
-    //       },
-    //     }),
-    //   );
-    // };
+    socket.onopen = () => {
+      socket.send(
+        JSON.stringify({
+          type: "subscribe",
+          payload: {
+            channels: [
+              {
+                name: "v2/ticker",
+                symbols: [selectedCurrency || "BTCUSD"],
+              },
+            ],
+          },
+        }),
+      );
+    };
 
-    // let currentCandle = null;
+    let currentCandle = null;
 
-    // socket.onmessage = (event) => {
-    //   const msg = JSON.parse(event.data);
-    //   if (!msg?.mark_price || !msg?.timestamp) return;
+    socket.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      if (!msg?.mark_price || !msg?.timestamp) return;
 
-    //   const price = Number(msg.mark_price);
-    //   const intervalSec = TIMEFRAME_TO_SECONDS[timeframeValue];
-    //   const time = Math.floor(msg.timestamp / intervalSec) * intervalSec;
+      const price = Number(msg.mark_price);
+      const intervalSec = TIMEFRAME_TO_SECONDS[timeframeValue];
+      const time = Math.floor(msg.timestamp / intervalSec) * intervalSec;
 
-    //   if (!currentCandle || currentCandle.time !== time) {
-    //     currentCandle = {
-    //       time: time / 1000,
-    //       open: price,
-    //       high: price,
-    //       low: price,
-    //       close: price,
-    //     };
+      if (!currentCandle || currentCandle.time !== time) {
+        currentCandle = {
+          time: time / 1000,
+          open: price,
+          high: price,
+          low: price,
+          close: price,
+        };
 
-    //     setLiveOhlcv(currentCandle);
-    //   } else {
-    //     currentCandle.high = Math.max(currentCandle.high, price);
-    //     currentCandle.low = Math.min(currentCandle.low, price);
-    //     currentCandle.close = price;
-    //   }
-    // };
+        setLiveOhlcv(currentCandle);
+      } else {
+        currentCandle.high = Math.max(currentCandle.high, price);
+        currentCandle.low = Math.min(currentCandle.low, price);
+        currentCandle.close = price;
+      }
+    };
 
     return () => {
       // try {
@@ -316,7 +317,7 @@ export default function Candlestick() {
       //   );
       // } catch (e) {}
 
-      // socket.close();
+      socket.close();
       chart.remove();
     };
   }, [selectedCurrency, timeframeValue]);
@@ -326,7 +327,7 @@ export default function Candlestick() {
   const loadIndicator = async () => {
     try {
       const { candles, indicatorData } = await apiService.post(
-        `indicatorDetails?symbol=BTCUSD&interval=1d&indicator=${selectedIndicator.toLocaleUpperCase()}`,
+        `indicatorDetails?symbol=${selectedCurrency}&interval=1d&indicator=${selectedIndicator.toLocaleUpperCase()}`,
       );
 
       if (chartType === "line") {
@@ -810,7 +811,7 @@ export default function Candlestick() {
       {/* Chart */}
       <div
         ref={containerRef}
-        className="p-2 z-0 relative m-2 rounded-md bg-white w-fit"
+        className="p-2 z-0 relative m-2 rounded-3 bg-white w-fit"
         style={{
           width: ChartProprties.width,
         }}
@@ -878,7 +879,7 @@ export default function Candlestick() {
                 return (
                   <div
                     key={index}
-                    className="flex w-full justify-between items-center gap-3 bg-white shadow-sm border border-slate-200 rounded-md px-3 h-8 text-xs "
+                    className="flex w-full justify-between items-center gap-3 bg-white shadow-sm border border-slate-200 rounded-3 px-3 h-8 text-xs "
                   >
                     {/* LEFT SIDE */}
                     <span className="font-medium w-full text-slate-800 flex items-center gap-2">
@@ -937,7 +938,7 @@ export default function Candlestick() {
                         <DropdownMenu.Portal>
                           <DropdownMenu.Content
                             sideOffset={6}
-                            className="w-56 rounded-md bg-white shadow-lg border border-gray-200 text-sm z-50"
+                            className="w-56 rounded-3 bg-white shadow-lg border border-gray-200 text-sm z-50"
                           >
                             <DropdownMenu.Item
                               onClick={() => setShowAlertForm(true)}
@@ -1016,30 +1017,46 @@ export default function Candlestick() {
         </button>
       </div>
 
+      {/* Sliding Panel */}
       <div
-        className={`
-                    fixed top-0 right-0 h-screen w-[400px] shadow-xl z-50
-                    transform transition-transform duration-300 ease-in-out
-                    ${openForm ? "translate-x-0" : "translate-x-full hidden"}
-                  `}
+        className="position-fixed top-0 end-0 vh-100 bg-white shadow"
+        style={{
+          width: "900px",
+          height: "100vh",
+          zIndex: 1050,
+          transform: openForm ? "translateX(0)" : "translateX(100%)",
+          transition: "transform 0.6s ease-out",
+        }}
       >
-        <Form onClose={() => setOpenForm(false)} />
+        <IndicatorRuleBuilder
+          onOpen={() => setOpenForm(true)}
+          onClose={() => setOpenForm(false)}
+        />
       </div>
 
-      {/* Open Button */}
+      {/* Backdrop (IMPORTANT for UX) */}
+      {openForm && (
+        <div
+          className="position-fixed top-0 start-0 w-100 vh-100 bg-dark bg-opacity-25"
+          style={{ zIndex: 1040 }}
+          onClick={() => setOpenForm(false)}
+        />
+      )}
+
+      {/* Floating Open Button */}
       {!openForm && (
         <button
           onClick={() => setOpenForm(true)}
-          className="fixed bottom-6 right-6 flex items-center gap-1 px-3 py-2
-                             text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-purple-500 z-50"
+          className="position-fixed bottom-0 end-0 m-4 btn btn-primary d-flex align-items-center gap-1"
+          style={{ zIndex: 1050 }}
         >
-          <FaFileWaveform />
+          <IoLink />
         </button>
       )}
 
       {/* ------------Start Indicator Rule Builder for Caluculating Indicators along with condition---------------- */}
       <div className="bg-slate-50">
-        <IndicatorRuleBuilder />
+        {/* <IndicatorRuleBuilder /> */}
         <IndicatorBuildingListing
           selectedCurrency={selectedCurrency}
           timeframeValue={timeframeValue}

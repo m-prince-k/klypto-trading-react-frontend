@@ -8,6 +8,7 @@ import Testing from './pages/Testing';
 import { ToastContainer } from 'react-toastify';
 import "react-toastify/dist/ReactToastify.css";
 import IndicatorBuildingListing from './components/indicator/IndicatorBuilderListing';
+import Login from './pages/auth/login';
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
         <Route path="/indiatorSlide" element={< IndiatorSlide />} />
 
         <Route path="/IndicatorBuildingListing" element={< IndicatorBuildingListing />} />
+        <Route path="/login" element={< Login />} />
 
 
       </Routes>
