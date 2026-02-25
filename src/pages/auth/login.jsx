@@ -1,8 +1,20 @@
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import { Form, Button, Card, Container } from "react-bootstrap";
 import { FiEye, FiEyeOff } from "react-icons/fi";
+import apiService from "../../services/apiServices";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
+import { isAuthenticated } from "./protected";
 
 export default function Login() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isAuthenticated()) {
+      navigate("/candleStick", { replace: true }); // redirect if already logged in
+    }
+  }, [navigate]);
+
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -36,28 +48,46 @@ export default function Login() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const validationErrors = validate();
-    setErrors(validationErrors);
+    // const validationErrors = validate();
+    // setErrors(validationErrors);
 
     // if (Object.keys(validationErrors).length > 0) return;
 
-    setLoading(true);
+    // setLoading(true);
 
     const payload = {
       email: form.email,
       password: form.password,
     };
-    console.log(payload, "payloadddddddddddddd");
-    if (form.remember) localStorage.setItem("session", JSON.stringify(payload));
-    else sessionStorage.setItem("session", JSON.stringify(payload));
 
-    setLoading(false);
-    alert("Login successful!");
+    try {
+      const response = await apiService.post("/api/login", payload);
+
+      console.log(response, "resssssssssss");
+      const data = await response?.user;
+      // console.log(data,"----------------098765678987656");
+      // return
+      // Save session based on "remember me"
+      if (form.remember) {
+        localStorage.setItem("session", JSON.stringify(data));
+      } else {
+        sessionStorage.setItem("session", JSON.stringify(data));
+      }
+
+      await toast.success("Login successful!");
+      navigate("/candleStick");
+    } catch (error) {
+      const message =
+        error.response?.data?.message || error.message || "Login failed";
+      console.error("Login error:", error);
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
   };
-
   return (
     <Container
       fluid

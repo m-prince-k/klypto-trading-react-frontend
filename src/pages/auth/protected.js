@@ -1,8 +1,7 @@
+// protected.js
 export function getSession() {
-  return (
-    localStorage.getItem("session") ||
-    sessionStorage.getItem("session")
-  );
+  console.log(localStorage.getItem("session"),'98765456')
+  return localStorage.getItem("session") || sessionStorage.getItem("session");
 }
 
 export function isAuthenticated() {

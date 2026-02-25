@@ -53,7 +53,12 @@ import {
 import IndicatorSettings from "../components/indicator/indicatorModals/IndicatorSettings";
 import IndicatorPropertyDialog from "../components/indicator/IndicatorPropertyDialog";
 
+import { useNavigate } from "react-router-dom";
+import { isAuthenticated } from "../pages/auth/protected";
+
+
 export default function Candlestick() {
+
   const chartRef = useRef();
   const containerRef = useRef();
   const seriesRef = useRef(null);
