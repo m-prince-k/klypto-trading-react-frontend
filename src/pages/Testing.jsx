@@ -1,99 +1,59 @@
-import { useRef, useEffect, useState } from "react";
-import { createChart, CandlestickSeries, LineSeries } from "lightweight-charts";
+import { useState } from "react";
+import { FaGlassWhiskey } from "react-icons/fa";
+import { Container, Button } from "react-bootstrap";
 
 export default function Testing() {
-  const wrapperRef = useRef(null);
-
-  const priceRef = useRef(null);
-  const smaRef = useRef(null);
-  const bbRef = useRef(null);
-
-  const priceChart = useRef(null);
-  const smaChart = useRef(null);
-  const bbChart = useRef(null);
-
-  // splitter Y position (px from top)
-  const [splitY, setSplitY] = useState(300);
-
-  useEffect(() => {
-    priceChart.current = createChart(priceRef.current, { height: splitY });
-    smaChart.current = createChart(smaRef.current, { height: 150 });
-    bbChart.current = createChart(bbRef.current, { height: 150 });
-
-    priceChart.current.addSeries(CandlestickSeries).setData([
-      { time: "2024-01-01", open: 100, high: 110, low: 95, close: 105 },
-      { time: "2024-01-02", open: 105, high: 115, low: 100, close: 110 },
-    ]);
-
-    const line = [
-      { time: "2024-01-01", value: 102 },
-      { time: "2024-01-02", value: 106 },
-    ];
-
-    smaChart.current.addSeries(LineSeries).setData(line);
-    bbChart.current.addSeries(LineSeries).setData(line);
-
-    priceChart.current.timeScale().subscribeVisibleTimeRangeChange((r) => {
-      smaChart.current.timeScale().setVisibleRange(r);
-      bbChart.current.timeScale().setVisibleRange(r);
-    });
-
-    return () => {
-      priceChart.current.remove();
-      smaChart.current.remove();
-      bbChart.current.remove();
-    };
-  }, []);
-
-  // 🔥 APPLY HEIGHTS ON SPLIT MOVE
-  useEffect(() => {
-    const total = wrapperRef.current.clientHeight;
-    const indicatorH = total - splitY - 6;
-
-    priceChart.current?.applyOptions({ height: splitY });
-    smaChart.current?.applyOptions({ height: indicatorH / 2 });
-    bbChart.current?.applyOptions({ height: indicatorH / 2 });
-  }, [splitY]);
-
-  // ---------- DRAG ----------
-  const startDrag = (e) => {
-    const rect = wrapperRef.current.getBoundingClientRect();
-
-    const move = (ev) => {
-      const y = ev.clientY - rect.top;
-      setSplitY(Math.min(Math.max(150, y), rect.height - 200));
-    };
-
-    const stop = () => {
-      window.removeEventListener("mousemove", move);
-      window.removeEventListener("mouseup", stop);
-    };
-
-    window.addEventListener("mousemove", move);
-    window.addEventListener("mouseup", stop);
-  };
+  const [open, setOpen] = useState(false);
 
   return (
-    <div
-      ref={wrapperRef}
-      style={{ height: "600px", width: "100%", position: "relative" }}
-    >
-      <div ref={priceRef} />
-
-      {/* 🔥 FREE MOVING SPLITTER */}
-      <div
-        onMouseDown={startDrag}
-        style={{
-          height: "6px",
-          cursor: "row-resize",
-          background: "#888",
-        }}
+    <>
+      {/* Trigger Icon */}
+      <FaGlassWhiskey
+        size={22}
+        style={{ cursor: "pointer" }}
+        onClick={() => setOpen(true)}
       />
 
-      <div>
-        <div ref={smaRef} />
-        <div ref={bbRef} />
+      {/* Backdrop */}
+      {open && (
+        <div
+          className="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-25"
+          style={{ zIndex: 1040 }}
+          onClick={() => setOpen(false)}
+        />
+      )}
+
+      {/* Sliding Panel */}
+      <div
+        className="position-fixed top-0 end-0 bg-white shadow"
+        style={{
+          width: "320px",
+          height: "100vh",
+          zIndex: 1050,
+          transition: "transform 0.5s ease",
+          transform: open ? "translateX(0)" : "translateX(100%)",
+        }}
+      >
+        {/* Header */}
+        <div className="d-flex justify-content-between align-items-center border-bottom p-3 fw-semibold">
+          <span>Waveform</span>
+
+          <Button
+            variant="light"
+            size="sm"
+            onClick={() => setOpen(false)}
+          >
+            ✕
+          </Button>
+        </div>
+
+        {/* Body */}
+        <Container className="p-3">
+          <div className="text-muted">
+            Your content here
+          </div>
+        </Container>
       </div>
-    </div>
+    </>
   );
 }

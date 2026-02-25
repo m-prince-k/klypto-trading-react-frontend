@@ -115,6 +115,60 @@ export const ChartProprties = {
   },
 };
 
+export const MiniChartProprties = {
+  width: 620,          // small footprint for hover
+  height: 280,
+
+  layout: {
+    background: { type: "solid", color: "#ffffff" },
+    textColor: "#64748b",
+    fontSize: 11,
+    fontFamily: "Inter, sans-serif",
+  },
+
+  grid: {
+    vertLines: { visible: false },
+    horzLines: { visible: false },
+  },
+
+  crosshair: {
+    mode: 0, // Normal crosshair (can disable entirely if desired)
+  },
+
+  rightPriceScale: {
+    visible: false,     // hide price scale
+    borderVisible: false,
+  },
+
+  leftPriceScale: {
+    visible: false,
+    borderVisible: false,
+  },
+
+  timeScale: {
+    visible: false,     // hide time axis
+    borderVisible: false,
+    secondsVisible: false,
+  },
+
+  handleScroll: false,  // 🔴 disable interactions
+  handleScale: false,
+
+  kineticScroll: {
+    mouse: false,
+    touch: false,
+  },
+
+  trackingMode: {
+    exitMode: 0,
+  },
+
+  localization: {
+    priceFormatter: price =>
+      price.toLocaleString("en-IN", { maximumFractionDigits: 2 }),
+  },
+};
+
 export function getIndicatorChartProperties(height = 140) {
   return {
     ...ChartProprties,

@@ -10,8 +10,18 @@ import apiService from "../../services/apiServices";
 import { IndicatorRuleModals } from "./indicatorModals/IndicatorRuleModals";
 import { FaCirclePlay, FaPlus } from "react-icons/fa6";
 import { RiLoopLeftLine } from "react-icons/ri";
+import {
+  Container,
+  Card,
+  Form,
+  Button,
+  Badge,
+  Stack,
+  CardHeader,
+} from "react-bootstrap";
+import { IoClose } from "react-icons/io5";
 
-export default function IndicatorRuleBuilder() {
+export default function IndicatorRuleBuilder({ onClose, onOpen }) {
   const [timeframeOptions, setTimeframeOptions] = useState([]);
   const [scannerOptions, setScannerOptions] = useState([]);
   const [indicators, setIndicators] = useState([]);
@@ -68,7 +78,8 @@ export default function IndicatorRuleBuilder() {
 
   /* ================= NATURAL LANGUAGE STATE ================= */
   const [input, setInput] = useState("");
-  const [conditions, setConditions] = useState([]);
+  // console.log(input, "userinputttttttt")
+  const [conditions, setConditions] = useState();
 
   /* ================= RULES (NO DEFAULT RULE) ================= */
   const [rules, setRules] = useState([]);
@@ -78,31 +89,52 @@ export default function IndicatorRuleBuilder() {
 
   /* ================= OPERATOR MAP ================= */
   const operatorMap = {
+    ">": ">",
+    "<": "<",
+    ">=": ">=",
+    "<=": "<=",
+    "=": "=",
+
     "greater than": ">",
-    "more than": ">",
-    above: ">",
+    "is greater than": ">",
     "less than": "<",
+    "is less than": "<",
+    above: ">",
     below: "<",
-    "equal to": "==",
-    "not equal to": "!=",
+    equals: "=",
+    "is equal to": "=",
   };
 
   /* ================= PARSER ================= */
   function parseNaturalConditions(text) {
-    const clean = text.toLowerCase().replace("if", "").trim();
+    if (!text || typeof text !== "string") return null;
 
-    // Split on " and "
-    const parts = clean.split(/\s+and\s+/);
+    /* ✅ Normalize safely */
+    const clean = text
+      .toLowerCase()
+      .replace(/^\s*(if|when|where)\s+/i, "") // remove starting keywords
+      .trim();
+
+    /* ✅ Split logical operators */
+    const parts = clean.split(/\s+(?:and|or|also|\&\&|\|\|)\s+/i);
 
     const results = [];
 
     for (const segment of parts) {
+      const trimmed = segment.trim();
+
       for (const phrase in operatorMap) {
-        if (segment.includes(phrase)) {
-          const pieces = segment.split(phrase);
+        if (trimmed.includes(phrase)) {
+          const pieces = trimmed.split(phrase);
+
           if (pieces.length !== 2) continue;
 
-          const leftRaw = pieces[0].replace("is", "").trim();
+          /* ✅ Clean left side */
+          const leftRaw = pieces[0]
+            .replace(/\bis\b/g, "") // remove standalone "is"
+            .trim();
+
+          /* ✅ Clean right side */
           const rightRaw = pieces[1].trim();
 
           const value = isNaN(rightRaw) ? rightRaw : Number(rightRaw);
@@ -112,7 +144,8 @@ export default function IndicatorRuleBuilder() {
             operator: operatorMap[phrase],
             value,
           });
-          break;
+
+          break; // stop checking phrases once matched
         }
       }
     }
@@ -137,6 +170,12 @@ export default function IndicatorRuleBuilder() {
   const addCondition = () => {
     if (!input.trim()) return;
 
+    const trimmedInput = input.trim();
+
+    // Append to the conditions array
+    setConditions(trimmedInput);
+
+    // console.log(trimmedInput, "conditionsssssssss");
     const parsedConditions = parseNaturalConditions(input);
 
     if (!parsedConditions) {
@@ -288,12 +327,35 @@ export default function IndicatorRuleBuilder() {
   /* ================= UI ================= */
 
   return (
-    <div className="w-full max-w-5xl py-10 mx-auto">
-      <div className="bg-white rounded-2xl shadow-xl p-6">
-        <div className="flex flex-col gap-4">
+    <Container
+      className="p-0"
+      style={{
+        zIndex: 1050,
+        height: "100vh",
+        transition: "transform 0.5s ease",
+        transform: onOpen ? "translateX(0)" : "translateX(100%)",
+      }}
+    >
+      <Card className="border-0 shadow-none p-0">
+        <Card.Header className="bg-slate-50 border-0 d-flex align-items-center justify-content-between py-3 px-4">
+          <h5 className="mb-0 fs-4  fw-semibold text-dark">Scanner</h5>
+
+          <Button
+            variant="light"
+            onClick={onClose}
+            className="d-flex align-items-center justify-content-center p-1 rounded-circle"
+            style={{
+              width: "32px",
+              height: "32px",
+            }}
+          >
+            <IoClose size={18} />
+          </Button>
+        </Card.Header>
+        <Card.Body className="d-flex flex-column gap-3">
           {/* INPUT */}
-          <div className="flex gap-3">
-            <input
+          <Stack direction="horizontal" gap={3}>
+            <Form.Control
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
@@ -302,34 +364,30 @@ export default function IndicatorRuleBuilder() {
                   addCondition();
                 }
               }}
-              placeholder="Scan stocks using simple language like 'stocks up by 4% and rising volume'"
-              className="
-            flex-1 min-w-[320px]
-            px-4 py-3 text-sm font-medium
-            border-2 border-slate-200 rounded-xl
-            focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-300
-            bg-white shadow-sm
-            placeholder:text-slate-400
-            transition-all duration-200
-            hover:border-slate-300
-          "
+              placeholder="Scan coins using simple language like 'coins up by 4% and rising volume'"
+              className="flex-grow-1 py-2 px-3 rounded-3 border-2 fw-medium"
+              style={{ minWidth: "320px" }}
             />
 
-            <button
+            <Button
               title="Generate query from natural language"
               onClick={addCondition}
-              className="
-            group relative px-6 py-3 rounded-xl text-sm font-bold
-            bg-gradient-to-r from-cyan-500 to-blue-500 text-white
-            hover:from-cyan-600 hover:to-blue-600
-            shadow-lg shadow-cyan-500/30 hover:shadow-xl hover:shadow-cyan-500/40
-            transition-all duration-300 hover:-translate-y-0.5
-            overflow-hidden
-            flex items-center gap-2
-          "
+              className="d-flex align-items-center gap-2 px-4 py-2 rounded-3 fw-bold border-0"
+              style={{
+                background: "linear-gradient(to right, #06b6d4, #3b82f6)",
+                boxShadow: "0 4px 15px rgba(6,182,212,0.3)",
+                transition: "all 0.3s ease",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.transform = "translateY(-2px)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.transform = "translateY(0)")
+              }
             >
               <svg
-                className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500"
+                width="16"
+                height="16"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -341,51 +399,55 @@ export default function IndicatorRuleBuilder() {
                   d="M13 10V3L4 14h7v7l9-11h-7z"
                 />
               </svg>
-              <span className="relative z-10">Generate</span>
-              <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-blue-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
-            </button>
-          </div>
+              Generate
+            </Button>
+          </Stack>
 
-          <div className="flex items-center gap-2 text-sm  font-medium">
-            <h2 className="text-slate-700">
-              Stock passes all of the below filters in
-            </h2>
-
+          {/* FILTER HEADER */}
+          <Stack
+            direction="horizontal"
+            gap={2}
+            className="align-items-center flex-wrap"
+          >
+            <span className="text-secondary fw-medium small">
+              Coins passes all of the below filters in
+            </span>
             <EditableMultiSelect
               value={selectedCurrencies}
               options={currencies}
               onChange={setSelectedCurrencies}
               placeholder="Select Currency"
             />
-
-            {/* <EditableSelect
-              value={selectedCurrency}
-              options={currencies}
-              onChange={(v) => setSelectedCurrency(v)}
-            /> */}
-
-            <span className="text-slate-700">segment</span>
-          </div>
+            <span className="text-secondary fw-medium small">segment</span>
+          </Stack>
 
           {/* EMPTY STATE */}
           {rules.length === 0 && (
-            <div className="text-sm text-slate-400">
+            <p className="text-muted small mb-0">
               No rules added. Type a condition or click "Add Rule".
-            </div>
+            </p>
           )}
 
           {/* RULES */}
           {rules.map((rule, index) => (
-            <div
+            <Stack
               key={rule.id}
-              className="group flex flex-wrap items-center gap-1.5 px-4 py-1"
+              direction="horizontal"
+              gap={2}
+              className="flex-wrap align-items-center px-3 py-1"
             >
-              {/* Row index badge */}
-              <span className="text-xs font-mono text-gray-600 w-5 text-center select-none shrink-0">
+              <Badge
+                bg="light"
+                text="dark"
+                className="font-monospace"
+                style={{ width: "20px", textAlign: "center" }}
+              >
                 {index + 1}
-              </span>
+              </Badge>
 
-              <div className="w-px h-4 bg-gray-700 shrink-0" />
+              <div
+                style={{ width: "1px", height: "16px", background: "#374151" }}
+              />
 
               <EditableSelect
                 value={rule.timeframe}
@@ -412,14 +474,17 @@ export default function IndicatorRuleBuilder() {
                 onChange={(v) => updateField(rule.id, "period", Math.max(0, v))}
               />
 
-              {/* Operator divider */}
-              <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg ">
+              <Stack
+                direction="horizontal"
+                gap={2}
+                className="px-2 py-1 rounded-3"
+              >
                 <EditableSelect
                   value={rule.operator}
                   options={OPERATORS}
                   onChange={(v) => updateField(rule.id, "operator", v)}
                 />
-              </div>
+              </Stack>
 
               <EditableSelect
                 value={rule.scanner}
@@ -432,108 +497,114 @@ export default function IndicatorRuleBuilder() {
                 onChange={(v) => updateField(rule.id, "value", v)}
               />
 
-              <button
+              <Button
+                variant="light"
                 onClick={() => removeRule(rule.id)}
-                className=" w-6 h-6 rounded-md text-gray-600 text-base leading-none border border-transparent bg-transparent"
+                className="p-0 border-0 bg-transparent text-secondary d-flex align-items-center justify-content-center"
+                style={{
+                  width: "24px",
+                  height: "24px",
+                  fontSize: "18px",
+                  lineHeight: 1,
+                }}
               >
                 ×
-              </button>
-            </div>
+              </Button>
+            </Stack>
           ))}
-          <div className="flex gap-2">
-            <button
+
+          {/* ADD RULE */}
+          <div>
+            <Button
               onClick={appendRule}
               title="Add new indicator rule"
-              className="
-              group flex items-center gap-2 px-4 py-2.5 rounded-xl 
-              bg-gradient-to-r from-purple-600 to-indigo-600 
-              hover:from-purple-700 hover:to-indigo-700
-              text-white font-semibold text-sm
-              shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40
-              transition-all duration-100 hover:-translate-y-0.5
-              overflow-hidden
-            "
+              className="d-flex align-items-center gap-2 px-3 py-2 rounded-3 fw-semibold border-0"
+              style={{
+                background: "linear-gradient(to right, #9333ea, #4f46e5)",
+                boxShadow: "0 4px 15px rgba(147,51,234,0.3)",
+                transition: "all 0.1s ease",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.transform = "translateY(-2px)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.transform = "translateY(0)")
+              }
             >
               <FaPlus />
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-indigo-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
-            </button>
+            </Button>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-3 pt-4">
-            <button
+          {/* ACTION BUTTONS */}
+          <Stack direction="horizontal" gap={3} className="pt-3 flex-wrap">
+            <Button
               onClick={() => {
                 const payload = buildQueryPayload();
-                console.log(payload, "FINAL QUERY");
+                onClose();
               }}
               title="Execute the scan with current rules"
-              className="
-            group relative px-6 py-3 rounded-xl text-sm font-semibold
-            bg-gradient-to-r from-purple-600 to-indigo-600 text-white 
-            hover:from-purple-700 hover:to-indigo-700 
-            transition-all duration-300
-            shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40
-            hover:-translate-y-0.5
-            overflow-hidden
-            flex items-center gap-2
-          "
+              className="d-flex align-items-center gap-2 px-4 py-2 rounded-3 fw-semibold border-0"
+              style={{
+                background: "linear-gradient(to right, #9333ea, #4f46e5)",
+                boxShadow: "0 4px 15px rgba(147,51,234,0.3)",
+                transition: "all 0.3s ease",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.transform = "translateY(-2px)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.transform = "translateY(0)")
+              }
             >
               <FaCirclePlay />
-              <span className="relative z-10">Run Scan</span>
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-indigo-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
-            </button>
+              Run Scan
+            </Button>
 
-            {/* Save Scan  */}
-            <button
+            <Button
+              variant="outline-primary"
               title="Save this scan for future use"
               onClick={() => openModal("saveScan")}
-              className="
-            px-6 py-3 rounded-xl text-sm font-semibold
-            bg-white text-purple-600 border-2 border-purple-200
-            hover:bg-purple-50 hover:border-purple-300
-            transition-all duration-200
-            flex items-center gap-2
-          "
+              className="d-flex align-items-center gap-2 px-4 py-2 rounded-3 fw-semibold"
+              style={{ borderColor: "#e9d5ff", color: "#9333ea" }}
             >
               <HiOutlineSave />
               Save Scan
-            </button>
-            {/* Backtest Results */}
-            <button
+            </Button>
+
+            <Button
+              variant="outline-primary"
               title="View historical backtest results"
               onClick={() => openModal("backtestResult")}
-              className=" px-6 py-3 rounded-xl text-sm font-semibold bg-white text-indigo-600 border-2 border-indigo-200
-            hover:bg-indigo-50 hover:border-indigo-300 transition-all duration-200 flex items-center gap-2"
+              className="d-flex align-items-center gap-2 px-4 py-2 rounded-3 fw-semibold"
+              style={{ borderColor: "#c7d2fe", color: "#4f46e5" }}
             >
               <RiLoopLeftLine />
               Backtest Results
-            </button>
-            {/* Create Alert */}
-            <button
+            </Button>
+
+            <Button
+              variant="outline-warning"
               title="Create alert based on these conditions"
               onClick={() => openModal("createAlert")}
-              className="
-            px-6 py-3 rounded-xl text-sm font-semibold
-            bg-white text-amber-600 border-2 border-amber-200
-            hover:bg-amber-50 hover:border-amber-300
-            transition-all duration-200
-            flex items-center gap-2
-          "
+              className="d-flex align-items-center gap-2 px-4 py-2 rounded-3 fw-semibold"
+              style={{ borderColor: "#fde68a", color: "#d97706" }}
             >
               <GoAlertFill />
               Create Alert
-            </button>
-          </div>
-        </div>
-      </div>
+            </Button>
+          </Stack>
+        </Card.Body>
+      </Card>
+
       {isModalOpen && (
         <IndicatorRuleModals
           type={modalType}
           onClose={closeModal}
           rules={rules}
+          conditions = {conditions}
           timeframeOptions={timeframeOptions}
         />
       )}
-    </div>
+    </Container>
   );
 }

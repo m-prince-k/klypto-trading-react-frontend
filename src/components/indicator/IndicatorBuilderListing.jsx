@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import apiService from "../../services/apiServices";
 import { Spinner } from "../tradingModals/Spinner";
+import MiniChart from "./MiniChart";
 
 const PAGE_SIZE = 5;
 
@@ -88,7 +89,7 @@ export default function IndicatorBuildingListing({
       }
 
       setCoins(finalData);
-      console.log(finalData, "listing data")
+      console.log(finalData, "listing data");
     } catch (err) {
       console.error("Load error:", err);
     } finally {
@@ -109,6 +110,46 @@ export default function IndicatorBuildingListing({
     }
   }
 
+  // dummy
+  const [rows, setRows] = useState([]);
+  const [hover, setHover] = useState(null);
+
+  useEffect(() => {
+    async function scan() {
+      const symbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT"];
+      const out = [];
+
+      for (let s of symbols) {
+        const candles = await fetchOHLC(s);
+        const closes = candles.map((c) => c.close);
+        const rsi = calcRSI(closes);
+
+        if (rsi >= 10) {
+          const last = candles[candles.length - 1];
+          out.push({
+            symbol: s,
+            rsi: rsi.toFixed(2),
+            ...last,
+          });
+        }
+      }
+      setRows(out);
+    }
+    scan();
+  }, []);
+
+  function calcRSI(closes, period = 14) {
+    let gain = 0,
+      loss = 0;
+    for (let i = closes.length - period; i < closes.length; i++) {
+      const diff = closes[i] - closes[i - 1];
+      diff >= 0 ? (gain += diff) : (loss -= diff);
+    }
+    if (loss === 0) return 100;
+    const rs = gain / loss;
+    return 100 - 100 / (1 + rs);
+  }
+
   const formattedData = useMemo(() => {
     if (!coins.length) return []; // ✅ NEVER return undefined
 
@@ -123,10 +164,7 @@ export default function IndicatorBuildingListing({
         price: Number(lastCandle?.close ?? 0),
         volume: Number(lastCandle?.volume ?? 0),
       };
-      
     });
-
-    
   }, [coins]);
 
   const sortedData = useMemo(() => {
@@ -144,7 +182,6 @@ export default function IndicatorBuildingListing({
     });
   }, [formattedData, sortField, sortAsc]);
 
-  
   const ITEMS_PER_PAGE = 20;
 
   const totalPages = Math.ceil(sortedData.length / ITEMS_PER_PAGE);
@@ -187,13 +224,13 @@ export default function IndicatorBuildingListing({
 
             {/* Toggles */}
             <div className="flex gap-6">
-            <Toggle label="Open New Charts" />
-            <Toggle label="Show Chart Preview"  />
-          </div>
+              <Toggle label="Open New Charts" />
+              <Toggle label="Show Chart Preview" />
+            </div>
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto">
+          {/* <div className="overflow-x-auto">
             {loading ? (
               <div className="flex items-center justify-center py-20">
                 <Spinner />
@@ -263,7 +300,7 @@ export default function IndicatorBuildingListing({
                           <span className="text-slate-900 font-semibold">
                             {row.volume.toLocaleString()}
                           </span>
-                          {/* <span className="text-xs text-slate-500">Volume</span> */}
+                           <span className="text-xs text-slate-500">Volume</span> 
                         </div>
                       </td>
                     </tr>
@@ -271,6 +308,51 @@ export default function IndicatorBuildingListing({
                 </tbody>
               </table>
             )}
+          </div> */}
+
+          {/* dummy dataa */}
+          <div>
+            <table width="100%" cellPadding="8" border="1">
+              <thead>
+                <tr>
+                  <th>Symbol</th>
+                  <th>RSI</th>
+                  <th>Open</th>
+                  <th>High</th>
+                  <th>Low</th>
+                  <th>Close</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {rows?.map((row) => (
+                  <tr key={row.symbol}>
+                    <td
+                      style={{ position: "relative", cursor: "pointer" }}
+                      onMouseEnter={() => setHover(row?.symbol)}
+                      onMouseLeave={() => setHover(null)}
+                    >
+                      {row.symbol}
+
+                      {hover === row.symbol && (
+                        // <MiniChart  />
+                        <MiniChart
+                          symbol={row.symbol}
+                          selectedCurrency={selectedCurrency}
+                          timeframeValue={timeframeValue}
+                        />
+                      )}
+                    </td>
+
+                    <td>{row.rsi}</td>
+                    <td>{row.open}</td>
+                    <td>{row.high}</td>
+                    <td>{row.low}</td>
+                    <td>{row.close}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
 
           {/* Pagination */}
