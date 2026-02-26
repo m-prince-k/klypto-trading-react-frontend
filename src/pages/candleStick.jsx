@@ -54,7 +54,7 @@ import IndicatorSettings from "../components/indicator/indicatorModals/Indicator
 import IndicatorPropertyDialog from "../components/indicator/IndicatorPropertyDialog";
 
 import { useNavigate } from "react-router-dom";
-import { isAuthenticated } from "../pages/auth/protected";
+import { isAuthenticated } from "./auth/protected";
 
 
 export default function Candlestick() {
@@ -906,7 +906,7 @@ export default function Candlestick() {
                         onClick={() => setIsVisible((prev) => !prev)}
                         className="text-slate-600"
                       >
-                        {isVisible ? <IoEyeOutline /> : <IoEyeOffOutline />}
+                        {isVisible ? <IoEyeOutline size={18}  /> : <IoEyeOffOutline size={18}  />}
                       </button>
 
                       {/* Settings */}
@@ -915,13 +915,12 @@ export default function Candlestick() {
                         onClick={() => setIndicatorProperty((prev) => !prev)}
                         className="text-slate-600"
                       >
-                        afaf
-                        {/* <IoSettingsOutline /> */}
+                        <IoSettingsOutline size={18} />
                       </button>
 
                       {/* Source Code */}
                       <button title="Source Code" className="text-slate-600 ">
-                        <FaCode />
+                        <FaCode size={18}  />
                       </button>
 
                       {/* Remove Indicator */}
@@ -929,14 +928,14 @@ export default function Candlestick() {
                         onClick={() => removeIndicator(indicator)}
                         className="text-slate-600"
                       >
-                        <IoCloseSharp />
+                        <IoCloseSharp size={18}  />
                       </button>
 
                       {/* MORE MENU */}
                       <DropdownMenu.Root>
                         <DropdownMenu.Trigger asChild>
                           <button className="text-slate-500 hover:text-slate-800">
-                            <FiMoreHorizontal />
+                            <FiMoreHorizontal size={18}  />
                           </button>
                         </DropdownMenu.Trigger>
 

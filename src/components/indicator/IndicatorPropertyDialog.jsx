@@ -5,54 +5,16 @@ import { useEffect, useState } from "react";
 import { IoClose, IoChevronDown } from "react-icons/io5";
 import { FiInfo } from "react-icons/fi";
 
-function SelectField({ label, options, value, onChange }) {
-  return (
-    <div className="flex items-center justify-between mb-4">
-      <label className="text-sm text-gray-700">{label}</label>
-
-      <div className="relative w-[140px]">
-        <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full appearance-none bg-white border border-gray-300 rounded-sm text-gray-800 text-sm h-[30px] pl-2.5 pr-7 outline-none focus:border-blue-500 cursor-pointer"
-        >
-          {options.map((o) => (
-            <option key={o} value={o}>
-              {o}
-            </option>
-          ))}
-        </select>
-
-        <IoChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none text-xs" />
-      </div>
-    </div>
-  );
-}
-
-function NumberField({ label, value, onChange, info }) {
-  return (
-    <div className="flex items-center justify-between mb-4">
-      <label className="flex items-center gap-1 text-sm text-gray-700">
-        {label}
-        {info && <FiInfo className="text-gray-400 text-xs" title={info} />}
-      </label>
-
-      <input
-        type="number"
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-[140px] bg-white border border-gray-300 rounded-sm text-gray-800 text-sm h-[30px] px-2.5 outline-none focus:border-blue-500"
-      />
-    </div>
-  );
-}
 
 export default function IndicatorPropertyDialog({
   indicatorProperty,
   selectedIndicator,
   setIndicatorProperty,
 }) {
-  /* ------------------ MAIN COMPONENT ------------------ */
+
+
+
+  console.log(indicatorProperty,selectedIndicator, "0000000000000000000000000004567890");
 
   const [open, setOpen] = useState(true);
 
@@ -109,6 +71,142 @@ export default function IndicatorPropertyDialog({
     console.log(indicatorConfig, "000000000");
   };
 
+  // -------------------------------------indicator property rendering as per selected ----------------------------------
+  function commonIndicator() {
+    return (
+      <>
+        <section className="sma-setting">
+          <p className="text-uppercase text-muted fw-bold small mb-3">
+            Settings
+          </p>
+
+          <div className="mb-3">
+            <label className="form-label">
+              {selectedIndicator} Length
+            </label>
+            <input
+              type="number"
+              className="form-control"
+              value={indicatorConfig.properties.length}
+              onChange={(e) =>
+                updateProperty("length", Number(e.target.value))
+              }
+            />
+          </div>
+
+          <div className="mb-3">
+            <label className="form-label">Source</label>
+            <select
+              className="form-select"
+              value={indicatorConfig.properties.source}
+              onChange={(e) =>
+                updateProperty("source", e.target.value)
+              }
+            >
+              {["Close", "Open", "High", "Low", "HL2", "HLC3", "OHLC4"].map(opt => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="mb-3">
+            <label className="form-label">offset</label>
+            <input
+              type="number"
+              className="form-control"
+              value={indicatorConfig.properties.length}
+              onChange={(e) =>
+                updateProperty("length", Number(e.target.value))
+              }
+            />
+          </div>
+
+        </section>
+      </>
+    )
+  }
+
+  // console.log(,"000000000000");
+
+
+  function renderIndicatorSetting() {
+    switch (selectedIndicator.map((val) => val).filter((ll) => ll =="SMA")[0]) {
+      case "SMA":
+        return (
+          <>
+          {commonIndicator()}
+            <hr />
+
+            <section className="smoothing">
+              <p className="text-uppercase text-muted fw-bold small mb-3">
+                Smoothing
+              </p>
+
+              <div className="mb-3">
+                <label className="form-label">Type</label>
+                <select
+                  className="form-select"
+                  value={indicatorConfig.properties.smoothing.type}
+                  onChange={(e) =>
+                    updateSmoothing("type", e.target.value)
+                  }
+                >
+                  {["SMA", "EMA", "WMA", "VWMA", "SMMA (RMA)"].map(opt => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label">Length</label>
+                <input
+                  type="number"
+
+                  className="form-control"
+                  value={indicatorConfig.properties?.smoothing?.length}
+                  onChange={(e) =>
+                    updateSmoothing("length", Number(e.target.value))
+                  }
+                />
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label">
+                  BB StdDev
+                </label>
+                <small className="text-muted d-block mb-1">
+                  Bollinger Band Standard Deviation
+                </small>
+                <input
+                  type="number"
+                  disabled
+                  className="form-control"
+                  value={indicatorConfig.properties.smoothing.bbStdDev}
+                  onChange={(e) =>
+                    updateSmoothing("bbStdDev", Number(e.target.value))
+                  }
+                />
+              </div>
+            </section>
+          </>
+        )
+      case "RSI" :
+
+      default:
+        return (
+          <p className="text-muted text-center">
+            No settings available for this indicator
+          </p>
+        );
+    }
+  }
+
+
+
   return (
     <div>
       <Modal
@@ -121,70 +219,21 @@ export default function IndicatorPropertyDialog({
         </Modal.Header>
 
         <Modal.Body>
-          {/* Section Title */}
-          <p className="text-uppercase text-muted fw-bold small mb-3">
-            {selectedIndicator} Settings
-          </p>
-          <NumberField
-            label={`${selectedIndicator} Length`}
-            value={indicatorConfig.properties.length}
-            onChange={(val) => updateProperty("length", val)}
-          />
-
-            <div>
-              <SelectField
-                label="Source"
-                value={indicatorConfig.properties.source}
-                options={[
-                  "Close",
-                  "Open",
-                  "High",
-                  "Low",
-                  "HL2",
-                  "HLC3",
-                  "OHLC4",
-                ]}
-                onChange={(val) => updateProperty("source", val)}
-              />
-
-              <hr />
-
-              {/* Smoothing */}
-              <p className="text-uppercase text-muted fw-bold small mb-3">
-                Smoothing
-              </p>
-
-              <SelectField
-                label="Type"
-                value={indicatorConfig.properties.smoothing.type}
-                options={["SMA", "EMA", "WMA", "VWMA", "SMMA (RMA)"]}
-                onChange={(val) => updateSmoothing("type", val)}
-              />
-            </div>
-       
-
-          <NumberField
-            label="Length"
-            value={indicatorConfig.properties.smoothing.length}
-            onChange={(val) => updateProperty("length", val)}
-          />
-
-
-            <NumberField
-              label="BB StdDev"
-              value={indicatorConfig.properties.smoothing.bbStdDev}
-              info="Bollinger Band Standard Deviation"
-              onChange={(val) => updateSmoothing("bbStdDev", val)}
-            />
-         
+          {renderIndicatorSetting()}
         </Modal.Body>
 
         <Modal.Footer>
-          <Button variant="light" onClick={() => setIndicatorProperty(false)}>
+          <Button
+            variant="light"
+            onClick={() => setIndicatorProperty(false)}
+          >
             Cancel
           </Button>
 
-          <Button variant="dark" onClick={handleIndicatorPropertyChange}>
+          <Button
+            variant="dark"
+            onClick={handleIndicatorPropertyChange}
+          >
             Ok
           </Button>
         </Modal.Footer>

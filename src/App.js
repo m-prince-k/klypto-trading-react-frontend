@@ -10,6 +10,7 @@ import "react-toastify/dist/ReactToastify.css";
 import IndicatorBuildingListing from "./components/indicator/IndicatorBuilderListing";
 import Login from "./pages/auth/login";
 import { ProtectedRoute } from "./pages/auth/ProtectedRoute";
+import { Navigate } from "react-router-dom";
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
             element={<IndicatorBuildingListing />}
           />
           <Route path="/login" element={<Login />} />
+          <Route path="/" element={<Navigate to="/login" />} />
         </Routes>
       </BrowserRouter>
     </div>

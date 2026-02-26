@@ -110,8 +110,9 @@ export const ListingModal = ({
       <div className="w-full px-5 py-4 max-w-3xl h-[90vh] rounded-md bg-white border border-slate-700 shadow-lg">
         {/* Header */}
         <div className="flex items-center justify-between  ">
-          <h2 className="text-xl font-semibold ">{title}</h2>
+          <h2 className="text-xl">{title}</h2>
           <IoCloseSharp
+          size={20}
             onClick={onClose}
             className="cursor-pointer text-slate-400"
           />
@@ -216,7 +217,7 @@ export const ListingModal = ({
                   </div>
                 ) : filteredIndicators.length > 0 ? (
                   <ul className="list-unstyled ps-7 text-secondary fs-6">
-                    {filteredIndicators.map((item, index) => (
+                    {filteredIndicators?.map((item, index) => (
                       <li key={index}>
                         <label className="d-flex align-items-center gap-2 px-2 py-1 rounded">
                           <input
