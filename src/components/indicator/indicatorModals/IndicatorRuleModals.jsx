@@ -5,6 +5,7 @@ import { ButtonGroup, ToggleButton, Button } from "react-bootstrap";
 import { FaEnvelope, FaSms } from "react-icons/fa";
 import { toast } from "react-toastify";
 import apiService from "../../../services/apiServices";
+import { scanCategories } from "../../../util/common";
 
 export function IndicatorRuleModals({
   type,
@@ -39,7 +40,13 @@ export function IndicatorRuleModals({
         );
 
       case "createAlert":
-        return <CreateAlertContent onClose={onClose} rules={rules} conditions={conditions}/>;
+        return (
+          <CreateAlertContent
+            onClose={onClose}
+            rules={rules}
+            conditions={conditions}
+          />
+        );
 
       default:
         return null;
@@ -81,7 +88,7 @@ export function IndicatorRuleModals({
 
 function SaveScanContent({ onSubmit, onClose, categories = [], rules = [] }) {
   const [errors, setErrors] = useState({});
-  const [scannerPayload, setscannerPayload] = useState(null);
+  const [scannerPayload, setscannerPayload] = useState("");
   const [form, setForm] = useState({
     name: "",
     description: "",
@@ -89,49 +96,81 @@ function SaveScanContent({ onSubmit, onClose, categories = [], rules = [] }) {
   });
 
   const updateField = (key, value) => {
-    setForm((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
+  setForm((prev) => ({
+    ...prev,
+    [key]: value,
+  }));
+};
+
+const validatingForm = () => {
+  const errors = {};
+
+  const name = form?.name?.trim?.();   // ⭐ SAFE chaining
+
+  if (!name) {
+    errors.name = "Name is required";
+  } else if (name.length < 3) {
+    errors.name = "Name must be more than 3 characters";
+  }
+
+  if (!form?.category?.key) {          // ⭐ SAFE object check
+    errors.category = "Please select a scan category";
+  }
+
+  setErrors(errors);
+
+  return Object.keys(errors).length === 0;
+};
+
+const handleSubmit = async (e) => {
+  e?.stopPropagation?.();
+  e?.preventDefault?.();
+
+  const isValid = validatingForm();
+  if (!isValid) return;
+
+  if (!rules?.length) {
+    toast?.error?.("No scan condition found ❌");
+    return;
+  }
+
+  try {
+    const condition = await rules?.map(rule => ({
+    indicator: rule?.indicator,
+    operator: rule?.operator,
+    value: rule?.value,
+  }));
+
+  const payload = {
+    name: form?.name?.trim?.(),
+    description: form?.description?.trim?.(),
+
+    condition,   // ⭐ ALL RULES HERE
+
+        key: form?.category?.key,      // ⭐ FROM SELECTED CATEGORY
+    label: form?.category?.label, 
   };
 
-  const handleSubmit = (e) => {
-    e?.stopPropagation?.();
+  setscannerPayload?.(payload);
 
-    const isValid = validatingForm();
+  console.log("SETTING PAYLOAD:", payload);
+    const response = await apiService?.post?.(
+      "api/addCustomIndicator",
+      payload
+    );
 
-    console.log("VALIDATION RESULT:", isValid);
-    console.log("FORM STATE:", form); // ⭐ IMPORTANT
-
-    if (!isValid) return;
-
-    const payload = {
-      ...form,
-      rules: JSON.stringify(rules, null, 2),
-    };
-
-    console.log("SETTING PAYLOAD:", payload);
-
-    setscannerPayload(payload);
-    toast.success("Scanner saved successfully ✅");
+    console.log("API RESPONSE:", response);
+    toast?.success?.("Scanner saved successfully ✅");
     onClose();
-  };
+  } catch (error) {
+    console.error("SAVE FAILED:", error);
 
-  const validatingForm = () => {
-    const errors = {};
-
-    const name = (form.name ?? "").trim();
-
-    if (!name) {
-      errors.name = "Name is required";
-    } else if (name.length < 3) {
-      errors.name = "Name must be more than 3 characters";
-    }
-
-    setErrors(errors);
-
-    return Object.keys(errors).length === 0;
-  };
+    toast?.error?.(
+      error?.response?.data?.message ??
+      "Failed to save scanner ❌"
+    );
+  }
+};
 
   return (
     <div className=" bg-white rounded-2xl text-left ">
@@ -203,22 +242,25 @@ function SaveScanContent({ onSubmit, onClose, categories = [], rules = [] }) {
             </label>
 
             <select
-              value={form.category}
-              onChange={(e) => updateField("category", e.target.value)}
-              className="
-          w-[60%] px-4 py-3 rounded-xl
-          border border-slate-200 bg-white
-          focus:outline-none 
-          text-sm text-slate-700
-        "
-            >
-              <option value="">Select a scan category</option>
-              {categories.map((cat) => (
-                <option key={cat.value} value={cat.value}>
-                  {cat.label}
-                </option>
-              ))}
-            </select>
+  value={form.category?.key || ""}
+  onChange={(e) => {
+    const selectedKey = e.target.value;
+
+    const selectedCategory = scanCategories.find(
+      (cat) => cat.key === selectedKey
+    );
+
+    updateField("category", selectedCategory);
+  }}
+>
+  <option value="">Select a scan category</option>
+
+  {scanCategories.map((cat) => (
+    <option key={cat.id} value={cat.key}>
+      {cat.label}
+    </option>
+  ))}
+</select>
 
             {errors.category && (
               <p className="text-xs text-red-500 mt-1">{errors.category}</p>
@@ -266,7 +308,7 @@ function SaveScanContent({ onSubmit, onClose, categories = [], rules = [] }) {
 
               <div className="mt-2">
                 <pre className="text-xs bg-slate-100 p-2 rounded-lg overflow-auto max-h-40">
-                  {scannerPayload.rules}
+                  {JSON.stringify(scannerPayload.rules, null, 2)}
                 </pre>
               </div>
             </div>
@@ -325,67 +367,77 @@ function BacktestResultContent({ onClose, rules = [], timeframeOptions = [] }) {
         /* ---------- FULL UI ---------- */
 
         <div className="p-4 bg-light rounded-bottom">
-  {/* Timeframe Buttons */}
-  <div className="d-flex flex-wrap gap-2 mb-4">
-    {rules.map((rule, index) => {
-      const frame = rule.timeframe;
-      const active = isActive(frame);
+          {/* Timeframe Buttons */}
+          <div className="d-flex flex-wrap gap-2 mb-4">
+            {rules.map((rule, index) => {
+              const frame = rule.timeframe;
+              const active = isActive(frame);
 
-      return (
-        <Link
-          key={rule.id ?? index}
-          onClick={() => toggleFrame(frame)}
-          className="text-decoration-none"
-        >
-          <Button
-            size="sm"
-            variant={active ? "primary" : "outline-secondary"}
-            className="fw-semibold rounded-3 px-3 py-1"
-            style={
-              active
-                ? { background: "#9333ea", borderColor: "#9333ea" }
-                : { background: "#fff", color: "#334155", borderColor: "#e2e8f0" }
-            }
-          >
-            {resolveTimeframeLabel(frame)}
-          </Button>
-        </Link>
-      );
-    })}
+              return (
+                <Link
+                  key={rule.id ?? index}
+                  onClick={() => toggleFrame(frame)}
+                  className="text-decoration-none"
+                >
+                  <Button
+                    size="sm"
+                    variant={active ? "primary" : "outline-secondary"}
+                    className="fw-semibold rounded-3 px-3 py-1"
+                    style={
+                      active
+                        ? { background: "#9333ea", borderColor: "#9333ea" }
+                        : {
+                            background: "#fff",
+                            color: "#334155",
+                            borderColor: "#e2e8f0",
+                          }
+                    }
+                  >
+                    {resolveTimeframeLabel(frame)}
+                  </Button>
+                </Link>
+              );
+            })}
 
-    {/* Show All Button */}
-    <Button
-      size="sm"
-      variant="dark"
-      className="fw-semibold rounded-3 px-3 py-1"
-      onClick={() => setActiveFrames(rules.map((rule) => rule.timeframe))}
-    >
-      Show All
-    </Button>
-  </div>
+            {/* Show All Button */}
+            <Button
+              size="sm"
+              variant="dark"
+              className="fw-semibold rounded-3 px-3 py-1"
+              onClick={() =>
+                setActiveFrames(rules.map((rule) => rule.timeframe))
+              }
+            >
+              Show All
+            </Button>
+          </div>
 
-  {/* Footer Buttons */}
-  <div className="d-flex justify-content-end gap-3 pt-2">
-    <Button
-      type="button"
-      variant="secondary"
-      className="fw-semibold rounded-3 px-4 py-2"
-      style={{ background: "#f1f5f9", color: "#475569", border: "none" }}
-      onClick={onClose}
-    >
-      Cancel
-    </Button>
+          {/* Footer Buttons */}
+          <div className="d-flex justify-content-end gap-3 pt-2">
+            <Button
+              type="button"
+              variant="secondary"
+              className="fw-semibold rounded-3 px-4 py-2"
+              style={{
+                background: "#f1f5f9",
+                color: "#475569",
+                border: "none",
+              }}
+              onClick={onClose}
+            >
+              Cancel
+            </Button>
 
-    <Button
-      variant="primary"
-      className="fw-semibold rounded-3 px-4 py-2"
-      style={{ background: "#9333ea", borderColor: "#9333ea" }}
-      onClick={() => console.log(activeFrames)}
-    >
-      Submit
-    </Button>
-  </div>
-</div>
+            <Button
+              variant="primary"
+              className="fw-semibold rounded-3 px-4 py-2"
+              style={{ background: "#9333ea", borderColor: "#9333ea" }}
+              onClick={() => console.log(activeFrames)}
+            >
+              Submit
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -485,7 +537,12 @@ function CreateAlertContent({ onSubmit, onClose, rules, conditions }) {
       if (mode === "email") {
         payload = { type: "email", email: form.email, rule: conditions };
       } else if (mode === "sms") {
-        payload = { type: "sms", mobile: form.phone, otp: form.otp, rule: conditions };
+        payload = {
+          type: "sms",
+          mobile: form.phone,
+          otp: form.otp,
+          rule: conditions,
+        };
       }
       console.log(payload, "payloaddddddddd");
 

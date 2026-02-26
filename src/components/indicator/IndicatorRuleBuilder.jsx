@@ -48,7 +48,7 @@ export default function IndicatorRuleBuilder({ onClose, onOpen }) {
     setError(null);
 
     try {
-      let response = await apiService.post(`getCurrencies`);
+      let response = await apiService.post(`/api/getCurrencies`);
       const raw = response?.data ?? [];
 
       const formatted = [
@@ -253,8 +253,8 @@ export default function IndicatorRuleBuilder({ onClose, onOpen }) {
     setLoading(true);
 
     try {
-      const response = await apiService.post("getTimeFrames");
-      const data = response.data;
+      const response = await apiService.post("/api/getTimeFrames");
+      const data = await response?.data;
 
       const flattened = [
         { label: "Daily", value: "1d" }, // ✅ ADD THIS
@@ -274,7 +274,7 @@ export default function IndicatorRuleBuilder({ onClose, onOpen }) {
 
   async function fetchIndicators() {
     try {
-      const response = await apiService.post("getIndicators");
+      const response = await apiService.post("/api/getIndicators");
       const raw = response.data;
 
       const formatted = [
@@ -295,7 +295,7 @@ export default function IndicatorRuleBuilder({ onClose, onOpen }) {
 
   async function fetchScanners() {
     try {
-      const response = await apiService.get("scanner");
+      const response = await apiService.get("/api/scanner");
       const raw = response.data;
 
       const formatted = [

@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import { FiBarChart2, FiActivity } from "react-icons/fi";
+import * as XLSX from "xlsx";
+
+
 import {
   MdCandlestickChart,
   MdShowChart,
@@ -115,6 +118,30 @@ export const ChartProprties = {
   },
 };
 
+
+export function getIndicatorChartProperties(height = 140, width= 1280) {
+  return {
+    ...ChartProprties,
+    height,
+    width,
+    layout: { ...ChartProprties.layout },
+
+    timeScale: {
+      ...ChartProprties.timeScale,
+      visible: false,
+      borderVisible: false,
+    },
+
+    rightPriceScale: {
+      ...ChartProprties.rightPriceScale,
+      visible: true,
+      scaleMargins: { top: 0.1, bottom: 0.1 },
+    },
+
+    grid: { ...ChartProprties.grid },
+    crosshair: { ...ChartProprties.crosshair },
+  };
+}
 export const MiniChartProprties = {
   width: 620,          // small footprint for hover
   height: 280,
@@ -168,41 +195,6 @@ export const MiniChartProprties = {
       price.toLocaleString("en-IN", { maximumFractionDigits: 2 }),
   },
 };
-
-export function getIndicatorChartProperties(height = 140) {
-  return {
-    ...ChartProprties,
-
-    height,
-
-    layout: {
-      ...ChartProprties.layout,
-    },
-
-    // ✅ CRITICAL: IDENTICAL TIME SCALE
-    timeScale: {
-      ...ChartProprties.timeScale,
-
-      // ✅ Prevent duplicate axis rendering glitches
-      visible: false,              // Hide pane time axis (TV style)
-      borderVisible: false,
-    },
-
-    rightPriceScale: {
-      ...ChartProprties.rightPriceScale,
-
-    },
-
-    grid: {
-      ...ChartProprties.grid,
-    },
-
-    crosshair: {
-      ...ChartProprties.crosshair,
-    },
-    attributionLogo: false,   
-  };
-}
 
 export function useDebounce(value, delay) {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -364,5 +356,76 @@ export const convertToHeikinAshi = (data) => {
     });
   };
 
+export const scanCategories = [ { id: 1, key: "range_breakouts", label: "Range Breakouts scan" }, { id: 2, key: "fundamental", label: "Fundamental Scans" }, { id: 3, key: "bullish", label: "Bullish scan" }, { id: 4, key: "bearish", label: "Bearish scan" }, { id: 5, key: "intraday_bullish", label: "Intraday Bullish scan" }, { id: 6, key: "intraday_bearish", label: "Intraday Bearish scan" }, { id: 7, key: "crossover", label: "Crossover" }, { id: 8, key: "other", label: "Other Scans" } ];
+
+
+export function handleExcelDownload(rows) {
+  if (!rows || rows.length === 0) {
+    alert("No data to export");
+    return;
+  }
+
+  const worksheet = XLSX.utils.json_to_sheet(rows);
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Stocks");
+
+  XLSX.writeFile(workbook, "stocks.xlsx");
+}
+
+
+export function handleCSVDownload(rows) {
+  if (!rows || rows.length === 0) {
+    alert("No data to export");
+    return;
+  }
+
+  const headers = Object.keys(rows[0]);
+
+  const csvContent = [
+    headers.join(","),
+
+    ...rows.map(row =>
+      headers
+        .map(key => {
+          const value = row[key] ?? "";
+          return `"${String(value).replace(/"/g, '""')}"`;
+        })
+        .join(",")
+    )
+  ].join("\n");
+
+  const blob = new Blob([csvContent], {
+    type: "text/csv;charset=utf-8;"
+  });
+
+  const url = window.URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "stocks.csv";
+  document.body.appendChild(a);
+  a.click();
+
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+}
+
+
+export function handleCopy(rows=null) {
+  if (!rows.length) return;
+
+  const headers = Object.keys(rows[0]).join("\t");
+
+  const body = rows
+    .map(row => Object.values(row).join("\t"))
+    .join("\n");
+
+  const text = headers + "\n" + body;
+
+  navigator.clipboard.writeText(text);
+
+  alert("Copied to clipboard ✔");
+}
 
 

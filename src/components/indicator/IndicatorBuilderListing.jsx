@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import apiService from "../../services/apiServices";
 import { Spinner } from "../tradingModals/Spinner";
 import MiniChart from "./MiniChart";
+import { handleCopy, handleCSVDownload, handleExcelDownload } from "../../util/common";
 
 const PAGE_SIZE = 5;
 
@@ -13,10 +14,9 @@ export default function IndicatorBuildingListing({
   const [sortAsc, setSortAsc] = useState(true);
   const [page, setPage] = useState(1);
   // const [openNewCharts, setOpenNewCharts] = useState(true);
-  // const [showPreview, setShowPreview] = useState(true);
+  const [showPreview, setShowPreview] = useState(true);
   const [coins, setCoins] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const ONE_YEAR = 365 * 24 * 60 * 60 * 1000;
   const QUOTES = ["USDT", "BTC", "ETH", "BNB", "FDUSD", "TRY"];
 
@@ -211,21 +211,39 @@ export default function IndicatorBuildingListing({
           <div className="flex items-center justify-between p-6 border-b border-slate-200/50 bg-gradient-to-r from-white to-slate-50/30">
             {/* Export Buttons */}
             <div className="flex gap-3">
-              {["Copy", "CSV", "Excel"].map((btn) => (
-                <button
-                  key={btn}
-                  className="group relative px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 hover:-translate-y-0.5 font-medium"
-                >
-                  <span className="relative z-10">{btn}</span>
-                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-400 to-indigo-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
-                </button>
-              ))}
+              <button
+                onClick={() => handleCopy(rows)}
+                className="group relative px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 hover:-translate-y-0.5 font-medium"
+              >
+                <span className="relative z-10">Copy</span>
+                <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-400 to-indigo-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
+              </button>
+
+              <button
+                onClick={() => handleCSVDownload(rows)}
+                className="group relative px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 hover:-translate-y-0.5 font-medium"
+              >
+                <span className="relative z-10">CSV</span>
+                <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-400 to-indigo-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
+              </button>
+
+              <button
+                onClick={() => handleExcelDownload(rows)}
+                className="group relative px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 hover:-translate-y-0.5 font-medium"
+              >
+                <span className="relative z-10">Excel</span>
+                <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-400 to-indigo-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
+              </button>
             </div>
 
             {/* Toggles */}
             <div className="flex gap-6">
-              <Toggle label="Open New Charts" />
-              <Toggle label="Show Chart Preview" />
+              {/* <Toggle label="Open New Charts" /> */}
+              <Toggle
+                label="Show Chart Preview"
+                enabled={showPreview}
+                setEnabled={setShowPreview}
+              />
             </div>
           </div>
 
@@ -329,13 +347,12 @@ export default function IndicatorBuildingListing({
                   <tr key={row.symbol}>
                     <td
                       style={{ position: "relative", cursor: "pointer" }}
-                      onMouseEnter={() => setHover(row?.symbol)}
-                      onMouseLeave={() => setHover(null)}
+                      onMouseEnter={() => showPreview && setHover(row?.symbol)}
+                      onMouseLeave={() => showPreview && setHover(null)}
                     >
                       {row.symbol}
 
-                      {hover === row.symbol && (
-                        // <MiniChart  />
+                      {showPreview && hover === row.symbol && (
                         <MiniChart
                           symbol={row.symbol}
                           selectedCurrency={selectedCurrency}
@@ -459,7 +476,7 @@ export default function IndicatorBuildingListing({
         <button
           onClick={() => setEnabled(!enabled)}
           className={`
-          relative w-14 h-7 flex items-center rounded-full p-1 transition-all duration-300 ease-in-out
+          relative w-14 h-7 flex items-center rounded-5 p-1 transition-all duration-300 ease-in-out
           ${
             enabled
               ? "bg-gradient-to-r from-purple-600 to-indigo-600 shadow-lg shadow-purple-500/40"
@@ -470,7 +487,7 @@ export default function IndicatorBuildingListing({
         >
           <div
             className={`
-            w-5 h-5 bg-white rounded-full shadow-lg transition-all duration-300 ease-in-out
+            w-5 h-5 bg-white rounded-5 shadow-lg transition-all duration-300 ease-in-out
             ${enabled ? "translate-x-7" : "translate-x-0"}
           `}
           >

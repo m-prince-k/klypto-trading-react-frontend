@@ -13,8 +13,7 @@ import IndicatorRuleBuilder from "../components/indicator/IndicatorRuleBuilder";
 import { LuCirclePlus, LuCircleMinus } from "react-icons/lu";
 import { RiResetRightLine } from "react-icons/ri";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { FaCode, FaFileWaveform } from "react-icons/fa6";
-import { Form } from "../components/tradingModals/Form";
+import { FaCode } from "react-icons/fa6";
 import ChartHeader from "../components/tradingModals/ChartHeader";
 import IndicatorBuildingListing from "../components/indicator/IndicatorBuilderListing";
 import {
@@ -29,14 +28,6 @@ import {
 } from "../util/common";
 import apiService from "../services/apiServices";
 import {
-  HiEye,
-  HiEyeOff,
-  HiCog,
-  HiCode,
-  HiX,
-  HiDotsHorizontal,
-} from "react-icons/hi";
-import {
   IoCloseSharp,
   IoEyeOffOutline,
   IoEyeOutline,
@@ -50,15 +41,9 @@ import {
   fetchIndicatorData,
   PANE_INDICATORS,
 } from "../util/chartFunctions";
-import IndicatorSettings from "../components/indicator/indicatorModals/IndicatorSettings";
 import IndicatorPropertyDialog from "../components/indicator/IndicatorPropertyDialog";
 
-import { useNavigate } from "react-router-dom";
-import { isAuthenticated } from "../pages/auth/protected";
-
-
 export default function Candlestick() {
-
   const chartRef = useRef();
   const containerRef = useRef();
   const seriesRef = useRef(null);
@@ -80,13 +65,15 @@ export default function Candlestick() {
   const [showAlertForm, setShowAlertForm] = useState(false);
   const [openSettings, setOpenSettings] = useState(false);
   const [indicatorProperty, setIndicatorProperty] = useState(false);
-
+  const mainChartHeightRef = useRef(500); // initial height
   const [isVisible, setIsVisible] = useState(true);
 
   const getIndicatorColor = useCallback(
     (index) => INDICATOR_COLORS[index % INDICATOR_COLORS.length],
     [],
   );
+
+  // console.log(liveOhlcv, "liveedata")
 
   const closeAlert = () => {
     setShowAlertForm(false);
@@ -156,16 +143,89 @@ export default function Candlestick() {
         return "macd";
       case "Volume":
         return "volume";
+      case "ATR":
+        return "ATR";
       default:
         return "momentum";
     }
   }
 
+  function repositionPanes() {
+    let offset = TIME_AXIS_HEIGHT;
+
+    Object.values(panesRef.current).forEach((pane) => {
+      pane.div.style.bottom = `${offset}px`;
+      pane.splitter.style.bottom = `${offset + pane.height}px`;
+
+      offset += pane.height;
+    });
+  }
+  function attachSplitterDrag(paneKey) {
+    const pane = panesRef.current[paneKey];
+    if (!pane) return;
+
+    let startY = 0;
+    let startPaneHeight = 0;
+    let startMainHeight = 0;
+
+    const onMouseMove = (e) => {
+      const dy = startY - e.clientY;
+
+      const newPaneHeight = Math.max(60, startPaneHeight + dy);
+      const delta = newPaneHeight - pane.height;
+
+      const newMainHeight = mainChartHeightRef.current - delta;
+
+      /* ✅ Prevent collapsing */
+      if (newMainHeight < 150) return;
+
+      pane.height = newPaneHeight;
+      mainChartHeightRef.current = newMainHeight;
+
+      /* ✅ Apply sizes */
+      pane.div.style.height = `${newPaneHeight}px`;
+
+      pane.chart.applyOptions({ height: newPaneHeight });
+      chartRef.current.applyOptions({ height: newMainHeight });
+
+      repositionPanes();
+    };
+
+    const onMouseUp = () => {
+      document.body.style.cursor = "default";
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+
+    pane.splitter.onmousedown = (e) => {
+      startY = e.clientY;
+      startPaneHeight = pane.height;
+      startMainHeight = mainChartHeightRef.current;
+
+      document.body.style.cursor = "row-resize";
+
+      window.addEventListener("mousemove", onMouseMove);
+      window.addEventListener("mouseup", onMouseUp);
+    };
+  }
+  function repositionPanes() {
+    let offset = TIME_AXIS_HEIGHT;
+
+    Object.values(panesRef.current).forEach((pane) => {
+      pane.div.style.bottom = `${offset}px`;
+      pane.splitter.style.bottom = `${offset + pane.height}px`;
+
+      offset += pane.height;
+    });
+  }
+
   function ensurePane(paneKey) {
+    // If pane already exists, return its chart
     if (panesRef.current[paneKey]) return panesRef.current[paneKey].chart;
 
     const paneCount = Object.keys(panesRef.current).length;
 
+    // Create pane container
     const paneDiv = document.createElement("div");
     paneDiv.style.position = "absolute";
     paneDiv.style.left = "0";
@@ -173,16 +233,47 @@ export default function Candlestick() {
     paneDiv.style.height = `${PANE_HEIGHT}px`;
     paneDiv.style.bottom = `${TIME_AXIS_HEIGHT + paneCount * PANE_HEIGHT}px`;
 
+    // Create splitter
+    const splitter = document.createElement("div");
+    splitter.style.position = "absolute";
+    splitter.style.left = "0";
+    splitter.style.width = "100%";
+    splitter.style.cursor = "row-resize";
+    splitter.style.bottom = `${TIME_AXIS_HEIGHT + paneCount * PANE_HEIGHT + PANE_HEIGHT}px`;
+    splitter.style.borderTop = "1px solid rgba(255,255,255,0.08)";
+    splitter.style.borderBottom = "1px solid rgba(0,0,0,0.4)";
+    splitter.onmouseenter = () =>
+      (splitter.style.background = "rgba(255,255,255,0.05)");
+    splitter.onmouseleave = () => (splitter.style.background = "transparent");
+    splitter.style.background = "rgba(255, 255, 255, 0.8)";
+    splitter.style.height = "8px";
+    splitter.style.zIndex = "10";
+
+    containerRef.current.appendChild(splitter);
     containerRef.current.appendChild(paneDiv);
 
+    // Create chart inside pane
     const paneChart = createChart(
       paneDiv,
       getIndicatorChartProperties(PANE_HEIGHT),
     );
 
-    panesRef.current[paneKey] = { chart: paneChart, div: paneDiv };
+    // Store pane references
+    panesRef.current[paneKey] = {
+      chart: paneChart,
+      div: paneDiv,
+      splitter,
+      height: PANE_HEIGHT,
+    };
 
+    // Enable resizing
+    attachSplitterDrag(paneKey);
+
+    // Attach time-scale sync
     attachSync(paneChart);
+
+    // Attach crosshair sync with main chart and other panes
+    attachCrosshair(paneChart, paneKey);
 
     return paneChart;
   }
@@ -211,24 +302,29 @@ export default function Candlestick() {
     const entry = indicatorSeriesRef.current[indicator];
     if (!entry) return;
 
-    /* ✅ MULTI-SERIES INDICATOR (MACD etc) */
+    const paneKey = resolvePaneKey(indicator);
+    const pane = panesRef.current[paneKey];
+    const chart = pane?.chart ?? chartRef.current;
+
+    if (!chart) return;
+
+    /* ✅ MULTI SERIES */
     if (typeof entry === "object" && !entry.setData) {
       Object.values(entry).forEach((series) => {
         try {
-          series?.remove();
+          chart.removeSeries(series);
         } catch (e) {}
       });
     } else {
       /* ✅ SINGLE SERIES */
       try {
-        entry.remove();
+        chart.removeSeries(entry);
       } catch (e) {}
     }
 
     delete indicatorSeriesRef.current[indicator];
     delete latestIndicatorValuesRef.current[indicator];
 
-    const paneKey = resolvePaneKey(indicator);
     cleanupPane(paneKey);
 
     setSelectedIndicator((prev) => prev.filter((i) => i !== indicator));
@@ -241,31 +337,14 @@ export default function Candlestick() {
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const chart = createChart(containerRef.current, ChartProprties);
+    const containerHeight = containerRef.current.clientHeight;
+
+    const chart = createChart(containerRef.current, {
+      ...ChartProprties,
+      height: mainChartHeightRef.current,
+    });
     chartRef.current = chart;
     attachSync(chart);
-
-    const end = Math.floor(Date.now() / 1000);
-    const start = end - 60 * 60;
-
-    fetch(
-      `https://api.india.delta.exchange/v2/history/candles?symbol=${selectedCurrency}&resolution=${timeframeValue}&start=${start}&end=${end}`,
-    )
-      .then((res) => res.json())
-      .then(async (data) => {
-        const candles = await data?.result?.map((c) => ({
-          time: c.time,
-          open: Number(c.open),
-          high: Number(c.high),
-          low: Number(c.low),
-          close: Number(c.close),
-        }));
-
-        if (seriesRef.current && candles?.length) {
-          seriesRef.current.setData(candles);
-        }
-      });
-
     /* =======================
      3️⃣ WebSocket Trades
   ======================== */
@@ -300,84 +379,27 @@ export default function Candlestick() {
 
       if (!currentCandle || currentCandle.time !== time) {
         currentCandle = {
-          time: time / 1000,
+          time,
           open: price,
           high: price,
           low: price,
           close: price,
         };
-
         setLiveOhlcv(currentCandle);
       } else {
         currentCandle.high = Math.max(currentCandle.high, price);
         currentCandle.low = Math.min(currentCandle.low, price);
         currentCandle.close = price;
+
+        setLiveOhlcv({ ...currentCandle }); // ← add this line
       }
     };
 
     return () => {
-      // try {
-      //   chart.timeScale().unsubscribeVisibleLogicalRangeChange(
-      //     handleVisibleRangeChange
-      //   );
-      // } catch (e) {}
-
       socket.close();
       chart.remove();
     };
   }, [selectedCurrency, timeframeValue]);
-
-  //  -------------------LOAD INDICATOR FROM API------------------------------
-
-  const loadIndicator = async () => {
-    try {
-      const { candles, indicatorData } = await apiService.post(
-        `indicatorDetails?symbol=${selectedCurrency}&interval=1d&indicator=${selectedIndicator.toLocaleUpperCase()}`,
-      );
-
-      if (chartType === "line") {
-        console.log(indicatorData, "loading indicator");
-      }
-    } catch (error) {
-      console.log(
-        error,
-        "______________error loading indicator__________________",
-      );
-    }
-  };
-
-  const renderValue = (indicator, value) => {
-    if (value == null) return "--";
-
-    /* -------- SINGLE VALUE -------- */
-    if (typeof value === "number") {
-      const series = indicatorSeriesRef.current[indicator];
-      const color = getSeriesColor(series);
-
-      return (
-        <span style={{ color }}>
-          {isFinite(value) ? value.toFixed(2) : "--"}
-        </span>
-      );
-    }
-
-    /* -------- MULTI VALUE -------- */
-    if (typeof value === "object") {
-      const grouped = indicatorSeriesRef.current[indicator];
-
-      return Object.entries(value).map(([lineName, val]) => {
-        const series = grouped?.[lineName];
-        const color = getSeriesColor(series);
-
-        return (
-          <span key={lineName} style={{ color, marginRight: 8 }}>
-            {lineName}: {isFinite(val) ? Number(val).toFixed(2) : "--"}
-          </span>
-        );
-      });
-    }
-    return "";
-  };
 
   const toggleIndicator = (indicator) => {
     setSelectedIndicator((prev) => {
@@ -404,102 +426,132 @@ export default function Candlestick() {
     });
   };
 
-  function extractValuesFromChart(param, chartValues = {}) {
-    if (!param?.seriesPrices) return chartValues;
+  const renderValue = (indicator, value) => {
+    if (value == null) return "--";
 
-    Object.entries(indicatorSeriesRef.current).forEach(([indicator, entry]) => {
-      if (typeof entry === "object" && !entry.setData) {
-        chartValues[indicator] = chartValues[indicator] || {};
+    if (typeof value === "number") {
+      const series = indicatorSeriesRef.current[indicator];
+      const color = getSeriesColor(series);
 
-        Object.entries(entry).forEach(([lineName, series]) => {
-          const price = param.seriesPrices.get(series);
-          if (price !== undefined) {
-            chartValues[indicator][lineName] = price;
-          }
-        });
-      } else {
-        const price = param.seriesPrices.get(entry);
-        if (price !== undefined) {
-          chartValues[indicator] = price;
-        }
-      }
+      return (
+        <span style={{ color }}>
+          {isFinite(value) ? value.toFixed(2) : "--"}
+        </span>
+      );
+    }
+
+    if (typeof value === "object") {
+      const grouped = indicatorSeriesRef.current[indicator];
+
+      return Object.entries(value).map(([lineName, val]) => {
+        const series = grouped?.[lineName];
+        const color = getSeriesColor(series);
+        console.log();
+        return (
+          <span key={lineName} style={{ color, marginRight: 8 }}>
+            {lineName}: {isFinite(val) ? Number(val).toFixed(2) : "--"}
+          </span>
+        );
+      });
+    }
+    return "";
+  };
+
+  /* =========================================================
+   CROSSHAIR SYNC & HANDLER
+========================================================= */
+
+  const syncCrosshair = useCallback((sourceChart, param) => {
+    if (!param?.time || syncingRef.current) return;
+
+    syncingRef.current = true;
+
+    const allCharts = [
+      chartRef.current,
+      ...Object.values(panesRef.current).map((p) => p.chart),
+    ];
+
+    allCharts.forEach((chart) => {
+      if (!chart || chart === sourceChart) return;
+
+      chart.setCrosshairPosition(
+        param.point?.x ?? 0,
+        param.point?.y ?? 0,
+        param.time,
+      );
     });
 
-    return chartValues;
-  }
-  // Separate useEffect for crosshair - runs once on mount
-  function attachCrosshair(chart) {
-    if (!chart) return () => {};
+    syncingRef.current = false;
+  }, []);
 
-    const handler = (param) => {
-      if (!param?.time) return;
+  const attachCrosshair = useCallback(
+    (chart, chartKey) => {
+      if (!chart) return () => {};
 
-      /* =========================
-     ✅ MAIN CANDLE VALUES
-  ========================== */
-
-      if (param.seriesData && seriesRef.current) {
-        const candle = param.seriesData.get(seriesRef.current);
-
-        if (candle?.open !== undefined) {
-          setLiveOhlcv({
-            open: candle.open,
-            high: candle.high,
-            low: candle.low,
-            close: candle.close,
-          });
+      const handler = (param) => {
+        if (!param.point || param.time === undefined) {
+          const allCharts = [
+            chartRef.current,
+            ...Object.values(panesRef.current).map((p) => p.chart),
+          ];
+          allCharts.forEach((c) => c?.clearCrosshairPosition?.());
+          setLiveIndicatorData({});
+          return;
         }
-      }
 
-      /* =========================
-     ✅ INDICATOR VALUES
-  ========================== */
+        // ----------------- SYNC CROSSHAIR -----------------
+        syncCrosshair(chart, param);
 
-      if (!param.seriesPrices) return; // ⭐⭐⭐ CRITICAL FIX
-
-      const values = {};
-
-      Object.entries(indicatorSeriesRef.current).forEach(
-        ([indicator, entry]) => {
-          /* ✅ MULTI-SERIES */
-          if (typeof entry === "object" && !entry.setData) {
-            values[indicator] = {};
-
-            Object.entries(entry).forEach(([lineName, series]) => {
-              const price = param.seriesPrices.get(series);
-              values[indicator][lineName] = price ?? null;
+        // ----------------- MAIN CHART OHLC -----------------
+        if (chartKey === "main" && seriesRef.current) {
+          const candle = param.seriesData.get(seriesRef.current);
+          if (candle?.open !== undefined) {
+            setLiveOhlcv({
+              open: candle.open,
+              high: candle.high,
+              low: candle.low,
+              close: candle.close,
             });
-          } else if (entry) {
-            /* ✅ SINGLE-SERIES */
-            const price = param.seriesPrices.get(entry);
-            values[indicator] = price ?? null;
           }
-        },
-      );
+        }
 
-      setLiveIndicatorData(values);
-    };
+        // ----------------- INDICATOR VALUES -----------------
+        if (!param.seriesData) return;
 
-    chart.subscribeCrosshairMove(handler);
+        const updates = {};
+        Object.entries(indicatorSeriesRef.current).forEach(
+          ([indicator, entry]) => {
+            if (!entry) return;
 
-    return () => chart.unsubscribeCrosshairMove(handler);
-  }
+            if (typeof entry === "object" && !entry.setData) {
+              updates[indicator] = {};
+              Object.entries(entry).forEach(([lineName, series]) => {
+                const val = param.seriesData.get(series);
+                updates[indicator][lineName] = val != null ? val : null;
+              });
+            } else {
+              const val = param.seriesData.get(entry);
+              updates[indicator] = val != null ? val : null;
+            }
+          },
+        );
+
+        setLiveIndicatorData(updates);
+      };
+
+      chart.subscribeCrosshairMove(handler);
+      return () => chart.unsubscribeCrosshairMove(handler);
+    },
+    [syncCrosshair],
+  );
 
   useEffect(() => {
     if (!chartRef.current) return;
 
-    const cleanups = [];
+    const detach = attachCrosshair(chartRef.current, "main");
+    return () => detach();
+  }, [chartRef.current]);
 
-    /* ✅ Main chart */
-    cleanups.push(attachCrosshair(chartRef.current));
-
-    /* ✅ Panes */
-    Object.values(panesRef.current).forEach((pane) => {
-      cleanups.push(attachCrosshair(pane.chart));
-    });
-
-    return () => cleanups.forEach((fn) => fn?.());
-  }, [selectedIndicator]);
   // Main useEffect for chart type/data changes
   useEffect(() => {
     if (!chartRef.current) return;
@@ -516,7 +568,7 @@ export default function Candlestick() {
     switch (chartType) {
       case "line":
         async function LineData() {
-          const { data } = await fetchDataByCurrency(
+          const data = await fetchDataByCurrency(
             selectedCurrency,
             timeframeValue,
             chartType,
@@ -547,7 +599,7 @@ export default function Candlestick() {
 
       case "bar":
         async function BarData() {
-          const { data } = await fetchDataByCurrency(
+          const data = await fetchDataByCurrency(
             selectedCurrency,
             timeframeValue,
             chartType,
@@ -581,7 +633,7 @@ export default function Candlestick() {
 
       case "area":
         async function AreaData() {
-          const { data } = await fetchDataByCurrency(
+          const data = await fetchDataByCurrency(
             selectedCurrency,
             timeframeValue,
             chartType,
@@ -612,7 +664,7 @@ export default function Candlestick() {
 
       case "baseline":
         async function BaseLineData() {
-          const { data } = await fetchDataByCurrency(
+          const data = await fetchDataByCurrency(
             selectedCurrency,
             timeframeValue,
             chartType,
@@ -643,7 +695,7 @@ export default function Candlestick() {
 
       case "histogram":
         async function HistogramData() {
-          const { data } = await fetchDataByCurrency(
+          const data = await fetchDataByCurrency(
             selectedCurrency,
             timeframeValue,
             chartType,
@@ -679,7 +731,7 @@ export default function Candlestick() {
 
       case "heikinashi":
         async function HeikinAshiData() {
-          const { data } = await fetchDataByCurrency(
+          const data = await fetchDataByCurrency(
             selectedCurrency,
             timeframeValue,
             chartType,
@@ -702,7 +754,7 @@ export default function Candlestick() {
 
       case "hollowcandles":
         async function HollowCandlesData() {
-          const { data } = await fetchDataByCurrency(
+          const data = await fetchDataByCurrency(
             selectedCurrency,
             timeframeValue,
             chartType,
@@ -728,17 +780,19 @@ export default function Candlestick() {
 
       default:
         async function fetchCandleStickData() {
-          const { data } = await fetchDataByCurrency(
+          const response = await fetchDataByCurrency(
             selectedCurrency,
             timeframeValue,
             chartType,
           );
+
           seriesRef.current = chartRef.current.addSeries(
             CandlestickSeries,
             chartSeriesStyles.candlestick,
           );
-          seriesRef.current.setData(data);
-          chartRef.current.timeScale().fitContent();
+          seriesRef.current?.setData(response);
+
+          chartRef.current?.timeScale().fitContent();
           await fetchIndicatorData(
             selectedIndicator,
             selectedCurrency,
@@ -754,7 +808,6 @@ export default function Candlestick() {
     }
   }, [
     chartType,
-    // historicalData,
     rangeValue,
     timeframeValue,
     selectedCurrency,
@@ -795,7 +848,7 @@ export default function Candlestick() {
   };
 
   return (
-    <div className="w-full h-screen flex flex-col bg-slate-50">
+    <div className="w-full flex flex-col bg-slate-50">
       <div>
         <ChartHeader
           timeframeValue={timeframeValue}
@@ -808,7 +861,6 @@ export default function Candlestick() {
           chartType={chartType}
           selectedIndicator={selectedIndicator}
           setSelectedIndicator={setSelectedIndicator}
-          loadIndicator={loadIndicator}
           toggleIndicator={toggleIndicator}
         />
       </div>
@@ -816,9 +868,14 @@ export default function Candlestick() {
       {/* Chart */}
       <div
         ref={containerRef}
-        className="p-2 z-0 relative m-2 rounded-3 bg-white w-fit"
         style={{
           width: ChartProprties.width,
+          height: ChartProprties.height,
+          position: "relative",
+          overflow: "hidden",
+
+          display: "flex",
+          flexDirection: "column",
         }}
       >
         {/* -------------------------------sub-header live Values----------------------- */}
@@ -878,9 +935,8 @@ export default function Candlestick() {
           <div className="absolute top-10 left-2 flex flex-col gap-1 z-50">
             {selectedIndicator &&
               selectedIndicator?.map((indicator, index) => {
-                const value = liveIndicatorData?.[indicator];
-                const series = indicatorSeriesRef.current[indicator];
-
+                const value = liveIndicatorData[indicator];
+                // console.log(value, "indicatorrrrrrrrr")
                 return (
                   <div
                     key={index}
@@ -894,7 +950,7 @@ export default function Candlestick() {
                       />
                       {indicator} : {timeframeValue} :
                       <span style={{ display: "flex", gap: 6 }}>
-                        {renderValue(indicator, liveIndicatorData[indicator])}
+                        {renderValue(indicator, value)}
                       </span>
                     </span>
 
@@ -915,8 +971,7 @@ export default function Candlestick() {
                         onClick={() => setIndicatorProperty((prev) => !prev)}
                         className="text-slate-600"
                       >
-                        afaf
-                        {/* <IoSettingsOutline /> */}
+                        <IoSettingsOutline />
                       </button>
 
                       {/* Source Code */}
@@ -987,39 +1042,54 @@ export default function Candlestick() {
         )}
       </div>
 
-      <div className="flex z-0 justify-center items-center gap-2 px-4 pb-4 w-fit mx-auto">
-        <button
-          onClick={zoomIn}
-          className="group relative flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-slate-50 to-slate-100 hover:from-purple-50 hover:to-indigo-50 text-slate-700 hover:text-purple-700 font-semibold rounded-xl shadow-sm hover:shadow-md border border-slate-200/50 hover:border-purple-300/50 transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
-        >
-          <LuCirclePlus className="w-4 h-4 group-hover:scale-110 group-hover:rotate-90 transition-all duration-300" />
-          <span className="text-sm">Zoom In</span>
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-100 to-indigo-100 opacity-0 group-hover:opacity-30 transition-opacity duration-200" />
-        </button>
+      <div className="d-flex align-items-center position-relative">
+        <div className="mx-auto d-flex align-items-center gap-2">
+          <button
+            onClick={zoomIn}
+            className="group relative flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-slate-50 to-slate-100 hover:from-purple-50 hover:to-indigo-50 text-slate-700 hover:text-purple-700 font-semibold rounded-xl shadow-sm hover:shadow-md border border-slate-200/50 hover:border-purple-300/50 transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
+          >
+            <LuCirclePlus className="w-4 h-4 group-hover:scale-110 group-hover:rotate-90 transition-all duration-300" />
+            <span className="text-sm">Zoom In</span>
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-100 to-indigo-100 opacity-0 group-hover:opacity-30 transition-opacity duration-200" />
+          </button>
 
-        {/* Divider */}
-        <div className="h-6 w-px bg-gradient-to-b from-transparent via-slate-300 to-transparent" />
+          {/* Divider */}
+          <div className="h-6 w-px bg-gradient-to-b from-transparent via-slate-300 to-transparent" />
 
-        <button
-          onClick={zoomOut}
-          className="group relative flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-slate-50 to-slate-100 hover:from-purple-50 hover:to-indigo-50 text-slate-700 hover:text-purple-700 font-semibold rounded-xl shadow-sm hover:shadow-md border border-slate-200/50 hover:border-purple-300/50 transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
-        >
-          <LuCircleMinus className="w-4 h-4 group-hover:scale-110 group-hover:rotate-90 transition-all duration-300" />
-          <span className="text-sm">Zoom Out</span>
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-100 to-indigo-100 opacity-0 group-hover:opacity-30 transition-opacity duration-200" />
-        </button>
+          <button
+            onClick={zoomOut}
+            className="group relative flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-slate-50 to-slate-100 hover:from-purple-50 hover:to-indigo-50 text-slate-700 hover:text-purple-700 font-semibold rounded-xl shadow-sm hover:shadow-md border border-slate-200/50 hover:border-purple-300/50 transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
+          >
+            <LuCircleMinus className="w-4 h-4 group-hover:scale-110 group-hover:rotate-90 transition-all duration-300" />
+            <span className="text-sm">Zoom Out</span>
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-100 to-indigo-100 opacity-0 group-hover:opacity-30 transition-opacity duration-200" />
+          </button>
 
-        {/* Divider */}
-        <div className="h-6 w-px bg-gradient-to-b from-transparent via-slate-300 to-transparent" />
+          {/* Divider */}
+          <div className="h-6 w-px bg-gradient-to-b from-transparent via-slate-300 to-transparent" />
 
-        <button
-          onClick={resetZoom}
-          className="group relative flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
-        >
-          <RiResetRightLine className="w-4 h-4 group-hover:rotate-[360deg] transition-transform duration-500" />
-          <span className="text-sm">Reset</span>
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-indigo-400 opacity-0 group-hover:opacity-20 transition-opacity duration-200" />
-        </button>
+          <button
+            onClick={resetZoom}
+            className="group relative flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
+          >
+            <RiResetRightLine className="w-4 h-4 group-hover:rotate-[360deg] transition-transform duration-500" />
+            <span className="text-sm">Reset</span>
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-indigo-400 opacity-0 group-hover:opacity-20 transition-opacity duration-200" />
+          </button>
+        </div>
+
+        {/* Floating Open Button */}
+        {!openForm && (
+          <div className="d-flex justify-content-end position-sticky top-0 ">
+            <button
+              onClick={() => setOpenForm(true)}
+              className="btn btn-primary d-flex align-items-center gap-1 mx-3"
+              style={{ zIndex: 1050 }}
+            >
+              <IoLink />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Sliding Panel */}
@@ -1046,17 +1116,6 @@ export default function Candlestick() {
           style={{ zIndex: 1040 }}
           onClick={() => setOpenForm(false)}
         />
-      )}
-
-      {/* Floating Open Button */}
-      {!openForm && (
-        <button
-          onClick={() => setOpenForm(true)}
-          className="position-fixed bottom-0 end-0 m-4 btn btn-primary d-flex align-items-center gap-1"
-          style={{ zIndex: 1050 }}
-        >
-          <IoLink />
-        </button>
       )}
 
       {/* ------------Start Indicator Rule Builder for Caluculating Indicators along with condition---------------- */}

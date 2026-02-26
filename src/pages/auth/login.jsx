@@ -58,19 +58,17 @@ export default function Login() {
 
     // setLoading(true);
 
-    const payload = {
+    
+    try {
+      const payload = {
       email: form.email,
       password: form.password,
     };
 
-    try {
       const response = await apiService.post("/api/login", payload);
 
       console.log(response, "resssssssssss");
       const data = await response?.user;
-      // console.log(data,"----------------098765678987656");
-      // return
-      // Save session based on "remember me"
       if (form.remember) {
         localStorage.setItem("session", JSON.stringify(data));
       } else {
