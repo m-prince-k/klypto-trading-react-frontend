@@ -6,15 +6,11 @@ import { IoClose, IoChevronDown } from "react-icons/io5";
 import { FiInfo } from "react-icons/fi";
 
 
-export default function IndicatorPropertyDialog({
-  indicatorProperty,
-  selectedIndicator,
-  setIndicatorProperty,
-}) {
+export default function IndicatorPropertyDialog({indicatorProperty,selectedIndicator,setIndicatorProperty,activeBarIndicator}) {
 
 
 
-  console.log(indicatorProperty,selectedIndicator, "0000000000000000000000000004567890");
+
 
   const [open, setOpen] = useState(true);
 
@@ -70,7 +66,6 @@ export default function IndicatorPropertyDialog({
   const handleIndicatorPropertyChange = (e) => {
     console.log(indicatorConfig, "000000000");
   };
-
   // -------------------------------------indicator property rendering as per selected ----------------------------------
   function commonIndicator() {
     return (
@@ -128,12 +123,12 @@ export default function IndicatorPropertyDialog({
     )
   }
 
-  // console.log(,"000000000000");
-
 
   function renderIndicatorSetting() {
-    switch (indicator) {
+    // console.log(selectedIndicator,"----------------0987657890")
+    switch (activeBarIndicator) {
       case "SMA":
+        console.log("first call is here-------------------------------------------")
         return (
           <>
           {commonIndicator()}
@@ -194,8 +189,14 @@ export default function IndicatorPropertyDialog({
             </section>
           </>
         )
+        break;
       case "RSI" :
-
+           return (
+            <>
+            <h1>Hello RSI</h1>
+            </>
+          )
+          
       default:
         return (
           <p className="text-muted text-center">
@@ -219,7 +220,7 @@ export default function IndicatorPropertyDialog({
         </Modal.Header>
 
         <Modal.Body>
-          {selectedIndicator && selectedIndicator?.map((vall) => renderIndicatorSetting(vall)) }
+         {renderIndicatorSetting()}
         </Modal.Body>
 
         <Modal.Footer>

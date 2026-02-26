@@ -1,4 +1,4 @@
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Form, Button, Card, Container } from "react-bootstrap";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import apiService from "../../services/apiServices";
@@ -49,29 +49,27 @@ export default function Login() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
 
-    // const validationErrors = validate();
-    // setErrors(validationErrors);
-
-    // if (Object.keys(validationErrors).length > 0) return;
-
-    // setLoading(true);
-
-    const payload = {
-      email: form.email,
-      password: form.password,
-    };
 
     try {
-      const response = await apiService.post("/api/login", payload);
 
-      console.log(response, "resssssssssss");
+      e.preventDefault();
+
+      const validationErrors = validate();
+      setErrors(validationErrors);
+
+      if (Object.keys(validationErrors)?.length > 0) return;
+
+      // setLoading(true);
+
+      const payload = {email: form.email,password: form.password};
+  
+      const response = await apiService.post("/api/login", payload);
+      console.log(response);
+
       const data = await response?.user;
-      // console.log(data,"----------------098765678987656");
-      // return
-      // Save session based on "remember me"
-      if (form.remember) {
+
+      if (form?.remember) {
         localStorage.setItem("session", JSON.stringify(data));
       } else {
         sessionStorage.setItem("session", JSON.stringify(data));
@@ -80,12 +78,7 @@ export default function Login() {
       await toast.success("Login successful!");
       navigate("/candleStick");
     } catch (error) {
-      const message =
-        error.response?.data?.message || error.message || "Login failed";
-      console.error("Login error:", error);
-      toast.error(message);
-    } finally {
-      setLoading(false);
+         await toast.error(error?.message);
     }
   };
   return (

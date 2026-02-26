@@ -22,16 +22,14 @@ api.interceptors.request.use(
 );
 
 // 🔹 Response Interceptor
-api.interceptors.response.use(
-  (response) => response.data,
-  (error) => {
+api.interceptors.response.use((response) => response?.data,(error) => {
     const message =
       error?.response?.data?.message ||
       error?.message ||
       "Something went wrong";
     // console.log("API Error:", error?.response?.data?.message);
     // console.log("API Error Details:", error?.message);
-    toast.error(error?.message);
+
 
     return Promise.reject(error);
   },

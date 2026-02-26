@@ -81,6 +81,8 @@ export default function Candlestick() {
   const [openSettings, setOpenSettings] = useState(false);
   const [indicatorProperty, setIndicatorProperty] = useState(false);
 
+  const [activeBarIndicator,setActiveBarIndicator]=useState("");
+
   const [isVisible, setIsVisible] = useState(true);
 
   const getIndicatorColor = useCallback(
@@ -380,8 +382,7 @@ export default function Candlestick() {
   };
 
   const toggleIndicator = (indicator) => {
-    setSelectedIndicator((prev) => {
-      const alreadySelected = prev.includes(indicator);
+    setSelectedIndicator((prev) => {const alreadySelected = prev.includes(indicator);
 
       if (alreadySelected) {
         // ✅ Remove ALL series belonging to indicator
@@ -728,16 +729,19 @@ export default function Candlestick() {
 
       default:
         async function fetchCandleStickData() {
-          const { data } = await fetchDataByCurrency(
+          const response = await fetchDataByCurrency(
             selectedCurrency,
             timeframeValue,
             chartType,
           );
+          console.log(response,"------------------------------------------->>>>>>>>>>>>>>>>>>")
           seriesRef.current = chartRef.current.addSeries(
             CandlestickSeries,
             chartSeriesStyles.candlestick,
           );
-          seriesRef.current.setData(data);
+          if(response){
+            seriesRef?.current?.setData(response);
+          }
           chartRef.current.timeScale().fitContent();
           await fetchIndicatorData(
             selectedIndicator,
@@ -793,6 +797,10 @@ export default function Candlestick() {
   const resetZoom = () => {
     chartRef.current?.timeScale().fitContent();
   };
+
+
+
+
 
   return (
     <div className="w-full h-screen flex flex-col bg-slate-50">
@@ -892,6 +900,7 @@ export default function Candlestick() {
                         className="w-2 h-2 rounded-full"
                         style={{ background: getIndicatorColor(index) }}
                       />
+                      
                       {indicator} : {timeframeValue} :
                       <span style={{ display: "flex", gap: 6 }}>
                         {renderValue(indicator, liveIndicatorData[indicator])}
@@ -912,7 +921,10 @@ export default function Candlestick() {
                       {/* Settings */}
                       <button
                         title="Indicator Settings"
-                        onClick={() => setIndicatorProperty((prev) => !prev)}
+                        onClick={() => {
+                          setActiveBarIndicator(indicator);
+                          setIndicatorProperty((prev) => !prev)
+                        } }
                         className="text-slate-600"
                       >
                         <IoSettingsOutline size={18} />
@@ -1074,6 +1086,7 @@ export default function Candlestick() {
         setIndicatorProperty={setIndicatorProperty}
         indicatorProperty={indicatorProperty}
         selectedIndicator={selectedIndicator}
+        activeBarIndicator={activeBarIndicator}
       />
     </div>
   );
