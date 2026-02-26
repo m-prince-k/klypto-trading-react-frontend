@@ -132,7 +132,7 @@ export default function IndicatorPropertyDialog({
 
 
   function renderIndicatorSetting() {
-    switch (selectedIndicator.map((val) => val).filter((ll) => ll =="SMA")[0]) {
+    switch (indicator) {
       case "SMA":
         return (
           <>
@@ -219,7 +219,7 @@ export default function IndicatorPropertyDialog({
         </Modal.Header>
 
         <Modal.Body>
-          {renderIndicatorSetting()}
+          {selectedIndicator && selectedIndicator?.map((vall) => renderIndicatorSetting(vall)) }
         </Modal.Body>
 
         <Modal.Footer>
