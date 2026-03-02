@@ -16,7 +16,6 @@ export const ListingModal = ({
   selectedIndicator,
   setSelectedIndicator,
   toggleIndicator,
-  // loadIndicator,
 }) => {
   const [activeTab, setActiveTab] = useState("Indicators");
   const [indicators, setIndicators] = useState([]);
@@ -42,7 +41,6 @@ export const ListingModal = ({
         response = await apiService.post(`/api/getIndicators`);
       }
       setIndicators(response?.data);
-      // console.log(response?.data, "-----------");
     } catch (err) {
       console.error(err);
       setError(err?.message || "Failed to fetch indicators");
@@ -65,7 +63,6 @@ export const ListingModal = ({
         response = await apiService.post(`api/getCurrencies`);
       }
       setCurrencies(await response?.data);
-      // console.log(currencies, "currencies-------------");
     } catch (err) {
       setError(err.message);
     } finally {
