@@ -508,7 +508,7 @@ export default function IndicatorRuleBuilder({ onClose, onOpen }) {
                   lineHeight: 1,
                 }}
               >
-                ×
+                x
               </Button>
             </Stack>
           ))}
@@ -537,7 +537,7 @@ export default function IndicatorRuleBuilder({ onClose, onOpen }) {
 
           {/* ACTION BUTTONS */}
           <Stack direction="horizontal" gap={3} className="pt-3 flex-wrap">
-            <Button
+            <Button size="18"
               onClick={() => {
                 const payload = buildQueryPayload();
                 onClose();

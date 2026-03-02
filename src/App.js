@@ -11,6 +11,7 @@ import IndicatorBuildingListing from "./components/indicator/IndicatorBuilderLis
 import Login from "./pages/auth/login";
 import { ProtectedRoute } from "./pages/auth/ProtectedRoute";
 import Signup from "./pages/auth/signup";
+import { Navigate } from "react-router-dom";
 
 function App() {
   return (
@@ -39,6 +40,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
 
+          <Route path="/" element={<Navigate to="/login" />} />
         </Routes>
       </BrowserRouter>
     </div>

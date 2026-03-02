@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { CandlestickSeries, createChart, CrosshairMode, LineSeries } from 'lightweight-charts';
 
-const MultiPaneTradingViewFixed = () => {
+const Testing = () => {
   const chartRefs = useRef([]);
   const containerRefs = useRef([]);
   const [hoverInfo, setHoverInfo] = useState('Hover on any chart to see values');
@@ -174,6 +174,6 @@ const MultiPaneTradingViewFixed = () => {
       <div style={{ marginTop: '5px', fontFamily: 'Arial', fontSize: '14px' }}>{hoverInfo}</div>
     </div>
   );
-};
+}
 
-export default MultiPaneTradingViewFixed;
+export default Testing;

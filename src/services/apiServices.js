@@ -6,7 +6,7 @@ const token = localStorage.getItem("session") && JSON.parse(localStorage.getItem
 
 // 🔹 Create axios instance
 const api = axios.create({
-  baseURL: "http://192.168.1.14:4000/", // change to your API
+  baseURL: "http://192.168.1.9:4000/", // change to your API
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
@@ -25,14 +25,14 @@ api.interceptors.request.use(
 );
 
 // 🔹 Response Interceptor
-api.interceptors.response.use(
-  (response) => response.data,
-  (error) => {
+api.interceptors.response.use((response) => response?.data,(error) => {
     const message =
       error?.response?.data?.message ||
       error?.message ||
       "Something went wrong";
-    // toast.error(error?.message);
+    // console.log("API Error:", error?.response?.data?.message);
+    // console.log("API Error Details:", error?.message);
+
 
     return Promise.reject(error);
   },

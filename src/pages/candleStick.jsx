@@ -43,6 +43,10 @@ import {
 } from "../util/chartFunctions";
 import IndicatorPropertyDialog from "../components/indicator/IndicatorPropertyDialog";
 
+import { useNavigate } from "react-router-dom";
+import { isAuthenticated } from "./auth/protected";
+
+
 export default function Candlestick() {
   const chartRef = useRef();
   const containerRef = useRef();
@@ -67,6 +71,7 @@ export default function Candlestick() {
   const [indicatorProperty, setIndicatorProperty] = useState(false);
   const mainChartHeightRef = useRef(500); // initial height
   const [isVisible, setIsVisible] = useState(true);
+  const[activeBarIndicator,setActiveBarIndicator]=useState("");
 
   const getIndicatorColor = useCallback(
     (index) => INDICATOR_COLORS[index % INDICATOR_COLORS.length],
@@ -402,8 +407,7 @@ export default function Candlestick() {
   }, [selectedCurrency, timeframeValue]);
 
   const toggleIndicator = (indicator) => {
-    setSelectedIndicator((prev) => {
-      const alreadySelected = prev.includes(indicator);
+    setSelectedIndicator((prev) => {const alreadySelected = prev.includes(indicator);
 
       if (alreadySelected) {
         // ✅ Remove ALL series belonging to indicator
@@ -785,14 +789,15 @@ export default function Candlestick() {
             timeframeValue,
             chartType,
           );
-
+          console.log(response,"------------------------------------------->>>>>>>>>>>>>>>>>>")
           seriesRef.current = chartRef.current.addSeries(
             CandlestickSeries,
             chartSeriesStyles.candlestick,
           );
-          seriesRef.current?.setData(response);
-
-          chartRef.current?.timeScale().fitContent();
+          if(response){
+            seriesRef?.current?.setData(response);
+          }
+          chartRef.current.timeScale().fitContent();
           await fetchIndicatorData(
             selectedIndicator,
             selectedCurrency,
@@ -846,6 +851,10 @@ export default function Candlestick() {
   const resetZoom = () => {
     chartRef.current?.timeScale().fitContent();
   };
+
+
+
+
 
   return (
     <div className="w-full flex flex-col bg-slate-50">
@@ -948,6 +957,7 @@ export default function Candlestick() {
                         className="w-2 h-2 rounded-full"
                         style={{ background: getIndicatorColor(index) }}
                       />
+                      
                       {indicator} : {timeframeValue} :
                       <span style={{ display: "flex", gap: 6 }}>
                         {renderValue(indicator, value)}
@@ -962,21 +972,24 @@ export default function Candlestick() {
                         onClick={() => setIsVisible((prev) => !prev)}
                         className="text-slate-600"
                       >
-                        {isVisible ? <IoEyeOutline /> : <IoEyeOffOutline />}
+                        {isVisible ? <IoEyeOutline size={18}  /> : <IoEyeOffOutline size={18}  />}
                       </button>
 
                       {/* Settings */}
                       <button
                         title="Indicator Settings"
-                        onClick={() => setIndicatorProperty((prev) => !prev)}
+                        onClick={() => {
+                          setActiveBarIndicator(indicator);
+                          setIndicatorProperty((prev) => !prev)
+                        } }
                         className="text-slate-600"
                       >
-                        <IoSettingsOutline />
+                        <IoSettingsOutline size={18} />
                       </button>
 
                       {/* Source Code */}
                       <button title="Source Code" className="text-slate-600 ">
-                        <FaCode />
+                        <FaCode size={18}  />
                       </button>
 
                       {/* Remove Indicator */}
@@ -984,14 +997,14 @@ export default function Candlestick() {
                         onClick={() => removeIndicator(indicator)}
                         className="text-slate-600"
                       >
-                        <IoCloseSharp />
+                        <IoCloseSharp size={18}  />
                       </button>
 
                       {/* MORE MENU */}
                       <DropdownMenu.Root>
                         <DropdownMenu.Trigger asChild>
                           <button className="text-slate-500 hover:text-slate-800">
-                            <FiMoreHorizontal />
+                            <FiMoreHorizontal size={18}  />
                           </button>
                         </DropdownMenu.Trigger>
 
@@ -1134,6 +1147,7 @@ export default function Candlestick() {
         setIndicatorProperty={setIndicatorProperty}
         indicatorProperty={indicatorProperty}
         selectedIndicator={selectedIndicator}
+        activeBarIndicator={activeBarIndicator}
       />
     </div>
   );
