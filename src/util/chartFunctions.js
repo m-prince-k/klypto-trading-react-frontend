@@ -119,10 +119,10 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
   const normalizedType = type.replace(/[\s/]+/g, "");
 
   const response = await apiService.post(
-    `indicatorDetails?symbol=${selectedCurrency}&interval=${timeframeValue}&type=${normalizedType}`,
+    `/api/indicatorDetails?symbol=${selectedCurrency}&interval=${timeframeValue}&type=${normalizedType}`,
   );
 
-  console.log("Raw indicator data for", type, ":", response);
+  // console.log("Raw indicator data for", type, ":", response);
 
   const mapLine = (arr) =>
     arr?.map((d) => ({
