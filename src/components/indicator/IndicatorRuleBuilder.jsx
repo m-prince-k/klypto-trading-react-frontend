@@ -158,7 +158,7 @@ export default function IndicatorRuleBuilder({ onClose, onOpen }) {
     return {
       id: Date.now(),
       timeframe: "Daily",
-      indicator: "",
+      indicator: "RSI",
       period: 14,
       operator: ">",
       scanner: "",
