@@ -16,7 +16,7 @@ const TOOLS = {
 
 const EMOJIS = ["😀", "🔥", "🚀", "📉", "📈", "⭐", "❌", "⭕"];
 
-export default function Testing() {
+export default function ChartLeftSidebar() {
   const svgRef = useRef(null);
 
   const [tool, setTool] = useState(TOOLS.SELECT);
@@ -183,7 +183,7 @@ export default function Testing() {
   };
 
   return (
-    <div style={{ display: "flex", height: "100vh", position: "relative" }}>
+    <>
       {/* ===== LEFT TOOLBAR ===== */}
       <div style={styles.toolbar}>
         <Btn title="Select" onClick={() => setTool(TOOLS.SELECT)}>🖱</Btn>
@@ -277,7 +277,7 @@ export default function Testing() {
           }}
         />
       )}
-    </div>
+    </>
   );
 }
 

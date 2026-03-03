@@ -125,7 +125,7 @@ export default function IndicatorStyle({
             label: "Cloud Fill",
             type: "area",
             color0: "rgba(38,166,154,0.4)", // bullish cloud
-            
+
             color1: "rgba(239,83,80,0.4)", // bearish cloud
           },
         ];
@@ -941,26 +941,6 @@ export default function IndicatorStyle({
             width: 2,
             visible: true,
           },
-
-          // Maxima Line
-          {
-            key: "maxima",
-            label: "Maxima",
-            type: "line",
-            color: "#26a69a",
-            width: 1,
-            visible: true,
-          },
-
-          // Minima Line
-          {
-            key: "minima",
-            label: "Minima",
-            type: "line",
-            color: "#ef5350",
-            width: 1,
-            visible: true,
-          },
         ];
 
       case "Negative Volume Index":
@@ -972,16 +952,6 @@ export default function IndicatorStyle({
             type: "line",
             color: "#2962ff",
             width: 2,
-            visible: true,
-          },
-
-          // Maxima Line
-          {
-            key: "nviBasedema",
-            label: "NVI Based EMA",
-            type: "line",
-            color: "#26a69a",
-            width: 1,
             visible: true,
           },
         ];

@@ -8,11 +8,11 @@ export default function ProfileDropDown() {
   const [language, setLanguage] = useState("English (India)");
 
   return (
-    <div style={{ height: "100vh", background: dark ? "#111" : "#f5f5f5" }}>
+    <div>
       {/* ===== TOP BAR ===== */}
-      <div style={styles.topBar}>
-        <button onClick={() => setOpen(true)} style={styles.menuBtn}>☰</button>
-        <b style={{ color: dark ? "#fff" : "#000" }}>TradingView</b>
+      <div className="custom-toggle-bar" style={styles.topBar}>
+        <button onClick={() => setOpen(true)} >☰</button>
+      
       </div>
 
       {/* ===== DRAWER OVERLAY ===== */}
@@ -96,13 +96,6 @@ export default function ProfileDropDown() {
         />
       </div>
 
-      {/* ===== DEMO CONTENT ===== */}
-      <div style={{ padding: 20, color: dark ? "#fff" : "#000" }}>
-        <h2>Chart Area</h2>
-        <p>Dark Mode: {dark ? "ON" : "OFF"}</p>
-        <p>Drawings Panel: {drawingsPanel ? "Visible" : "Hidden"}</p>
-        <p>Language: {language}</p>
-      </div>
     </div>
   );
 }

@@ -15,6 +15,7 @@ export const styles = {
     position: "fixed",
     inset: 0,
     background: "rgba(0,0,0,0.3)",
+    zIndex:99999,
   },
   drawer: {
     position: "fixed",
@@ -23,7 +24,7 @@ export const styles = {
     width: 280,
     transition: "0.25s",
     padding: 12,
-    zIndex: 10,
+    zIndex: 9999999,
     boxShadow: "2px 0 6px rgba(0,0,0,0.2)",
   },
   header: {
