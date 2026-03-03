@@ -10,6 +10,7 @@ import { chartOptions } from "../../util/common";
 import { EditableNumber } from "../indicator/EditTableLabel";
 import { isAuthenticated, logout } from "../../pages/auth/protected";
 import { Navigate, useNavigate } from "react-router-dom";
+import ProfileDropDown from "../auth/profile/ProfileDropDown";
 
 export default function ChartHeader({
   timeframeValue,
@@ -220,6 +221,11 @@ export default function ChartHeader({
             </button>
           )}
         </div>
+
+          
+          <ProfileDropDown />
+
+
       </div>
 
       {/* MODAL (UNCHANGED) */}

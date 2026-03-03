@@ -45,6 +45,8 @@ import IndicatorPropertyDialog from "../components/indicator/IndicatorPropertyDi
 
 import { useNavigate } from "react-router-dom";
 import { isAuthenticated } from "./auth/protected";
+import ChartLeftSidebar from "../components/chart/leftbar/ChartLeftSidebar";
+import ChartRightSidebar from "../components/chart/rightbar/ChartRightSidebar";
 
 
 export default function Candlestick() {
@@ -71,7 +73,7 @@ export default function Candlestick() {
   const [indicatorProperty, setIndicatorProperty] = useState(false);
   const mainChartHeightRef = useRef(500); // initial height
   const [isVisible, setIsVisible] = useState(true);
-  const[activeBarIndicator,setActiveBarIndicator]=useState("");
+  const [activeBarIndicator, setActiveBarIndicator] = useState("");
 
   const getIndicatorColor = useCallback(
     (index) => INDICATOR_COLORS[index % INDICATOR_COLORS.length],
@@ -295,7 +297,7 @@ export default function Candlestick() {
 
     try {
       paneChart.remove();
-    } catch (e) {}
+    } catch (e) { }
 
     delete panesRef.current[paneKey];
   }
@@ -318,13 +320,13 @@ export default function Candlestick() {
       Object.values(entry).forEach((series) => {
         try {
           chart.removeSeries(series);
-        } catch (e) {}
+        } catch (e) { }
       });
     } else {
       /* ✅ SINGLE SERIES */
       try {
         chart.removeSeries(entry);
-      } catch (e) {}
+      } catch (e) { }
     }
 
     delete indicatorSeriesRef.current[indicator];
@@ -407,7 +409,8 @@ export default function Candlestick() {
   }, [selectedCurrency, timeframeValue]);
 
   const toggleIndicator = (indicator) => {
-    setSelectedIndicator((prev) => {const alreadySelected = prev.includes(indicator);
+    setSelectedIndicator((prev) => {
+      const alreadySelected = prev.includes(indicator);
 
       if (alreadySelected) {
         // ✅ Remove ALL series belonging to indicator
@@ -490,7 +493,7 @@ export default function Candlestick() {
 
   const attachCrosshair = useCallback(
     (chart, chartKey) => {
-      if (!chart) return () => {};
+      if (!chart) return () => { };
 
       const handler = (param) => {
         if (!param.point || param.time === undefined) {
@@ -789,12 +792,12 @@ export default function Candlestick() {
             timeframeValue,
             chartType,
           );
-          console.log(response,"------------------------------------------->>>>>>>>>>>>>>>>>>")
+          console.log(response, "------------------------------------------->>>>>>>>>>>>>>>>>>")
           seriesRef.current = chartRef.current.addSeries(
             CandlestickSeries,
             chartSeriesStyles.candlestick,
           );
-          if(response){
+          if (response) {
             seriesRef?.current?.setData(response);
           }
           chartRef.current.timeScale().fitContent();
@@ -853,302 +856,334 @@ export default function Candlestick() {
   };
 
 
-
-
-
   return (
-    <div className="w-full flex flex-col bg-slate-50">
-      <div>
-        <ChartHeader
-          timeframeValue={timeframeValue}
-          setTimeframeValue={setTimeframeValue}
-          rangeValue={rangeValue}
-          setRangeValue={setRangeValue}
-          selectedCurrency={selectedCurrency}
-          setSelectedCurrency={setSelectedCurrency}
-          setChartType={setChartType}
-          chartType={chartType}
-          selectedIndicator={selectedIndicator}
-          setSelectedIndicator={setSelectedIndicator}
-          toggleIndicator={toggleIndicator}
-        />
-      </div>
-
-      {/* Chart */}
-      <div
-        ref={containerRef}
-        style={{
-          width: ChartProprties.width,
-          height: ChartProprties.height,
-          position: "relative",
-          overflow: "hidden",
-
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        {/* -------------------------------sub-header live Values----------------------- */}
-        <div className="flex px-2 top-2 z-10 absolute items-center gap-2 bg-slate-100 justify-start">
-          {/* LEFT: Symbol */}
-
-          <div className="text-sm text-slate-950">
-            {selectedCurrency} : {timeframeValue} :
-          </div>
-          <div className="flex items-center justify-center">
-            <div className="relative">
-              {/* outer ring */}
-              <span
-                className={`absolute inset-0 rounded-full opacity-30 animate-ping ${isMarketOpen ? "bg-green-500" : "bg-red-400"}`}
-              ></span>
-
-              {/* inner dot */}
-              <span
-                className={`relative block w-3 h-3 rounded-full ${isMarketOpen ? "bg-green-500" : "bg-red-400"}`}
-              ></span>
+    <>
+      <section className="trading-view-wrapper">
+        <div className="container-fluid p-0 m-0">
+          <div class="row">
+            <div className="col-md-12">
+              <div className="trading-chart-header">
+                <ChartHeader
+                  timeframeValue={timeframeValue}
+                  setTimeframeValue={setTimeframeValue}
+                  rangeValue={rangeValue}
+                  setRangeValue={setRangeValue}
+                  selectedCurrency={selectedCurrency}
+                  setSelectedCurrency={setSelectedCurrency}
+                  setChartType={setChartType}
+                  chartType={chartType}
+                  selectedIndicator={selectedIndicator}
+                  setSelectedIndicator={setSelectedIndicator}
+                  toggleIndicator={toggleIndicator}
+                />
+              </div>
             </div>
           </div>
+          <div className="row">
+            <div className="col-md-1">
+              <ChartLeftSidebar />
+            </div>
+            <div className="col-md-8">
 
-          {/* CENTER: Timeframes */}
-          <div className="d-flex gap-2 align-items-center">
-            {SINGLE_VALUE_CHARTS.includes(chartType) ? (
-              // Line / Area / Baseline → Close only
-              <h6 className="px-2 py-1 mb-0">
-                <span className="text-primary">{liveOhlcv?.value}</span>
-              </h6>
-            ) : (
-              // Other charts → OHLC
-              <>
-                <h6 className="px-2 py-1 mb-0">
-                  O: <span className={valueColor}>{liveOhlcv?.open}</span>
-                </h6>
+              <div ref={containerRef}
+                style={{
+                  width: ChartProprties.width,
+                  height: ChartProprties.height,
+                  position: "relative",
+                  overflow: "hidden",
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
 
-                <h6 className="px-2 py-1 mb-0">
-                  H: <span className={valueColor}>{liveOhlcv?.high}</span>
-                </h6>
 
-                <h6 className="px-2 py-1 mb-0">
-                  L: <span className={valueColor}>{liveOhlcv?.low}</span>
-                </h6>
+                {/* -------------------------------sub-header live Values----------------------- */}
+                <div className="flex px-2 top-2 z-10 absolute items-center gap-2 bg-slate-100 justify-start">
+                  {/* LEFT: Symbol */}
 
-                <h6 className="px-2 py-1 mb-0">
-                  C: <span className={valueColor}>{liveOhlcv?.close}</span>
-                </h6>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* -----------------INDICATOR BAR------------------- */}
-
-        {selectedIndicator?.length > 0 && (
-          <div className="absolute top-10 left-2 flex flex-col gap-1 z-50">
-            {selectedIndicator &&
-              selectedIndicator?.map((indicator, index) => {
-                const value = liveIndicatorData[indicator];
-                // console.log(value, "indicatorrrrrrrrr")
-                return (
-                  <div
-                    key={index}
-                    className="flex w-full justify-between items-center gap-3 bg-white shadow-sm border border-slate-200 rounded-3 px-3 h-8 text-xs "
-                  >
-                    {/* LEFT SIDE */}
-                    <span className="font-medium w-full text-slate-800 flex items-center gap-2">
+                  <div className="text-sm text-slate-950">
+                    {selectedCurrency} : {timeframeValue} :
+                  </div>
+                  <div className="flex items-center justify-center">
+                    <div className="relative">
+                      {/* outer ring */}
                       <span
-                        className="w-2 h-2 rounded-full"
-                        style={{ background: getIndicatorColor(index) }}
-                      />
-                      
-                      {indicator} : {timeframeValue} :
-                      <span style={{ display: "flex", gap: 6 }}>
-                        {renderValue(indicator, value)}
-                      </span>
-                    </span>
+                        className={`absolute inset-0 rounded-full opacity-30 animate-ping ${isMarketOpen ? "bg-green-500" : "bg-red-400"}`}
+                      ></span>
 
-                    {/* RIGHT SIDE */}
-                    <div className="flex items-center gap-2">
-                      {/* hide/ */}
-                      <button
-                        title={isVisible ? "Hide Indicator" : "Show Indicator"}
-                        onClick={() => setIsVisible((prev) => !prev)}
-                        className="text-slate-600"
-                      >
-                        {isVisible ? <IoEyeOutline size={18}  /> : <IoEyeOffOutline size={18}  />}
-                      </button>
-
-                      {/* Settings */}
-                      <button
-                        title="Indicator Settings"
-                        onClick={() => {
-                          setActiveBarIndicator(indicator);
-                          setIndicatorProperty((prev) => !prev)
-                        } }
-                        className="text-slate-600"
-                      >
-                        <IoSettingsOutline size={18} />
-                      </button>
-
-                      {/* Source Code */}
-                      <button title="Source Code" className="text-slate-600 ">
-                        <FaCode size={18}  />
-                      </button>
-
-                      {/* Remove Indicator */}
-                      <button
-                        onClick={() => removeIndicator(indicator)}
-                        className="text-slate-600"
-                      >
-                        <IoCloseSharp size={18}  />
-                      </button>
-
-                      {/* MORE MENU */}
-                      <DropdownMenu.Root>
-                        <DropdownMenu.Trigger asChild>
-                          <button className="text-slate-500 hover:text-slate-800">
-                            <FiMoreHorizontal size={18}  />
-                          </button>
-                        </DropdownMenu.Trigger>
-
-                        <DropdownMenu.Portal>
-                          <DropdownMenu.Content
-                            sideOffset={6}
-                            className="w-56 rounded-3 bg-white shadow-lg border border-gray-200 text-sm z-50"
-                          >
-                            <DropdownMenu.Item
-                              onClick={() => setShowAlertForm(true)}
-                              className="px-4 py-2 hover:bg-gray-100 cursor-pointer outline-none"
-                            >
-                              Add Alert
-                            </DropdownMenu.Item>
-
-                            <DropdownMenu.Item className="px-4 py-2 hover:bg-gray-100 cursor-pointer outline-none">
-                              Add Strategy / Indicator
-                            </DropdownMenu.Item>
-
-                            <DropdownMenu.Separator className="h-px bg-gray-200 my-1" />
-
-                            <DropdownMenu.Item asChild>
-                              <a
-                                href="<LINK>"
-                                target="_blank"
-                                className="block px-4 py-2 hover:bg-gray-100 outline-none"
-                              >
-                                View Source Code
-                              </a>
-                            </DropdownMenu.Item>
-                          </DropdownMenu.Content>
-                        </DropdownMenu.Portal>
-                      </DropdownMenu.Root>
+                      {/* inner dot */}
+                      <span
+                        className={`relative block w-3 h-3 rounded-full ${isMarketOpen ? "bg-green-500" : "bg-red-400"}`}
+                      ></span>
                     </div>
+                  </div>
 
-                    {showAlertForm && (
-                      <IndicatorAlert
-                        onClose={closeAlert}
-                        value={value}
-                        liveOhlcv={liveOhlcv}
-                        symbol={selectedCurrency}
-                      />
+                  {/* CENTER: Timeframes */}
+                  <div className="d-flex gap-2 align-items-center">
+                    {SINGLE_VALUE_CHARTS.includes(chartType) ? (
+                      // Line / Area / Baseline → Close only
+                      <h6 className="px-2 py-1 mb-0">
+                        <span className="text-primary">{liveOhlcv?.value}</span>
+                      </h6>
+                    ) : (
+                      // Other charts → OHLC
+                      <>
+                        <h6 className="px-2 py-1 mb-0">
+                          O: <span className={valueColor}>{liveOhlcv?.open}</span>
+                        </h6>
+
+                        <h6 className="px-2 py-1 mb-0">
+                          H: <span className={valueColor}>{liveOhlcv?.high}</span>
+                        </h6>
+
+                        <h6 className="px-2 py-1 mb-0">
+                          L: <span className={valueColor}>{liveOhlcv?.low}</span>
+                        </h6>
+
+                        <h6 className="px-2 py-1 mb-0">
+                          C: <span className={valueColor}>{liveOhlcv?.close}</span>
+                        </h6>
+                      </>
                     )}
                   </div>
-                );
-              })}
+                </div>
+
+                {/* -----------------INDICATOR BAR------------------- */}
+
+                {selectedIndicator?.length > 0 && (
+                  <div className="absolute top-10 left-2 flex flex-col gap-1 z-50">
+                    {selectedIndicator &&
+                      selectedIndicator?.map((indicator, index) => {
+                        const value = liveIndicatorData[indicator];
+                        // console.log(value, "indicatorrrrrrrrr")
+                        return (
+                          <div
+                            key={index}
+                            className="flex w-full justify-between items-center gap-3 bg-white shadow-sm border border-slate-200 rounded-3 px-3 h-8 text-xs "
+                          >
+                            {/* LEFT SIDE */}
+                            <span className="font-medium w-full text-slate-800 flex items-center gap-2">
+                              <span
+                                className="w-2 h-2 rounded-full"
+                                style={{ background: getIndicatorColor(index) }}
+                              />
+
+                              {indicator} : {timeframeValue} :
+                              <span style={{ display: "flex", gap: 6 }}>
+                                {renderValue(indicator, value)}
+                              </span>
+                            </span>
+
+                            {/* RIGHT SIDE */}
+                            <div className="flex items-center gap-2">
+                              {/* hide/ */}
+                              <button
+                                title={isVisible ? "Hide Indicator" : "Show Indicator"}
+                                onClick={() => setIsVisible((prev) => !prev)}
+                                className="text-slate-600"
+                              >
+                                {isVisible ? <IoEyeOutline size={18} /> : <IoEyeOffOutline size={18} />}
+                              </button>
+
+                              {/* Settings */}
+                              <button
+                                title="Indicator Settings"
+                                onClick={() => {
+                                  setActiveBarIndicator(indicator);
+                                  setIndicatorProperty((prev) => !prev)
+                                }}
+                                className="text-slate-600"
+                              >
+                                <IoSettingsOutline size={18} />
+                              </button>
+
+                              {/* Source Code */}
+                              <button title="Source Code" className="text-slate-600 ">
+                                <FaCode size={18} />
+                              </button>
+
+                              {/* Remove Indicator */}
+                              <button
+                                onClick={() => removeIndicator(indicator)}
+                                className="text-slate-600"
+                              >
+                                <IoCloseSharp size={18} />
+                              </button>
+
+                              {/* MORE MENU */}
+                              <DropdownMenu.Root>
+                                <DropdownMenu.Trigger asChild>
+                                  <button className="text-slate-500 hover:text-slate-800">
+                                    <FiMoreHorizontal size={18} />
+                                  </button>
+                                </DropdownMenu.Trigger>
+
+                                <DropdownMenu.Portal>
+                                  <DropdownMenu.Content
+                                    sideOffset={6}
+                                    className="w-56 rounded-3 bg-white shadow-lg border border-gray-200 text-sm z-50"
+                                  >
+                                    <DropdownMenu.Item
+                                      onClick={() => setShowAlertForm(true)}
+                                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer outline-none"
+                                    >
+                                      Add Alert
+                                    </DropdownMenu.Item>
+
+                                    <DropdownMenu.Item className="px-4 py-2 hover:bg-gray-100 cursor-pointer outline-none">
+                                      Add Strategy / Indicator
+                                    </DropdownMenu.Item>
+
+                                    <DropdownMenu.Separator className="h-px bg-gray-200 my-1" />
+
+                                    <DropdownMenu.Item asChild>
+                                      <a
+                                        href="<LINK>"
+                                        target="_blank"
+                                        className="block px-4 py-2 hover:bg-gray-100 outline-none"
+                                      >
+                                        View Source Code
+                                      </a>
+                                    </DropdownMenu.Item>
+                                  </DropdownMenu.Content>
+                                </DropdownMenu.Portal>
+                              </DropdownMenu.Root>
+                            </div>
+
+                            {showAlertForm && (
+                              <IndicatorAlert
+                                onClose={closeAlert}
+                                value={value}
+                                liveOhlcv={liveOhlcv}
+                                symbol={selectedCurrency}
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
+              </div>
+            </div>
+            {/* <div className="col-md-2">
+              <ChartRightSidebar />
+            </div> */}
           </div>
-        )}
-      </div>
-
-      <div className="d-flex align-items-center position-relative">
-        <div className="mx-auto d-flex align-items-center gap-2">
-          <button
-            onClick={zoomIn}
-            className="group relative flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-slate-50 to-slate-100 hover:from-purple-50 hover:to-indigo-50 text-slate-700 hover:text-purple-700 font-semibold rounded-xl shadow-sm hover:shadow-md border border-slate-200/50 hover:border-purple-300/50 transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
-          >
-            <LuCirclePlus className="w-4 h-4 group-hover:scale-110 group-hover:rotate-90 transition-all duration-300" />
-            <span className="text-sm">Zoom In</span>
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-100 to-indigo-100 opacity-0 group-hover:opacity-30 transition-opacity duration-200" />
-          </button>
-
-          {/* Divider */}
-          <div className="h-6 w-px bg-gradient-to-b from-transparent via-slate-300 to-transparent" />
-
-          <button
-            onClick={zoomOut}
-            className="group relative flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-slate-50 to-slate-100 hover:from-purple-50 hover:to-indigo-50 text-slate-700 hover:text-purple-700 font-semibold rounded-xl shadow-sm hover:shadow-md border border-slate-200/50 hover:border-purple-300/50 transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
-          >
-            <LuCircleMinus className="w-4 h-4 group-hover:scale-110 group-hover:rotate-90 transition-all duration-300" />
-            <span className="text-sm">Zoom Out</span>
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-100 to-indigo-100 opacity-0 group-hover:opacity-30 transition-opacity duration-200" />
-          </button>
-
-          {/* Divider */}
-          <div className="h-6 w-px bg-gradient-to-b from-transparent via-slate-300 to-transparent" />
-
-          <button
-            onClick={resetZoom}
-            className="group relative flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
-          >
-            <RiResetRightLine className="w-4 h-4 group-hover:rotate-[360deg] transition-transform duration-500" />
-            <span className="text-sm">Reset</span>
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-indigo-400 opacity-0 group-hover:opacity-20 transition-opacity duration-200" />
-          </button>
         </div>
 
-        {/* Floating Open Button */}
-        {!openForm && (
-          <div className="d-flex justify-content-end position-sticky top-0 ">
-            <button
-              onClick={() => setOpenForm(true)}
-              className="btn btn-primary d-flex align-items-center gap-1 mx-3"
-              style={{ zIndex: 1050 }}
+        {/* -------------------------market part start here-------------------- */}
+      </section>
+
+      
+      
+
+
+      <section className="market-trading-part">
+        <div className="container p-0 m-0">
+          <div className="row">
+
+            <div className="d-flex align-items-center position-relative">
+              <div className="mx-auto d-flex align-items-center gap-2">
+                <button
+                  onClick={zoomIn}
+                  className="group relative flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-slate-50 to-slate-100 hover:from-purple-50 hover:to-indigo-50 text-slate-700 hover:text-purple-700 font-semibold rounded-xl shadow-sm hover:shadow-md border border-slate-200/50 hover:border-purple-300/50 transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
+                >
+                  <LuCirclePlus className="w-4 h-4 group-hover:scale-110 group-hover:rotate-90 transition-all duration-300" />
+                  <span className="text-sm">Zoom In</span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-100 to-indigo-100 opacity-0 group-hover:opacity-30 transition-opacity duration-200" />
+                </button>
+
+                {/* Divider */}
+                <div className="h-6 w-px bg-gradient-to-b from-transparent via-slate-300 to-transparent" />
+
+                <button
+                  onClick={zoomOut}
+                  className="group relative flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-slate-50 to-slate-100 hover:from-purple-50 hover:to-indigo-50 text-slate-700 hover:text-purple-700 font-semibold rounded-xl shadow-sm hover:shadow-md border border-slate-200/50 hover:border-purple-300/50 transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
+                >
+                  <LuCircleMinus className="w-4 h-4 group-hover:scale-110 group-hover:rotate-90 transition-all duration-300" />
+                  <span className="text-sm">Zoom Out</span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-100 to-indigo-100 opacity-0 group-hover:opacity-30 transition-opacity duration-200" />
+                </button>
+
+                {/* Divider */}
+                <div className="h-6 w-px bg-gradient-to-b from-transparent via-slate-300 to-transparent" />
+
+                <button
+                  onClick={resetZoom}
+                  className="group relative flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
+                >
+                  <RiResetRightLine className="w-4 h-4 group-hover:rotate-[360deg] transition-transform duration-500" />
+                  <span className="text-sm">Reset</span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-indigo-400 opacity-0 group-hover:opacity-20 transition-opacity duration-200" />
+                </button>
+              </div>
+
+              {/* Floating Open Button */}
+              {!openForm && (
+                <div className="d-flex justify-content-end position-sticky top-0 ">
+                  <button
+                    onClick={() => setOpenForm(true)}
+                    className="btn btn-primary d-flex align-items-center gap-1 mx-3"
+                    style={{ zIndex: 1050 }}
+                  >
+                    <IoLink />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Sliding Panel */}
+            <div
+              className="position-fixed top-0 end-0 vh-100 bg-white shadow"
+              style={{
+                width: "900px",
+                height: "100vh",
+                zIndex: 1050,
+                transform: openForm ? "translateX(0)" : "translateX(100%)",
+                transition: "transform 0.6s ease-out",
+              }}
             >
-              <IoLink />
-            </button>
+              <IndicatorRuleBuilder
+                onOpen={() => setOpenForm(true)}
+                onClose={() => setOpenForm(false)}
+              />
+            </div>
+
+            {/* Backdrop (IMPORTANT for UX) */}
+            {openForm && (
+              <div
+                className="position-fixed top-0 start-0 w-100 vh-100 bg-dark bg-opacity-25"
+                style={{ zIndex: 1040 }}
+                onClick={() => setOpenForm(false)}
+              />
+            )}
+
+         
+            {/* ------------------------------------------indicator sub part property show in modal------------------------------- */}
+            <IndicatorPropertyDialog
+              setIndicatorProperty={setIndicatorProperty}
+              indicatorProperty={indicatorProperty}
+              selectedIndicator={selectedIndicator}
+              activeBarIndicator={activeBarIndicator}
+            />
           </div>
-        )}
-      </div>
+        </div>
+      </section>
 
-      {/* Sliding Panel */}
-      <div
-        className="position-fixed top-0 end-0 vh-100 bg-white shadow"
-        style={{
-          width: "900px",
-          height: "100vh",
-          zIndex: 1050,
-          transform: openForm ? "translateX(0)" : "translateX(100%)",
-          transition: "transform 0.6s ease-out",
-        }}
-      >
-        <IndicatorRuleBuilder
-          onOpen={() => setOpenForm(true)}
-          onClose={() => setOpenForm(false)}
-        />
-      </div>
 
-      {/* Backdrop (IMPORTANT for UX) */}
-      {openForm && (
-        <div
-          className="position-fixed top-0 start-0 w-100 vh-100 bg-dark bg-opacity-25"
-          style={{ zIndex: 1040 }}
-          onClick={() => setOpenForm(false)}
-        />
-      )}
 
-      {/* ------------Start Indicator Rule Builder for Caluculating Indicators along with condition---------------- */}
-      <div className="bg-slate-50">
-        {/* <IndicatorRuleBuilder /> */}
-        <IndicatorBuildingListing
-          selectedCurrency={selectedCurrency}
-          timeframeValue={timeframeValue}
-        />
-      </div>
 
-      {/* ------End of indicator rule builder */}
 
-      {/* ------------------------------------------indicator sub part property show in modal------------------------------- */}
-      <IndicatorPropertyDialog
-        setIndicatorProperty={setIndicatorProperty}
-        indicatorProperty={indicatorProperty}
-        selectedIndicator={selectedIndicator}
-        activeBarIndicator={activeBarIndicator}
-      />
-    </div>
+         <div className="">
+              {/* <IndicatorRuleBuilder /> */}
+              <IndicatorBuildingListing
+                selectedCurrency={selectedCurrency}
+                timeframeValue={timeframeValue}
+              />
+            </div>
+
+
+    </>
+
   );
 }
