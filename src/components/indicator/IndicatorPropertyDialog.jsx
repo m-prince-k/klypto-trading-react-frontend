@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Modal, Button, Tabs, Tab } from "react-bootstrap";
+import { Modal, Button, Tabs, Tab, Row, Col, Form } from "react-bootstrap";
 import IndicatorStyle from "./indicatorModals/IndicatorStyle";
 
 export default function IndicatorPropertyDialog({
@@ -7,6 +7,12 @@ export default function IndicatorPropertyDialog({
   setIndicatorProperty,
   activeBarIndicator,
 }) {
+  const labelStyle = {
+    display: "inline-block",
+    width: "150px", // Set this to the width of the longest label
+    textAlign: "left",
+    marginRight: "1rem",
+  };
   /* =========================
      PER-INDICATOR CONFIG STATE
   ========================== */
@@ -158,10 +164,104 @@ export default function IndicatorPropertyDialog({
     "Fisher Transform": {
       length: 9,
     },
-    "ATR":{
-      length: 14, 
+    ATR: {
+      length: 14,
       smoothing: "RMA",
-    }
+    },
+    "Bollinger Bands": {
+      length: 20,
+      maType: "SMA", // default moving average type
+      stdDev: 2,
+      source: "Close",
+      offset: 0,
+    },
+    "Bollinger Band Width": {
+      length: 20,
+      stdDev: 2,
+      source: "Close",
+      highestExpansionLength: 125,
+      lowestContractionLength: 125,
+    },
+    "Keltner Channels": {
+      length: 20,
+      source: "Close",
+      multiplier: 2,
+      atrLength: 10,
+      bandsStyle: "Average True Range",
+      useEMA: true,
+    },
+    "Donchian Channels": {
+      length: 20,
+      offset: 0,
+    },
+    "Choppiness Index": {
+      length: 14,
+      offset: 0,
+    },
+    "Standard Deviation": {
+      length: 20,
+      source: "Close",
+    },
+    "Volume": {
+      maLength: 20,
+      colorByPrevious: false,
+    },
+    "Historical Volatility": {
+      length: 10,
+    },
+    OBV: {
+      smoothing: {
+        type: "None",
+        length: 14,
+        bbStdDev: 2,
+      },
+    },
+    "Percentage Volume Oscillator": {
+      fastLength: 12,
+      slowLength: 26,
+      signalLength: 9,
+      oscMaType: "EMA", // EMA | SMA
+      signalMaType: "EMA", // EMA | SMA
+    },
+    "Chaikin Money Flow": {
+      length: 20,
+    },
+    MFI: {
+      length: 14,
+    },
+    "Ease of Movement": {
+      length: 14,
+      divisor: 10000,
+    },
+    "Negative Volume Index": {
+      emaLength: 255,
+    },
+    "Positive Volume Index": {
+      emaLength: 255,
+    },
+    VWAP: {
+      hideOnDailyOrAbove: true,
+      anchorPeriod: "Daily",
+      source: "HLC3",
+      offset: 0,
+
+      bandSettings: {
+        calculationMode: "Standard Deviation", // or "Percentage"
+
+        band1: { enabled: true, multiplier: 1 },
+        band2: { enabled: false, multiplier: 2 },
+        band3: { enabled: false, multiplier: 3 },
+      },
+    },
+    "Zig Zag": {
+      priceDeviation: 5,
+      pivotLegs: 10,
+      lineColor: "#2962ff",
+      extendToLastBar: true,
+      displayReversalPrice: false,
+      displayCumulativeVolume: false,
+      reversalPriceChangeMode: "absolute",
+    },
   });
 
   const [indicatorStyle, setIndicatorStyle] = useState({
@@ -190,6 +290,28 @@ export default function IndicatorPropertyDialog({
     }));
   };
 
+  const updateNestedProperty = (parentKey, childKey, value) => {
+    setIndicatorConfigs((prev) => ({
+      ...prev,
+      [parentKey]: {
+        ...prev[parentKey],
+        [childKey]: value,
+      },
+    }));
+  };
+  const updateNestedDoubleProperty = (parentKey, childKey, fieldKey, value) => {
+    setIndicatorConfigs((prev) => ({
+      ...prev,
+      [parentKey]: {
+        ...prev[parentKey],
+        [childKey]: {
+          ...prev[parentKey][childKey],
+          [fieldKey]: value,
+        },
+      },
+    }));
+  };
+
   const updateSmoothing = (key, value) => {
     setIndicatorConfigs((prev) => ({
       ...prev,
@@ -213,21 +335,28 @@ export default function IndicatorPropertyDialog({
 
     if (!fullConfig) return;
 
-    // Separate smoothing if exists
-    const { smoothing, ...properties } = fullConfig;
-
     const payload = {
       indicatorName,
-      properties,
+      properties: {},
     };
 
-    // Only attach smoothing if it exists
-    if (smoothing) {
-      payload.smoothing = smoothing;
+    // Iterate over all keys in the fullConfig
+    for (const key in fullConfig) {
+      if (key === "smoothing") {
+        // Only add smoothing if it exists and has keys
+        if (
+          fullConfig.smoothing &&
+          Object.keys(fullConfig.smoothing).length > 0
+        ) {
+          payload.smoothing = { ...fullConfig.smoothing };
+        }
+      } else {
+        // Include all other keys dynamically
+        payload.properties[key] = fullConfig[key];
+      }
     }
 
     console.log(payload);
-
     setIndicatorProperty(false);
   };
 
@@ -241,48 +370,70 @@ export default function IndicatorPropertyDialog({
     showOffset = true,
   }) {
     return (
-      <section>
+      <section className="mt-3">
         {showLength && currentConfig?.length !== undefined && (
-          <div className="mb-3">
-            <label className="form-label">Length</label>
-            <input
-              type="number"
-              className="form-control"
-              value={currentConfig.length}
-              onChange={(e) => updateProperty("length", Number(e.target.value))}
-            />
-          </div>
+          <Form.Group
+            as={Row}
+            className="mb-3"
+            controlId="length"
+            style={{ alignItems: "center" }}
+          >
+            <Form.Label style={labelStyle}>Length</Form.Label>
+            <Col>
+              <Form.Control
+                type="number"
+                value={currentConfig.length}
+                onChange={(e) =>
+                  updateProperty("length", Number(e.target.value))
+                }
+              />
+            </Col>
+          </Form.Group>
         )}
 
         {showSource && currentConfig?.source !== undefined && (
-          <div className="mb-3">
-            <label className="form-label">Source</label>
-            <select
-              className="form-select"
-              value={currentConfig.source}
-              onChange={(e) => updateProperty("source", e.target.value)}
-            >
-              {["Close", "Open", "High", "Low", "HL2", "HLC3", "OHLC4"].map(
-                (opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ),
-              )}
-            </select>
-          </div>
+          <Form.Group
+            as={Row}
+            className="mb-3"
+            controlId="source"
+            style={{ alignItems: "center" }}
+          >
+            <Form.Label style={labelStyle}>Source</Form.Label>
+            <Col>
+              <Form.Select
+                value={currentConfig.source}
+                onChange={(e) => updateProperty("source", e.target.value)}
+              >
+                {["Close", "Open", "High", "Low", "HL2", "HLC3", "OHLC4"].map(
+                  (opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ),
+                )}
+              </Form.Select>
+            </Col>
+          </Form.Group>
         )}
 
         {showOffset && currentConfig?.offset !== undefined && (
-          <div className="mb-3">
-            <label className="form-label">Offset</label>
-            <input
-              type="number"
-              className="form-control"
-              value={currentConfig.offset}
-              onChange={(e) => updateProperty("offset", Number(e.target.value))}
-            />
-          </div>
+          <Form.Group
+            as={Row}
+            className="mb-3"
+            controlId="offset"
+            style={{ alignItems: "center" }}
+          >
+            <Form.Label style={labelStyle}>Offset</Form.Label>
+            <Col>
+              <Form.Control
+                type="number"
+                value={currentConfig.offset}
+                onChange={(e) =>
+                  updateProperty("offset", Number(e.target.value))
+                }
+              />
+            </Col>
+          </Form.Group>
         )}
       </section>
     );
@@ -294,53 +445,76 @@ export default function IndicatorPropertyDialog({
     return (
       <>
         <hr />
+
         <section>
-          <div className="mb-3">
-            <label className="form-label">Smoothing Type</label>
-            <select
-              className="form-select"
-              value={currentConfig.smoothing.type}
-              onChange={(e) => updateSmoothing("type", e.target.value)}
-            >
-              {[
-                "SMA",
-                "EMA",
-                "WMA",
-                "SMA + Bollinger Bands",
-                "VWMA",
-                "SMMA (RMA)",
-              ].map((opt) => (
-                <option key={opt}>{opt}</option>
-              ))}
-            </select>
-          </div>
+          {/* Smoothing Type */}
+          <Form.Group
+            as={Row}
+            className="mb-3"
+            controlId="smoothingType"
+            style={{ alignItems: "center" }}
+          >
+            <Form.Label style={labelStyle}>Smoothing Type</Form.Label>
+            <Col>
+              <Form.Select
+                value={currentConfig.smoothing.type}
+                onChange={(e) => updateSmoothing("type", e.target.value)}
+              >
+                {[
+                  "None",
+                  "SMA",
+                  "EMA",
+                  "WMA",
+                  "SMA + Bollinger Bands",
+                  "VWMA",
+                  "SMMA (RMA)",
+                ].map((opt) => (
+                  <option key={opt}>{opt}</option>
+                ))}
+              </Form.Select>
+            </Col>
+          </Form.Group>
 
-          <div className="mb-3">
-            <label className="form-label">Length</label>
-            <input
-              type="number"
-              className="form-control"
-              value={currentConfig.smoothing.length}
-              onChange={(e) =>
-                updateSmoothing("length", Number(e.target.value))
-              }
-            />
-          </div>
+          {/* Smoothing Length */}
+          <Form.Group
+            as={Row}
+            className="mb-3"
+            controlId="smoothingLength"
+            style={{ alignItems: "center" }}
+          >
+            <Form.Label style={labelStyle}>Length</Form.Label>
+            <Col>
+              <Form.Control
+                type="number"
+                value={currentConfig.smoothing.length}
+                onChange={(e) =>
+                  updateSmoothing("length", Number(e.target.value))
+                }
+              />
+            </Col>
+          </Form.Group>
 
-          <div className="mb-3">
-            <label className="form-label">BB Std Dev</label>
-            <input
-              type="number"
-              className="form-control"
-              value={currentConfig.smoothing.bbStdDev}
-              disabled={
-                currentConfig.smoothing.type !== "SMA + Bollinger Bands"
-              }
-              onChange={(e) =>
-                updateSmoothing("bbStdDev", Number(e.target.value))
-              }
-            />
-          </div>
+          {/* BB Std Dev */}
+          <Form.Group
+            as={Row}
+            className="mb-3"
+            controlId="bbStdDev"
+            style={{ alignItems: "center" }}
+          >
+            <Form.Label style={labelStyle}>BB Std Dev</Form.Label>
+            <Col>
+              <Form.Control
+                type="number"
+                value={currentConfig.smoothing.bbStdDev}
+                disabled={
+                  currentConfig.smoothing.type !== "SMA + Bollinger Bands"
+                }
+                onChange={(e) =>
+                  updateSmoothing("bbStdDev", Number(e.target.value))
+                }
+              />
+            </Col>
+          </Form.Group>
         </section>
       </>
     );
@@ -876,6 +1050,702 @@ export default function IndicatorPropertyDialog({
                 <option value="WMA">WMA</option>
               </select>
             </div>
+          </>
+        );
+      case "Bollinger Bands":
+        return (
+          <>
+            <BaseSettings />
+            <div className="mb-3">
+              <label className="form-label">Basic MA Type</label>
+              <select
+                className="form-control"
+                value={currentConfig.maType}
+                onChange={(e) => updateProperty("maType", e.target.value)}
+              >
+                <option value="SMA">SMA</option>
+                <option value="EMA">EMA</option>
+                <option value="SMMA">SMMA</option>
+                <option value="WMA">WMA</option>
+                <option value="VWMA">VWMA</option>
+              </select>
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Standard Deviation</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.stdDev}
+                onChange={(e) =>
+                  updateProperty("stdDev", Number(e.target.value))
+                }
+              />
+            </div>
+          </>
+        );
+
+      case "Bollinger Band Width":
+        return (
+          <>
+            <BaseSettings showOffset={false} />
+            <div className="mb-3">
+              <label className="form-label">Standard Deviation</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.stdDev}
+                onChange={(e) =>
+                  updateProperty("stdDev", Number(e.target.value))
+                }
+              />
+            </div>
+            <div className="mb-3">
+              <label className="form-label">Highest Expansion Length</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.highestExpansionLength}
+                onChange={(e) =>
+                  updateProperty(
+                    "highestExpansionLength",
+                    Number(e.target.value),
+                  )
+                }
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Lowest Contraction Length</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.lowestContractionLength}
+                onChange={(e) =>
+                  updateProperty(
+                    "lowestContractionLength",
+                    Number(e.target.value),
+                  )
+                }
+              />
+            </div>
+          </>
+        );
+
+      case "Historical Volatility":
+        return (
+          <>
+            <BaseSettings showOffset={false} showSource={false} />
+          </>
+        );
+
+      case "Keltner Channels":
+        return (
+          <>
+            <BaseSettings showOffset={false} />
+            <div className="mb-3">
+              <label className="form-label">Multiplier</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.multiplier}
+                onChange={(e) =>
+                  updateProperty("multiplier", Number(e.target.value))
+                }
+              />
+            </div>
+
+            <div className="form-check mb-3">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                id="useEMA"
+                checked={currentConfig.useEMA}
+                onChange={(e) => updateProperty("useEMA", e.target.checked)}
+              />
+              <label className="form-check-label" htmlFor="useEMA">
+                Use Exponential MA
+              </label>
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Bands Style</label>
+              <select
+                className="form-control"
+                value={currentConfig.bandsStyle}
+                onChange={(e) => updateProperty("bandsStyle", e.target.value)}
+              >
+                <option value="Average True Range">Average True Range</option>
+                <option value="True Range">True Range</option>
+                <option value="Range">Range</option>
+              </select>
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">ATR Length</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.atrLength}
+                onChange={(e) =>
+                  updateProperty("atrLength", Number(e.target.value))
+                }
+              />
+            </div>
+          </>
+        );
+
+      case "Donchian Channels":
+        return (
+          <>
+            <BaseSettings showSource={false} />
+          </>
+        );
+      case "Choppiness Index":
+        return (
+          <>
+            <BaseSettings showSource={false} />
+          </>
+        );
+      case "Standard Deviation":
+        return (
+          <>
+            <BaseSettings showOffset={false} />
+          </>
+        );
+
+      case "Volume":
+        return (
+          <>
+            <div className="mb-3">
+              <label className="form-label">MA Length</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.maLength}
+                onChange={(e) =>
+                  updateProperty("maLength", Number(e.target.value))
+                }
+              />
+            </div>
+
+            <div className="form-check mb-3">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                id="colorByPrevious"
+                checked={currentConfig.colorByPrevious}
+                onChange={(e) =>
+                  updateProperty("colorByPrevious", e.target.checked)
+                }
+              />
+              <label className="form-check-label" htmlFor="colorByPrevious">
+                Color Based on Previous Bar
+              </label>
+            </div>
+          </>
+        );
+
+      case "Historical Volatility":
+        return (
+          <>
+            <BaseSettings showOffset={false} showSource={false} />
+          </>
+        );
+
+      case "OBV":
+        return (
+          <>
+            <SmoothingSection />
+          </>
+        );
+
+      case "Percentage Volume Oscillator":
+        return (
+          <>
+            {/* Fast Length */}
+            <Form.Group
+              as={Row}
+              className="mb-3 align-items-center"
+              controlId="fastLength"
+            >
+              <Form.Label style={labelStyle} className="mb-0">
+                Fast Length
+              </Form.Label>
+              <Col>
+                <Form.Control
+                  type="number"
+                  value={currentConfig.fastLength}
+                  onChange={(e) =>
+                    updateProperty("fastLength", Number(e.target.value))
+                  }
+                />
+              </Col>
+            </Form.Group>
+
+            {/* Slow Length */}
+            <Form.Group
+              as={Row}
+              className="mb-3 align-items-center"
+              controlId="slowLength"
+            >
+              <Form.Label style={labelStyle} className="mb-0">
+                Slow Length
+              </Form.Label>
+              <Col>
+                <Form.Control
+                  type="number"
+                  value={currentConfig.slowLength}
+                  onChange={(e) =>
+                    updateProperty("slowLength", Number(e.target.value))
+                  }
+                />
+              </Col>
+            </Form.Group>
+
+            {/* Signal Length */}
+            <Form.Group
+              as={Row}
+              className="mb-3 align-items-center"
+              controlId="signalLength"
+            >
+              <Form.Label style={labelStyle} className="mb-0">
+                Signal Length
+              </Form.Label>
+              <Col>
+                <Form.Control
+                  type="number"
+                  value={currentConfig.signalLength}
+                  onChange={(e) =>
+                    updateProperty("signalLength", Number(e.target.value))
+                  }
+                />
+              </Col>
+            </Form.Group>
+
+            {/* Oscillator MA Type */}
+            <Form.Group
+              as={Row}
+              className="mb-3 align-items-center"
+              controlId="oscMaType"
+            >
+              <Form.Label style={labelStyle} className="mb-0">
+                Oscillator MA Type
+              </Form.Label>
+              <Col>
+                <Form.Select
+                  value={currentConfig.oscMaType}
+                  onChange={(e) => updateProperty("oscMaType", e.target.value)}
+                >
+                  <option value="EMA">EMA</option>
+                  <option value="SMA">SMA</option>
+                </Form.Select>
+              </Col>
+            </Form.Group>
+
+            {/* Signal MA Type */}
+            <Form.Group
+              as={Row}
+              className="mb-3 align-items-center"
+              controlId="signalMaType"
+            >
+              <Form.Label style={labelStyle} className="mb-0">
+                Signal MA Type
+              </Form.Label>
+              <Col>
+                <Form.Select
+                  value={currentConfig.signalMaType}
+                  onChange={(e) =>
+                    updateProperty("signalMaType", e.target.value)
+                  }
+                >
+                  <option value="EMA">EMA</option>
+                  <option value="SMA">SMA</option>
+                </Form.Select>
+              </Col>
+            </Form.Group>
+          </>
+        );
+
+      case "Chaikin Money Flow":
+        return (
+          <>
+            <BaseSettings showOffset={false} showSource={false} />
+          </>
+        );
+
+      case "MFI":
+        return (
+          <>
+            <BaseSettings showOffset={false} showSource={false} />
+          </>
+        );
+
+      case "Ease of Movement":
+        return (
+          <>
+            <BaseSettings showOffset={false} showSource={false} />
+
+            {/* Divisor */}
+            <Form.Group
+              as={Row}
+              className="mb-3 align-items-center"
+              controlId="eomDivisor"
+            >
+              <Form.Label style={labelStyle} className="mb-0">
+                Divisor
+              </Form.Label>
+              <Col>
+                <Form.Control
+                  type="number"
+                  value={currentConfig.divisor}
+                  onChange={(e) =>
+                    updateProperty("divisor", Number(e.target.value))
+                  }
+                />
+              </Col>
+            </Form.Group>
+          </>
+        );
+
+      case "Negative Volume Index":
+        return (
+          <>
+            <Form.Group
+              as={Row}
+              className="mb-3 align-items-center"
+              controlId="nviEmaLength"
+            >
+              <Form.Label style={labelStyle} className="mb-0">
+                EMA Length
+              </Form.Label>
+              <Col>
+                <Form.Control
+                  type="number"
+                  value={currentConfig.emaLength}
+                  onChange={(e) =>
+                    updateProperty("emaLength", Number(e.target.value))
+                  }
+                />
+              </Col>
+            </Form.Group>
+          </>
+        );
+
+      case "Positive Volume Index":
+        return (
+          <>
+            <Form.Group
+              as={Row}
+              className="mb-3 align-items-center"
+              controlId="pviEmaLength"
+            >
+              <Form.Label style={labelStyle} className="mb-0">
+                EMA Length
+              </Form.Label>
+              <Col>
+                <Form.Control
+                  type="number"
+                  value={currentConfig.emaLength}
+                  onChange={(e) =>
+                    updateProperty("emaLength", Number(e.target.value))
+                  }
+                />
+              </Col>
+            </Form.Group>
+          </>
+        );
+
+      case "VWAP":
+        return (
+          <>
+            {/* Hide VWAP */}
+            <Form.Group as={Row} className="mb-3 align-items-center">
+              <Form.Label style={labelStyle} className="mb-0">
+                Hide on 1D or Above
+              </Form.Label>
+              <Col>
+                <Form.Check
+                  type="checkbox"
+                  checked={currentConfig.hideOnDailyOrAbove}
+                  onChange={(e) =>
+                    updateProperty("hideOnDailyOrAbove", e.target.checked)
+                  }
+                />
+              </Col>
+            </Form.Group>
+
+            {/* Anchor Period */}
+            <Form.Group as={Row} className="mb-3 align-items-center">
+              <Form.Label style={labelStyle} className="mb-0">
+                Anchor Period
+              </Form.Label>
+              <Col>
+                <Form.Select
+                  value={currentConfig.anchorPeriod}
+                  onChange={(e) =>
+                    updateProperty("anchorPeriod", e.target.value)
+                  }
+                >
+                  <option>Daily</option>
+                  <option>Weekly</option>
+                  <option>Monthly</option>
+                  <option>Quarterly</option>
+                  <option>Yearly</option>
+                </Form.Select>
+              </Col>
+            </Form.Group>
+
+            <BaseSettings showLength={false} />
+
+            {/* ========================= */}
+            {/* Band Settings Section */}
+            {/* ========================= */}
+
+            <hr />
+            <h6 className="mb-3">Band Settings</h6>
+
+            {/* Band Calculation Mode */}
+            <Form.Group as={Row} className="mb-3 align-items-center">
+              <Form.Label style={labelStyle} className="mb-0">
+                Band Calculation Mode
+              </Form.Label>
+              <Col>
+                <Form.Select
+                  value={currentConfig.bandSettings.calculationMode}
+                  onChange={(e) =>
+                    updateNestedProperty(
+                      "bandSettings",
+                      "calculationMode",
+                      e.target.value,
+                    )
+                  }
+                >
+                  <option>Standard Deviation</option>
+                  <option>Percentage</option>
+                </Form.Select>
+              </Col>
+            </Form.Group>
+
+            {/* Band Multiplier #1 */}
+            <Form.Group as={Row} className="mb-3 align-items-center">
+              <Form.Label style={labelStyle} className="mb-0">
+                Band Multiplier #1
+              </Form.Label>
+              <Col className="d-flex align-items-center gap-3">
+                <Form.Check
+                  type="checkbox"
+                  checked={currentConfig.bandSettings.band1.enabled}
+                  onChange={(e) =>
+                    updateNestedDoubleProperty(
+                      "bandSettings",
+                      "band1",
+                      "enabled",
+                      e.target.checked,
+                    )
+                  }
+                />
+                <Form.Control
+                  type="number"
+                  style={{ maxWidth: "120px" }}
+                  value={currentConfig.bandSettings.band1.multiplier}
+                  onChange={(e) =>
+                    updateNestedDoubleProperty(
+                      "bandSettings",
+                      "band1",
+                      "multiplier",
+                      Number(e.target.value),
+                    )
+                  }
+                />
+              </Col>
+            </Form.Group>
+
+            {/* Band Multiplier #2 */}
+            <Form.Group as={Row} className="mb-3 align-items-center">
+              <Form.Label style={labelStyle} className="mb-0">
+                Band Multiplier #2
+              </Form.Label>
+              <Col className="d-flex align-items-center gap-3">
+                <Form.Check
+                  type="checkbox"
+                  checked={currentConfig.bandSettings.band2.enabled}
+                  onChange={(e) =>
+                    updateNestedDoubleProperty(
+                      "bandSettings",
+                      "band2",
+                      "enabled",
+                      e.target.checked,
+                    )
+                  }
+                />
+                <Form.Control
+                  type="number"
+                  style={{ maxWidth: "120px" }}
+                  value={currentConfig.bandSettings.band2.multiplier}
+                  onChange={(e) =>
+                    updateNestedDoubleProperty(
+                      "bandSettings",
+                      "band2",
+                      "multiplier",
+                      Number(e.target.value),
+                    )
+                  }
+                />
+              </Col>
+            </Form.Group>
+
+            {/* Band Multiplier #3 */}
+            <Form.Group as={Row} className="mb-3 align-items-center">
+              <Form.Label style={labelStyle} className="mb-0">
+                Band Multiplier #3
+              </Form.Label>
+              <Col className="d-flex align-items-center gap-3">
+                <Form.Check
+                  type="checkbox"
+                  checked={currentConfig.bandSettings.band3.enabled}
+                  onChange={(e) =>
+                    updateNestedDoubleProperty(
+                      "bandSettings",
+                      "band3",
+                      "enabled",
+                      e.target.checked,
+                    )
+                  }
+                />
+                <Form.Control
+                  type="number"
+                  style={{ maxWidth: "120px" }}
+                  value={currentConfig.bandSettings.band3.multiplier}
+                  onChange={(e) =>
+                    updateNestedDoubleProperty(
+                      "bandSettings",
+                      "band3",
+                      "multiplier",
+                      Number(e.target.value),
+                    )
+                  }
+                />
+              </Col>
+            </Form.Group>
+          </>
+        );
+
+      case "Zig Zag":
+        return (
+          <>
+            {/* Price Deviation */}
+            {/* <div className="row mb-3 align-items-center">
+              <div className="col-6">
+                <label className="form-label">
+                  Price Deviation for Reversal (%)
+                </label>
+              </div>
+              <div className="col-6">
+                <input
+                  type="number"
+                  className="form-control"
+                  value={indicatorConfigs.properties.priceDeviation}
+                  onChange={(e) =>
+                    updateProperty("priceDeviation", Number(e.target.value))
+                  }
+                />
+              </div>
+            </div> */}
+
+            {/* Pivot Legs */}
+            {/* <div className="row mb-3 align-items-center">
+              <div className="col-6">
+                <label className="form-label">Pivot Legs</label>
+              </div>
+              <div className="col-6">
+                <input
+                  type="number"
+                  className="form-control"
+                  value={indicatorConfigs.properties.pivotLegs}
+                  onChange={(e) =>
+                    updateProperty("pivotLegs", Number(e.target.value))
+                  }
+                />
+              </div>
+            </div> */}
+
+            {/* Line Color */}
+            {/* <div className="row mb-3 align-items-center">
+              <div className="col-6">
+                <label className="form-label">Line Color</label>
+              </div>
+              <div className="col-6">
+                <input
+                  type="color"
+                  className="form-control form-control-color"
+                  value={indicatorConfigs.properties.lineColor}
+                  onChange={(e) => updateProperty("lineColor", e.target.value)}
+                />
+              </div>
+            </div> */}
+
+            {/* Extend to Last Bar */}
+            {/* <div className="form-check mb-2">
+              <input
+                type="checkbox"
+                className="form-check-input"
+                checked={indicatorConfigs.properties.extendToLastBar}
+                onChange={(e) =>
+                  updateProperty("extendToLastBar", e.target.checked)
+                }
+              />
+              <label className="form-check-label">Extend to Last Bar</label>
+            </div> */}
+
+            {/* Display Reversal Price */}
+            {/* <div className="form-check mb-2">
+              <input
+                type="checkbox"
+                className="form-check-input"
+                checked={indicatorConfigs.properties.displayReversalPrice}
+                onChange={(e) =>
+                  updateProperty("displayReversalPrice", e.target.checked)
+                }
+              />
+              <label className="form-check-label">Display Reversal Price</label>
+            </div> */}
+
+            {/* Display Cumulative Volume */}
+            {/* <div className="form-check mb-2">
+              <input
+                type="checkbox"
+                className="form-check-input"
+                checked={indicatorConfigs.properties.displayCumulativeVolume}
+                onChange={(e) =>
+                  updateProperty("displayCumulativeVolume", e.target.checked)
+                }
+              />
+              <label className="form-check-label">
+                Display Cumulative Volume
+              </label>
+            </div> */}
+
+            {/* Display Reversal Price Change Mode */}
+            {/* <div className="row mb-3 align-items-center">
+              <div className="col-6">
+                <label className="form-label">
+                  Display Reversal Price Change
+                </label>
+              </div>
+              <div className="col-6">
+                <select
+                  className="form-select"
+                  value={indicatorConfig.properties.reversalPriceChangeMode}
+                  onChange={(e) =>
+                    updateProperty("reversalPriceChangeMode", e.target.value)
+                  }
+                >
+                  <option value="absolute">Absolute</option>
+                  <option value="percent">Percent</option>
+                </select>
+              </div>
+            </div> */}
           </>
         );
 

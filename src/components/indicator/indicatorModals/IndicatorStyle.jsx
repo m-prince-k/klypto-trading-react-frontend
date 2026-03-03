@@ -125,6 +125,7 @@ export default function IndicatorStyle({
             label: "Cloud Fill",
             type: "area",
             color0: "rgba(38,166,154,0.4)", // bullish cloud
+            
             color1: "rgba(239,83,80,0.4)", // bearish cloud
           },
         ];
@@ -593,8 +594,533 @@ export default function IndicatorStyle({
             color: "#ff9800",
           },
         ];
-        case "ATR":
+      case "ATR":
         return [{ key: "atr", label: "ATR", type: "line" }];
+
+      case "Keltner Channels":
+        return [
+          // Lines
+          {
+            key: "upper",
+            label: "Upper Channel",
+            type: "line",
+            color: "#ef5350",
+          },
+          { key: "basis", label: "Basis Line", type: "line", color: "#26a69a" },
+          {
+            key: "lower",
+            label: "Lower Channel",
+            type: "line",
+            color: "#26a69a",
+          },
+          {
+            key: "bg",
+            label: "Background ",
+            type: "fill",
+            color0: "rgba(38,166,154,0.1)", // color under bullish trend
+            color1: "rgba(239,83,80,0.1)", // color under bearish trend
+          },
+        ];
+      case "Bollinger Bands":
+        return [
+          // Lines
+          {
+            key: "upper",
+            label: "Upper Channel",
+            type: "line",
+            color: "#ef5350",
+          },
+          { key: "basis", label: "Basis Line", type: "line", color: "#26a69a" },
+          {
+            key: "lower",
+            label: "Lower Channel",
+            type: "line",
+            color: "#26a69a",
+          },
+          {
+            key: "bg",
+            label: "Background ",
+            type: "fill",
+            color0: "rgba(38,166,154,0.1)", // color under bullish trend
+            color1: "rgba(239,83,80,0.1)", // color under bearish trend
+          },
+        ];
+      case "Bollinger Band Width":
+        return [
+          // Lines
+          {
+            key: "bollingerBandWidth",
+            label: "Bollinger Band Width",
+            type: "line",
+            color: "#ef5350",
+          },
+          {
+            key: "highestExpansion",
+            label: "Highest Expansion",
+            type: "line",
+            color: "#26a69a",
+          },
+          {
+            key: "lowestContraction",
+            label: "Lowest Contraction",
+            type: "line",
+            color: "#26a69a",
+          },
+        ];
+
+      case "Donchian Channels":
+        return [
+          // Lines
+          {
+            key: "upper",
+            label: "Upper Channel",
+            type: "line",
+            color: "#ef5350",
+          },
+          { key: "basis", label: "Basis Line", type: "line", color: "#26a69a" },
+          {
+            key: "lower",
+            label: "Lower Channel",
+            type: "line",
+            color: "#26a69a",
+          },
+          {
+            key: "bg",
+            label: "Background ",
+            type: "fill",
+            color0: "rgba(38,166,154,0.1)", // color under bullish trend
+            color1: "rgba(239,83,80,0.1)", // color under bearish trend
+          },
+        ];
+
+      case "Choppiness Index":
+        return [
+          // Lines
+          {
+            key: "chopLine",
+            label: "Chop",
+            type: "line",
+            color: "#ef5350",
+          },
+          {
+            key: "upper",
+            label: "Upper Band",
+            type: "line",
+            color: "#ef5350",
+            showValue: true,
+            value: 61.8,
+          },
+          {
+            key: "middle",
+            label: "Middle Band",
+            type: "line",
+            color: "#26a69a",
+            showValue: true,
+            value: 50,
+          },
+          {
+            key: "lower",
+            label: "Lower Band",
+            type: "line",
+            color: "#26a69a",
+            showValue: true,
+            value: 38.2,
+          },
+          {
+            key: "bg",
+            label: "Background ",
+            type: "fill",
+            color: "rgba(38,166,154,0.1)",
+          },
+        ];
+
+      case "Standard Deviation":
+        return [
+          // Lines
+          {
+            key: "plotLine",
+            label: "Plot",
+            type: "line",
+            color: "#ef5350",
+          },
+        ];
+
+      case "Volume":
+        return [
+          {
+            key: "volumeBars",
+            label: "Volume Bars",
+            type: "bars",
+            colorUp: "#26a69a", // growing volume
+            colorDown: "#ef5350", // falling volume
+            colorByPrevious: true, // toggle for coloring based on previous bar
+          },
+
+          // Volume MA line
+          {
+            key: "volumeMA",
+            label: "Volume MA",
+            type: "line",
+            color: "#2962ff",
+            width: 2,
+            visible: false, // by default unchecked
+          },
+        ];
+
+      case "Historical Volatility":
+        return [
+          // HV Line
+          {
+            key: "hv",
+            label: "HV",
+            type: "line",
+            color: "#1890ff",
+            width: 2,
+            visible: false, // default unchecked
+          },
+        ];
+
+      case "OBV":
+        return [
+          // VIX Line
+          {
+            key: "obv",
+            label: "On Balance Volume",
+            type: "line",
+            color: "#ff4d4f",
+            width: 2,
+          },
+        ];
+
+      case "Percentage Volume Oscillator":
+        return [
+          // Histogram (multi-state coloring)
+          {
+            key: "histogram",
+            label: "Histogram",
+            type: "histogram",
+
+            // 5 color states
+            color0: "#26a69a", // strong positive
+            color1: "#80cbc4", // weak positive
+            color2: "#b0bec5", // near zero
+            color3: "#ff8a80", // weak negative
+            color4: "#ef5350", // strong negative
+
+            visible: true,
+          },
+
+          // PVO Line
+          {
+            key: "pvo",
+            label: "PVO",
+            type: "line",
+            color: "#2962ff",
+            width: 2,
+            visible: true,
+          },
+
+          // Signal Line
+          {
+            key: "signal",
+            label: "Signal",
+            type: "line",
+            color: "#ff6d00",
+            width: 2,
+            visible: true,
+          },
+
+          // Zero Line
+          {
+            key: "zeroLine",
+            label: "Zero Line",
+            type: "line",
+            value: 0, // fixed level
+            color: "#9e9e9e",
+            width: 1,
+            lineStyle: 2, // optional: dashed
+            visible: true,
+          },
+        ];
+
+      case "Accumulation / Distribution":
+        return [
+          // PVO Line
+          {
+            key: "accumulationDistribution",
+            label: "Accumulation / Distribution",
+            type: "line",
+            color: "#2962ff",
+            width: 2,
+            visible: true,
+          },
+        ];
+
+      case "Chaikin Money Flow":
+        return [
+          {
+            key: "cmf",
+            label: "CMF",
+            type: "line",
+            color: "#2962ff",
+            width: 2,
+            visible: true,
+          },
+          // Zero Line
+          {
+            key: "zeroLine",
+            label: "Zero Line",
+            type: "line",
+            value: 0, // fixed level
+            color: "#9e9e9e",
+            width: 1,
+            visible: true,
+          },
+        ];
+
+      case "MFI":
+        return [
+          // MFI Line
+          {
+            key: "mf",
+            label: "MFI",
+            type: "line",
+            color: "#2962ff",
+            width: 2,
+            visible: true,
+          },
+
+          // Overbought Band
+          {
+            key: "upper",
+            label: "Overbought",
+            type: "band",
+            value: 80,
+            showValue: true,
+            color: "#ef5350",
+          },
+
+          // Middle Band
+          {
+            key: "middle",
+            label: "Middle Band",
+            type: "band",
+            value: 50,
+            showValue: true,
+            color: "#9e9e9e",
+          },
+
+          // Oversold Band
+          {
+            key: "lower",
+            label: "Oversold",
+            type: "band",
+            value: 20,
+            showValue: true,
+            color: "#26a69a",
+          },
+
+          // Background
+          {
+            key: "bg",
+            label: "Background",
+            type: "fill",
+            visible: true,
+            topColor: "rgba(239,83,80,0.08)", // overbought zone
+            bottomColor: "rgba(38,166,154,0.08)", // oversold zone
+          },
+        ];
+      case "Ease of Movement":
+        return [
+          // EOM Line
+          {
+            key: "eom",
+            label: "EOM",
+            type: "line",
+            color: "#2962ff",
+            width: 2,
+            visible: true,
+          },
+
+          // Maxima Line
+          {
+            key: "maxima",
+            label: "Maxima",
+            type: "line",
+            color: "#26a69a",
+            width: 1,
+            visible: true,
+          },
+
+          // Minima Line
+          {
+            key: "minima",
+            label: "Minima",
+            type: "line",
+            color: "#ef5350",
+            width: 1,
+            visible: true,
+          },
+        ];
+
+      case "Negative Volume Index":
+        return [
+          // EOM Line
+          {
+            key: "nvi",
+            label: "NVI",
+            type: "line",
+            color: "#2962ff",
+            width: 2,
+            visible: true,
+          },
+
+          // Maxima Line
+          {
+            key: "nviBasedema",
+            label: "NVI Based EMA",
+            type: "line",
+            color: "#26a69a",
+            width: 1,
+            visible: true,
+          },
+        ];
+
+      case "Positive Volume Index":
+        return [
+          // EOM Line
+          {
+            key: "nvi",
+            label: "PVI",
+            type: "line",
+            color: "#2962ff",
+            width: 2,
+            visible: true,
+          },
+
+          // Maxima Line
+          {
+            key: "nviBasedema",
+            label: "PVI Based EMA",
+            type: "line",
+            color: "#26a69a",
+            width: 1,
+            visible: true,
+          },
+        ];
+
+      case "VWAP":
+        return [
+          // Main VWAP Line
+          {
+            key: "vwap",
+            label: "VWAP",
+            type: "line",
+            color: "#2962ff",
+            width: 2,
+            visible: true,
+          },
+
+          // ===== Band #1 =====
+          {
+            key: "upperBand1",
+            label: "Upper Band #1",
+            type: "line",
+            color: "#26a69a",
+            width: 1,
+            visible: true,
+          },
+          {
+            key: "lowerBand1",
+            label: "Lower Band #1",
+            type: "line",
+            color: "#26a69a",
+            width: 1,
+            visible: true,
+          },
+          {
+            key: "bandFill1",
+            label: "Bands Fill #1",
+            type: "fill",
+            color: "rgba(38,166,154,0.08)",
+            visible: true,
+            upperKey: "upperBand1",
+            lowerKey: "lowerBand1",
+          },
+
+          // ===== Band #2 =====
+          {
+            key: "upperBand2",
+            label: "Upper Band #2",
+            type: "line",
+            color: "#ff9800",
+            width: 1,
+            visible: false,
+          },
+          {
+            key: "lowerBand2",
+            label: "Lower Band #2",
+            type: "line",
+            color: "#ff9800",
+            width: 1,
+            visible: false,
+          },
+          {
+            key: "bandFill2",
+            label: "Bands Fill #2",
+            type: "fill",
+            color: "rgba(255,152,0,0.08)",
+            visible: false,
+            upperKey: "upperBand2",
+            lowerKey: "lowerBand2",
+          },
+
+          // ===== Band #3 =====
+          {
+            key: "upperBand3",
+            label: "Upper Band #3",
+            type: "line",
+            color: "#ef5350",
+            width: 1,
+            visible: false,
+          },
+          {
+            key: "lowerBand3",
+            label: "Lower Band #3",
+            type: "line",
+            color: "#ef5350",
+            width: 1,
+            visible: false,
+          },
+          {
+            key: "bandFill3",
+            label: "Bands Fill #3",
+            type: "fill",
+            color: "rgba(239,83,80,0.08)",
+            visible: false,
+            upperKey: "upperBand3",
+            lowerKey: "lowerBand3",
+          },
+        ];
+      case "Zig Zag":
+        return [
+          {
+            key: "zigzagLine",
+            label: "Lines",
+            type: "line",
+            color: "#2962ff",
+            width: 2,
+            visible: true, // checked by default
+          },
+          {
+            key: "paneLabels",
+            label: "Pane Labels",
+            type: "label",
+            color: "#000000",
+            backgroundColor: "rgba(41,98,255,0.15)",
+            visible: true, // checked by default
+          },
+        ];
 
       default:
         return [];
