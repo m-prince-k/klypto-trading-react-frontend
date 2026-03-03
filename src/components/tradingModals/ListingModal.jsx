@@ -16,7 +16,6 @@ export const ListingModal = ({
   selectedIndicator,
   setSelectedIndicator,
   toggleIndicator,
-  loadIndicator,
 }) => {
   const [activeTab, setActiveTab] = useState("Indicators");
   const [indicators, setIndicators] = useState([]);
@@ -36,13 +35,12 @@ export const ListingModal = ({
     try {
       if (debouncedIndicator) {
         response = await apiService.post(
-          `getIndicators?q=${debouncedIndicator}`,
+          `/api/getIndicators?q=${debouncedIndicator}`,
         );
       } else {
-        response = await apiService.post(`getIndicators`);
+        response = await apiService.post(`/api/getIndicators`);
       }
       setIndicators(response?.data);
-      // console.log(response?.data, "-----------");
     } catch (err) {
       console.error(err);
       setError(err?.message || "Failed to fetch indicators");
@@ -59,13 +57,12 @@ export const ListingModal = ({
     try {
       if (!debouncedCurrency) {
         response = await apiService.post(
-          `getCurrencies?symbol=${debouncedCurrency}`,
+          `api/getCurrencies?symbol=${debouncedCurrency}`,
         );
       } else {
-        response = await apiService.post(`getCurrencies`);
+        response = await apiService.post(`api/getCurrencies`);
       }
       setCurrencies(await response?.data);
-      // console.log(currencies, "currencies-------------");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -84,6 +81,7 @@ export const ListingModal = ({
 
   const filteredIndicators = (indicators ?? []).filter((item) => {
     if (!searchIndicator) return true;
+
 
     const search = searchIndicator.toLowerCase();
 
@@ -134,7 +132,7 @@ export const ListingModal = ({
             </div>
 
             {/* Listing Grid */}
-            <div className="overflow-y-auto mt-3 max-h-[70vh]">
+            <div className="overflow-y-auto mt-3 max-h-[65vh]">
               {loading ? (
                 <Spinner />
               ) : filteredCurrencies?.length > 0 ? (
@@ -148,16 +146,16 @@ export const ListingModal = ({
                     }}
                     className="w-full flex border-b border-slate-200 justify-between px-1 py-3 text-left hover:bg-slate-100"
                   >
-                    <div className="flex gap-2 items-center">
-                      <span className="text-xl text-yellow-500">
+                    <div className="flex gap-2 fs-6 items-center">
+                      <span className=" text-yellow-500">
                         <GrBitcoin />
                       </span>
-                      <h2 className="uppercase">
+                      <h2 className="uppercase fs-6">
                         {curr?.base}/{curr?.quote}
                       </h2>
                     </div>
                     <div>
-                      <h3>{curr?.symbol}</h3>
+                      <h3 className=" fs-6">{curr?.symbol}</h3>
                     </div>
                   </Link>
                 ))
@@ -171,7 +169,7 @@ export const ListingModal = ({
         )}
 
         {title === "Indicators" && (
-          <div className="mt-3 space-y-4 max-h-[55vh]">
+          <div className="mt-3 space-y-4 z-999 max-h-[45vh]">
             {/* Search */}
             <div className="relative">
               <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />

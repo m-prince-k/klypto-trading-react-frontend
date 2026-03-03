@@ -5,12 +5,15 @@ export async function fetchDataByCurrency(selectedCurrency, timeframeValue) {
   let response;
   if (selectedCurrency && timeframeValue) {
     response = await apiService.post(
-      `listing?symbol=${selectedCurrency || "BTCUSD"}&interval=${timeframeValue || "1m"}&limit=1000`,
+      `api/listing?symbol=${selectedCurrency || "BTCUSD"}&interval=${timeframeValue || "1m"}&limit=1000`,
     );
+        // console.log(response, "resssssssssssssss")
+
   } else {
     response = await apiService.post(
-      `listing?symbol=${selectedCurrency || "BTCUSD"}&limit=1000&interval=${timeframeValue || "1m"}`,
+      `api/listing?symbol=${selectedCurrency || "BTCUSD"}&limit=1000&interval=${timeframeValue || "1m"}`,
     );
+    // console.log(response, "resssssssssssssss")
   }
   return response;
 }
@@ -116,10 +119,10 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
   const normalizedType = type.replace(/[\s/]+/g, "");
 
   const response = await apiService.post(
-    `indicatorDetails?symbol=${selectedCurrency}&interval=${timeframeValue}&type=${normalizedType}`,
+    `/api/indicatorDetails?symbol=${selectedCurrency}&interval=${timeframeValue}&type=${normalizedType}`,
   );
 
-  console.log("Raw indicator data for", type, ":", response);
+  // console.log("Raw indicator data for", type, ":", response);
 
   const mapLine = (arr) =>
     arr?.map((d) => ({
@@ -129,7 +132,7 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
 
   switch (normalizedType) {
     /* ---------------- SINGLE VALUE ---------------- */
-    case "SMA":
+    
     case "EMA":
     case "HMA":
     case "DEMA":
@@ -173,6 +176,20 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
               value: d.value,
             })) ?? [],
       };
+
+      case "SMA":
+  return {
+    type: "single",
+    data:
+      response.data
+        ?.filter((d) => d.sma != null && d.time != null) // only valid SMA points
+        .map((d) => ({
+          time: d.time,  // timestamp
+          value: d.sma,  // SMA value
+        })) ?? [],
+  };
+
+
     case "ZigZag": {
       const rows = response?.data ?? [];
 

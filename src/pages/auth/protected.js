@@ -1,3 +1,5 @@
+import { Navigate, useNavigate } from "react-router-dom";
+
 // protected.js
 export function getSession() {
   console.log(localStorage.getItem("session"),'98765456')
@@ -9,6 +11,7 @@ export function isAuthenticated() {
 }
 
 export function logout() {
+    
   localStorage.removeItem("session");
   sessionStorage.removeItem("session");
 }
