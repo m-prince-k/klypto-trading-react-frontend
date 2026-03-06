@@ -28,7 +28,9 @@ import {
   convertToHeikinAshi,
   getIndicatorChartProperties,
 } from "../util/common";
-import apiService from "../services/apiServices";
+
+
+
 import {
   IoCloseSharp,
   IoEyeOffOutline,
