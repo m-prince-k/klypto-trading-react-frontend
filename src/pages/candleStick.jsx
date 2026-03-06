@@ -26,7 +26,6 @@ import {
   convertToHeikinAshi,
   getIndicatorChartProperties,
 } from "../util/common";
-import apiService from "../services/apiServices";
 import {
   IoCloseSharp,
   IoEyeOffOutline,
@@ -40,7 +39,7 @@ import {
   fetchDataByCurrency,
   fetchIndicatorData,
   PANE_INDICATORS,
-} from "../util/chartFunctions";
+} from "../util/ChartFunctions";
 import IndicatorPropertyDialog from "../components/indicator/IndicatorPropertyDialog";
 
 import { useNavigate } from "react-router-dom";
@@ -880,9 +879,9 @@ export default function Candlestick() {
             </div>
           </div>
           <div className="row">
-            <div className="col-md-1">
+            {/* <div className="col-md-1">
               <ChartLeftSidebar />
-            </div>
+            </div> */}
             <div className="col-md-8">
 
               <div ref={containerRef}

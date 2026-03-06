@@ -1,4 +1,4 @@
-import { Form } from "react-bootstrap";
+import { Row, Col, Form } from "react-bootstrap";
 
 export default function IndicatorStyle({
   style,
@@ -1102,119 +1102,56 @@ export default function IndicatorStyle({
   /* ================= RENDER ================= */
 
   return (
-    <div style={containerStyle}>
+    <div className="d-flex flex-column p-3">
       {rows.map((row) => (
-        <div key={row.key} style={rowStyle}>
+        <Row key={row.key} className="align-items-center py-2 border-bottom">
           {/* LEFT - CHECKBOX */}
-          <div style={leftStyle}>
+          <Col md={6}>
             <Form.Check
               type="checkbox"
-              checked={style[row.key]?.visible ?? true}
+              checked={
+                style?.[activeBarIndicator]?.[row.key]?.visible ??
+                row.visible ??
+                true
+              }
               onChange={(e) => update(row.key, "visible", e.target.checked)}
               label={row.label}
             />
-          </div>
+          </Col>
 
-          {/* MIDDLE - COLOR + LINE PREVIEW */}
-          <div style={middleStyle}>
-            {/* COLOR PICKER */}
+          {/* MIDDLE - COLOR + PREVIEW */}
+          <Col md={2} className="d-flex align-items-center ">
             <input
               type="color"
-              value={style[activeBarIndicator]?.[row.key]?.color || "#2962ff"}
+              value={
+                style?.[activeBarIndicator]?.[row.key]?.color ??
+                row.color ??
+                "#2962ff"
+              }
               onChange={(e) => update(row.key, "color", e.target.value)}
-              style={colorBox}
+              className="form-control form-control-color"
             />
+          </Col>
 
-            {/* LINE PREVIEW (for line & band only) */}
-            {(row.type === "line" || row.type === "band") && (
-              <button type="button" style={linePreviewBtn}>
-                <div
-                  style={{
-                    ...linePreview,
-                    background: style[row.key]?.color || "#333",
-                  }}
-                />
-              </button>
-            )}
-          </div>
-
-          {/* RIGHT SIDE */}
-          <div style={rightStyle}>
+          {/* RIGHT - VALUE */}
+          <Col md={4} className="d-flex align-items-start">
             {row.showValue && (
-              <input
+              <Form.Control
                 type="number"
-                value={style[row.key]?.value ?? ""}
+                value={
+                  style?.[activeBarIndicator]?.[row.key]?.value ??
+                  row.value ??
+                  ""
+                }
                 onChange={(e) =>
                   update(row.key, "value", Number(e.target.value))
                 }
-                style={valueInput}
+                style={{ width: "100%" }}
               />
             )}
-          </div>
-        </div>
+          </Col>
+        </Row>
       ))}
     </div>
   );
 }
-
-/* ===================== STYLES ===================== */
-
-const containerStyle = {
-  display: "flex",
-  flexDirection: "column",
-};
-
-const rowStyle = {
-  display: "grid",
-  gridTemplateColumns: "1fr 160px 80px",
-  alignItems: "center",
-  padding: "10px 0",
-  borderBottom: "1px solid #eee",
-};
-
-const leftStyle = {
-  fontSize: "14px",
-};
-
-const middleStyle = {
-  display: "flex",
-  alignItems: "center",
-  gap: "8px",
-};
-
-const rightStyle = {
-  display: "flex",
-  justifyContent: "flex-end",
-};
-
-const colorBox = {
-  width: "36px",
-  height: "32px",
-  borderRadius: "6px",
-  border: "1px solid #ddd",
-  cursor: "pointer",
-};
-
-const linePreviewBtn = {
-  width: "60px",
-  height: "32px",
-  borderRadius: "6px",
-  border: "1px solid #ddd",
-  background: "#fff",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-};
-
-const linePreview = {
-  width: "40px",
-  height: "2px",
-};
-
-const valueInput = {
-  width: "70px",
-  height: "32px",
-  borderRadius: "6px",
-  border: "1px solid #ddd",
-  textAlign: "center",
-};
