@@ -1,4 +1,5 @@
 import "bootstrap/dist/css/bootstrap.min.css"; //this is for temp
+import { Row, Col, Form, Modal, Button } from "react-bootstrap";
 import {
   createChart,
   CandlestickSeries,
@@ -25,6 +26,7 @@ import {
   getSeriesColor,
   convertToHeikinAshi,
   getIndicatorChartProperties,
+  getRowsByIndicator,
 } from "../util/common";
 import {
   IoCloseSharp,
@@ -39,6 +41,7 @@ import {
   fetchDataByCurrency,
   fetchIndicatorData,
   PANE_INDICATORS,
+  updateIndicatorStyle,
 } from "../util/ChartFunctions";
 import IndicatorPropertyDialog from "../components/indicator/IndicatorPropertyDialog";
 
@@ -46,7 +49,8 @@ import { useNavigate } from "react-router-dom";
 import { isAuthenticated } from "./auth/protected";
 import ChartLeftSidebar from "../components/chart/leftbar/ChartLeftSidebar";
 import ChartRightSidebar from "../components/chart/rightbar/ChartRightSidebar";
-
+import IndicatorStyle from "../components/indicator/indicatorModals/IndicatorStyle";
+import TradingViewChart from "./TradingViewChart";
 
 export default function Candlestick() {
   const chartRef = useRef();
@@ -73,6 +77,494 @@ export default function Candlestick() {
   const mainChartHeightRef = useRef(500); // initial height
   const [isVisible, setIsVisible] = useState(true);
   const [activeBarIndicator, setActiveBarIndicator] = useState("");
+const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
+
+  const [indicatorConfigs, setIndicatorConfigs] = useState({
+    SMA: {
+      length: 9,
+      source: "Close",
+      offset: 0,
+      smoothing: {
+        type: "SMA + Bollinger Bands",
+        length: 14,
+        bbStdDev: 2,
+      },
+    },
+
+    EMA: {
+      length: 9,
+      source: "Close",
+      offset: 0,
+    },
+
+    WMA: {
+      length: 9,
+      source: "Close",
+      offset: 0,
+    },
+
+    HMA: {
+      length: 9,
+      source: "Close",
+    },
+
+    DEMA: {
+      length: 9,
+      source: "Close",
+    },
+
+    TEMA: {
+      length: 9,
+    },
+
+    KAMA: {
+      ERlength: 10,
+      fastLength: 2,
+      slowLength: 30,
+      source: "Close",
+    },
+
+    "Ichimoku Cloud": {
+      conversionLength: 9,
+      baseLength: 26,
+      spanBLength: 52,
+      laggingSpan: 26,
+    },
+    "Parabolic SAR": {
+      start: 0.02,
+      increment: 0.02,
+      maxValue: 0.02,
+    },
+    SuperTrend: {
+      atrLength: 10,
+      factor: 3,
+    },
+
+    Aroon: {
+      length: 14,
+    },
+    "Aroon Oscillator": {
+      length: 14,
+    },
+    ADX: {
+      smoothing: 14,
+      diLength: 14,
+    },
+
+    "Chande Kroll Stop": {
+      atrLength: 10, // default p
+      atrCoefficient: 1, // default x
+      stopLength: 9, // default q
+    },
+
+    RSI: {
+      length: 14,
+      source: "Close",
+      smoothing: {
+        type: "SMA",
+        length: 14,
+        bbStdDev: 2,
+      },
+    },
+
+    Stochastic: {
+      kLength: 14, // %K Length
+      kSmoothing: 1, // %K Smoothing
+      dSmoothing: 3, // %D Smoothing
+    },
+
+    "Stochastic RSI": {
+      rsiLength: 14, // RSI period
+      rsiSource: "Close", // RSI source (dropdown)
+      stochasticLength: 14, // %K length of Stochastic
+      kSmoothing: 3, // %K smoothing
+      dSmoothing: 3, // %D smoothing
+    },
+
+    MACD: {
+      source: "Close",
+      fastLength: 12, // Fast EMA/SMA
+      slowLength: 26, // Slow EMA/SMA
+      signalLength: 9, // Signal line length
+      oscillatorMAType: "EMA", // dropdown: "EMA" or "SMA"
+      signalMAType: "EMA",
+    },
+
+    CCI: {
+      length: 20,
+      source: "HLC3",
+      smoothing: {
+        type: "SMA",
+        length: 14,
+        bbStdDev: 2,
+      },
+    },
+    Momentum: {
+      length: 10,
+      source: "Close",
+    },
+    ROC: {
+      length: 9,
+      source: "Close",
+    },
+    "Williams %R": {
+      length: 14,
+      source: "Close",
+    },
+    "Ultimate Oscillator": {
+      fastLength: 7, // Fast period
+      middleLength: 14, // Middle period
+      slowLength: 28, // Slow period
+    },
+    "Chande Momentum Oscillator": {
+      length: 9,
+      source: "Close",
+    },
+    TRIX: {
+      length: 18,
+    },
+    "Fisher Transform": {
+      length: 9,
+    },
+    ATR: {
+      length: 14,
+      smoothing: "RMA",
+    },
+    "Bollinger Bands": {
+      length: 20,
+      maType: "SMA", // default moving average type
+      stdDev: 2,
+      source: "Close",
+      offset: 0,
+    },
+    "Bollinger Band Width": {
+      length: 20,
+      stdDev: 2,
+      source: "Close",
+      highestExpansionLength: 125,
+      lowestContractionLength: 125,
+    },
+    "Keltner Channels": {
+      length: 20,
+      source: "Close",
+      multiplier: 2,
+      atrLength: 10,
+      bandsStyle: "Average True Range",
+      useEMA: true,
+    },
+    "Donchian Channels": {
+      length: 20,
+      offset: 0,
+    },
+    "Choppiness Index": {
+      length: 14,
+      offset: 0,
+    },
+    "Standard Deviation": {
+      length: 20,
+      source: "Close",
+    },
+    Volume: {
+      maLength: 20,
+      colorByPrevious: false,
+    },
+    "Historical Volatility": {
+      length: 10,
+    },
+    OBV: {
+      smoothing: {
+        type: "None",
+        length: 14,
+        bbStdDev: 2,
+      },
+    },
+    "Percentage Volume Oscillator": {
+      fastLength: 12,
+      slowLength: 26,
+      signalLength: 9,
+      oscMaType: "EMA", // EMA | SMA
+      signalMaType: "EMA", // EMA | SMA
+    },
+    "Chaikin Money Flow": {
+      length: 20,
+    },
+    MFI: {
+      length: 14,
+    },
+    "Ease of Movement": {
+      length: 14,
+      divisor: 10000,
+    },
+    "Negative Volume Index": {
+      emaLength: 255,
+    },
+    "Positive Volume Index": {
+      emaLength: 255,
+    },
+    VWAP: {
+      hideOnDailyOrAbove: true,
+      anchorPeriod: "Daily",
+      source: "HLC3",
+      offset: 0,
+
+      bandSettings: {
+        calculationMode: "Standard Deviation", // or "Percentage"
+
+        band1: { enabled: true, multiplier: 1 },
+        band2: { enabled: false, multiplier: 2 },
+        band3: { enabled: false, multiplier: 3 },
+      },
+    },
+    "Zig Zag": {
+      priceDeviation: 5,
+      pivotLegs: 10,
+      lineColor: "#2962ff",
+      extendToLastBar: true,
+      displayReversalPrice: false,
+      displayCumulativeVolume: false,
+      reversalPriceChangeMode: "absolute",
+    },
+  });
+
+  const indicatorStyleDefault = {
+    /* ================= RSI ================= */
+
+    RSI: {
+      rsi: { visible: true, color: "#26a69a", width: 2 },
+      rsiMa: { visible: true, color: "#ff9800", width: 2 },
+
+      upper: { visible: true, value: 70, color: "#ef5350" },
+      middle: { visible: true, value: 50, color: "#9e9e9e" },
+      lower: { visible: true, value: 30, color: "#26a69a" },
+
+      bgFill: {
+        visible: true,
+        color0: "rgba(38,166,154,0.1)",
+        color1: "rgba(38,166,154,0.1)",
+      },
+
+      obFill: {
+        visible: true,
+        color0: "rgba(239,83,80,0.2)",
+        color1: "rgba(239,83,80,0.4)",
+      },
+
+      osFill: {
+        visible: true,
+        color0: "rgba(38,166,154,0.2)",
+        color1: "rgba(38,166,154,0.4)",
+      },
+    },
+
+    /* ================= SMA ================= */
+
+    SMA: {
+      ma: { visible: true, color: "#2962ff", width: 2 },
+      smaMa: { visible: true, color: "#ff9800", width: 2 },
+
+      bbUpper: { visible: true, color: "#ef5350" },
+      bbLower: { visible: true, color: "#26a69a" },
+
+      bbFill: {
+        visible: true,
+        color0: "rgba(41,98,255,0.1)",
+        color1: "rgba(41,98,255,0.1)",
+      },
+    },
+
+    // /* ================= EMA ================= */
+
+    // EMA: {
+    //   ema: { visible: true, color: "#2962ff", width: 2 },
+    // },
+
+    // WMA: {
+    //   wma: { visible: true, color: "#2962ff", width: 2 },
+    // },
+
+    // HMA: {
+    //   hma: { visible: true, color: "#2962ff", width: 2 },
+    // },
+
+    // DEMA: {
+    //   dema: { visible: true, color: "#2962ff", width: 2 },
+    // },
+
+    // TEMA: {
+    //   tema: { visible: true, color: "#2962ff", width: 2 },
+    // },
+
+    // KAMA: {
+    //   kama: { visible: true, color: "#2962ff", width: 2 },
+    // },
+
+    // /* ================= ICHIMOKU ================= */
+
+    // "Ichimoku Cloud": {
+    //   conversionLine: { visible: true, color: "#2962ff" },
+    //   baseLine: { visible: true, color: "#ff9800" },
+    //   laggingSpan: { visible: true, color: "#9c27b0" },
+
+    //   leadingSpanA: { visible: true, color: "#26a69a" },
+    //   leadingSpanB: { visible: true, color: "#ef5350" },
+
+    //   kumoUpper: { visible: true, color: "#26a69a" },
+    //   kumoLower: { visible: true, color: "#ef5350" },
+
+    //   cloudFill: {
+    //     visible: true,
+    //     color0: "rgba(38,166,154,0.4)",
+    //     color1: "rgba(239,83,80,0.4)",
+    //   },
+    // },
+
+    // /* ================= SUPER TREND ================= */
+
+    // SuperTrend: {
+    //   upTrend: { visible: true, color: "#26a69a" },
+    //   downTrend: { visible: true, color: "#ef5350" },
+
+    //   bodyMiddle: { visible: true, color: "#ffffff" },
+
+    //   upTrendBg: {
+    //     visible: true,
+    //     color0: "rgba(38,166,154,0.2)",
+    //     color1: "rgba(38,166,154,0.2)",
+    //   },
+
+    //   downTrendBg: {
+    //     visible: true,
+    //     color0: "rgba(239,83,80,0.2)",
+    //     color1: "rgba(239,83,80,0.2)",
+    //   },
+    // },
+
+    // /* ================= MACD ================= */
+
+    // MACD: {
+    //   macdLine: { visible: true, color: "#26a69a", width: 2 },
+
+    //   signalLine: { visible: true, color: "#ff9800", width: 2 },
+
+    //   histogram: {
+    //     visible: true,
+    //     color0: "#26a69a",
+    //     color1: "#81c784",
+    //     color2: "#ef5350",
+    //     color3: "#e57373",
+    //   },
+
+    //   zeroLine: {
+    //     visible: true,
+    //     value: 0,
+    //     color: "#9e9e9e",
+    //   },
+    // },
+
+    // /* ================= STOCHASTIC ================= */
+
+    // Stochastic: {
+    //   kLine: { visible: true, color: "#26a69a" },
+    //   dLine: { visible: true, color: "#ff9800" },
+
+    //   upperBand: { visible: true, value: 80, color: "#ef5350" },
+    //   middleBand: { visible: true, value: 50, color: "#9e9e9e" },
+    //   lowerBand: { visible: true, value: 20, color: "#26a69a" },
+
+    //   bgFill: {
+    //     visible: true,
+    //     color0: "rgba(38,166,154,0.05)",
+    //     color1: "rgba(38,166,154,0.05)",
+    //   },
+    // },
+
+    // /* ================= CCI ================= */
+
+    // CCI: {
+    //   cciLine: { visible: true, color: "#26a69a" },
+    //   cciMa: { visible: true, color: "#ff9800" },
+
+    //   upperBand: { visible: true, value: 100, color: "#ef5350" },
+    //   middleBand: { visible: true, value: 0, color: "#9e9e9e" },
+    //   lowerBand: { visible: true, value: -100, color: "#26a69a" },
+
+    //   bgFill: {
+    //     visible: true,
+    //     color0: "rgba(38,166,154,0.05)",
+    //     color1: "rgba(38,166,154,0.05)",
+    //   },
+    // },
+
+    // /* ================= ATR ================= */
+
+    // ATR: {
+    //   atr: { visible: true, color: "#2962ff", width: 2 },
+    // },
+
+    // /* ================= VOLUME ================= */
+
+    // Volume: {
+    //   volumeBars: {
+    //     visible: true,
+    //     colorUp: "#26a69a",
+    //     colorDown: "#ef5350",
+    //     colorByPrevious: true,
+    //   },
+
+    //   volumeMA: {
+    //     visible: false,
+    //     color: "#2962ff",
+    //     width: 2,
+    //   },
+    // },
+
+    // /* ================= VWAP ================= */
+
+    // VWAP: {
+    //   vwap: { visible: true, color: "#2962ff", width: 2 },
+
+    //   upperBand1: { visible: true, color: "#26a69a" },
+    //   lowerBand1: { visible: true, color: "#26a69a" },
+
+    //   bandFill1: {
+    //     visible: true,
+    //     color: "rgba(38,166,154,0.08)",
+    //   },
+
+    //   upperBand2: { visible: false, color: "#ff9800" },
+    //   lowerBand2: { visible: false, color: "#ff9800" },
+
+    //   bandFill2: {
+    //     visible: false,
+    //     color: "rgba(255,152,0,0.08)",
+    //   },
+
+    //   upperBand3: { visible: false, color: "#ef5350" },
+    //   lowerBand3: { visible: false, color: "#ef5350" },
+
+    //   bandFill3: {
+    //     visible: false,
+    //     color: "rgba(239,83,80,0.08)",
+    //   },
+    // },
+
+    // /* ================= ZIG ZAG ================= */
+
+    // "Zig Zag": {
+    //   zigzagLine: {
+    //     visible: true,
+    //     color: "#2962ff",
+    //     width: 2,
+    //   },
+
+    //   paneLabels: {
+    //     visible: true,
+    //     color: "#000000",
+    //     backgroundColor: "rgba(41,98,255,0.15)",
+    //   },
+    // },
+  };
+  const [indicatorStyle, setIndicatorStyle] = useState(indicatorStyleDefault);
 
   const getIndicatorColor = useCallback(
     (index) => INDICATOR_COLORS[index % INDICATOR_COLORS.length],
@@ -296,7 +788,7 @@ export default function Candlestick() {
 
     try {
       paneChart.remove();
-    } catch (e) { }
+    } catch (e) {}
 
     delete panesRef.current[paneKey];
   }
@@ -319,13 +811,13 @@ export default function Candlestick() {
       Object.values(entry).forEach((series) => {
         try {
           chart.removeSeries(series);
-        } catch (e) { }
+        } catch (e) {}
       });
     } else {
       /* ✅ SINGLE SERIES */
       try {
         chart.removeSeries(entry);
-      } catch (e) { }
+      } catch (e) {}
     }
 
     delete indicatorSeriesRef.current[indicator];
@@ -492,7 +984,7 @@ export default function Candlestick() {
 
   const attachCrosshair = useCallback(
     (chart, chartKey) => {
-      if (!chart) return () => { };
+      if (!chart) return () => {};
 
       const handler = (param) => {
         if (!param.point || param.time === undefined) {
@@ -791,7 +1283,10 @@ export default function Candlestick() {
             timeframeValue,
             chartType,
           );
-          console.log(response, "------------------------------------------->>>>>>>>>>>>>>>>>>")
+          console.log(
+            response,
+            "------------------------------------------->>>>>>>>>>>>>>>>>>",
+          );
           seriesRef.current = chartRef.current.addSeries(
             CandlestickSeries,
             chartSeriesStyles.candlestick,
@@ -809,6 +1304,8 @@ export default function Candlestick() {
             indicatorSeriesRef,
             latestIndicatorValuesRef,
             getIndicatorColor,
+            indicatorStyle,
+            activeBarIndicator,
           );
         }
         fetchCandleStickData();
@@ -854,6 +1351,90 @@ export default function Candlestick() {
     chartRef.current?.timeScale().fitContent();
   };
 
+ 
+  // const getRowsByIndicator = (indicator) => {
+  //   switch (indicator) {
+  //     /* ================= RSI ================= */
+  //     case "RSI":
+  //       return [
+  //         { key: "rsi", label: "RSI", type: "line", color: "#26a69a" },
+  //         {
+  //           key: "rsiMa",
+  //           label: "RSI-based MA",
+  //           type: "line",
+  //           color: "#ff9800",
+  //         },
+
+  //         {
+  //           key: "upper",
+  //           label: "RSI Upper Band",
+  //           type: "band",
+  //           showValue: true,
+  //           value: 70, // default
+  //           color: "#ef5350",
+  //         },
+  //         {
+  //           key: "middle",
+  //           label: "RSI Middle Band",
+  //           type: "band",
+  //           showValue: true,
+  //           value: 50, // default
+  //           color: "#9e9e9e",
+  //         },
+  //         {
+  //           key: "lower",
+  //           label: "RSI Lower Band",
+  //           type: "band",
+  //           showValue: true,
+  //           value: 30, // default
+  //           color: "#26a69a",
+  //         },
+
+  //         {
+  //           key: "bgFill",
+  //           label: "RSI Background Fill",
+  //           type: "fill",
+  //           color0: "rgba(38,166,154,0.1)",
+  //           color1: "rgba(38,166,154,0.1)",
+  //         },
+  //         {
+  //           key: "obFill",
+  //           label: "Overbought Gradient Fill",
+  //           type: "fill",
+  //           color0: "rgba(239,83,80,0.2)",
+  //           color1: "rgba(239,83,80,0.4)",
+  //         },
+  //         {
+  //           key: "osFill",
+  //           label: "Oversold Gradient Fill",
+  //           type: "fill",
+  //           color0: "rgba(38,166,154,0.2)",
+  //           color1: "rgba(38,166,154,0.4)",
+  //         },
+  //       ];
+  //     default:
+  //       return [];
+  //   }
+  // };
+
+  // const updateIndicator = (indicator, style) => {
+  //   const series = indicatorSeries[indicator];
+
+  //   if (!series) return;
+
+  //   Object.keys(style).forEach((key) => {
+  //     const config = style[key];
+
+  //     if (series[key]) {
+  //       series[key].applyOptions({
+  //         color: config.color,
+  //         lineWidth: config.width,
+  //         visible: config.visible,
+  //       });
+  //     }
+  //   });
+  // };
+  
 
   return (
     <>
@@ -883,8 +1464,8 @@ export default function Candlestick() {
               <ChartLeftSidebar />
             </div> */}
             <div className="col-md-8">
-
-              <div ref={containerRef}
+              <div
+                ref={containerRef}
                 style={{
                   width: ChartProprties.width,
                   height: ChartProprties.height,
@@ -894,8 +1475,6 @@ export default function Candlestick() {
                   flexDirection: "column",
                 }}
               >
-
-
                 {/* -------------------------------sub-header live Values----------------------- */}
                 <div className="flex px-2 top-2 z-10 absolute items-center gap-2 bg-slate-100 justify-start">
                   {/* LEFT: Symbol */}
@@ -928,19 +1507,23 @@ export default function Candlestick() {
                       // Other charts → OHLC
                       <>
                         <h6 className="px-2 py-1 mb-0">
-                          O: <span className={valueColor}>{liveOhlcv?.open}</span>
+                          O:{" "}
+                          <span className={valueColor}>{liveOhlcv?.open}</span>
                         </h6>
 
                         <h6 className="px-2 py-1 mb-0">
-                          H: <span className={valueColor}>{liveOhlcv?.high}</span>
+                          H:{" "}
+                          <span className={valueColor}>{liveOhlcv?.high}</span>
                         </h6>
 
                         <h6 className="px-2 py-1 mb-0">
-                          L: <span className={valueColor}>{liveOhlcv?.low}</span>
+                          L:{" "}
+                          <span className={valueColor}>{liveOhlcv?.low}</span>
                         </h6>
 
                         <h6 className="px-2 py-1 mb-0">
-                          C: <span className={valueColor}>{liveOhlcv?.close}</span>
+                          C:{" "}
+                          <span className={valueColor}>{liveOhlcv?.close}</span>
                         </h6>
                       </>
                     )}
@@ -966,7 +1549,6 @@ export default function Candlestick() {
                                 className="w-2 h-2 rounded-full"
                                 style={{ background: getIndicatorColor(index) }}
                               />
-
                               {indicator} : {timeframeValue} :
                               <span style={{ display: "flex", gap: 6 }}>
                                 {renderValue(indicator, value)}
@@ -977,11 +1559,19 @@ export default function Candlestick() {
                             <div className="flex items-center gap-2">
                               {/* hide/ */}
                               <button
-                                title={isVisible ? "Hide Indicator" : "Show Indicator"}
+                                title={
+                                  isVisible
+                                    ? "Hide Indicator"
+                                    : "Show Indicator"
+                                }
                                 onClick={() => setIsVisible((prev) => !prev)}
                                 className="text-slate-600"
                               >
-                                {isVisible ? <IoEyeOutline size={18} /> : <IoEyeOffOutline size={18} />}
+                                {isVisible ? (
+                                  <IoEyeOutline size={18} />
+                                ) : (
+                                  <IoEyeOffOutline size={18} />
+                                )}
                               </button>
 
                               {/* Settings */}
@@ -989,7 +1579,7 @@ export default function Candlestick() {
                                 title="Indicator Settings"
                                 onClick={() => {
                                   setActiveBarIndicator(indicator);
-                                  setIndicatorProperty((prev) => !prev)
+                                  setIndicatorProperty((prev) => !prev);
                                 }}
                                 className="text-slate-600"
                               >
@@ -997,7 +1587,10 @@ export default function Candlestick() {
                               </button>
 
                               {/* Source Code */}
-                              <button title="Source Code" className="text-slate-600 ">
+                              <button
+                                title="Source Code"
+                                className="text-slate-600 "
+                              >
                                 <FaCode size={18} />
                               </button>
 
@@ -1073,14 +1666,9 @@ export default function Candlestick() {
         {/* -------------------------market part start here-------------------- */}
       </section>
 
-      
-      
-
-
       <section className="market-trading-part">
         <div className="container p-0 m-0">
           <div className="row">
-
             <div className="d-flex align-items-center position-relative">
               <div className="mx-auto d-flex align-items-center gap-2">
                 <button
@@ -1157,32 +1745,45 @@ export default function Candlestick() {
               />
             )}
 
-         
             {/* ------------------------------------------indicator sub part property show in modal------------------------------- */}
+           
             <IndicatorPropertyDialog
               setIndicatorProperty={setIndicatorProperty}
               indicatorProperty={indicatorProperty}
               selectedIndicator={selectedIndicator}
               activeBarIndicator={activeBarIndicator}
+              setIndicatorConfigs={setIndicatorConfigs}
+              indicatorConfigs={indicatorConfigs}
+              setTempIndicatorConfig={setTempIndicatorConfig}
+              tempIndicatorConfig={tempIndicatorConfig}
+              indicatorStyle={indicatorStyle}
+              setIndicatorStyle={setIndicatorStyle}
+              indicatorSeriesRef={indicatorSeriesRef}
             />
+
+          {/* <TradingViewChart
+            setIndicatorProperty={setIndicatorProperty}
+              indicatorProperty={indicatorProperty}
+              // selectedIndicator={selectedIndicator}
+              activeBarIndicator={activeBarIndicator}
+              setIndicatorConfigs={setIndicatorConfigs}
+              indicatorStyle={indicatorStyle}
+              setIndicatorStyle={setIndicatorStyle}
+              indicatorSeriesRef={indicatorSeriesRef}
+          /> */}
+
+
           </div>
         </div>
       </section>
 
-
-
-
-
-         <div className="">
-              {/* <IndicatorRuleBuilder /> */}
-              <IndicatorBuildingListing
-                selectedCurrency={selectedCurrency}
-                timeframeValue={timeframeValue}
-              />
-            </div>
-
-
+      <div className="">
+        {/* <IndicatorRuleBuilder /> */}
+        <IndicatorBuildingListing
+          selectedCurrency={selectedCurrency}
+          timeframeValue={timeframeValue}
+        />
+      </div>
     </>
-
   );
 }

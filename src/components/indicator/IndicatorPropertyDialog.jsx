@@ -1,12 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { Modal, Button, Tabs, Tab, Row, Col, Form } from "react-bootstrap";
 import IndicatorStyle from "./indicatorModals/IndicatorStyle";
+import { updateIndicatorStyle } from "../../util/ChartFunctions";
 
 export default function IndicatorPropertyDialog({
   indicatorProperty,
   setIndicatorProperty,
   activeBarIndicator,
-    updateIndicator,
+  updateIndicator,
+  indicatorConfigs,
+  setIndicatorConfigs,
+  setIndicatorStyle,
+  indicatorStyle,
+  indicatorSeriesRef,
 }) {
   const labelStyle = {
     display: "inline-block",
@@ -18,335 +24,370 @@ export default function IndicatorPropertyDialog({
      PER-INDICATOR CONFIG STATE
   ========================== */
 
-  const [indicatorConfigs, setIndicatorConfigs] = useState({
-    SMA: {
-      length: 9,
-      source: "Close",
-      offset: 0,
-      smoothing: {
-        type: "SMA + Bollinger Bands",
-        length: 14,
-        bbStdDev: 2,
-      },
-    },
+  // const [indicatorConfigs, setIndicatorConfigs] = useState({
+  //   SMA: {
+  //     length: 9,
+  //     source: "Close",
+  //     offset: 0,
+  //     smoothing: {
+  //       type: "SMA + Bollinger Bands",
+  //       length: 14,
+  //       bbStdDev: 2,
+  //     },
+  //   },
 
-    EMA: {
-      length: 9,
-      source: "Close",
-      offset: 0,
-    },
+  //   EMA: {
+  //     length: 9,
+  //     source: "Close",
+  //     offset: 0,
+  //   },
 
-    WMA: {
-      length: 9,
-      source: "Close",
-      offset: 0,
-    },
+  //   WMA: {
+  //     length: 9,
+  //     source: "Close",
+  //     offset: 0,
+  //   },
 
-    HMA: {
-      length: 9,
-      source: "Close",
-    },
+  //   HMA: {
+  //     length: 9,
+  //     source: "Close",
+  //   },
 
-    DEMA: {
-      length: 9,
-      source: "Close",
-    },
+  //   DEMA: {
+  //     length: 9,
+  //     source: "Close",
+  //   },
 
-    TEMA: {
-      length: 9,
-    },
+  //   TEMA: {
+  //     length: 9,
+  //   },
 
-    KAMA: {
-      ERlength: 10,
-      fastLength: 2,
-      slowLength: 30,
-      source: "Close",
-    },
+  //   KAMA: {
+  //     ERlength: 10,
+  //     fastLength: 2,
+  //     slowLength: 30,
+  //     source: "Close",
+  //   },
 
-    "Ichimoku Cloud": {
-      conversionLength: 9,
-      baseLength: 26,
-      spanBLength: 52,
-      laggingSpan: 26,
-    },
-    "Parabolic SAR": {
-      start: 0.02,
-      increment: 0.02,
-      maxValue: 0.02,
-    },
-    SuperTrend: {
-      atrLength: 10,
-      factor: 3,
-    },
+  //   "Ichimoku Cloud": {
+  //     conversionLength: 9,
+  //     baseLength: 26,
+  //     spanBLength: 52,
+  //     laggingSpan: 26,
+  //   },
+  //   "Parabolic SAR": {
+  //     start: 0.02,
+  //     increment: 0.02,
+  //     maxValue: 0.02,
+  //   },
+  //   SuperTrend: {
+  //     atrLength: 10,
+  //     factor: 3,
+  //   },
 
-    Aroon: {
-      length: 14,
-    },
-    "Aroon Oscillator": {
-      length: 14,
-    },
-    ADX: {
-      smoothing: 14,
-      diLength: 14,
-    },
+  //   Aroon: {
+  //     length: 14,
+  //   },
+  //   "Aroon Oscillator": {
+  //     length: 14,
+  //   },
+  //   ADX: {
+  //     smoothing: 14,
+  //     diLength: 14,
+  //   },
 
-    "Chande Kroll Stop": {
-      atrLength: 10, // default p
-      atrCoefficient: 1, // default x
-      stopLength: 9, // default q
-    },
+  //   "Chande Kroll Stop": {
+  //     atrLength: 10, // default p
+  //     atrCoefficient: 1, // default x
+  //     stopLength: 9, // default q
+  //   },
 
-    RSI: {
-      length: 14,
-      source: "Close",
-      smoothing: {
-        type: "SMA",
-        length: 14,
-        bbStdDev: 2,
-      },
-    },
+  //   RSI: {
+  //     length: 14,
+  //     source: "Close",
+  //     smoothing: {
+  //       type: "SMA",
+  //       length: 14,
+  //       bbStdDev: 2,
+  //     },
+  //   },
 
-    Stochastic: {
-      kLength: 14, // %K Length
-      kSmoothing: 1, // %K Smoothing
-      dSmoothing: 3, // %D Smoothing
-    },
+  //   Stochastic: {
+  //     kLength: 14, // %K Length
+  //     kSmoothing: 1, // %K Smoothing
+  //     dSmoothing: 3, // %D Smoothing
+  //   },
 
-    "Stochastic RSI": {
-      rsiLength: 14, // RSI period
-      rsiSource: "Close", // RSI source (dropdown)
-      stochasticLength: 14, // %K length of Stochastic
-      kSmoothing: 3, // %K smoothing
-      dSmoothing: 3, // %D smoothing
-    },
+  //   "Stochastic RSI": {
+  //     rsiLength: 14, // RSI period
+  //     rsiSource: "Close", // RSI source (dropdown)
+  //     stochasticLength: 14, // %K length of Stochastic
+  //     kSmoothing: 3, // %K smoothing
+  //     dSmoothing: 3, // %D smoothing
+  //   },
 
-    MACD: {
-      source: "Close",
-      fastLength: 12, // Fast EMA/SMA
-      slowLength: 26, // Slow EMA/SMA
-      signalLength: 9, // Signal line length
-      oscillatorMAType: "EMA", // dropdown: "EMA" or "SMA"
-      signalMAType: "EMA",
-    },
+  //   MACD: {
+  //     source: "Close",
+  //     fastLength: 12, // Fast EMA/SMA
+  //     slowLength: 26, // Slow EMA/SMA
+  //     signalLength: 9, // Signal line length
+  //     oscillatorMAType: "EMA", // dropdown: "EMA" or "SMA"
+  //     signalMAType: "EMA",
+  //   },
 
-    CCI: {
-      length: 20,
-      source: "HLC3",
-      smoothing: {
-        type: "SMA",
-        length: 14,
-        bbStdDev: 2,
-      },
-    },
-    Momentum: {
-      length: 10,
-      source: "Close",
-    },
-    ROC: {
-      length: 9,
-      source: "Close",
-    },
-    "Williams %R": {
-      length: 14,
-      source: "Close",
-    },
-    "Ultimate Oscillator": {
-      fastLength: 7, // Fast period
-      middleLength: 14, // Middle period
-      slowLength: 28, // Slow period
-    },
-    "Chande Momentum Oscillator": {
-      length: 9,
-      source: "Close",
-    },
-    TRIX: {
-      length: 18,
-    },
-    "Fisher Transform": {
-      length: 9,
-    },
-    ATR: {
-      length: 14,
-      smoothing: "RMA",
-    },
-    "Bollinger Bands": {
-      length: 20,
-      maType: "SMA", // default moving average type
-      stdDev: 2,
-      source: "Close",
-      offset: 0,
-    },
-    "Bollinger Band Width": {
-      length: 20,
-      stdDev: 2,
-      source: "Close",
-      highestExpansionLength: 125,
-      lowestContractionLength: 125,
-    },
-    "Keltner Channels": {
-      length: 20,
-      source: "Close",
-      multiplier: 2,
-      atrLength: 10,
-      bandsStyle: "Average True Range",
-      useEMA: true,
-    },
-    "Donchian Channels": {
-      length: 20,
-      offset: 0,
-    },
-    "Choppiness Index": {
-      length: 14,
-      offset: 0,
-    },
-    "Standard Deviation": {
-      length: 20,
-      source: "Close",
-    },
-    Volume: {
-      maLength: 20,
-      colorByPrevious: false,
-    },
-    "Historical Volatility": {
-      length: 10,
-    },
-    OBV: {
-      smoothing: {
-        type: "None",
-        length: 14,
-        bbStdDev: 2,
-      },
-    },
-    "Percentage Volume Oscillator": {
-      fastLength: 12,
-      slowLength: 26,
-      signalLength: 9,
-      oscMaType: "EMA", // EMA | SMA
-      signalMaType: "EMA", // EMA | SMA
-    },
-    "Chaikin Money Flow": {
-      length: 20,
-    },
-    MFI: {
-      length: 14,
-    },
-    "Ease of Movement": {
-      length: 14,
-      divisor: 10000,
-    },
-    "Negative Volume Index": {
-      emaLength: 255,
-    },
-    "Positive Volume Index": {
-      emaLength: 255,
-    },
-    VWAP: {
-      hideOnDailyOrAbove: true,
-      anchorPeriod: "Daily",
-      source: "HLC3",
-      offset: 0,
+  //   CCI: {
+  //     length: 20,
+  //     source: "HLC3",
+  //     smoothing: {
+  //       type: "SMA",
+  //       length: 14,
+  //       bbStdDev: 2,
+  //     },
+  //   },
+  //   Momentum: {
+  //     length: 10,
+  //     source: "Close",
+  //   },
+  //   ROC: {
+  //     length: 9,
+  //     source: "Close",
+  //   },
+  //   "Williams %R": {
+  //     length: 14,
+  //     source: "Close",
+  //   },
+  //   "Ultimate Oscillator": {
+  //     fastLength: 7, // Fast period
+  //     middleLength: 14, // Middle period
+  //     slowLength: 28, // Slow period
+  //   },
+  //   "Chande Momentum Oscillator": {
+  //     length: 9,
+  //     source: "Close",
+  //   },
+  //   TRIX: {
+  //     length: 18,
+  //   },
+  //   "Fisher Transform": {
+  //     length: 9,
+  //   },
+  //   ATR: {
+  //     length: 14,
+  //     smoothing: "RMA",
+  //   },
+  //   "Bollinger Bands": {
+  //     length: 20,
+  //     maType: "SMA", // default moving average type
+  //     stdDev: 2,
+  //     source: "Close",
+  //     offset: 0,
+  //   },
+  //   "Bollinger Band Width": {
+  //     length: 20,
+  //     stdDev: 2,
+  //     source: "Close",
+  //     highestExpansionLength: 125,
+  //     lowestContractionLength: 125,
+  //   },
+  //   "Keltner Channels": {
+  //     length: 20,
+  //     source: "Close",
+  //     multiplier: 2,
+  //     atrLength: 10,
+  //     bandsStyle: "Average True Range",
+  //     useEMA: true,
+  //   },
+  //   "Donchian Channels": {
+  //     length: 20,
+  //     offset: 0,
+  //   },
+  //   "Choppiness Index": {
+  //     length: 14,
+  //     offset: 0,
+  //   },
+  //   "Standard Deviation": {
+  //     length: 20,
+  //     source: "Close",
+  //   },
+  //   Volume: {
+  //     maLength: 20,
+  //     colorByPrevious: false,
+  //   },
+  //   "Historical Volatility": {
+  //     length: 10,
+  //   },
+  //   OBV: {
+  //     smoothing: {
+  //       type: "None",
+  //       length: 14,
+  //       bbStdDev: 2,
+  //     },
+  //   },
+  //   "Percentage Volume Oscillator": {
+  //     fastLength: 12,
+  //     slowLength: 26,
+  //     signalLength: 9,
+  //     oscMaType: "EMA", // EMA | SMA
+  //     signalMaType: "EMA", // EMA | SMA
+  //   },
+  //   "Chaikin Money Flow": {
+  //     length: 20,
+  //   },
+  //   MFI: {
+  //     length: 14,
+  //   },
+  //   "Ease of Movement": {
+  //     length: 14,
+  //     divisor: 10000,
+  //   },
+  //   "Negative Volume Index": {
+  //     emaLength: 255,
+  //   },
+  //   "Positive Volume Index": {
+  //     emaLength: 255,
+  //   },
+  //   VWAP: {
+  //     hideOnDailyOrAbove: true,
+  //     anchorPeriod: "Daily",
+  //     source: "HLC3",
+  //     offset: 0,
 
-      bandSettings: {
-        calculationMode: "Standard Deviation", // or "Percentage"
+  //     bandSettings: {
+  //       calculationMode: "Standard Deviation", // or "Percentage"
 
-        band1: { enabled: true, multiplier: 1 },
-        band2: { enabled: false, multiplier: 2 },
-        band3: { enabled: false, multiplier: 3 },
-      },
-    },
-    "Zig Zag": {
-      priceDeviation: 5,
-      pivotLegs: 10,
-      lineColor: "#2962ff",
-      extendToLastBar: true,
-      displayReversalPrice: false,
-      displayCumulativeVolume: false,
-      reversalPriceChangeMode: "absolute",
-    },
-  });
+  //       band1: { enabled: true, multiplier: 1 },
+  //       band2: { enabled: false, multiplier: 2 },
+  //       band3: { enabled: false, multiplier: 3 },
+  //     },
+  //   },
+  //   "Zig Zag": {
+  //     priceDeviation: 5,
+  //     pivotLegs: 10,
+  //     lineColor: "#2962ff",
+  //     extendToLastBar: true,
+  //     displayReversalPrice: false,
+  //     displayCumulativeVolume: false,
+  //     reversalPriceChangeMode: "absolute",
+  //   },
+  // });
 
-  const [indicatorStyle, setIndicatorStyle] = useState({
-    visible: true,
-    color: "#2962ff",
-    width: 2,
-  });
+  // const [indicatorStyle, setIndicatorStyle] = useState(indicatorStyleDefault);
 
-  const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
-  const [tempIndicatorStyle, setTempIndicatorStyle] = useState({});
+  // const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
+  // const [tempIndicatorStyle, setTempIndicatorStyle] = useState({});
 
-  useEffect(() => {
-    if (activeBarIndicator) {
-      setTempIndicatorConfig(indicatorConfigs[activeBarIndicator] || {});
-      setTempIndicatorStyle(indicatorStyle || {});
-    }
-  }, [activeBarIndicator]);
+  // const [condition,setCondition]=useState({
+  //   length:0
+  // });
+  // useEffect(() => {
+  //   if (activeBarIndicator) {
+  //     setTempIndicatorConfig(indicatorConfigs[activeBarIndicator] || {});
+  //     // setTempIndicatorStyle(indicatorStyle || {});
+  //   }
+  // }, [activeBarIndicator]);
 
   /* =========================
      CURRENT CONFIG
   ========================== */
 
-  const currentConfig = indicatorConfigs[activeBarIndicator] || {};
+  const currentConfig = indicatorConfigs[activeBarIndicator];
+  console.log(currentConfig);
 
   /* =========================
      UPDATE PROPERTY
   ========================== */
 
-  const updateProperty = (key, value) => {
-    setTempIndicatorConfig((prev) => ({
+  const updateIndicatorConfig = (key, value) => {
+    setIndicatorConfigs((prev) => ({
       ...prev,
-      [key]: value,
+      [activeBarIndicator]: {
+        ...prev[activeBarIndicator],
+        [key]: value,
+      },
+    }));
+  };
+
+  const updateProperty = (key, value) => {
+    setIndicatorConfigs((prev) => ({
+      ...prev,
+      [activeBarIndicator]: {
+        ...prev[activeBarIndicator],
+        [key]: value,
+      },
     }));
   };
 
   const updateNestedProperty = (parentKey, childKey, value) => {
-    setTempIndicatorConfig((prev) => ({
+    setIndicatorConfigs((prev) => ({
       ...prev,
-      [parentKey]: {
-        ...prev[parentKey],
-        [childKey]: value,
-      },
-    }));
-  };
-  const updateNestedDoubleProperty = (parentKey, childKey, fieldKey, value) => {
-    setTempIndicatorConfig((prev) => ({
-      ...prev,
-      [parentKey]: {
-        ...prev[parentKey],
-        [childKey]: {
-          ...prev[parentKey][childKey],
-          [fieldKey]: value,
+      [activeBarIndicator]: {
+        ...prev[activeBarIndicator],
+        [parentKey]: {
+          ...prev[activeBarIndicator][parentKey],
+          [childKey]: value,
         },
       },
     }));
   };
 
-const updateSmoothing = (key, value) => {
-  setTempIndicatorConfig((prev) => ({
-    ...prev,
-    smoothing: {
-      ...prev.smoothing,
-      [key]: value,
-    },
-  }));
-};
+  const updateNestedDoubleProperty = (parentKey, childKey, fieldKey, value) => {
+    setIndicatorConfigs((prev) => ({
+      ...prev,
+      [activeBarIndicator]: {
+        ...prev[activeBarIndicator],
+        [parentKey]: {
+          ...prev[activeBarIndicator][parentKey],
+          [childKey]: {
+            ...prev[activeBarIndicator][parentKey][childKey],
+            [fieldKey]: value,
+          },
+        },
+      },
+    }));
+  };
+
+  const updateSmoothing = (key, value) => {
+    setIndicatorConfigs((prev) => ({
+      ...prev,
+      [activeBarIndicator]: {
+        ...prev[activeBarIndicator],
+        smoothing: {
+          ...prev[activeBarIndicator].smoothing,
+          [key]: value,
+        },
+      },
+    }));
+  };
   /* =========================
      OK BUTTON
   ========================== */
   const handleIndicatorPropertyChange = () => {
-    setIndicatorConfigs((prev) => ({
+
+    
+
+    setIndicatorStyle((prev) => ({
       ...prev,
-      [activeBarIndicator]: tempIndicatorConfig,
+      [activeBarIndicator]: indicatorConfigs,
     }));
 
-    updateIndicator(activeBarIndicator, tempIndicatorConfig);
+    // updateIndicator(activeBarIndicator, tempIndicatorConfig);
 
+    // console.log(indicatorStyle, "indicator style")
+    updateIndicatorStyle(
+      activeBarIndicator,
+      indicatorStyle,
+      indicatorSeriesRef,
+    );
     setIndicatorProperty(false);
   };
 
   const handleCancel = () => {
-  setTempIndicatorConfig(indicatorConfigs[activeBarIndicator]);
-  setIndicatorProperty(false);
-};
+    setIndicatorConfigs((prev) => ({
+      ...prev,
+      [activeBarIndicator]: indicatorConfigs[activeBarIndicator],
+    }));
+    setIndicatorProperty(false);
+  };
   /* =========================
      BASE SETTINGS COMPONENT
   ========================== */
@@ -369,9 +410,9 @@ const updateSmoothing = (key, value) => {
             <Col>
               <Form.Control
                 type="number"
-                value={currentConfig.length}
+                value={currentConfig?.length ?? ""}
                 onChange={(e) =>
-                  updateProperty("length", Number(e.target.value))
+                  updateIndicatorConfig("length", Number(e.target.value))
                 }
               />
             </Col>
@@ -388,7 +429,7 @@ const updateSmoothing = (key, value) => {
             <Form.Label style={labelStyle}>Source</Form.Label>
             <Col>
               <Form.Select
-                value={currentConfig.source}
+                value={currentConfig?.source}
                 onChange={(e) => updateProperty("source", e.target.value)}
               >
                 {["Close", "Open", "High", "Low", "HL2", "HLC3", "OHLC4"].map(
@@ -1763,8 +1804,9 @@ const updateSmoothing = (key, value) => {
 
           <Tab eventKey="style" title="Style">
             <IndicatorStyle
-              style={tempIndicatorStyle}
-              setStyle={setTempIndicatorStyle}
+              indicatorStyle={indicatorStyle}
+              setIndicatorStyle={setIndicatorStyle}
+              indicatorSeriesRef={indicatorSeriesRef}
               activeBarIndicator={activeBarIndicator}
             />
           </Tab>

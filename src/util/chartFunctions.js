@@ -1,5 +1,6 @@
-import { LineSeries } from "lightweight-charts";
+import { HistogramSeries, LineSeries } from "lightweight-charts";
 import apiService from "../services/apiServices";
+import { getRowsByIndicator } from "./common";
 
 export async function fetchDataByCurrency(selectedCurrency, timeframeValue) {
   let response;
@@ -7,8 +8,7 @@ export async function fetchDataByCurrency(selectedCurrency, timeframeValue) {
     response = await apiService.post(
       `api/listing?symbol=${selectedCurrency || "BTCUSD"}&interval=${timeframeValue || "1m"}&limit=1000`,
     );
-        // console.log(response, "resssssssssssssss")
-
+    // console.log(response, "resssssssssssssss")
   } else {
     response = await apiService.post(
       `api/listing?symbol=${selectedCurrency || "BTCUSD"}&limit=1000&interval=${timeframeValue || "1m"}`,
@@ -18,6 +18,126 @@ export async function fetchDataByCurrency(selectedCurrency, timeframeValue) {
   return response;
 }
 
+// export async function fetchIndicatorData(
+//   selectedIndicator,
+//   selectedCurrency,
+//   timeframeValue,
+//   chartRef,
+//   addSeries,
+//   indicatorSeriesRef,
+//   latestIndicatorValuesRef,
+//   getIndicatorColor,
+//   indicatorStyle,
+//   activeBarIndicator,
+// ) {
+//   if (!selectedIndicator?.length) return;
+
+//   // console.log(indicatorStyle[activeBarIndicator], "activeeeeeeeee")
+//   for (const [index, indicator] of selectedIndicator.entries()) {
+//     try {
+//       const result = await fetchDataForIndicators(
+//         selectedCurrency,
+//         indicator,
+//         timeframeValue,
+//       );
+
+//       if (!result) continue;
+
+//       /* ================= SINGLE LINE ================= */
+
+//       if (result.type === "single") {
+//         removeSeries(indicatorSeriesRef, chartRef, indicator);
+
+//         //   const series = addSeries(indicator, LineSeries, {
+//         //     color: getIndicatorColor(index),
+//         //     lineWidth: 1,
+//         //   });
+//         //   console.log(indicatorStyle[indicator], "activeeeeeeeee")
+
+//         //   if (!series) continue;
+
+//         //   series.setData(result.data);
+
+//         //   if (result.data?.length) {
+//         //     latestIndicatorValuesRef.current[indicator] =
+//         //       result.data[result.data.length - 1].value;
+//         //   }
+
+//         //   indicatorSeriesRef.current[indicator] = series;
+//         // }
+
+//         Object.entries(result.data).forEach(([lineName, lineData]) => {
+//           const rowConfig = rows.find((r) => r.key === lineName);
+//           const styleConfig = indicatorStyle?.[indicator]?.[lineName];
+
+//           const series = addSeries(indicator, LineSeries, {
+//             color: styleConfig?.color || rowConfig?.color || "#2962ff",
+//             lineWidth: styleConfig?.width || 1,
+//             visible: styleConfig?.visible ?? true,
+//           });
+
+//           if (!series) return;
+
+//           series.setData(lineData);
+
+//           groupedSeries[lineName] = series;
+//         });
+//       }
+
+//       /* ================= MULTI LINE ================= */
+
+//       if (result.type === "multi") {
+//         const indicatorKey = indicator;
+
+//         // ✅ Remove OLD grouped series safely
+//         const oldEntry = indicatorSeriesRef.current[indicatorKey];
+
+//         if (oldEntry && typeof oldEntry === "object") {
+//           Object.values(oldEntry).forEach((series) => {
+//             try {
+//               series?.remove?.();
+//             } catch (e) {}
+//           });
+//         }
+
+//         const groupedSeries = {};
+
+//         Object.entries(result.data).forEach(
+//           ([lineName, lineData], lineIndex) => {
+//             const series = addSeries(indicator, LineSeries, {
+//               color: getIndicatorColor(lineIndex), // ✅ FIXED COLOR
+//               lineWidth: 1,
+//             });
+
+//             if (!series) return;
+
+//             series.setData(lineData);
+
+//             groupedSeries[lineName] = series;
+
+//             if (lineData?.length) {
+//               latestIndicatorValuesRef.current[indicatorKey] = {
+//                 ...(latestIndicatorValuesRef.current[indicatorKey] || {}),
+//                 [lineName]: lineData[lineData.length - 1].value,
+//               };
+//             }
+//           },
+//         );
+
+//         indicatorSeriesRef.current[indicatorKey] = groupedSeries;
+//       }
+
+//       /* ================= PIVOT ================= */
+
+//       if (result.type === "pivot") {
+//         plotPivotLevels(result.data, chartRef, indicatorSeriesRef);
+//       }
+//     } catch (error) {
+//       console.log(error, "Indicator loading error");
+//     }
+//   }
+// }
+
 export async function fetchIndicatorData(
   selectedIndicator,
   selectedCurrency,
@@ -26,11 +146,11 @@ export async function fetchIndicatorData(
   addSeries,
   indicatorSeriesRef,
   latestIndicatorValuesRef,
-  getIndicatorColor,
+  indicatorStyle,
 ) {
   if (!selectedIndicator?.length) return;
 
-  for (const [index, indicator] of selectedIndicator.entries()) {
+  for (const indicator of selectedIndicator) {
     try {
       const result = await fetchDataForIndicators(
         selectedCurrency,
@@ -40,51 +160,106 @@ export async function fetchIndicatorData(
 
       if (!result) continue;
 
-      /* ================= SINGLE LINE ================= */
+      const rows = getRowsByIndicator(indicator);
 
-      if (result.type === "single") {
-        removeSeries(indicatorSeriesRef, chartRef, indicator);
+      // /* ================= SINGLE LINE ================= */
 
-        const series = addSeries(indicator, LineSeries, {
-          color: getIndicatorColor(index),
-          lineWidth: 1,
-        });
+      // if (result.type === "single") {
 
-        if (!series) continue;
+      //   removeSeries(indicatorSeriesRef, chartRef, indicator);
 
-        series.setData(result.data);
+      //   const rowConfig = rows?.[0];
+      //   const styleConfig = indicatorStyle?.[indicator]?.[rowConfig?.key];
 
-        if (result.data?.length) {
-          latestIndicatorValuesRef.current[indicator] =
-            result.data[result.data.length - 1].value;
-        }
+      //   const series = addSeries(indicator, LineSeries, {
+      //     color: styleConfig?.color || rowConfig?.color || "#2962ff",
+      //     lineWidth: styleConfig?.width || 1,
+      //     visible: styleConfig?.visible ?? true,
+      //   });
 
-        indicatorSeriesRef.current[indicator] = series;
-      }
+      //   if (!series) continue;
 
-      /* ================= MULTI LINE ================= */
+      //   series.setData(result.data);
 
-      if (result.type === "multi") {
-        const indicatorKey = indicator;
+      //   if (result.data?.length) {
+      //     latestIndicatorValuesRef.current[indicator] =
+      //       result.data[result.data.length - 1].value;
+      //   }
 
-        // ✅ Remove OLD grouped series safely
-        const oldEntry = indicatorSeriesRef.current[indicatorKey];
+      //   indicatorSeriesRef.current[indicator] = {
+      //     [rowConfig?.key || indicator]: series
+      //   };
+      // }
 
-        if (oldEntry && typeof oldEntry === "object") {
-          Object.values(oldEntry).forEach((series) => {
-            try {
-              series?.remove?.();
-            } catch (e) {}
-          });
-        }
+      // /* ================= MULTI LINE ================= */
 
-        const groupedSeries = {};
+      // if (result.type === "multi") {
 
-        Object.entries(result.data).forEach(
-          ([lineName, lineData], lineIndex) => {
+      //   const indicatorKey = indicator;
+
+      //   const oldEntry = indicatorSeriesRef.current[indicatorKey];
+
+      //   if (oldEntry && typeof oldEntry === "object") {
+      //     Object.values(oldEntry).forEach((series) => {
+      //       try { series?.remove?.(); } catch (e) {}
+      //     });
+      //   }
+
+      //   const groupedSeries = {};
+
+      //   Object.entries(result.data).forEach(([lineName, lineData]) => {
+
+      //     const rowConfig = rows?.find((r) => r.key === lineName);
+      //     const styleConfig = indicatorStyle?.[indicator]?.[lineName];
+
+      //     const series = addSeries(indicator, LineSeries, {
+      //       color: styleConfig?.color || rowConfig?.color || "#2962ff",
+      //       lineWidth: styleConfig?.width || 1,
+      //       visible: styleConfig?.visible ?? true,
+      //     });
+
+      //     if (!series) return;
+
+      //     series.setData(lineData);
+
+      //     groupedSeries[lineName] = series;
+
+      //     if (lineData?.length) {
+      //       latestIndicatorValuesRef.current[indicatorKey] = {
+      //         ...(latestIndicatorValuesRef.current[indicatorKey] || {}),
+      //         [lineName]: lineData[lineData.length - 1].value,
+      //       };
+      //     }
+
+      //   });
+
+      //   indicatorSeriesRef.current[indicatorKey] = groupedSeries;
+      // }
+
+      // /* ================= PIVOT ================= */
+
+      // if (result.type === "pivot") {
+      //   plotPivotLevels(result.data, chartRef, indicatorSeriesRef);
+      // }
+
+
+      switch (indicator) {
+        /* ================= RSI ================= */
+
+        case "RSI": {
+          const groupedSeries = {};
+
+          Object.entries(result.data).forEach(([lineName, lineData]) => {
+            const rowConfig = rows?.find((r) => r.key === lineName);
+            const styleConfig = indicatorStyle?.[indicator]?.[lineName];
+
             const series = addSeries(indicator, LineSeries, {
-              color: getIndicatorColor(lineIndex), // ✅ FIXED COLOR
-              lineWidth: 1,
+              color: styleConfig?.color || rowConfig?.color || "#26a69a",
+              lineWidth: styleConfig?.width || 2,
+              visible: styleConfig?.visible ?? true,
+              bgFill: styleConfig?.bgFill || "#26a69a"
+
+
             });
 
             if (!series) return;
@@ -92,35 +267,138 @@ export async function fetchIndicatorData(
             series.setData(lineData);
 
             groupedSeries[lineName] = series;
+          });
 
-            if (lineData?.length) {
-              latestIndicatorValuesRef.current[indicatorKey] = {
-                ...(latestIndicatorValuesRef.current[indicatorKey] || {}),
-                [lineName]: lineData[lineData.length - 1].value,
-              };
+          indicatorSeriesRef.current[indicator] = groupedSeries;
+
+          break;
+        }
+
+        /* ================= SMA ================= */
+
+        case "SMA": {
+          removeSeries(indicatorSeriesRef, chartRef, indicator);
+
+          const rowConfig = rows?.[0];
+          const styleConfig = indicatorStyle?.[indicator]?.[rowConfig?.key];
+
+          const series = addSeries(indicator, LineSeries, {
+            color: styleConfig?.color || "#2962ff",
+            lineWidth: styleConfig?.width || 2,
+            visible: styleConfig?.visible ?? true,
+          });
+
+          if (!series) break;
+
+          series.setData(result.data);
+
+          indicatorSeriesRef.current[indicator] = {
+            [rowConfig?.key]: series,
+          };
+
+          break;
+        }
+
+        /* ================= MACD ================= */
+
+        case "MACD": {
+          const groupedSeries = {};
+
+          Object.entries(result.data).forEach(([lineName, lineData]) => {
+            let series;
+
+            if (lineName === "histogram") {
+              series = addSeries(indicator, HistogramSeries, {
+                color: "#26a69a",
+              });
+            } else {
+              series = addSeries(indicator, LineSeries, {
+                lineWidth: 2,
+              });
             }
-          },
-        );
 
-        indicatorSeriesRef.current[indicatorKey] = groupedSeries;
-      }
+            if (!series) return;
 
-      /* ================= PIVOT ================= */
+            series.setData(lineData);
 
-      if (result.type === "pivot") {
-        plotPivotLevels(result.data, chartRef, indicatorSeriesRef);
+            groupedSeries[lineName] = series;
+          });
+
+          indicatorSeriesRef.current[indicator] = groupedSeries;
+
+          break;
+        }
+
+        /* ================= ATR ================= */
+
+        case "ATR": {
+          removeSeries(indicatorSeriesRef, chartRef, indicator);
+
+          const series = addSeries(indicator, LineSeries, {
+            color: "#ff9800",
+            lineWidth: 2,
+          });
+
+          if (!series) break;
+
+          series.setData(result.data);
+
+          indicatorSeriesRef.current[indicator] = {
+            atr: series,
+          };
+
+          break;
+        }
+
+        /* ================= DEFAULT ================= */
+
+        default:
+          console.warn("Indicator not handled:", indicator);
       }
     } catch (error) {
       console.log(error, "Indicator loading error");
     }
   }
 }
+
+export const updateIndicatorStyle = (
+  indicator,
+  indicatorStyle,
+  indicatorSeriesRef,
+) => {
+  const seriesGroup = indicatorSeriesRef?.current?.[indicator];
+  const styleGroup = indicatorStyle?.[indicator];
+
+  if (!seriesGroup || !styleGroup) return;
+
+  Object.entries(styleGroup).forEach(([key, config]) => {
+    const series = seriesGroup[key];
+
+    if (!series) return;
+
+    series.applyOptions({
+      ...(config.color && { color: config.color }),
+      ...(config.width && { lineWidth: config.width }),
+      ...(config.visible !== undefined && { visible: config.visible }),
+    });
+  });
+};
 async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
   const normalizedType = type.replace(/[\s/]+/g, "");
 
-  const response = await apiService.post(
+  let response;
+
+  if(normalizedType == "RSI"){
+ response = await apiService.post(
+    `/api/indicatorDetails?symbol=${selectedCurrency}&interval=${timeframeValue}&type=${normalizedType}`, {maType: "SMA"}
+  );
+  }
+  else{
+ response = await apiService.post(
     `/api/indicatorDetails?symbol=${selectedCurrency}&interval=${timeframeValue}&type=${normalizedType}`,
   );
+  }
+  
 
   // console.log("Raw indicator data for", type, ":", response);
 
@@ -132,7 +410,7 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
 
   switch (normalizedType) {
     /* ---------------- SINGLE VALUE ---------------- */
-    
+
     case "EMA":
     case "HMA":
     case "DEMA":
@@ -177,18 +455,17 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
             })) ?? [],
       };
 
-      case "SMA":
-  return {
-    type: "single",
-    data:
-      response.data
-        ?.filter((d) => d.sma != null && d.time != null) // only valid SMA points
-        .map((d) => ({
-          time: d.time,  // timestamp
-          value: d.sma,  // SMA value
-        })) ?? [],
-  };
-
+    case "SMA":
+      return {
+        type: "single",
+        data:
+          response.data
+            ?.filter((d) => d.sma != null && d.time != null) // only valid SMA points
+            .map((d) => ({
+              time: d.time, // timestamp
+              value: d.sma, // SMA value
+            })) ?? [],
+      };
 
     case "ZigZag": {
       const rows = response?.data ?? [];
@@ -221,14 +498,24 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
 
     case "RSI":
       return {
-        type: "single",
-        data:
-          response.data
-            ?.filter((d) => d.rsi != null && d.time != null)
-            .map((d) => ({
-              time: d.time,
-              value: d.rsi,
-            })) ?? [],
+        type: "multi",
+        data: {
+          rsi:
+            response.data
+              ?.filter((d) => d.rsi != null && d.time != null)
+              .map((d) => ({
+                time: d.time,
+                value: d.rsi,
+              })) ?? [],
+
+          rsiMa:
+            response.data
+              ?.filter((d) => d.sma != null && d.time != null)
+              .map((d) => ({
+                time: d.time,
+                value: d.sma,
+              })) ?? [],
+        },
       };
 
     /* ---------------- NESTED VALUE ---------------- */

@@ -1,14 +1,14 @@
 import { Row, Col, Form } from "react-bootstrap";
 
 export default function IndicatorStyle({
-  style,
-  setStyle,
+  indicatorStyle,
+  setIndicatorStyle,
   activeBarIndicator,
 }) {
   /* ================= UPDATE FUNCTION ================= */
 
   const update = (section, key, value) => {
-    setStyle((prev) => ({
+    setIndicatorStyle((prev) => ({
       ...prev,
       [activeBarIndicator]: {
         ...prev[activeBarIndicator],
@@ -19,6 +19,8 @@ export default function IndicatorStyle({
       },
     }));
   };
+
+
 
   /* ================= ROW CONFIG BASED ON INDICATOR ================= */
 
@@ -58,14 +60,6 @@ export default function IndicatorStyle({
             showValue: true,
             value: 30, // default
             color: "#26a69a",
-          },
-
-          {
-            key: "bgFill",
-            label: "RSI Background Fill",
-            type: "fill",
-            color0: "rgba(38,166,154,0.1)",
-            color1: "rgba(38,166,154,0.1)",
           },
           {
             key: "obFill",
@@ -1096,9 +1090,8 @@ export default function IndicatorStyle({
         return [];
     }
   };
-
+  const selectedStyle = indicatorStyle?.[activeBarIndicator];
   const rows = getRowsByIndicator(activeBarIndicator);
-
   /* ================= RENDER ================= */
 
   return (
@@ -1109,11 +1102,7 @@ export default function IndicatorStyle({
           <Col md={6}>
             <Form.Check
               type="checkbox"
-              checked={
-                style?.[activeBarIndicator]?.[row.key]?.visible ??
-                row.visible ??
-                true
-              }
+              checked={selectedStyle?.[row.key]?.visible ?? row.visible ?? true}
               onChange={(e) => update(row.key, "visible", e.target.checked)}
               label={row.label}
             />
@@ -1123,33 +1112,60 @@ export default function IndicatorStyle({
           <Col md={2} className="d-flex align-items-center ">
             <input
               type="color"
-              value={
-                style?.[activeBarIndicator]?.[row.key]?.color ??
-                row.color ??
-                "#2962ff"
-              }
+              value={selectedStyle?.[row.key]?.color ?? row.color ?? "#2962ff"}
               onChange={(e) => update(row.key, "color", e.target.value)}
               className="form-control form-control-color"
             />
           </Col>
+          <Col md={4} className="d-flex flex-column gap-2">
+            {/* VALUE INPUT (for bands like 70 / 50 / 30) */}
+            {row.value !== undefined && (
+              <div>
+                {/* <Form.Label className="small mb-1">Value</Form.Label> */}
+                <Form.Control
+                  type="number"
+                  value={selectedStyle?.[row.key]?.value ?? row.value ?? ""}
+                  onChange={(e) =>
+                    update(row.key, "value", Number(e.target.value))
+                  }
+                />
+              </div>
+            )}
+
+            {/* WIDTH INPUT (for line indicators) */}
+            {row.type === "line" && (
+              <div className="d-flex gap-2 items-center">
+                <Form.Label className="small mb-1">Width</Form.Label>
+                <Form.Control
+                  type="number"
+                  min={1}
+                  max={50}
+                  value={selectedStyle?.[row.key]?.width ?? row.width ?? 2}
+                  onChange={(e) => {
+                    const width = Math.max(
+                      1,
+                      Math.min(50, Number(e.target.value)),
+                    );
+                    update(row.key, "width", width);
+                  }}
+                />
+              </div>
+            )}
+          </Col>
 
           {/* RIGHT - VALUE */}
-          <Col md={4} className="d-flex align-items-start">
+          {/* <Col md={4} className="d-flex align-items-start">
             {row.showValue && (
               <Form.Control
                 type="number"
-                value={
-                  style?.[activeBarIndicator]?.[row.key]?.value ??
-                  row.value ??
-                  ""
-                }
+                value={selectedStyle?.[row.key]?.value ?? row.value ?? ""}
                 onChange={(e) =>
                   update(row.key, "value", Number(e.target.value))
                 }
                 style={{ width: "100%" }}
               />
             )}
-          </Col>
+          </Col> */}
         </Row>
       ))}
     </div>
