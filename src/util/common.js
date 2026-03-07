@@ -431,7 +431,7 @@ export const getRowsByIndicator = (indicator) => {
     case "RSI":
       return [
         { key: "rsi", label: "RSI", type: "line", color: "#26a69a" },
-        { key: "rsiMa", label: "RSI-based MA", type: "line", color: "#ff9800" },
+        { key: "smoothingMA", label: "Smoothing MA", type: "line", color: "#fffc30" },
 
         { key: "upper", label: "RSI Upper Band", value: 70, color: "#ef5350" },
         {
@@ -468,3 +468,23 @@ export const getRowsByIndicator = (indicator) => {
       return [];
   }
 };
+
+export const PANE_INDICATORS = new Set([
+  "RSI",
+  "MACD",
+  "MACDHistogram",
+  "CCI",
+  "ROC",
+  "Williams%R",
+  "UltimateOscillator",
+  "AroonOscillator",
+  "ChandeMomentumOscillator", // CMO
+  "TRIX",
+  "FisherTransform",
+  "KlingerOscillator",
+  "ATR",
+  "ChoppinessIndex",
+  "Volume",
+  "ChaikinMoneyFlow",
+  "MFI",
+]);

@@ -1,155 +1,138 @@
-import React, { useState } from "react";
-import { Row, Col, Form, Modal, Button } from "react-bootstrap";
-import { updateIndicatorStyle } from "../util/ChartFunctions";
-import { getRowsByIndicator } from "../util/common";
+import React, { useEffect, useRef, useState } from "react";
+import { createChart, LineSeries } from "lightweight-charts";
 
-export default function TradingViewChart({setIndicatorProperty,indicatorProperty,activeBarIndicator,indicatorConfigs,indicatorStyle,setIndicatorStyle,indicatorSeriesRef,}) {
-  const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
+export default function TradingViewChart() {
 
-  // console.log(indicatorStyle,"styleeeeeee")
+  const chartRef = useRef(null);
+  const rsiSeriesRef = useRef(null);
 
-  const handleIndicatorPropertyChange = () => {
-    const style = indicatorStyle[activeBarIndicator];
+  const [upper, setUpper] = useState(70);
+  const [middle, setMiddle] = useState(50);
+  const [lower, setLower] = useState(30);
 
-    updateIndicatorStyle(
-      activeBarIndicator,
-      indicatorStyle,
-      indicatorSeriesRef,
-    );
-    setIndicatorProperty(false);
-  };
+  useEffect(() => {
 
-  const update = (section, key, value) => {
-    setIndicatorStyle((prev) => ({
-      ...prev,
-      [activeBarIndicator]: {
-        ...prev[activeBarIndicator],
-        [section]: {
-          ...prev[activeBarIndicator]?.[section],
-          [key]: value,
-        },
+    const chart = createChart(chartRef.current, {
+      height: 400,
+      layout: {
+        background: { color: "#0f172a" },
+        textColor: "#DDD",
       },
-    }));
-  };
+      grid: {
+        vertLines: { color: "#1f2937" },
+        horzLines: { color: "#1f2937" },
+      },
+    });
 
-  const handleCancel = () => {
-    setTempIndicatorConfig(indicatorConfigs[activeBarIndicator]);
-    setIndicatorProperty(false);
-  };
+    const rsiSeries = chart.addSeries(LineSeries,{
+      color: "#f97316",
+      lineWidth: 2,
+    });
 
-  const selectedStyle = indicatorStyle?.[activeBarIndicator];
-  const rows = getRowsByIndicator(activeBarIndicator);
+    rsiSeriesRef.current = rsiSeries;
+
+    // dummy RSI data
+    const data = [];
+    let time = 1;
+
+    for (let i = 0; i < 100; i++) {
+      data.push({
+        time: time++,
+        value: Math.random() * 100,
+      });
+    }
+
+    rsiSeries.setData(data);
+
+    return () => chart.remove();
+
+  }, []);
+
+  // update price lines when values change
+  useEffect(() => {
+
+    if (!rsiSeriesRef.current) return;
+
+    // remove old lines
+    rsiSeriesRef.current._priceLines?.forEach(line =>
+      rsiSeriesRef.current.removePriceLine(line)
+    );
+
+    const upperLine = rsiSeriesRef.current.createPriceLine({
+      price: upper,
+      color: "#ef4444",
+      lineWidth: 1,
+      lineStyle: 2,
+      axisLabelVisible: true,
+      title: "Upper",
+    });
+
+    const middleLine = rsiSeriesRef.current.createPriceLine({
+      price: middle,
+      color: "#22c55e",
+      lineWidth: 1,
+      lineStyle: 2,
+      axisLabelVisible: true,
+      title: "Middle",
+    });
+
+    const lowerLine = rsiSeriesRef.current.createPriceLine({
+      price: lower,
+      color: "#3b82f6",
+      lineWidth: 1,
+      lineStyle: 2,
+      axisLabelVisible: true,
+      title: "Lower",
+    });
+
+    rsiSeriesRef.current._priceLines = [
+      upperLine,
+      middleLine,
+      lowerLine,
+    ];
+
+  }, [upper, middle, lower]);
+
   return (
-    <div>
-      <Modal
-        show={indicatorProperty}
-        onHide={() => setIndicatorProperty(false)}
-        centered
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>{activeBarIndicator}</Modal.Title>
-        </Modal.Header>
+    <div style={{ padding: 20, background: "#020617", color: "white" }}>
 
-        <Modal.Body>
-          <div className="d-flex flex-column p-3">
-            {rows.map((row) => (
-              <Row
-                key={row.key}
-                className="align-items-center py-2 border-bottom"
-              >
-                {/* LEFT - CHECKBOX */}
-                <Col md={6}>
-                  <Form.Check
-                    type="checkbox"
-                    checked={
-                      selectedStyle?.[row.key]?.visible ?? row.visible ?? true
-                    }
-                    onChange={(e) =>
-                      update(row.key, "visible", e.target.checked)
-                    }
-                    label={row.label}
-                  />
-                </Col>
+      {/* Inputs */}
 
-                {/* MIDDLE - COLOR + PREVIEW */}
-                <Col md={2} className="d-flex align-items-center ">
-                  <input
-                    type="color"
-                    value={
-                      selectedStyle?.[row.key]?.color ?? row.color ?? "#2962ff"
-                    }
-                    onChange={(e) => update(row.key, "color", e.target.value)}
-                    className="form-control form-control-color"
-                  />
-                </Col>
-                <Col md={4} className="d-flex flex-column gap-2">
-                  {/* VALUE INPUT (for bands like 70 / 50 / 30) */}
-                  {row.value !== undefined && (
-                    <div>
-                      {/* <Form.Label className="small mb-1">Value</Form.Label> */}
-                      <Form.Control
-                        type="number"
-                        value={
-                          selectedStyle?.[row.key]?.value ?? row.value ?? ""
-                        }
-                        onChange={(e) =>
-                          update(row.key, "value", Number(e.target.value))
-                        }
-                      />
-                    </div>
-                  )}
+      <div style={{ marginBottom: 15, display: "flex", gap: 10 }}>
 
-                  {/* WIDTH INPUT (for line indicators) */}
-                  {row.type === "line" && (
-                    <div className="d-flex gap-2 items-center">
-                      <Form.Label className="small mb-1">Width</Form.Label>
-                      <Form.Control
-                        type="number"
-                        min={1}
-                        max={50}
-                        value={
-                          selectedStyle?.[row.key]?.width ?? row.width ?? 2
-                        }
-                        onChange={(e) => {
-                          const width = Math.max(
-                            1,
-                            Math.min(50, Number(e.target.value)),
-                          );
-                          update(row.key, "width", width);
-                        }}
-                      />
-                    </div>
-                  )}
-                </Col>
+        <div>
+          Upper
+          <input
+            type="number"
+            value={upper}
+            onChange={(e) => setUpper(Number(e.target.value))}
+          />
+        </div>
 
-                {/* RIGHT - VALUE */}
-                <Col md={4} className="d-flex align-items-start">
-                  {row.showValue && (
-                    <Form.Control
-                      type="number"
-                      value={selectedStyle?.[row.key]?.value ?? row.value ?? ""}
-                      onChange={(e) =>
-                        update(row.key, "value", Number(e.target.value))
-                      }
-                      style={{ width: "100%" }}
-                    />
-                  )}
-                </Col>
-              </Row>
-            ))}
-          </div>
-        </Modal.Body>
+        <div>
+          Middle
+          <input
+            type="number"
+            value={middle}
+            onChange={(e) => setMiddle(Number(e.target.value))}
+          />
+        </div>
 
-        <Modal.Footer>
-          <Button variant="light" onClick={handleCancel}>
-            Cancel
-          </Button>
+        <div>
+          Lower
+          <input
+            type="number"
+            value={lower}
+            onChange={(e) => setLower(Number(e.target.value))}
+          />
+        </div>
 
-          <Button variant="dark" onClick={handleIndicatorPropertyChange}>
-            Ok
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      </div>
+
+      {/* Chart */}
+
+      <div ref={chartRef} />
+
     </div>
   );
 }

@@ -1,17 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { Modal, Button, Tabs, Tab, Row, Col, Form } from "react-bootstrap";
 import IndicatorStyle from "./indicatorModals/IndicatorStyle";
-import { updateIndicatorStyle } from "../../util/ChartFunctions";
+import {updateIndicatorStyle}  from "../../util/ChartFunctions";
 
 export default function IndicatorPropertyDialog({
-  indicatorProperty,
   setIndicatorProperty,
+  indicatorProperty,
   activeBarIndicator,
-  updateIndicator,
-  indicatorConfigs,
   setIndicatorConfigs,
-  setIndicatorStyle,
+  indicatorConfigs,
   indicatorStyle,
+  setIndicatorStyle,
   indicatorSeriesRef,
 }) {
   const labelStyle = {
@@ -291,7 +290,7 @@ export default function IndicatorPropertyDialog({
   ========================== */
 
   const currentConfig = indicatorConfigs[activeBarIndicator];
-  console.log(currentConfig);
+  // console.log(currentConfig);
 
   /* =========================
      UPDATE PROPERTY
@@ -363,24 +362,25 @@ export default function IndicatorPropertyDialog({
   ========================== */
   const handleIndicatorPropertyChange = () => {
 
-    
+  console.log(indicatorStyle, "styleeeeeeee");
 
-    setIndicatorStyle((prev) => ({
-      ...prev,
-      [activeBarIndicator]: indicatorConfigs,
-    }));
+  updateIndicatorStyle(
+    activeBarIndicator,
+    indicatorStyle,
+    indicatorSeriesRef
+  );
 
-    // updateIndicator(activeBarIndicator, tempIndicatorConfig);
+  /* ===== CREATE PAYLOAD FOR ACTIVE INDICATOR ===== */
 
-    // console.log(indicatorStyle, "indicator style")
-    updateIndicatorStyle(
-      activeBarIndicator,
-      indicatorStyle,
-      indicatorSeriesRef,
-    );
-    setIndicatorProperty(false);
+  const payload = {
+    indicator: activeBarIndicator,
+    config: indicatorConfigs?.[activeBarIndicator] || {}
   };
 
+  console.log(payload, "payload for api");
+
+  setIndicatorProperty(false);
+};
   const handleCancel = () => {
     setIndicatorConfigs((prev) => ({
       ...prev,
@@ -467,25 +467,55 @@ export default function IndicatorPropertyDialog({
     );
   }
 
-  function SmoothingSection() {
-    if (!currentConfig?.smoothing) return null;
+  const toggleSmoothing = (value) => {
+  setIndicatorConfigs((prev) => ({
+    ...prev,
+    [activeBarIndicator]: {
+      ...prev[activeBarIndicator],
+      smoothing: {
+        ...prev[activeBarIndicator].smoothing,
+        enableMA: value,
+      },
+    },
+  }));
+};
 
-    return (
-      <>
-        <hr />
+ function SmoothingSection() {
+  if (!currentConfig?.smoothing) return null;
 
+  const smoothing = currentConfig.smoothing;
+
+  return (
+    <>
+      <hr />
+
+      {/* HEADER WITH CHECKBOX */}
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h6 className="m-0">Smoothing</h6>
+
+        <Form.Check
+          type="checkbox"
+          label="Enable"
+          checked={smoothing.enableMA}
+          onChange={(e) => toggleSmoothing(e.target.checked)}
+        />
+      </div>
+
+      {/* SHOW FORM ONLY IF ENABLED */}
+      {smoothing.enableMA && (
         <section>
-          {/* Smoothing Type */}
+          {/* TYPE */}
           <Form.Group
             as={Row}
             className="mb-3"
             controlId="smoothingType"
             style={{ alignItems: "center" }}
           >
-            <Form.Label style={labelStyle}>Smoothing Type</Form.Label>
+            <Form.Label style={labelStyle}>Type</Form.Label>
+
             <Col>
               <Form.Select
-                value={currentConfig.smoothing.type}
+                value={smoothing.type}
                 onChange={(e) => updateSmoothing("type", e.target.value)}
               >
                 {[
@@ -503,7 +533,7 @@ export default function IndicatorPropertyDialog({
             </Col>
           </Form.Group>
 
-          {/* Smoothing Length */}
+          {/* LENGTH */}
           <Form.Group
             as={Row}
             className="mb-3"
@@ -511,10 +541,11 @@ export default function IndicatorPropertyDialog({
             style={{ alignItems: "center" }}
           >
             <Form.Label style={labelStyle}>Length</Form.Label>
+
             <Col>
               <Form.Control
                 type="number"
-                value={currentConfig.smoothing.length}
+                value={smoothing.length}
                 onChange={(e) =>
                   updateSmoothing("length", Number(e.target.value))
                 }
@@ -522,7 +553,7 @@ export default function IndicatorPropertyDialog({
             </Col>
           </Form.Group>
 
-          {/* BB Std Dev */}
+          {/* BB STD DEV */}
           <Form.Group
             as={Row}
             className="mb-3"
@@ -530,13 +561,12 @@ export default function IndicatorPropertyDialog({
             style={{ alignItems: "center" }}
           >
             <Form.Label style={labelStyle}>BB Std Dev</Form.Label>
+
             <Col>
               <Form.Control
                 type="number"
-                value={currentConfig.smoothing.bbStdDev}
-                disabled={
-                  currentConfig.smoothing.type !== "SMA + Bollinger Bands"
-                }
+                value={smoothing.bbStdDev}
+                disabled={smoothing.type !== "SMA + Bollinger Bands"}
                 onChange={(e) =>
                   updateSmoothing("bbStdDev", Number(e.target.value))
                 }
@@ -544,9 +574,10 @@ export default function IndicatorPropertyDialog({
             </Col>
           </Form.Group>
         </section>
-      </>
-    );
-  }
+      )}
+    </>
+  );
+}
 
   /* =========================
      RENDER PER INDICATOR
@@ -1806,7 +1837,6 @@ export default function IndicatorPropertyDialog({
             <IndicatorStyle
               indicatorStyle={indicatorStyle}
               setIndicatorStyle={setIndicatorStyle}
-              indicatorSeriesRef={indicatorSeriesRef}
               activeBarIndicator={activeBarIndicator}
             />
           </Tab>

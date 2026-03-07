@@ -1,290 +1,441 @@
-import { HistogramSeries, LineSeries } from "lightweight-charts";
+import { useEffect, useRef } from "react";
+import {
+  createChart,
+  CandlestickSeries,
+  LineSeries,
+  HistogramSeries,
+  AreaSeries,
+} from "lightweight-charts";
 import apiService from "../services/apiServices";
 import { getRowsByIndicator } from "./common";
 
-export async function fetchDataByCurrency(selectedCurrency, timeframeValue) {
-  let response;
-  if (selectedCurrency && timeframeValue) {
-    response = await apiService.post(
-      `api/listing?symbol=${selectedCurrency || "BTCUSD"}&interval=${timeframeValue || "1m"}&limit=1000`,
-    );
-    // console.log(response, "resssssssssssssss")
-  } else {
-    response = await apiService.post(
-      `api/listing?symbol=${selectedCurrency || "BTCUSD"}&limit=1000&interval=${timeframeValue || "1m"}`,
-    );
-    // console.log(response, "resssssssssssssss")
-  }
-  return response;
-}
-
-export async function fetchIndicatorData(
-  selectedIndicator,
-  selectedCurrency,
-  timeframeValue,
+export default function useChartFunctions({
   chartRef,
   addSeries,
   indicatorSeriesRef,
   indicatorStyle,
-) {
-  console.log(indicatorStyle, "styloeeeeeeeeeeeeeeeeeeeeeeeee");
+}) {
+  useEffect(() => {
+    const rsiGroup = indicatorSeriesRef.current?.RSI;
+    if (!rsiGroup) return;
 
-  if (!selectedIndicator?.length) return;
+    const rsiSeries = rsiGroup.rsi;
+    const rsiMaSeries = rsiGroup.rsiMa;
+    const smoothingSeries = rsiGroup.smoothingMA;
 
-  for (const indicator of selectedIndicator) {
-    try {
-      const result = await fetchDataForIndicators(
-        selectedCurrency,
-        indicator,
-        timeframeValue,
+    if (!rsiSeries) return;
+
+    const rsiStyle = indicatorStyle?.RSI?.rsi;
+    const rsiMaStyle = indicatorStyle?.RSI?.rsiMa;
+    const smoothingStyle = indicatorStyle?.RSI?.smoothingMA;
+
+    const upper = indicatorStyle?.RSI?.upper;
+    const middle = indicatorStyle?.RSI?.middle;
+    const lower = indicatorStyle?.RSI?.lower;
+
+    /* ================= UPDATE RSI ================= */
+
+    if (rsiStyle) {
+      rsiSeries.applyOptions({
+        color: rsiStyle.color,
+        lineWidth: rsiStyle.width,
+        visible: rsiStyle.visible,
+      });
+    }
+
+    /* ================= UPDATE RSI MA ================= */
+
+    if (rsiMaSeries && rsiMaStyle) {
+      rsiMaSeries.applyOptions({
+        color: rsiMaStyle.color,
+        lineWidth: rsiMaStyle.width,
+        visible: rsiMaStyle.visible,
+      });
+    }
+
+    /* ================= UPDATE SMOOTHING MA ================= */
+
+    if (smoothingSeries && smoothingStyle) {
+      smoothingSeries.applyOptions({
+        color: smoothingStyle.color,
+        lineWidth: smoothingStyle.width,
+        visible: smoothingStyle.visible,
+      });
+    }
+
+    /* ================= CREATE BANDS FIRST TIME ================= */
+
+    if (!rsiGroup._priceLines) {
+      rsiGroup._priceLines = {
+        upper: rsiSeries.createPriceLine({
+          price: upper?.value ?? 70,
+          color: upper?.color || "#ef5350",
+          lineWidth: upper?.width ?? 2,
+          lineStyle: 2,
+        }),
+
+        middle: rsiSeries.createPriceLine({
+          price: middle?.value ?? 50,
+          color: middle?.color || "#9e9e9e",
+          lineWidth: middle?.width ?? 2,
+          lineStyle: 2,
+        }),
+
+        lower: rsiSeries.createPriceLine({
+          price: lower?.value ?? 30,
+          color: lower?.color || "#26a69a",
+          lineWidth: lower?.width ?? 2,
+          lineStyle: 2,
+        }),
+      };
+
+      //   gradient fill
+      const upperValue = upper?.value ?? 70;
+      const lowerValue = lower?.value ?? 30;
+
+      const overboughtData = [];
+      const oversoldData = [];
+
+      const rsiData = rsiGroup._rsiData;
+      if (!rsiData) return;
+
+      rsiData.forEach((point) => {
+        if (point.value > upperValue) {
+          overboughtData.push(point);
+        } else {
+          overboughtData.push({
+            time: point.time,
+            value: upperValue,
+          });
+        }
+
+        if (point.value < lowerValue) {
+          oversoldData.push(point);
+        } else {
+          oversoldData.push({
+            time: point.time,
+            value: lowerValue,
+          });
+        }
+      });
+
+      rsiGroup.overboughtArea?.setData(overboughtData);
+      rsiGroup.oversoldArea?.setData(oversoldData);
+
+      return;
+    }
+
+    /* ================= UPDATE EXISTING BANDS ================= */
+
+    const priceLines = rsiGroup._priceLines;
+
+    priceLines.upper?.applyOptions({
+      price: upper?.value,
+      color: upper?.color,
+      lineWidth: upper?.width ?? 2,
+    });
+
+    priceLines.middle?.applyOptions({
+      price: middle?.value,
+      color: middle?.color,
+      lineWidth: middle?.width ?? 2,
+    });
+
+    priceLines.lower?.applyOptions({
+      price: lower?.value,
+      color: lower?.color,
+      lineWidth: lower?.width ?? 2,
+    });
+  }, [
+    indicatorSeriesRef.current?.RSI?.rsi,
+
+    indicatorStyle?.RSI?.rsi?.color,
+    indicatorStyle?.RSI?.rsi?.width,
+
+    indicatorStyle?.RSI?.rsiMa?.color,
+    indicatorStyle?.RSI?.rsiMa?.width,
+
+    indicatorStyle?.RSI?.smoothingMA?.color,
+    indicatorStyle?.RSI?.smoothingMA?.width,
+
+    indicatorStyle?.RSI?.upper?.value,
+    indicatorStyle?.RSI?.middle?.value,
+    indicatorStyle?.RSI?.lower?.value,
+
+    indicatorStyle?.RSI?.upper?.color,
+    indicatorStyle?.RSI?.middle?.color,
+    indicatorStyle?.RSI?.lower?.color,
+    indicatorStyle?.RSI?.upper?.width,
+    indicatorStyle?.RSI?.middle?.width,
+    indicatorStyle?.RSI?.lower?.width,
+  ]);
+
+  async function fetchDataByCurrency(selectedCurrency, timeframeValue) {
+    let response;
+    if (selectedCurrency && timeframeValue) {
+      response = await apiService.post(
+        `api/listing?symbol=${selectedCurrency || "BTCUSD"}&interval=${timeframeValue || "1m"}&limit=1000`,
       );
+      // console.log(response, "resssssssssssssss")
+    } else {
+      response = await apiService.post(
+        `api/listing?symbol=${selectedCurrency || "BTCUSD"}&limit=1000&interval=${timeframeValue || "1m"}`,
+      );
+      // console.log(response, "resssssssssssssss")
+    }
+    return response;
+  }
 
-      if (!result) continue;
+  /* ================= FETCH INDICATORS ================= */
 
-      const rows = getRowsByIndicator(indicator);
+  async function fetchIndicatorData(
+    selectedIndicator,
+    selectedCurrency,
+    timeframeValue,
+    // chartRef,
+    // addSeries,
+    // indicatorSeriesRef,
+    // indicatorStyle,
+  ) {
+    console.log(indicatorStyle, "styloeeeeeeeeeeeeeeeeeeeeeeeee");
 
-      switch (indicator) {
-        /* ================= RSI ================= */
+    if (!selectedIndicator?.length) return;
 
-        case "RSI": {
-          const groupedSeries = {};
+    for (const indicator of selectedIndicator) {
+      try {
+        const result = await fetchDataForIndicators(
+          selectedCurrency,
+          indicator,
+          timeframeValue,
+        );
 
-          Object.entries(result.data).forEach(([lineName, lineData]) => {
-            const rowConfig = rows?.find((r) => r.key === lineName);
-            const styleConfig = indicatorStyle?.[indicator]?.[lineName];
+        if (!result) continue;
+
+        const rows = getRowsByIndicator(indicator);
+
+        switch (indicator) {
+          /* ================= RSI ================= */
+
+          case "RSI": {
+            const groupedSeries = {};
+
+            Object.entries(result.data).forEach(([lineName, lineData]) => {
+              const rowConfig = rows?.find((r) => r.key === lineName);
+              const styleConfig = indicatorStyle?.[indicator]?.[lineName];
+
+              const series = addSeries(indicator, LineSeries, {
+                color: styleConfig?.color || rowConfig?.color || "#26a69a",
+                lineWidth: styleConfig?.width || 2,
+                visible: styleConfig?.visible ?? true,
+              });
+
+              if (!series) return;
+
+              series.setData(lineData);
+
+              groupedSeries[lineName] = series;
+            });
+
+            /* ================= RSI BANDS ================= */
+
+            groupedSeries.overboughtArea = addSeries(indicator, AreaSeries, {
+              lineColor: "transparent",
+              topColor: "rgba(0,255,150,0.35)",
+              bottomColor: "rgba(0,255,150,0.05)",
+            });
+
+            groupedSeries.oversoldArea = addSeries(indicator, AreaSeries, {
+              lineColor: "transparent",
+              topColor: "rgba(255,70,70,0.35)",
+              bottomColor: "rgba(255,70,70,0.05)",
+            });
+
+            indicatorSeriesRef.current[indicator] = groupedSeries;
+
+            break;
+          }
+
+          /* ================= SMA ================= */
+
+          case "SMA": {
+            removeSeries(indicatorSeriesRef, chartRef, indicator);
+
+            const styleConfig = indicatorStyle?.SMA?.sma;
 
             const series = addSeries(indicator, LineSeries, {
-              color: styleConfig?.color || rowConfig?.color || "#26a69a",
+              color: styleConfig?.color || "#2962ff",
               lineWidth: styleConfig?.width || 2,
               visible: styleConfig?.visible ?? true,
             });
 
-            if (!series) return;
 
-            series.setData(lineData);
+            if (!series) break;
 
-            groupedSeries[lineName] = series;
-          });
+            series.setData(result.data);
 
-          /* ================= RSI BANDS ================= */
+            // store with correct key
+            indicatorSeriesRef.current["SMA"] = {
+              sma: series,
+            };
 
-          const upperBand = indicatorStyle?.[indicator]?.upper;
-          const middleBand = indicatorStyle?.[indicator]?.middle;
-          const lowerBand = indicatorStyle?.[indicator]?.lower;
+            console.log(
+              "Stored SMA series:",
+              indicatorSeriesRef.current["SMA"],
+            );
 
-          console.log(
-            upperBand,
-            "______________________________________________________uperrrrrrrrrrrr",
-          );
-
-          const rsiSeries = groupedSeries["rsi"];
-
-          if (rsiSeries) {
-            rsiSeries.createPriceLine({
-              price: upperBand?.value ?? 70,
-              color: upperBand?.color || "#ef5350",
-              lineWidth: upperBand?.width ?? 2,
-              lineStyle: 2,
-              axisLabelVisible: true,
-              title: "Upper",
-            });
-
-            rsiSeries.createPriceLine({
-              price: middleBand?.value ?? 50,
-              color: middleBand?.color || "#9e9e9e",
-              lineWidth: middleBand?.width ?? 2,
-              lineStyle: 2,
-              axisLabelVisible: true,
-              title: "Middle",
-            });
-
-            rsiSeries.createPriceLine({
-              price: lowerBand?.value ?? 30,
-              color: lowerBand?.color || "#26a69a",
-              lineWidth: lowerBand?.width ?? 2,
-              lineStyle: 2,
-              axisLabelVisible: true,
-              title: "Lower",
-            });
+            break;
           }
+          case "EMA": {
+  removeSeries(indicatorSeriesRef, chartRef, indicator);
 
-          indicatorSeriesRef.current[indicator] = groupedSeries;
+  const styleConfig = indicatorStyle?.EMA?.ema;
 
-          break;
-        }
-
-        /* ================= SMA ================= */
-
-        case "SMA": {
-          removeSeries(indicatorSeriesRef, chartRef, indicator);
-
-          const styleConfig = indicatorStyle?.SMA?.sma;
-
-          const series = addSeries(indicator, LineSeries, {
-            color: styleConfig?.color || "#2962ff",
-            lineWidth: styleConfig?.width || 2,
-            visible: styleConfig?.visible ?? true,
-          });
-
-          if (!series) break;
-
-          series.setData(result.data);
-          console.log("Stored SMA series:", indicatorSeriesRef.current["SMA"]);
-
-          // store with correct key
-          indicatorSeriesRef.current["SMA"] = {
-            sma: series,
-          };
-
-          console.log("Stored SMA series:", indicatorSeriesRef.current["SMA"]);
-
-          break;
-        }
-
-        /* ================= MACD ================= */
-
-        case "MACD": {
-          const groupedSeries = {};
-
-          Object.entries(result.data).forEach(([lineName, lineData]) => {
-            let series;
-
-            if (lineName === "histogram") {
-              series = addSeries(indicator, HistogramSeries, {
-                color: "#26a69a",
-              });
-            } else {
-              series = addSeries(indicator, LineSeries, {
-                lineWidth: 2,
-              });
-            }
-
-            if (!series) return;
-
-            series.setData(lineData);
-
-            groupedSeries[lineName] = series;
-          });
-
-          indicatorSeriesRef.current[indicator] = groupedSeries;
-
-          break;
-        }
-
-        /* ================= ATR ================= */
-
-        case "ATR": {
-          removeSeries(indicatorSeriesRef, chartRef, indicator);
-
-          const series = addSeries(indicator, LineSeries, {
-            color: "#ff9800",
-            lineWidth: 2,
-          });
-
-          if (!series) break;
-
-          series.setData(result.data);
-
-          indicatorSeriesRef.current[indicator] = {
-            atr: series,
-          };
-
-          break;
-        }
-
-        /* ================= DEFAULT ================= */
-
-        default:
-          console.warn("Indicator not handled:", indicator);
-      }
-    } catch (error) {
-      console.log(error, "Indicator loading error");
-    }
-  }
-}
-
-export const updateIndicatorStyle = (
-  activeBarIndicator,
-  indicatorStyle,
-  indicatorSeriesRef,
-) => {
-  console.log(
-    indicatorStyle,
-    "-------------------------------------------------------",
-  );
-
-  const seriesGroup = indicatorSeriesRef?.current?.[activeBarIndicator];
-  const styleGroup = indicatorStyle?.[activeBarIndicator];
-
-  if (!seriesGroup || !styleGroup) return;
-
-  /* ================= UPDATE SERIES ================= */
-
-  Object.entries(seriesGroup).forEach(([key, series]) => {
-    const config = styleGroup?.[key];
-
-    if (!series || !config) return;
-
-    if (series.applyOptions) {
-      series.applyOptions({
-        ...(config.color && { color: config.color }),
-        ...(config.width && { lineWidth: config.width }),
-        ...(config.visible !== undefined && { visible: config.visible }),
-      });
-    }
+  const series = addSeries(indicator, LineSeries, {
+    color: styleConfig?.color || "#ff9800",
+    lineWidth: styleConfig?.width || 2,
+    visible: styleConfig?.visible ?? true,
   });
 
-  /* ================= UPDATE RSI BANDS ================= */
+  if (!series) break;
 
-  if (activeBarIndicator === "RSI") {
-    const rsiSeries = seriesGroup["rsi"];
-    if (!rsiSeries) return;
+  series.setData(result.data);
 
-    const upper = styleGroup?.upper;
-    const middle = styleGroup?.middle;
-    const lower = styleGroup?.lower;
+  indicatorSeriesRef.current["EMA"] = {
+    ema: series,
+  };
 
-    /* REMOVE OLD LINES */
+  console.log("Stored EMA series:", indicatorSeriesRef.current["EMA"]);
 
-    if (seriesGroup._priceLines) {
-      const oldLines = seriesGroup._priceLines;
+  break;
+}
+case "HMA": {
+  removeSeries(indicatorSeriesRef, chartRef, indicator);
 
-      if (oldLines.upper) rsiSeries.removePriceLine(oldLines.upper);
-      if (oldLines.middle) rsiSeries.removePriceLine(oldLines.middle);
-      if (oldLines.lower) rsiSeries.removePriceLine(oldLines.lower);
+  const styleConfig = indicatorStyle?.HMA?.hma;
+
+  const series = addSeries(indicator, LineSeries, {
+    color: styleConfig?.color || "#9c27b0",
+    lineWidth: styleConfig?.width || 2,
+    visible: styleConfig?.visible ?? true,
+  });
+
+  if (!series) break;
+
+  series.setData(result.data);
+
+  indicatorSeriesRef.current["HMA"] = {
+    hma: series,
+  };
+
+  console.log("Stored HMA series:", indicatorSeriesRef.current["HMA"]);
+
+  break;
+}
+
+          /* ================= MACD ================= */
+
+          case "MACD": {
+            const groupedSeries = {};
+
+            Object.entries(result.data).forEach(([lineName, lineData]) => {
+              let series;
+
+              if (lineName === "histogram") {
+                series = addSeries(indicator, HistogramSeries, {
+                  color: "#26a69a",
+                });
+              } else {
+                series = addSeries(indicator, LineSeries, {
+                  lineWidth: 2,
+                });
+              }
+
+              if (!series) return;
+
+              series.setData(lineData);
+
+              groupedSeries[lineName] = series;
+            });
+
+            indicatorSeriesRef.current[indicator] = groupedSeries;
+
+            break;
+          }
+
+          /* ================= ATR ================= */
+
+          case "ATR": {
+            removeSeries(indicatorSeriesRef, chartRef, indicator);
+
+            const series = addSeries(indicator, LineSeries, {
+              color: "#ff9800",
+              lineWidth: 2,
+            });
+
+            if (!series) break;
+
+            series.setData(result.data);
+
+            indicatorSeriesRef.current[indicator] = {
+              atr: series,
+            };
+
+            break;
+          }
+
+          /* ================= DEFAULT ================= */
+
+          default:
+            console.warn("Indicator not handled:", indicator);
+        }
+      } catch (error) {
+        console.log(error, "Indicator loading error");
+      }
     }
-
-    /* CREATE NEW LINES */
-
-    seriesGroup._priceLines = {
-      upper: rsiSeries.createPriceLine({
-        price: upper?.value ?? 70,
-        color: upper?.color || "#ef5350",
-        lineWidth: upper?.width ?? 2,
-        lineStyle: 2,
-      }),
-
-      middle: rsiSeries.createPriceLine({
-        price: middle?.value ?? 50,
-        color: middle?.color || "#9e9e9e",
-        lineWidth: middle?.width ?? 2,
-        lineStyle: 2,
-      }),
-
-      lower: rsiSeries.createPriceLine({
-        price: lower?.value ?? 30,
-        color: lower?.color || "#26a69a",
-        lineWidth: lower?.width ?? 2,
-        lineStyle: 2,
-      }),
-    };
   }
-};
-export async function fetchDataForIndicators(
-  selectedCurrency,
-  type,
-  timeframeValue,
-) {
+
+  /* ================= UPDATE STYLE ================= */
+
+  const updateIndicatorStyle = (
+    activeBarIndicator,
+    indicatorStyle,
+    indicatorSeriesRef,
+  ) => {
+    const seriesGroup = indicatorSeriesRef?.current?.[activeBarIndicator];
+    const styleGroup = indicatorStyle?.[activeBarIndicator];
+
+    if (!seriesGroup || !styleGroup) return;
+
+    Object.entries(seriesGroup).forEach(([key, series]) => {
+      if (key === "_priceLines") return;
+
+      const config = styleGroup?.[key];
+
+      if (!series || !config) return;
+
+      if (series.applyOptions) {
+        series.applyOptions({
+          ...(config.color && { color: config.color }),
+          ...(config.width && { lineWidth: config.width }),
+          ...(config.visible !== undefined && { visible: config.visible }),
+        });
+      }
+    });
+  };
+
+  return {
+    // chartRef,
+    fetchDataByCurrency,
+    fetchIndicatorData,
+    updateIndicatorStyle,
+    // indicatorSeriesRef,
+    // latestIndicatorValuesRef,
+  };
+}
+
+/* ================= FETCH INDICATOR API ================= */
+
+async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
   const normalizedType = type.replace(/[\s/]+/g, "");
 
   let response;
@@ -408,12 +559,12 @@ export async function fetchDataForIndicators(
                 value: d.rsi,
               })) ?? [],
 
-          rsiMa:
+          smoothingMA:
             response.data
-              ?.filter((d) => d.sma != null && d.time != null)
+              ?.filter((d) => d.smoothingMA != null && d.time != null)
               .map((d) => ({
                 time: d.time,
-                value: d.sma,
+                value: d.smoothingMA,
               })) ?? [],
         },
       };
@@ -428,7 +579,7 @@ export async function fetchDataForIndicators(
             ?.filter((d) => d.wma != null && d.time != null)
             .map((d) => ({
               time: d.time,
-              value: d.wma,
+              value: d.value,
             })) ?? [],
       };
 
@@ -753,20 +904,6 @@ export async function fetchDataForIndicators(
         data: [],
       };
   }
-}
-
-function safeRemoveSeries(chart, series) {
-  try {
-    if (!chart || !series) return;
-    chart.removeSeries(series);
-  } catch (e) {}
-}
-
-function getPivotColor(label) {
-  if (label === "P") return "#eab308"; // Pivot → Yellow
-  if (label.startsWith("R")) return "#44d5ef"; // Resistance → Red
-  if (label.startsWith("S")) return "#9722c5"; // Support → Green
-  return "#94a3b8";
 }
 
 function removeSeries(indicatorSeriesRef, chartRef, key) {

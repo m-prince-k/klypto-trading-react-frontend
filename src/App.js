@@ -12,6 +12,7 @@ import Login from "./pages/auth/login";
 import { ProtectedRoute } from "./pages/auth/ProtectedRoute";
 import Signup from "./pages/auth/signup";
 import { Navigate } from "react-router-dom";
+import Home from "./pages/Home";
 
 function App() {
   return (
@@ -37,8 +38,11 @@ function App() {
             path="/IndicatorBuildingListing"
             element={<IndicatorBuildingListing />}
           />
+          <Route path="/home" element={<Home />} />
+
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+
 
           <Route path="/" element={<Navigate to="/login" />} />
         </Routes>

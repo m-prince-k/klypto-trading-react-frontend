@@ -26,8 +26,11 @@ import {
   getSeriesColor,
   convertToHeikinAshi,
   getIndicatorChartProperties,
-  getRowsByIndicator,
+  PANE_INDICATORS,
 } from "../util/common";
+import SourceCodePanel from "../components/indicator/SourceCodePanel";
+import ChartRightSidebar from "../components/chart/rightbar/ChartRightSidebar";
+import ChartLeftSidebar from "../components/chart/leftbar/ChartLeftSidebar";
 import {
   IoCloseSharp,
   IoEyeOffOutline,
@@ -37,20 +40,8 @@ import {
 } from "react-icons/io5";
 import { FiMoreHorizontal } from "react-icons/fi";
 import IndicatorAlert from "../components/indicator/IndicatorAlert";
-import {
-  fetchDataByCurrency,
-  fetchIndicatorData,
-  PANE_INDICATORS,
-  updateIndicatorStyle,
-} from "../util/ChartFunctions";
 import IndicatorPropertyDialog from "../components/indicator/IndicatorPropertyDialog";
-
-import { useNavigate } from "react-router-dom";
-import { isAuthenticated } from "./auth/protected";
-import ChartLeftSidebar from "../components/chart/leftbar/ChartLeftSidebar";
-import ChartRightSidebar from "../components/chart/rightbar/ChartRightSidebar";
-import IndicatorStyle from "../components/indicator/indicatorModals/IndicatorStyle";
-import TradingViewChart from "./TradingViewChart";
+import useChartFunctions from "../util/useChartFunctions";
 
 export default function Candlestick() {
   const chartRef = useRef();
@@ -67,17 +58,45 @@ export default function Candlestick() {
   const [selectedIndicator, setSelectedIndicator] = useState([]);
   const [rangeValue, setRangeValue] = useState("1000");
   const [chartType, setChartType] = useState("candlestick");
-  // const [historicalData, setHistoricalData] = useState([]);
   const [isMarketOpen, setIsMarketOpen] = useState(true);
   const [liveOhlcv, setLiveOhlcv] = useState({});
   const [liveIndicatorData, setLiveIndicatorData] = useState({});
   const [showAlertForm, setShowAlertForm] = useState(false);
   const [openSettings, setOpenSettings] = useState(false);
   const [indicatorProperty, setIndicatorProperty] = useState(false);
-  const mainChartHeightRef = useRef(500); // initial height
-  const [isVisible, setIsVisible] = useState(true);
+  const mainChartHeightRef = useRef(500);
+
+  const [showSourcePanel, setShowSourcePanel] = useState(false);
+  const [activeSourceIndicator, setActiveSourceIndicator] = useState(null);
+
+  const [indicatorVisibility, setIndicatorVisibility] = useState({});
   const [activeBarIndicator, setActiveBarIndicator] = useState("");
-const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
+
+  const toggleIndicatorVisibility = (indicator) => {
+    const currentVisible = indicatorVisibility[indicator] ?? true;
+    const newVisibility = !currentVisible;
+
+    const seriesGroup = indicatorSeriesRef.current?.[indicator];
+
+    if (seriesGroup) {
+      Object.values(seriesGroup).forEach((series) => {
+        if (series?.applyOptions) {
+          series.applyOptions({ visible: newVisibility });
+        }
+      });
+
+      if (seriesGroup._priceLines) {
+        Object.values(seriesGroup._priceLines).forEach((line) => {
+          line?.applyOptions({ visible: newVisibility });
+        });
+      }
+    }
+
+    setIndicatorVisibility((prev) => ({
+      ...prev,
+      [indicator]: newVisibility,
+    }));
+  };
 
   const [indicatorConfigs, setIndicatorConfigs] = useState({
     SMA: {
@@ -85,6 +104,7 @@ const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
       source: "Close",
       offset: 0,
       smoothing: {
+        enableMA: true,
         type: "SMA + Bollinger Bands",
         length: 14,
         bbStdDev: 2,
@@ -161,6 +181,7 @@ const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
       length: 14,
       source: "Close",
       smoothing: {
+        enableMA: true,
         type: "SMA",
         length: 14,
         bbStdDev: 2,
@@ -194,6 +215,7 @@ const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
       length: 20,
       source: "HLC3",
       smoothing: {
+        enableMA: true,
         type: "SMA",
         length: 14,
         bbStdDev: 2,
@@ -273,6 +295,7 @@ const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
     },
     OBV: {
       smoothing: {
+        enableMA: true,
         type: "None",
         length: 14,
         bbStdDev: 2,
@@ -326,244 +349,43 @@ const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
     },
   });
 
-  const indicatorStyleDefault = {
-    /* ================= RSI ================= */
-
+  let indicatorStyleDefault = {
     RSI: {
       rsi: { visible: true, color: "#26a69a", width: 2 },
-      rsiMa: { visible: true, color: "#ff9800", width: 2 },
+      smoothingMA: { visible: true, color: "#fffc30", width: 1 },
 
-      upper: { visible: true, value: 70, color: "#ef5350" },
-      middle: { visible: true, value: 50, color: "#9e9e9e" },
-      lower: { visible: true, value: 30, color: "#26a69a" },
-
+      upper: { visible: true, value: 70, color: "#9e9e9e", width: 1 },
+      middle: { visible: true, value: 50, color: "#9e9e9e", width: 1 },
+      lower: { visible: true, value: 30, color: "#9e9e9e", width: 1 },
       bgFill: {
         visible: true,
         color0: "rgba(38,166,154,0.1)",
         color1: "rgba(38,166,154,0.1)",
       },
-
       obFill: {
         visible: true,
         color0: "rgba(239,83,80,0.2)",
         color1: "rgba(239,83,80,0.4)",
       },
-
       osFill: {
         visible: true,
         color0: "rgba(38,166,154,0.2)",
         color1: "rgba(38,166,154,0.4)",
       },
     },
-
-    /* ================= SMA ================= */
-
     SMA: {
       ma: { visible: true, color: "#2962ff", width: 2 },
       smaMa: { visible: true, color: "#ff9800", width: 2 },
-
       bbUpper: { visible: true, color: "#ef5350" },
       bbLower: { visible: true, color: "#26a69a" },
-
       bbFill: {
         visible: true,
         color0: "rgba(41,98,255,0.1)",
         color1: "rgba(41,98,255,0.1)",
       },
     },
-
-    // /* ================= EMA ================= */
-
-    // EMA: {
-    //   ema: { visible: true, color: "#2962ff", width: 2 },
-    // },
-
-    // WMA: {
-    //   wma: { visible: true, color: "#2962ff", width: 2 },
-    // },
-
-    // HMA: {
-    //   hma: { visible: true, color: "#2962ff", width: 2 },
-    // },
-
-    // DEMA: {
-    //   dema: { visible: true, color: "#2962ff", width: 2 },
-    // },
-
-    // TEMA: {
-    //   tema: { visible: true, color: "#2962ff", width: 2 },
-    // },
-
-    // KAMA: {
-    //   kama: { visible: true, color: "#2962ff", width: 2 },
-    // },
-
-    // /* ================= ICHIMOKU ================= */
-
-    // "Ichimoku Cloud": {
-    //   conversionLine: { visible: true, color: "#2962ff" },
-    //   baseLine: { visible: true, color: "#ff9800" },
-    //   laggingSpan: { visible: true, color: "#9c27b0" },
-
-    //   leadingSpanA: { visible: true, color: "#26a69a" },
-    //   leadingSpanB: { visible: true, color: "#ef5350" },
-
-    //   kumoUpper: { visible: true, color: "#26a69a" },
-    //   kumoLower: { visible: true, color: "#ef5350" },
-
-    //   cloudFill: {
-    //     visible: true,
-    //     color0: "rgba(38,166,154,0.4)",
-    //     color1: "rgba(239,83,80,0.4)",
-    //   },
-    // },
-
-    // /* ================= SUPER TREND ================= */
-
-    // SuperTrend: {
-    //   upTrend: { visible: true, color: "#26a69a" },
-    //   downTrend: { visible: true, color: "#ef5350" },
-
-    //   bodyMiddle: { visible: true, color: "#ffffff" },
-
-    //   upTrendBg: {
-    //     visible: true,
-    //     color0: "rgba(38,166,154,0.2)",
-    //     color1: "rgba(38,166,154,0.2)",
-    //   },
-
-    //   downTrendBg: {
-    //     visible: true,
-    //     color0: "rgba(239,83,80,0.2)",
-    //     color1: "rgba(239,83,80,0.2)",
-    //   },
-    // },
-
-    // /* ================= MACD ================= */
-
-    // MACD: {
-    //   macdLine: { visible: true, color: "#26a69a", width: 2 },
-
-    //   signalLine: { visible: true, color: "#ff9800", width: 2 },
-
-    //   histogram: {
-    //     visible: true,
-    //     color0: "#26a69a",
-    //     color1: "#81c784",
-    //     color2: "#ef5350",
-    //     color3: "#e57373",
-    //   },
-
-    //   zeroLine: {
-    //     visible: true,
-    //     value: 0,
-    //     color: "#9e9e9e",
-    //   },
-    // },
-
-    // /* ================= STOCHASTIC ================= */
-
-    // Stochastic: {
-    //   kLine: { visible: true, color: "#26a69a" },
-    //   dLine: { visible: true, color: "#ff9800" },
-
-    //   upperBand: { visible: true, value: 80, color: "#ef5350" },
-    //   middleBand: { visible: true, value: 50, color: "#9e9e9e" },
-    //   lowerBand: { visible: true, value: 20, color: "#26a69a" },
-
-    //   bgFill: {
-    //     visible: true,
-    //     color0: "rgba(38,166,154,0.05)",
-    //     color1: "rgba(38,166,154,0.05)",
-    //   },
-    // },
-
-    // /* ================= CCI ================= */
-
-    // CCI: {
-    //   cciLine: { visible: true, color: "#26a69a" },
-    //   cciMa: { visible: true, color: "#ff9800" },
-
-    //   upperBand: { visible: true, value: 100, color: "#ef5350" },
-    //   middleBand: { visible: true, value: 0, color: "#9e9e9e" },
-    //   lowerBand: { visible: true, value: -100, color: "#26a69a" },
-
-    //   bgFill: {
-    //     visible: true,
-    //     color0: "rgba(38,166,154,0.05)",
-    //     color1: "rgba(38,166,154,0.05)",
-    //   },
-    // },
-
-    // /* ================= ATR ================= */
-
-    // ATR: {
-    //   atr: { visible: true, color: "#2962ff", width: 2 },
-    // },
-
-    // /* ================= VOLUME ================= */
-
-    // Volume: {
-    //   volumeBars: {
-    //     visible: true,
-    //     colorUp: "#26a69a",
-    //     colorDown: "#ef5350",
-    //     colorByPrevious: true,
-    //   },
-
-    //   volumeMA: {
-    //     visible: false,
-    //     color: "#2962ff",
-    //     width: 2,
-    //   },
-    // },
-
-    // /* ================= VWAP ================= */
-
-    // VWAP: {
-    //   vwap: { visible: true, color: "#2962ff", width: 2 },
-
-    //   upperBand1: { visible: true, color: "#26a69a" },
-    //   lowerBand1: { visible: true, color: "#26a69a" },
-
-    //   bandFill1: {
-    //     visible: true,
-    //     color: "rgba(38,166,154,0.08)",
-    //   },
-
-    //   upperBand2: { visible: false, color: "#ff9800" },
-    //   lowerBand2: { visible: false, color: "#ff9800" },
-
-    //   bandFill2: {
-    //     visible: false,
-    //     color: "rgba(255,152,0,0.08)",
-    //   },
-
-    //   upperBand3: { visible: false, color: "#ef5350" },
-    //   lowerBand3: { visible: false, color: "#ef5350" },
-
-    //   bandFill3: {
-    //     visible: false,
-    //     color: "rgba(239,83,80,0.08)",
-    //   },
-    // },
-
-    // /* ================= ZIG ZAG ================= */
-
-    // "Zig Zag": {
-    //   zigzagLine: {
-    //     visible: true,
-    //     color: "#2962ff",
-    //     width: 2,
-    //   },
-
-    //   paneLabels: {
-    //     visible: true,
-    //     color: "#000000",
-    //     backgroundColor: "rgba(41,98,255,0.15)",
-    //   },
-    // },
   };
+
   const [indicatorStyle, setIndicatorStyle] = useState(indicatorStyleDefault);
 
   const getIndicatorColor = useCallback(
@@ -596,6 +418,26 @@ const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
 
     const paneKey = resolvePaneKey(normalized);
     const paneChart = ensurePane(paneKey);
+
+    const toggleIndicatorVisibility = (indicator) => {
+      const newVisibility = !indicatorVisibility[indicator];
+
+      const seriesGroup = indicatorSeriesRef.current?.[indicator];
+
+      if (seriesGroup) {
+        Object.values(seriesGroup).forEach((series) => {
+          if (series?.applyOptions) {
+            series.applyOptions({ visible: newVisibility });
+          }
+        });
+
+        if (seriesGroup._priceLines) {
+          Object.values(seriesGroup._priceLines).forEach((line) => {
+            line?.applyOptions({ visible: newVisibility });
+          });
+        }
+      }
+    };
 
     return paneChart.addSeries(SeriesType, options);
   };
@@ -924,39 +766,43 @@ const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
     });
   };
 
+  /* =========================================================
+RENDER INDICATOR VALUE
+========================================================= */
+
   const renderValue = (indicator, value) => {
     if (value == null) return "--";
 
-    if (typeof value === "number") {
-      const series = indicatorSeriesRef.current[indicator];
-      const color = getSeriesColor(series);
+    /* SINGLE VALUE (SMA etc) */
 
-      return (
-        <span style={{ color }}>
-          {isFinite(value) ? value.toFixed(2) : "--"}
-        </span>
-      );
+    if (typeof value === "number") {
+      const color =
+        indicatorStyle?.[indicator]?.sma?.color ||
+        indicatorStyle?.[indicator]?.ma?.color ||
+        "#333";
+
+      return <span style={{ color }}>{value.toFixed(2)}</span>;
     }
 
-    if (typeof value === "object") {
-      const grouped = indicatorSeriesRef.current[indicator];
+    /* MULTI VALUE (RSI etc) */
 
-      return Object.entries(value).map(([lineName, val]) => {
-        const series = grouped?.[lineName];
-        const color = getSeriesColor(series);
-        console.log();
+    if (typeof value === "object") {
+      return Object.entries(value).map(([key, val]) => {
+        const color = indicatorStyle?.[indicator]?.[key]?.color || "#333";
+
         return (
-          <span key={lineName} style={{ color, marginRight: 8 }}>
-            {lineName}: {isFinite(val) ? Number(val).toFixed(2) : "--"}
+          <span key={key} style={{ marginRight: 8, color }}>
+            {Number.isFinite(val) ? val.toFixed(2) : "--"}
           </span>
         );
       });
     }
-    return "";
+
+    return "--";
   };
 
   /* =========================================================
-   CROSSHAIR SYNC & HANDLER
+SYNC CROSSHAIR
 ========================================================= */
 
   const syncCrosshair = useCallback((sourceChart, param) => {
@@ -964,12 +810,12 @@ const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
 
     syncingRef.current = true;
 
-    const allCharts = [
+    const charts = [
       chartRef.current,
       ...Object.values(panesRef.current).map((p) => p.chart),
     ];
 
-    allCharts.forEach((chart) => {
+    charts.forEach((chart) => {
       if (!chart || chart === sourceChart) return;
 
       chart.setCrosshairPosition(
@@ -982,73 +828,120 @@ const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
     syncingRef.current = false;
   }, []);
 
-  const attachCrosshair = useCallback(
-    (chart, chartKey) => {
-      if (!chart) return () => {};
+  const updateIndicatorValues = (param) => {
+    const updates = {};
 
-      const handler = (param) => {
-        if (!param.point || param.time === undefined) {
-          const allCharts = [
-            chartRef.current,
-            ...Object.values(panesRef.current).map((p) => p.chart),
-          ];
-          allCharts.forEach((c) => c?.clearCrosshairPosition?.());
-          setLiveIndicatorData({});
+    Object.entries(indicatorSeriesRef.current).forEach(([indicator, group]) => {
+      if (!group) return;
+
+      const indicatorValues = {};
+
+      Object.entries(group).forEach(([lineName, series]) => {
+        if (
+          lineName === "_priceLines" ||
+          lineName === "overboughtArea" ||
+          lineName === "oversoldArea"
+        )
           return;
+
+        const price = param.seriesData?.get(series);
+
+        if (price !== undefined) {
+          const value = typeof price === "object" ? price.value : price;
+
+          indicatorValues[lineName] = value;
         }
+      });
 
-        // ----------------- SYNC CROSSHAIR -----------------
-        syncCrosshair(chart, param);
+      if (Object.keys(indicatorValues).length === 1) {
+        updates[indicator] = Object.values(indicatorValues)[0];
+      } else if (Object.keys(indicatorValues).length > 0) {
+        updates[indicator] = indicatorValues;
+      }
+    });
 
-        // ----------------- MAIN CHART OHLC -----------------
-        if (chartKey === "main" && seriesRef.current) {
-          const candle = param.seriesData.get(seriesRef.current);
-          if (candle?.open !== undefined) {
-            setLiveOhlcv({
-              open: candle.open,
-              high: candle.high,
-              low: candle.low,
-              close: candle.close,
-            });
-          }
-        }
+    if (Object.keys(updates).length > 0) {
+      setLiveIndicatorData(updates);
+    }
+  };
 
-        // ----------------- INDICATOR VALUES -----------------
-        if (!param.seriesData) return;
+  /* =========================================================
+ATTACH CROSSHAIR
+========================================================= */
 
-        const updates = {};
-        Object.entries(indicatorSeriesRef.current).forEach(
-          ([indicator, entry]) => {
-            if (!entry) return;
+  const attachCrosshair = useCallback((chart, chartKey) => {
+    if (!chart) return () => {};
 
-            if (typeof entry === "object" && !entry.setData) {
-              updates[indicator] = {};
-              Object.entries(entry).forEach(([lineName, series]) => {
-                const val = param.seriesData.get(series);
-                updates[indicator][lineName] = val != null ? val : null;
-              });
-            } else {
-              const val = param.seriesData.get(entry);
-              updates[indicator] = val != null ? val : null;
-            }
-          },
+    const handler = (param) => {
+      if (!param?.point || param.time === undefined) {
+        const charts = [
+          chartRef.current,
+          ...Object.values(panesRef.current).map((p) => p.chart),
+        ];
+
+        charts.forEach((c) => c?.clearCrosshairPosition?.());
+
+        return;
+      }
+
+      /* ================= SYNC ALL CHARTS ================= */
+
+      const charts = [
+        chartRef.current,
+        ...Object.values(panesRef.current).map((p) => p.chart),
+      ];
+
+      charts.forEach((c) => {
+        if (!c) return;
+
+        c.setCrosshairPosition(
+          param.point?.x ?? 0,
+          param.point?.y ?? 0,
+          param.time,
         );
+      });
 
-        setLiveIndicatorData(updates);
-      };
+      /* ================= UPDATE CANDLE ================= */
 
-      chart.subscribeCrosshairMove(handler);
-      return () => chart.unsubscribeCrosshairMove(handler);
-    },
-    [syncCrosshair],
-  );
+      if (seriesRef.current) {
+        const candle = param.seriesData?.get(seriesRef.current);
+
+        if (candle) {
+          setLiveOhlcv({
+            open: candle.open,
+            high: candle.high,
+            low: candle.low,
+            close: candle.close,
+          });
+        }
+      }
+
+      /* ================= UPDATE INDICATORS ================= */
+
+      updateIndicatorValues(param);
+    };
+
+    chart.subscribeCrosshairMove(handler);
+
+    return () => chart.unsubscribeCrosshairMove(handler);
+  }, []);
+
+  /* =========================================================
+ATTACH MAIN CHART
+========================================================= */
 
   useEffect(() => {
-    if (!chartRef.current) return;
+    const charts = [
+      chartRef.current,
+      ...Object.values(panesRef.current).map((p) => p.chart),
+    ];
 
-    const detach = attachCrosshair(chartRef.current, "main");
-    return () => detach();
-  }, [chartRef.current]);
+    const detachers = charts
+      .filter(Boolean)
+      .map((chart) => attachCrosshair(chart));
+
+    return () => detachers.forEach((detach) => detach());
+  }, [attachCrosshair]);
 
   // Main useEffect for chart type/data changes
   useEffect(() => {
@@ -1086,10 +979,6 @@ const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
             selectedIndicator,
             selectedCurrency,
             timeframeValue,
-            chartRef,
-            indicatorSeriesRef,
-            latestIndicatorValuesRef,
-            getIndicatorColor,
           );
         }
         LineData();
@@ -1120,10 +1009,6 @@ const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
             selectedIndicator,
             selectedCurrency,
             timeframeValue,
-            chartRef,
-            indicatorSeriesRef,
-            latestIndicatorValuesRef,
-            getIndicatorColor,
           );
         }
         BarData();
@@ -1151,10 +1036,6 @@ const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
             selectedIndicator,
             selectedCurrency,
             timeframeValue,
-            chartRef,
-            indicatorSeriesRef,
-            latestIndicatorValuesRef,
-            getIndicatorColor,
           );
         }
         AreaData();
@@ -1182,10 +1063,6 @@ const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
             selectedIndicator,
             selectedCurrency,
             timeframeValue,
-            chartRef,
-            indicatorSeriesRef,
-            latestIndicatorValuesRef,
-            getIndicatorColor,
           );
         }
         BaseLineData();
@@ -1218,10 +1095,6 @@ const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
             selectedIndicator,
             selectedCurrency,
             timeframeValue,
-            chartRef,
-            indicatorSeriesRef,
-            latestIndicatorValuesRef,
-            getIndicatorColor,
           );
         }
         HistogramData();
@@ -1237,14 +1110,11 @@ const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
           seriesRef.current = chartRef.current.addSeries(CandlestickSeries);
           seriesRef.current.setData(convertToHeikinAshi(data));
           chartRef.current.timeScale().fitContent();
+
           await fetchIndicatorData(
             selectedIndicator,
             selectedCurrency,
             timeframeValue,
-            chartRef,
-            indicatorSeriesRef,
-            latestIndicatorValuesRef,
-            getIndicatorColor,
           );
         }
         HeikinAshiData();
@@ -1267,10 +1137,6 @@ const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
             selectedIndicator,
             selectedCurrency,
             timeframeValue,
-            chartRef,
-            indicatorSeriesRef,
-            latestIndicatorValuesRef,
-            getIndicatorColor,
           );
         }
         HollowCandlesData();
@@ -1282,10 +1148,6 @@ const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
             selectedCurrency,
             timeframeValue,
             chartType,
-          );
-          console.log(
-            response,
-            "------------------------------------------->>>>>>>>>>>>>>>>>>",
           );
           seriesRef.current = chartRef.current.addSeries(
             CandlestickSeries,
@@ -1299,13 +1161,6 @@ const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
             selectedIndicator,
             selectedCurrency,
             timeframeValue,
-            chartRef,
-            addSeries,
-            indicatorSeriesRef,
-            latestIndicatorValuesRef,
-            getIndicatorColor,
-            indicatorStyle,
-            activeBarIndicator,
           );
         }
         fetchCandleStickData();
@@ -1317,6 +1172,14 @@ const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
     selectedCurrency,
     selectedIndicator,
   ]);
+
+  const { fetchDataByCurrency, fetchIndicatorData, updateIndicatorStyle } =
+    useChartFunctions({
+      chartRef,
+      addSeries,
+      indicatorSeriesRef,
+      indicatorStyle,
+    });
 
   // Zoom In
   const zoomIn = () => {
@@ -1351,7 +1214,6 @@ const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
     chartRef.current?.timeScale().fitContent();
   };
 
- 
   // const getRowsByIndicator = (indicator) => {
   //   switch (indicator) {
   //     /* ================= RSI ================= */
@@ -1434,7 +1296,6 @@ const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
   //     }
   //   });
   // };
-  
 
   return (
     <>
@@ -1459,11 +1320,15 @@ const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
               </div>
             </div>
           </div>
+
           <div className="row">
-            {/* <div className="col-md-1">
-              <ChartLeftSidebar />
-            </div> */}
-            <div className="col-md-8">
+            <div className="col-md-1 p-0 m-0">
+              <ChartLeftSidebar
+                chartRef={chartRef}
+                containerRef={containerRef}
+              />
+            </div>
+            <div className="col-md-7">
               <div
                 ref={containerRef}
                 style={{
@@ -1537,7 +1402,7 @@ const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
                     {selectedIndicator &&
                       selectedIndicator?.map((indicator, index) => {
                         const value = liveIndicatorData[indicator];
-                        // console.log(value, "indicatorrrrrrrrr")
+                        console.log(liveIndicatorData, "------------");
                         return (
                           <div
                             key={index}
@@ -1560,14 +1425,16 @@ const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
                               {/* hide/ */}
                               <button
                                 title={
-                                  isVisible
+                                  indicatorVisibility[indicator]
                                     ? "Hide Indicator"
                                     : "Show Indicator"
                                 }
-                                onClick={() => setIsVisible((prev) => !prev)}
+                                onClick={() =>
+                                  toggleIndicatorVisibility(indicator)
+                                }
                                 className="text-slate-600"
                               >
-                                {isVisible ? (
+                                {indicatorVisibility[indicator] ? (
                                   <IoEyeOutline size={18} />
                                 ) : (
                                   <IoEyeOffOutline size={18} />
@@ -1589,7 +1456,11 @@ const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
                               {/* Source Code */}
                               <button
                                 title="Source Code"
-                                className="text-slate-600 "
+                                onClick={() => {
+                                  setActiveSourceIndicator(indicator);
+                                  setShowSourcePanel(true);
+                                }}
+                                className="text-slate-600"
                               >
                                 <FaCode size={18} />
                               </button>
@@ -1657,11 +1528,17 @@ const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
                 )}
               </div>
             </div>
-            {/* <div className="col-md-2">
+            <div className="col-md-3">
               <ChartRightSidebar />
-            </div> */}
+            </div>
           </div>
         </div>
+
+        <SourceCodePanel
+          show={showSourcePanel}
+          indicator={activeSourceIndicator}
+          onClose={() => setShowSourcePanel(false)}
+        />
 
         {/* -------------------------market part start here-------------------- */}
       </section>
@@ -1746,33 +1623,17 @@ const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
             )}
 
             {/* ------------------------------------------indicator sub part property show in modal------------------------------- */}
-           
+
             <IndicatorPropertyDialog
               setIndicatorProperty={setIndicatorProperty}
               indicatorProperty={indicatorProperty}
-              selectedIndicator={selectedIndicator}
               activeBarIndicator={activeBarIndicator}
               setIndicatorConfigs={setIndicatorConfigs}
               indicatorConfigs={indicatorConfigs}
-              setTempIndicatorConfig={setTempIndicatorConfig}
-              tempIndicatorConfig={tempIndicatorConfig}
               indicatorStyle={indicatorStyle}
               setIndicatorStyle={setIndicatorStyle}
               indicatorSeriesRef={indicatorSeriesRef}
             />
-
-          {/* <TradingViewChart
-            setIndicatorProperty={setIndicatorProperty}
-              indicatorProperty={indicatorProperty}
-              // selectedIndicator={selectedIndicator}
-              activeBarIndicator={activeBarIndicator}
-              setIndicatorConfigs={setIndicatorConfigs}
-              indicatorStyle={indicatorStyle}
-              setIndicatorStyle={setIndicatorStyle}
-              indicatorSeriesRef={indicatorSeriesRef}
-          /> */}
-
-
           </div>
         </div>
       </section>
