@@ -4,10 +4,10 @@ import EditableMultiSelect, {
   EditableSelect,
   EditableNumber,
   OPERATORS,
-} from "./EditTableLabel";
+} from "../indicator/EditTableLabel";
 import { HiOutlineSave } from "react-icons/hi";
 import apiService from "../../services/apiServices";
-import { IndicatorRuleModals } from "./indicatorModals/IndicatorRuleModals";
+import { IndicatorRuleModals } from "./IndicatorRuleModals";
 import { FaCirclePlay, FaPlus } from "react-icons/fa6";
 import { RiLoopLeftLine } from "react-icons/ri";
 import {

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Modal, Button, Tabs, Tab, Row, Col, Form } from "react-bootstrap";
-import IndicatorStyle from "./indicatorModals/IndicatorStyle";
+import IndicatorStyle from "./IndicatorStyle";
 import {updateIndicatorStyle}  from "../../util/ChartFunctions";
 
 export default function IndicatorPropertyDialog({

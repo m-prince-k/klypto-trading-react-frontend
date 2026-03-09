@@ -1,5 +1,5 @@
 import { Row, Col, Form } from "react-bootstrap";
-import { getRowsByIndicator } from "../../../util/common";
+import { getRowsByIndicator } from "../../util/common";
 
 export default function IndicatorStyle({
   indicatorStyle,
@@ -1094,89 +1094,170 @@ export default function IndicatorStyle({
   /* ================= RENDER ================= */
 
   return (
-    <div className="d-flex flex-column p-3">
-      {rows.map((row) => (
-  <Row
-    key={row.key}
-    className="align-items-center py-2 border-bottom"
-  >
-    {/* LEFT - CHECKBOX */}
-    <Col md={5} className="d-flex align-items-center">
-      <Form.Check
-        type="checkbox"
-        checked={selectedStyle?.[row.key]?.visible ?? row.visible ?? true}
-        onChange={(e) => update(row.key, "visible", e.target.checked)}
-        label={row.label}
-      />
-    </Col>
-
-    {/* COLOR PICKER */}
-    <Col md={2} className="d-flex justify-content-center">
-      <input
-        type="color"
-        value={selectedStyle?.[row.key]?.color ?? row.color ?? "#2962ff"}
-        onChange={(e) => update(row.key, "color", e.target.value)}
-        className="form-control form-control-color"
-      />
-    </Col>
-
-    {/* RIGHT SIDE */}
-    <Col md={3} className="d-flex align-items-center px-0 gap-1">
-      
-      {/* WIDTH BUTTONS */}
-      {(row.type === "line" || row.value !== undefined) && (
-        <div className="d-flex border rounded overflow-hidden">
-
-          {[1, 3, 5, 10].map((w) => {
-            const currentWidth =
-              selectedStyle?.[row.key]?.width ?? row.width ?? 1;
-
-            const active = currentWidth === w;
-
-            return (
-              <button
-                key={w}
-                onClick={() => update(row.key, "width", w)}
-                className={`px-2 py-1 border-0 ${
-                  active ? "bg-dark text-white" : "bg-light"
-                }`}
-                style={{
-                  width: 35,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <div
-                  style={{
-                    height: w / 3,
-                    width: "100%",
-                    background: active ? "white" : "#333",
-                    borderRadius: 2,
-                  }}
-                />
-              </button>
-            );
-          })}
-
-        </div>
-      )}
-
-    </Col>
-    <Col md={1} className="px-1">
-    {/* VALUE INPUT */}
-      {row.value !== undefined && (
-        <Form.Control
-          type="number"
-          style={{ width: "70px" }}
-          value={selectedStyle?.[row.key]?.value ?? row.value ?? ""}
-          onChange={(e) =>
-            update(row.key, "value", Number(e.target.value))
+    <div style={{ padding: "2px 0" }}>
+  {rows.map((row) => (
+    <div
+      key={row.key}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        padding: "6px 12px",
+        borderBottom: "1px solid #f0f0f0",
+        gap: 0,
+        transition: "background 0.12s",
+        minHeight: 38,
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = "#f8f9fa")}
+      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+    >
+      {/* CHECKBOX + LABEL */}
+      <div style={{ display: "flex", alignItems: "center", width: 185,  }}>
+        <Form.Check
+          type="checkbox"
+          checked={selectedStyle?.[row.key]?.visible ?? row.visible ?? true}
+          onChange={(e) => update(row.key, "visible", e.target.checked)}
+          label={
+            <span
+              style={{
+                fontSize: "13.5px",
+                fontWeight: 500,
+                color: "#1c1c1e",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                letterSpacing: "-0.1px",
+              }}
+            >
+              {row.label}
+            </span>
           }
         />
-      )}</Col>
-  </Row>
-))}
+      </div>
+
+      {/* COLOR PICKERS */}
+      <div style={{ width: 72, flexShrink: 0, display: "flex", alignItems: "center", gap: 4 }}>
+        {row.type !== "fill" ? (
+          <>
+            <input
+              type="color"
+              value={selectedStyle?.[row.key]?.color ?? row.color ?? "#2962ff"}
+              onChange={(e) => update(row.key, "color", e.target.value)}
+              style={{ width: 40, height: 30, border: "1px solid #ddd", borderRadius: 5, padding: 2, cursor: "pointer" }}
+              className="form-control form-control-color"
+            />
+            <div style={{ width: 40, height: 35, visibility: "hidden" }} />
+          </>
+        ) : (
+          <>
+            <input
+              type="color"
+              value={
+                selectedStyle?.[row.key]?.topFillColor1 ?? selectedStyle?.[row.key]?.bottomFillColor1 ??
+                row.topFillColor1 ?? row.bottomFillColor1
+              }
+              onChange={(e) => update(row.key, row.topFillColor1 ? "topFillColor1" : "bottomFillColor1", e.target.value)}
+              style={{  width: 40, height: 30, border: "1px solid #ddd", borderRadius: 5, padding: 2, cursor: "pointer" }}
+              className="form-control form-control-color"
+            />
+            <input
+              type="color"
+              value={
+                selectedStyle?.[row.key]?.topFillColor2 ?? selectedStyle?.[row.key]?.bottomFillColor2 ??
+                row.topFillColor2 ?? row.bottomFillColor2
+              }
+              onChange={(e) => update(row.key, row.topFillColor2 ? "topFillColor2" : "bottomFillColor2", e.target.value)}
+              style={{width: 40, height: 30, border: "1px solid #ddd", borderRadius: 5, padding: 2, cursor: "pointer" }}
+              className="form-control form-control-color"
+            />
+          </>
+        )}
+      </div>
+
+      {/* WIDTH BUTTONS */}
+      <div style={{ flexShrink: 0 }}>
+        {(row.type === "line" || row.value !== undefined) && (
+          <div
+            style={{
+              display: "flex",
+              overflow: "hidden",
+              border: "1px solid #e0e0e0",
+              borderRadius: 8,
+              background: "#f7f7f7",
+              boxShadow: "inset 0 1px 2px rgba(0,0,0,0.04)",
+            }}
+          >
+            {[1, 3, 5, 10].map((w, i) => {
+              const currentWidth = selectedStyle?.[row.key]?.width ?? row.width ?? 1;
+              const active = currentWidth === w;
+              return (
+                <button
+                  key={w}
+                  onClick={() => update(row.key, "width", w)}
+                  style={{
+                    width: 30,
+                    height: 14,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: "none",
+                    borderRight: i < 3 ? "1px solid #e0e0e0" : "none",
+                    background: active
+                      ? "linear-gradient(135deg, #2c2c2e, #1a1a1a)"
+                      : "transparent",
+                    cursor: "pointer",
+                    transition: "background 0.15s",
+                    padding: "0 5px",
+                    position: "relative",
+                  }}
+                >
+                  {/* subtle shine on active */}
+                  {active && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: 0, left: 0, right: 0,
+                        height: "40%",
+                        background: "linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 100%)",
+                        borderRadius: "8px 8px 0 0",
+                        pointerEvents: "none",
+                      }}
+                    />
+                  )}
+                  <div
+                    style={{
+                      height: w === 1 ? 1 : w === 3 ? 1.8 : w === 5 ? 2.8 : 4,
+                      width: "100%",
+                      background: active
+                        ? "rgba(255,255,255,0.9)"
+                        : "rgba(80,80,80,0.55)",
+                      borderRadius: 99,
+                    }}
+                  />
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* VALUE INPUT */}
+      {row.value !== undefined && (
+        <div style={{ marginLeft: 6, flexShrink: 0 }}>
+          <Form.Control
+            type="number"
+            value={selectedStyle?.[row.key]?.value ?? row.value ?? ""}
+            onChange={(e) => update(row.key, "value", Number(e.target.value))}
+            style={{
+              width: 52, height: 32, fontSize: 13,
+              padding: "2px 2px", borderRadius: 6,
+              border: "1px solid #ddd", textAlign: "center",
+              color: "#1c1c1e", background: "#fff",
+            }}
+          />
+        </div>
+      )}
     </div>
+  ))}
+</div>
   );
 }

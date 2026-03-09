@@ -4,8 +4,8 @@ import { Link } from "react-router-dom";
 import { ButtonGroup, ToggleButton, Button } from "react-bootstrap";
 import { FaEnvelope, FaSms } from "react-icons/fa";
 import { toast } from "react-toastify";
-import apiService from "../../../services/apiServices";
-import { scanCategories } from "../../../util/common";
+import apiService from "../../services/apiServices";
+import { scanCategories } from "../../util/common";
 
 export function IndicatorRuleModals({
   type,

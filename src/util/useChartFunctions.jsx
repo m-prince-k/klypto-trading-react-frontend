@@ -5,9 +5,11 @@ import {
   LineSeries,
   HistogramSeries,
   AreaSeries,
+  BaselineSeries,
 } from "lightweight-charts";
 import apiService from "../services/apiServices";
 import { getRowsByIndicator } from "./common";
+import RSIPlot from "../components/indicator/RSI/RSIPlot";
 
 export default function useChartFunctions({
   chartRef,
@@ -15,160 +17,171 @@ export default function useChartFunctions({
   indicatorSeriesRef,
   indicatorStyle,
 }) {
-  useEffect(() => {
-    const rsiGroup = indicatorSeriesRef.current?.RSI;
-    if (!rsiGroup) return;
+  // useEffect(() => {
+  //   const rsiGroup = indicatorSeriesRef.current?.RSI;
+  //   if (!rsiGroup) return;
 
-    const rsiSeries = rsiGroup.rsi;
-    const rsiMaSeries = rsiGroup.rsiMa;
-    const smoothingSeries = rsiGroup.smoothingMA;
+  //   const rsiSeries = rsiGroup.rsi;
+  //   const smoothingSeries = rsiGroup.smoothingMA;
 
-    if (!rsiSeries) return;
+  //   if (!rsiSeries) return;
 
-    const rsiStyle = indicatorStyle?.RSI?.rsi;
-    const rsiMaStyle = indicatorStyle?.RSI?.rsiMa;
-    const smoothingStyle = indicatorStyle?.RSI?.smoothingMA;
+  //   const rsiStyle = indicatorStyle?.RSI?.rsi;
+  //   const smoothingStyle = indicatorStyle?.RSI?.smoothingMA;
 
-    const upper = indicatorStyle?.RSI?.upper;
-    const middle = indicatorStyle?.RSI?.middle;
-    const lower = indicatorStyle?.RSI?.lower;
+  //   const upper = indicatorStyle?.RSI?.upper;
+  //   const middle = indicatorStyle?.RSI?.middle;
+  //   const lower = indicatorStyle?.RSI?.lower;
 
-    /* ================= UPDATE RSI ================= */
+  //   const obFill = indicatorStyle?.RSI?.obFill;
+  //   const osFill = indicatorStyle?.RSI?.osFill;
 
-    if (rsiStyle) {
-      rsiSeries.applyOptions({
-        color: rsiStyle.color,
-        lineWidth: rsiStyle.width,
-        visible: rsiStyle.visible,
-      });
-    }
+  //   /* ================= UPDATE RSI ================= */
 
-    /* ================= UPDATE RSI MA ================= */
+  //   if (rsiStyle) {
+  //     rsiSeries.applyOptions({
+  //       color: rsiStyle.color,
+  //       lineWidth: rsiStyle.width,
+  //       visible: rsiStyle.visible,
+  //     });
+  //   }
 
-    if (rsiMaSeries && rsiMaStyle) {
-      rsiMaSeries.applyOptions({
-        color: rsiMaStyle.color,
-        lineWidth: rsiMaStyle.width,
-        visible: rsiMaStyle.visible,
-      });
-    }
+  //   /* ================= UPDATE SMOOTHING ================= */
 
-    /* ================= UPDATE SMOOTHING MA ================= */
+  //   if (smoothingSeries && smoothingStyle) {
+  //     smoothingSeries.applyOptions({
+  //       color: smoothingStyle.color,
+  //       lineWidth: smoothingStyle.width,
+  //       visible: smoothingStyle.visible,
+  //     });
+  //   }
 
-    if (smoothingSeries && smoothingStyle) {
-      smoothingSeries.applyOptions({
-        color: smoothingStyle.color,
-        lineWidth: smoothingStyle.width,
-        visible: smoothingStyle.visible,
-      });
-    }
+  //   /* ================= CREATE BANDS FIRST TIME ================= */
 
-    /* ================= CREATE BANDS FIRST TIME ================= */
+  //   if (!rsiGroup._priceLines) {
+  //     rsiGroup._priceLines = {
+  //       upper: rsiSeries.createPriceLine({
+  //         price: upper?.value ?? 70,
+  //         color: upper?.color || "#ef5350",
+  //         lineWidth: upper?.width ?? 2,
+  //         lineStyle: 2,
+  //       }),
 
-    if (!rsiGroup._priceLines) {
-      rsiGroup._priceLines = {
-        upper: rsiSeries.createPriceLine({
-          price: upper?.value ?? 70,
-          color: upper?.color || "#ef5350",
-          lineWidth: upper?.width ?? 2,
-          lineStyle: 2,
-        }),
+  //       middle: rsiSeries.createPriceLine({
+  //         price: middle?.value ?? 50,
+  //         color: middle?.color || "#9e9e9e",
+  //         lineWidth: middle?.width ?? 2,
+  //         lineStyle: 2,
+  //       }),
 
-        middle: rsiSeries.createPriceLine({
-          price: middle?.value ?? 50,
-          color: middle?.color || "#9e9e9e",
-          lineWidth: middle?.width ?? 2,
-          lineStyle: 2,
-        }),
+  //       lower: rsiSeries.createPriceLine({
+  //         price: lower?.value ?? 30,
+  //         color: lower?.color || "#26a69a",
+  //         lineWidth: lower?.width ?? 2,
+  //         lineStyle: 2,
+  //       }),
+  //     };
+  //   }
 
-        lower: rsiSeries.createPriceLine({
-          price: lower?.value ?? 30,
-          color: lower?.color || "#26a69a",
-          lineWidth: lower?.width ?? 2,
-          lineStyle: 2,
-        }),
-      };
+  //   /* ================= UPDATE BANDS ================= */
 
-      //   gradient fill
-      const upperValue = upper?.value ?? 70;
-      const lowerValue = lower?.value ?? 30;
+  //   const priceLines = rsiGroup._priceLines;
 
-      const overboughtData = [];
-      const oversoldData = [];
+  //   priceLines.upper?.applyOptions({
+  //     price: upper?.value,
+  //     color: upper?.color,
+  //     lineWidth: upper?.width ?? 2,
+  //   });
 
-      const rsiData = rsiGroup._rsiData;
-      if (!rsiData) return;
+  //   priceLines.middle?.applyOptions({
+  //     price: middle?.value,
+  //     color: middle?.color,
+  //     lineWidth: middle?.width ?? 2,
+  //   });
 
-      rsiData.forEach((point) => {
-        if (point.value > upperValue) {
-          overboughtData.push(point);
-        } else {
-          overboughtData.push({
-            time: point.time,
-            value: upperValue,
-          });
-        }
+  //   priceLines.lower?.applyOptions({
+  //     price: lower?.value,
+  //     color: lower?.color,
+  //     lineWidth: lower?.width ?? 2,
+  //   });
 
-        if (point.value < lowerValue) {
-          oversoldData.push(point);
-        } else {
-          oversoldData.push({
-            time: point.time,
-            value: lowerValue,
-          });
-        }
-      });
+  //   /* ================= UPDATE GRADIENT COLORS ================= */
 
-      rsiGroup.overboughtArea?.setData(overboughtData);
-      rsiGroup.oversoldArea?.setData(oversoldData);
+  //   const overboughtFill = rsiGroup.overboughtFill;
+  //   const oversoldFill = rsiGroup.oversoldFill;
 
-      return;
-    }
+  //   if (overboughtFill && obFill) {
+  //     overboughtFill.applyOptions({
+  //       topFillColor1: obFill.topFillColor1,
+  //       topFillColor2: obFill.topFillColor2,
+  //       visible: obFill.visible,
+  //     });
+  //   }
 
-    /* ================= UPDATE EXISTING BANDS ================= */
+  //   if (oversoldFill && osFill) {
+  //     oversoldFill.applyOptions({
+  //       bottomFillColor1: osFill.bottomFillColor1,
+  //       bottomFillColor2: osFill.bottomFillColor2,
+  //       visible: osFill.visible,
+  //     });
+  //   }
 
-    const priceLines = rsiGroup._priceLines;
+  //   /* ================= UPDATE GRADIENT DATA ================= */
 
-    priceLines.upper?.applyOptions({
-      price: upper?.value,
-      color: upper?.color,
-      lineWidth: upper?.width ?? 2,
-    });
+  //   const rsiData = rsiGroup._rsiData;
+  //   if (!rsiData) return;
 
-    priceLines.middle?.applyOptions({
-      price: middle?.value,
-      color: middle?.color,
-      lineWidth: middle?.width ?? 2,
-    });
+  //   const upperValue = upper?.value ?? 70;
+  //   const lowerValue = lower?.value ?? 30;
 
-    priceLines.lower?.applyOptions({
-      price: lower?.value,
-      color: lower?.color,
-      lineWidth: lower?.width ?? 2,
-    });
-  }, [
-    indicatorSeriesRef.current?.RSI?.rsi,
+  //   const overboughtData = [];
+  //   const oversoldData = [];
 
-    indicatorStyle?.RSI?.rsi?.color,
-    indicatorStyle?.RSI?.rsi?.width,
+  //   rsiData.forEach((point) => {
+  //     overboughtData.push({
+  //       time: point.time,
+  //       value: Math.max(point.value, upperValue),
+  //     });
 
-    indicatorStyle?.RSI?.rsiMa?.color,
-    indicatorStyle?.RSI?.rsiMa?.width,
+  //     oversoldData.push({
+  //       time: point.time,
+  //       value: Math.min(point.value, lowerValue),
+  //     });
+  //   });
 
-    indicatorStyle?.RSI?.smoothingMA?.color,
-    indicatorStyle?.RSI?.smoothingMA?.width,
+  //   rsiGroup.overboughtFill?.setData(overboughtData);
+  //   rsiGroup.oversoldFill?.setData(oversoldData);
+  // }, [
+  //   indicatorSeriesRef.current?.RSI?.rsi,
 
-    indicatorStyle?.RSI?.upper?.value,
-    indicatorStyle?.RSI?.middle?.value,
-    indicatorStyle?.RSI?.lower?.value,
+  //   indicatorStyle?.RSI?.rsi?.color,
+  //   indicatorStyle?.RSI?.rsi?.width,
+  //   indicatorStyle?.RSI?.rsi?.visible,
 
-    indicatorStyle?.RSI?.upper?.color,
-    indicatorStyle?.RSI?.middle?.color,
-    indicatorStyle?.RSI?.lower?.color,
-    indicatorStyle?.RSI?.upper?.width,
-    indicatorStyle?.RSI?.middle?.width,
-    indicatorStyle?.RSI?.lower?.width,
-  ]);
+  //   indicatorStyle?.RSI?.smoothingMA?.color,
+  //   indicatorStyle?.RSI?.smoothingMA?.width,
+  //   indicatorStyle?.RSI?.smoothingMA?.visible,
+
+  //   indicatorStyle?.RSI?.upper?.value,
+  //   indicatorStyle?.RSI?.middle?.value,
+  //   indicatorStyle?.RSI?.lower?.value,
+
+  //   indicatorStyle?.RSI?.upper?.color,
+  //   indicatorStyle?.RSI?.middle?.color,
+  //   indicatorStyle?.RSI?.lower?.color,
+
+  //   indicatorStyle?.RSI?.upper?.width,
+  //   indicatorStyle?.RSI?.middle?.width,
+  //   indicatorStyle?.RSI?.lower?.width,
+
+  //   indicatorStyle?.RSI?.obFill?.topFillColor1,
+  //   indicatorStyle?.RSI?.obFill?.topFillColor2,
+  //   indicatorStyle?.RSI?.obFill?.visible,
+
+  //   indicatorStyle?.RSI?.osFill?.bottomFillColor1,
+  //   indicatorStyle?.RSI?.osFill?.bottomFillColor2,
+  //   indicatorStyle?.RSI?.osFill?.visible,
+  // ]);
 
   async function fetchDataByCurrency(selectedCurrency, timeframeValue) {
     let response;
@@ -192,13 +205,7 @@ export default function useChartFunctions({
     selectedIndicator,
     selectedCurrency,
     timeframeValue,
-    // chartRef,
-    // addSeries,
-    // indicatorSeriesRef,
-    // indicatorStyle,
   ) {
-    console.log(indicatorStyle, "styloeeeeeeeeeeeeeeeeeeeeeeeee");
-
     if (!selectedIndicator?.length) return;
 
     for (const indicator of selectedIndicator) {
@@ -217,120 +224,74 @@ export default function useChartFunctions({
           /* ================= RSI ================= */
 
           case "RSI": {
-            const groupedSeries = {};
-
-            Object.entries(result.data).forEach(([lineName, lineData]) => {
-              const rowConfig = rows?.find((r) => r.key === lineName);
-              const styleConfig = indicatorStyle?.[indicator]?.[lineName];
-
-              const series = addSeries(indicator, LineSeries, {
-                color: styleConfig?.color || rowConfig?.color || "#26a69a",
-                lineWidth: styleConfig?.width || 2,
-                visible: styleConfig?.visible ?? true,
-              });
-
-              if (!series) return;
-
-              series.setData(lineData);
-
-              groupedSeries[lineName] = series;
-            });
-
-            /* ================= RSI BANDS ================= */
-
-            groupedSeries.overboughtArea = addSeries(indicator, AreaSeries, {
-              lineColor: "transparent",
-              topColor: "rgba(0,255,150,0.35)",
-              bottomColor: "rgba(0,255,150,0.05)",
-            });
-
-            groupedSeries.oversoldArea = addSeries(indicator, AreaSeries, {
-              lineColor: "transparent",
-              topColor: "rgba(255,70,70,0.35)",
-              bottomColor: "rgba(255,70,70,0.05)",
-            });
-
-            indicatorSeriesRef.current[indicator] = groupedSeries;
-
+            indicatorSeriesRef.current.RSI = {
+              result,
+              rows,
+            };
             break;
           }
 
           /* ================= SMA ================= */
 
           case "SMA": {
+            indicatorSeriesRef.current.SMA = {
+              result,
+              rows,
+            };
+            break;
+          }
+          case "EMA": {
             removeSeries(indicatorSeriesRef, chartRef, indicator);
 
-            const styleConfig = indicatorStyle?.SMA?.sma;
+            const styleConfig = indicatorStyle?.EMA?.ema;
 
             const series = addSeries(indicator, LineSeries, {
-              color: styleConfig?.color || "#2962ff",
+              color: styleConfig?.color || "#ff9800",
               lineWidth: styleConfig?.width || 2,
               visible: styleConfig?.visible ?? true,
             });
-
 
             if (!series) break;
 
             series.setData(result.data);
 
-            // store with correct key
-            indicatorSeriesRef.current["SMA"] = {
-              sma: series,
+            indicatorSeriesRef.current["EMA"] = {
+              ema: series,
             };
 
             console.log(
-              "Stored SMA series:",
-              indicatorSeriesRef.current["SMA"],
+              "Stored EMA series:",
+              indicatorSeriesRef.current["EMA"],
             );
 
             break;
           }
-          case "EMA": {
-  removeSeries(indicatorSeriesRef, chartRef, indicator);
+          case "HMA": {
+            removeSeries(indicatorSeriesRef, chartRef, indicator);
 
-  const styleConfig = indicatorStyle?.EMA?.ema;
+            const styleConfig = indicatorStyle?.HMA?.hma;
 
-  const series = addSeries(indicator, LineSeries, {
-    color: styleConfig?.color || "#ff9800",
-    lineWidth: styleConfig?.width || 2,
-    visible: styleConfig?.visible ?? true,
-  });
+            const series = addSeries(indicator, LineSeries, {
+              color: styleConfig?.color || "#9c27b0",
+              lineWidth: styleConfig?.width || 2,
+              visible: styleConfig?.visible ?? true,
+            });
 
-  if (!series) break;
+            if (!series) break;
 
-  series.setData(result.data);
+            series.setData(result.data);
 
-  indicatorSeriesRef.current["EMA"] = {
-    ema: series,
-  };
+            indicatorSeriesRef.current["HMA"] = {
+              hma: series,
+            };
 
-  console.log("Stored EMA series:", indicatorSeriesRef.current["EMA"]);
+            console.log(
+              "Stored HMA series:",
+              indicatorSeriesRef.current["HMA"],
+            );
 
-  break;
-}
-case "HMA": {
-  removeSeries(indicatorSeriesRef, chartRef, indicator);
-
-  const styleConfig = indicatorStyle?.HMA?.hma;
-
-  const series = addSeries(indicator, LineSeries, {
-    color: styleConfig?.color || "#9c27b0",
-    lineWidth: styleConfig?.width || 2,
-    visible: styleConfig?.visible ?? true,
-  });
-
-  if (!series) break;
-
-  series.setData(result.data);
-
-  indicatorSeriesRef.current["HMA"] = {
-    hma: series,
-  };
-
-  console.log("Stored HMA series:", indicatorSeriesRef.current["HMA"]);
-
-  break;
-}
+            break;
+          }
 
           /* ================= MACD ================= */
 

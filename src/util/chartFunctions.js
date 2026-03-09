@@ -72,11 +72,6 @@ export async function fetchIndicatorData(
           const middleBand = indicatorStyle?.[indicator]?.middle;
           const lowerBand = indicatorStyle?.[indicator]?.lower;
 
-          console.log(
-            upperBand,
-            "______________________________________________________uperrrrrrrrrrrr",
-          );
-
           const rsiSeries = groupedSeries["rsi"];
 
           if (rsiSeries) {
@@ -107,6 +102,22 @@ export async function fetchIndicatorData(
               title: "Lower",
             });
           }
+
+          const overboughtSeries = chartRef.addHistogramSeries({
+            priceScaleId: "",
+            priceFormat: { type: "price", precision: 2 },
+            color: "rgba(239,83,80,0.3)",
+            base: 70,
+            lineWidth: 0,
+          });
+
+          const oversoldSeries = chartRef.addHistogramSeries({
+            priceScaleId: "",
+            priceFormat: { type: "price", precision: 2 },
+            color: "rgba(38,166,154,0.3)",
+            base: 30,
+            lineWidth: 0,
+          });
 
           indicatorSeriesRef.current[indicator] = groupedSeries;
 

@@ -1,5 +1,4 @@
 import "bootstrap/dist/css/bootstrap.min.css"; //this is for temp
-import { Row, Col, Form, Modal, Button } from "react-bootstrap";
 import {
   createChart,
   CandlestickSeries,
@@ -10,20 +9,19 @@ import {
   BaselineSeries,
 } from "lightweight-charts";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import IndicatorRuleBuilder from "../components/indicator/IndicatorRuleBuilder";
+import IndicatorRuleBuilder from "../components/scanner/IndicatorRuleBuilder";
 import { LuCirclePlus, LuCircleMinus } from "react-icons/lu";
 import { RiResetRightLine } from "react-icons/ri";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { FaCode } from "react-icons/fa6";
 import ChartHeader from "../components/tradingModals/ChartHeader";
-import IndicatorBuildingListing from "../components/indicator/IndicatorBuilderListing";
+import IndicatorBuildingListing from "../components/scanner/IndicatorBuilderListing";
 import {
   ChartProprties,
   TIMEFRAME_TO_SECONDS,
   SINGLE_VALUE_CHARTS,
   INDICATOR_COLORS,
   chartSeriesStyles,
-  getSeriesColor,
   convertToHeikinAshi,
   getIndicatorChartProperties,
   PANE_INDICATORS,
@@ -42,6 +40,7 @@ import { FiMoreHorizontal } from "react-icons/fi";
 import IndicatorAlert from "../components/indicator/IndicatorAlert";
 import IndicatorPropertyDialog from "../components/indicator/IndicatorPropertyDialog";
 import useChartFunctions from "../util/useChartFunctions";
+import { indicatorComponents } from "../components/indicator/IndicatorIndex";
 
 export default function Candlestick() {
   const chartRef = useRef();
@@ -351,26 +350,31 @@ export default function Candlestick() {
 
   let indicatorStyleDefault = {
     RSI: {
-      rsi: { visible: true, color: "#26a69a", width: 2 },
+      rsi: { visible: true, color: "#26a69a", width: 1 },
+
       smoothingMA: { visible: true, color: "#fffc30", width: 1 },
 
       upper: { visible: true, value: 70, color: "#9e9e9e", width: 1 },
-      middle: { visible: true, value: 50, color: "#9e9e9e", width: 1 },
+
+      middle: { visible: false, value: 50, color: "#9e9e9e", width: 1 },
+
       lower: { visible: true, value: 30, color: "#9e9e9e", width: 1 },
-      bgFill: {
+
+      bandFill: {
         visible: true,
-        color0: "rgba(38,166,154,0.1)",
-        color1: "rgba(38,166,154,0.1)",
+        topFillColor1: "rgba(140,120,255,0.05)",
+        topFillColor2: "rgba(140,120,255,0.05)",
       },
       obFill: {
         visible: true,
-        color0: "rgba(239,83,80,0.2)",
-        color1: "rgba(239,83,80,0.4)",
+        topFillColor1: "rgba(38,166,154,0.8)",
+        topFillColor2: "rgba(38,166,154,0.5)",
       },
+
       osFill: {
         visible: true,
-        color0: "rgba(38,166,154,0.2)",
-        color1: "rgba(38,166,154,0.4)",
+        bottomFillColor1: "rgba(239,83,80,0.8)",
+        bottomFillColor2: "rgba(239,83,80,0.5)",
       },
     },
     SMA: {
@@ -393,51 +397,27 @@ export default function Candlestick() {
     [],
   );
 
-  // console.log(liveOhlcv, "liveedata")
-
   const closeAlert = () => {
     setShowAlertForm(false);
   };
-
-  const closeIndicatorSettings = () => {
-    setOpenSettings(false);
-  };
-
   const TIME_AXIS_HEIGHT = 28;
   const PANE_HEIGHT = 140;
 
   const addSeries = (indicator, SeriesType, options) => {
+    console.log(SeriesType, options, "--------");
+
     if (!chartRef.current) return null;
 
     const normalized = String(indicator).replace(/[\s/]+/g, "");
 
-    // Indicators that should go to panes
+    // MAIN CHART SERIES
     if (!PANE_INDICATORS.has(normalized)) {
       return chartRef.current.addSeries(SeriesType, options);
     }
 
+    // PANE SERIES
     const paneKey = resolvePaneKey(normalized);
     const paneChart = ensurePane(paneKey);
-
-    const toggleIndicatorVisibility = (indicator) => {
-      const newVisibility = !indicatorVisibility[indicator];
-
-      const seriesGroup = indicatorSeriesRef.current?.[indicator];
-
-      if (seriesGroup) {
-        Object.values(seriesGroup).forEach((series) => {
-          if (series?.applyOptions) {
-            series.applyOptions({ visible: newVisibility });
-          }
-        });
-
-        if (seriesGroup._priceLines) {
-          Object.values(seriesGroup._priceLines).forEach((line) => {
-            line?.applyOptions({ visible: newVisibility });
-          });
-        }
-      }
-    };
 
     return paneChart.addSeries(SeriesType, options);
   };
@@ -479,8 +459,10 @@ export default function Candlestick() {
 
   function resolvePaneKey(type) {
     switch (type) {
+      case "RSI":
+        return "RSI";
       case "MACD":
-        return "macd";
+        return "MACD";
       case "Volume":
         return "volume";
       case "ATR":
@@ -619,9 +601,10 @@ export default function Candlestick() {
   }
 
   function cleanupPane(paneKey) {
-    const paneChart = panesRef.current[paneKey];
-    if (!paneChart) return;
+    const pane = panesRef.current[paneKey];
+    if (!pane) return;
 
+    // Check if any indicator still belongs to this pane
     const stillUsed = Object.keys(indicatorSeriesRef.current).some(
       (key) => resolvePaneKey(key) === paneKey,
     );
@@ -629,8 +612,20 @@ export default function Candlestick() {
     if (stillUsed) return;
 
     try {
-      paneChart.remove();
-    } catch (e) {}
+      // remove chart instance
+      if (pane.chart) pane.chart.remove();
+
+      // remove DOM elements
+      if (pane.div && pane.div.parentNode) {
+        pane.div.parentNode.removeChild(pane.div);
+      }
+
+      if (pane.splitter && pane.splitter.parentNode) {
+        pane.splitter.parentNode.removeChild(pane.splitter);
+      }
+    } catch (e) {
+      console.error("Pane cleanup error:", e);
+    }
 
     delete panesRef.current[paneKey];
   }
@@ -648,15 +643,19 @@ export default function Candlestick() {
 
     if (!chart) return;
 
-    /* ✅ MULTI SERIES */
-    if (typeof entry === "object" && !entry.setData) {
-      Object.values(entry).forEach((series) => {
+    /* MULTI SERIES */
+    if (entry && typeof entry === "object" && !entry.priceScale) {
+      Object.entries(entry).forEach(([key, series]) => {
+        if (key.startsWith("_")) return; // skip internal data
+
+        if (!series || typeof series.applyOptions !== "function") return;
+
         try {
           chart.removeSeries(series);
         } catch (e) {}
       });
     } else {
-      /* ✅ SINGLE SERIES */
+      /* SINGLE SERIES (SMA, EMA etc) */
       try {
         chart.removeSeries(entry);
       } catch (e) {}
@@ -676,8 +675,6 @@ export default function Candlestick() {
   // ----------Main chart------------
   useEffect(() => {
     if (!containerRef.current) return;
-
-    const containerHeight = containerRef.current.clientHeight;
 
     const chart = createChart(containerRef.current, {
       ...ChartProprties,
@@ -741,31 +738,48 @@ export default function Candlestick() {
     };
   }, [selectedCurrency, timeframeValue]);
 
-  const toggleIndicator = (indicator) => {
+  const toggleIndicator = useCallback((indicator) => {
     setSelectedIndicator((prev) => {
       const alreadySelected = prev.includes(indicator);
 
       if (alreadySelected) {
-        // ✅ Remove ALL series belonging to indicator
-        Object.keys(indicatorSeriesRef.current).forEach((key) => {
-          if (key === indicator || key.startsWith(`${indicator}_`)) {
-            const series = indicatorSeriesRef.current[key];
+        const entry = indicatorSeriesRef.current[indicator];
 
-            if (series && chartRef.current) {
-              chartRef.current.removeSeries(series);
-            }
+        if (!entry) {
+          return prev.filter((i) => i !== indicator);
+        }
 
-            delete indicatorSeriesRef.current[key];
-          }
+        const paneKey = resolvePaneKey(indicator);
+        const pane = panesRef.current[paneKey];
+        const chart = pane?.chart ?? chartRef.current;
+
+        if (!chart) return prev;
+
+        const seriesList = Array.isArray(entry)
+          ? entry
+          : typeof entry === "object" && !entry.setData
+            ? Object.values(entry)
+            : [entry];
+
+        seriesList.forEach((series) => {
+          if (!series) return;
+
+          try {
+            chart.removeSeries(series);
+          } catch (e) {}
         });
+
+        delete indicatorSeriesRef.current[indicator];
+        delete latestIndicatorValuesRef.current[indicator];
+
+        cleanupPane(paneKey);
 
         return prev.filter((i) => i !== indicator);
       }
 
       return [...prev, indicator];
     });
-  };
-
+  }, []);
   /* =========================================================
 RENDER INDICATOR VALUE
 ========================================================= */
@@ -799,6 +813,29 @@ RENDER INDICATOR VALUE
     }
 
     return "--";
+  };
+
+  const renderIndicators = () => {
+    return selectedIndicator.map((indicator) => {
+      const Component = indicatorComponents[indicator];
+
+      if (!Component) return null;
+
+      const data = indicatorSeriesRef.current[indicator];
+
+      if (!data) return null;
+
+      return (
+        <Component
+          key={indicator}
+          result={data.result}
+          rows={data.rows}
+          indicatorStyle={indicatorStyle}
+          indicatorSeriesRef={indicatorSeriesRef}
+          addSeries={addSeries}
+        />
+      );
+    });
   };
 
   /* =========================================================
@@ -1327,6 +1364,7 @@ ATTACH MAIN CHART
                 chartRef={chartRef}
                 containerRef={containerRef}
               />
+              {renderIndicators()}
             </div>
             <div className="col-md-7">
               <div

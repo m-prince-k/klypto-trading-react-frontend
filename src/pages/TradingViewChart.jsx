@@ -1,138 +1,95 @@
-import React, { useEffect, useRef, useState } from "react";
-import { createChart, LineSeries } from "lightweight-charts";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { Container, Card, Row, Col, Spinner, Alert } from "react-bootstrap";
 
-export default function TradingViewChart() {
+const ViewProfile = () => {
 
-  const chartRef = useRef(null);
-  const rsiSeriesRef = useRef(null);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const [upper, setUpper] = useState(70);
-  const [middle, setMiddle] = useState(50);
-  const [lower, setLower] = useState(30);
+  const fetchProfile = async () => {
+    try {
+
+      const token = localStorage.getItem("token");
+
+      const res = await axios.get(
+        "http://localhost:5000/api/user/profile",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      setUser(res.data.data);
+
+    } catch (err) {
+      console.log(err);
+      setError("Failed to load profile");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-
-    const chart = createChart(chartRef.current, {
-      height: 400,
-      layout: {
-        background: { color: "#0f172a" },
-        textColor: "#DDD",
-      },
-      grid: {
-        vertLines: { color: "#1f2937" },
-        horzLines: { color: "#1f2937" },
-      },
-    });
-
-    const rsiSeries = chart.addSeries(LineSeries,{
-      color: "#f97316",
-      lineWidth: 2,
-    });
-
-    rsiSeriesRef.current = rsiSeries;
-
-    // dummy RSI data
-    const data = [];
-    let time = 1;
-
-    for (let i = 0; i < 100; i++) {
-      data.push({
-        time: time++,
-        value: Math.random() * 100,
-      });
-    }
-
-    rsiSeries.setData(data);
-
-    return () => chart.remove();
-
+    fetchProfile();
   }, []);
 
-  // update price lines when values change
-  useEffect(() => {
-
-    if (!rsiSeriesRef.current) return;
-
-    // remove old lines
-    rsiSeriesRef.current._priceLines?.forEach(line =>
-      rsiSeriesRef.current.removePriceLine(line)
-    );
-
-    const upperLine = rsiSeriesRef.current.createPriceLine({
-      price: upper,
-      color: "#ef4444",
-      lineWidth: 1,
-      lineStyle: 2,
-      axisLabelVisible: true,
-      title: "Upper",
-    });
-
-    const middleLine = rsiSeriesRef.current.createPriceLine({
-      price: middle,
-      color: "#22c55e",
-      lineWidth: 1,
-      lineStyle: 2,
-      axisLabelVisible: true,
-      title: "Middle",
-    });
-
-    const lowerLine = rsiSeriesRef.current.createPriceLine({
-      price: lower,
-      color: "#3b82f6",
-      lineWidth: 1,
-      lineStyle: 2,
-      axisLabelVisible: true,
-      title: "Lower",
-    });
-
-    rsiSeriesRef.current._priceLines = [
-      upperLine,
-      middleLine,
-      lowerLine,
-    ];
-
-  }, [upper, middle, lower]);
-
   return (
-    <div style={{ padding: 20, background: "#020617", color: "white" }}>
+    <Container className="mt-5">
+      <Row className="justify-content-center">
 
-      {/* Inputs */}
+        <Col md={6}>
+          <Card className="shadow">
 
-      <div style={{ marginBottom: 15, display: "flex", gap: 10 }}>
+            <Card.Header className="text-center fw-bold">
+              My Profile
+            </Card.Header>
 
-        <div>
-          Upper
-          <input
-            type="number"
-            value={upper}
-            onChange={(e) => setUpper(Number(e.target.value))}
-          />
-        </div>
+            <Card.Body>
 
-        <div>
-          Middle
-          <input
-            type="number"
-            value={middle}
-            onChange={(e) => setMiddle(Number(e.target.value))}
-          />
-        </div>
+              {loading && (
+                <div className="text-center">
+                  <Spinner animation="border" />
+                </div>
+              )}
 
-        <div>
-          Lower
-          <input
-            type="number"
-            value={lower}
-            onChange={(e) => setLower(Number(e.target.value))}
-          />
-        </div>
+              {error && (
+                <Alert variant="danger">
+                  {error}
+                </Alert>
+              )}
 
-      </div>
+              {user && !loading && (
+                <>
+                  <p>
+                    <strong>Name :</strong> {user.name}
+                  </p>
 
-      {/* Chart */}
+                  <p>
+                    <strong>Email :</strong> {user.email}
+                  </p>
 
-      <div ref={chartRef} />
+                  <p>
+                    <strong>Phone :</strong> {user.phone}
+                  </p>
 
-    </div>
+                  <p>
+                    <strong>Joined :</strong>{" "}
+                    {new Date(user.createdAt).toLocaleDateString()}
+                  </p>
+                </>
+              )}
+
+            </Card.Body>
+
+          </Card>
+        </Col>
+
+      </Row>
+    </Container>
   );
-}
+};
+
+export default ViewProfile;
