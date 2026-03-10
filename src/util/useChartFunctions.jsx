@@ -1,188 +1,14 @@
-import { useEffect, useRef } from "react";
-import {
-  createChart,
-  CandlestickSeries,
-  LineSeries,
-  HistogramSeries,
-  AreaSeries,
-  BaselineSeries,
-} from "lightweight-charts";
+import { LineSeries, HistogramSeries } from "lightweight-charts";
 import apiService from "../services/apiServices";
 import { getRowsByIndicator } from "./common";
-import RSIPlot from "../components/indicator/RSI/RSIPlot";
 
 export default function useChartFunctions({
   chartRef,
   addSeries,
   indicatorSeriesRef,
   indicatorStyle,
+  latestIndicatorValuesRef,
 }) {
-  // useEffect(() => {
-  //   const rsiGroup = indicatorSeriesRef.current?.RSI;
-  //   if (!rsiGroup) return;
-
-  //   const rsiSeries = rsiGroup.rsi;
-  //   const smoothingSeries = rsiGroup.smoothingMA;
-
-  //   if (!rsiSeries) return;
-
-  //   const rsiStyle = indicatorStyle?.RSI?.rsi;
-  //   const smoothingStyle = indicatorStyle?.RSI?.smoothingMA;
-
-  //   const upper = indicatorStyle?.RSI?.upper;
-  //   const middle = indicatorStyle?.RSI?.middle;
-  //   const lower = indicatorStyle?.RSI?.lower;
-
-  //   const obFill = indicatorStyle?.RSI?.obFill;
-  //   const osFill = indicatorStyle?.RSI?.osFill;
-
-  //   /* ================= UPDATE RSI ================= */
-
-  //   if (rsiStyle) {
-  //     rsiSeries.applyOptions({
-  //       color: rsiStyle.color,
-  //       lineWidth: rsiStyle.width,
-  //       visible: rsiStyle.visible,
-  //     });
-  //   }
-
-  //   /* ================= UPDATE SMOOTHING ================= */
-
-  //   if (smoothingSeries && smoothingStyle) {
-  //     smoothingSeries.applyOptions({
-  //       color: smoothingStyle.color,
-  //       lineWidth: smoothingStyle.width,
-  //       visible: smoothingStyle.visible,
-  //     });
-  //   }
-
-  //   /* ================= CREATE BANDS FIRST TIME ================= */
-
-  //   if (!rsiGroup._priceLines) {
-  //     rsiGroup._priceLines = {
-  //       upper: rsiSeries.createPriceLine({
-  //         price: upper?.value ?? 70,
-  //         color: upper?.color || "#ef5350",
-  //         lineWidth: upper?.width ?? 2,
-  //         lineStyle: 2,
-  //       }),
-
-  //       middle: rsiSeries.createPriceLine({
-  //         price: middle?.value ?? 50,
-  //         color: middle?.color || "#9e9e9e",
-  //         lineWidth: middle?.width ?? 2,
-  //         lineStyle: 2,
-  //       }),
-
-  //       lower: rsiSeries.createPriceLine({
-  //         price: lower?.value ?? 30,
-  //         color: lower?.color || "#26a69a",
-  //         lineWidth: lower?.width ?? 2,
-  //         lineStyle: 2,
-  //       }),
-  //     };
-  //   }
-
-  //   /* ================= UPDATE BANDS ================= */
-
-  //   const priceLines = rsiGroup._priceLines;
-
-  //   priceLines.upper?.applyOptions({
-  //     price: upper?.value,
-  //     color: upper?.color,
-  //     lineWidth: upper?.width ?? 2,
-  //   });
-
-  //   priceLines.middle?.applyOptions({
-  //     price: middle?.value,
-  //     color: middle?.color,
-  //     lineWidth: middle?.width ?? 2,
-  //   });
-
-  //   priceLines.lower?.applyOptions({
-  //     price: lower?.value,
-  //     color: lower?.color,
-  //     lineWidth: lower?.width ?? 2,
-  //   });
-
-  //   /* ================= UPDATE GRADIENT COLORS ================= */
-
-  //   const overboughtFill = rsiGroup.overboughtFill;
-  //   const oversoldFill = rsiGroup.oversoldFill;
-
-  //   if (overboughtFill && obFill) {
-  //     overboughtFill.applyOptions({
-  //       topFillColor1: obFill.topFillColor1,
-  //       topFillColor2: obFill.topFillColor2,
-  //       visible: obFill.visible,
-  //     });
-  //   }
-
-  //   if (oversoldFill && osFill) {
-  //     oversoldFill.applyOptions({
-  //       bottomFillColor1: osFill.bottomFillColor1,
-  //       bottomFillColor2: osFill.bottomFillColor2,
-  //       visible: osFill.visible,
-  //     });
-  //   }
-
-  //   /* ================= UPDATE GRADIENT DATA ================= */
-
-  //   const rsiData = rsiGroup._rsiData;
-  //   if (!rsiData) return;
-
-  //   const upperValue = upper?.value ?? 70;
-  //   const lowerValue = lower?.value ?? 30;
-
-  //   const overboughtData = [];
-  //   const oversoldData = [];
-
-  //   rsiData.forEach((point) => {
-  //     overboughtData.push({
-  //       time: point.time,
-  //       value: Math.max(point.value, upperValue),
-  //     });
-
-  //     oversoldData.push({
-  //       time: point.time,
-  //       value: Math.min(point.value, lowerValue),
-  //     });
-  //   });
-
-  //   rsiGroup.overboughtFill?.setData(overboughtData);
-  //   rsiGroup.oversoldFill?.setData(oversoldData);
-  // }, [
-  //   indicatorSeriesRef.current?.RSI?.rsi,
-
-  //   indicatorStyle?.RSI?.rsi?.color,
-  //   indicatorStyle?.RSI?.rsi?.width,
-  //   indicatorStyle?.RSI?.rsi?.visible,
-
-  //   indicatorStyle?.RSI?.smoothingMA?.color,
-  //   indicatorStyle?.RSI?.smoothingMA?.width,
-  //   indicatorStyle?.RSI?.smoothingMA?.visible,
-
-  //   indicatorStyle?.RSI?.upper?.value,
-  //   indicatorStyle?.RSI?.middle?.value,
-  //   indicatorStyle?.RSI?.lower?.value,
-
-  //   indicatorStyle?.RSI?.upper?.color,
-  //   indicatorStyle?.RSI?.middle?.color,
-  //   indicatorStyle?.RSI?.lower?.color,
-
-  //   indicatorStyle?.RSI?.upper?.width,
-  //   indicatorStyle?.RSI?.middle?.width,
-  //   indicatorStyle?.RSI?.lower?.width,
-
-  //   indicatorStyle?.RSI?.obFill?.topFillColor1,
-  //   indicatorStyle?.RSI?.obFill?.topFillColor2,
-  //   indicatorStyle?.RSI?.obFill?.visible,
-
-  //   indicatorStyle?.RSI?.osFill?.bottomFillColor1,
-  //   indicatorStyle?.RSI?.osFill?.bottomFillColor2,
-  //   indicatorStyle?.RSI?.osFill?.visible,
-  // ]);
-
   async function fetchDataByCurrency(selectedCurrency, timeframeValue) {
     let response;
     if (selectedCurrency && timeframeValue) {
@@ -228,6 +54,13 @@ export default function useChartFunctions({
               result,
               rows,
             };
+            const rsi = result?.data?.rsi;
+            const sma = result?.data?.smoothingMA;
+
+            latestIndicatorValuesRef.current.RSI = {
+              rsi: rsi?.[rsi.length - 1]?.value,
+              smoothingMA: sma?.[sma.length - 1]?.value,
+            };
             break;
           }
 
@@ -238,6 +71,9 @@ export default function useChartFunctions({
               result,
               rows,
             };
+            const ma = result?.data?.ma;
+
+            latestIndicatorValuesRef.current.SMA = ma?.[ma.length - 1]?.value;
             break;
           }
           case "EMA": {
@@ -258,11 +94,6 @@ export default function useChartFunctions({
             indicatorSeriesRef.current["EMA"] = {
               ema: series,
             };
-
-            console.log(
-              "Stored EMA series:",
-              indicatorSeriesRef.current["EMA"],
-            );
 
             break;
           }
@@ -355,42 +186,9 @@ export default function useChartFunctions({
     }
   }
 
-  /* ================= UPDATE STYLE ================= */
-
-  const updateIndicatorStyle = (
-    activeBarIndicator,
-    indicatorStyle,
-    indicatorSeriesRef,
-  ) => {
-    const seriesGroup = indicatorSeriesRef?.current?.[activeBarIndicator];
-    const styleGroup = indicatorStyle?.[activeBarIndicator];
-
-    if (!seriesGroup || !styleGroup) return;
-
-    Object.entries(seriesGroup).forEach(([key, series]) => {
-      if (key === "_priceLines") return;
-
-      const config = styleGroup?.[key];
-
-      if (!series || !config) return;
-
-      if (series.applyOptions) {
-        series.applyOptions({
-          ...(config.color && { color: config.color }),
-          ...(config.width && { lineWidth: config.width }),
-          ...(config.visible !== undefined && { visible: config.visible }),
-        });
-      }
-    });
-  };
-
   return {
-    // chartRef,
     fetchDataByCurrency,
     fetchIndicatorData,
-    updateIndicatorStyle,
-    // indicatorSeriesRef,
-    // latestIndicatorValuesRef,
   };
 }
 
@@ -401,7 +199,7 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
 
   let response;
 
-  if (normalizedType == "RSI") {
+  if (normalizedType === "RSI") {
     response = await apiService.post(
       `/api/indicatorDetails?symbol=${selectedCurrency}&interval=${timeframeValue}&type=${normalizedType}`,
       { maType: "SMA" },

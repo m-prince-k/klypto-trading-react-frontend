@@ -4,7 +4,7 @@ const token = localStorage.getItem("session") && JSON.parse(localStorage.getItem
 
 // 🔹 Create axios instance
 const api = axios.create({
-  baseURL: "http://192.168.1.13:4000/", // change to your API
+  baseURL: "https://loiteringly-homeliest-breana.ngrok-free.dev", // change to your API
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",

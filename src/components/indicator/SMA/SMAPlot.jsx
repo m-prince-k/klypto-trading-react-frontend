@@ -17,11 +17,22 @@ export default function SMAPlot({
 
     const indicator = "SMA";
 
-    const styleConfig = indicatorStyle?.SMA?.sma;
+    const styleConfig = indicatorStyle?.SMA?.ma;
+
+    /* remove previous SMA series */
+
+    const existing = indicatorSeriesRef.current?.SMA?.ma;
+
+    if (existing) {
+      try {
+        chartRef.current?.removeSeries(existing);
+      } catch {}
+    }
 
     const series = addSeries(indicator, LineSeries, {
-      color: styleConfig?.color || "#2962ff",
+      color: styleConfig?.color,
       lineWidth: styleConfig?.width || 2,
+      lineStyle: styleConfig?.lineStyle ?? 0,
       visible: styleConfig?.visible ?? true,
     });
 
@@ -30,17 +41,7 @@ export default function SMAPlot({
     series.setData(result.data);
 
     indicatorSeriesRef.current.SMA = {
-      sma: series,
-    };
-
-    console.log("Stored SMA series:", indicatorSeriesRef.current.SMA);
-
-    /* cleanup when indicator removed */
-
-    return () => {
-      try {
-        chartRef.current?.removeSeries(series);
-      } catch (e) {}
+      ma: series,
     };
 
   }, [result]);
@@ -51,21 +52,23 @@ export default function SMAPlot({
 
   useEffect(() => {
 
-    const smaSeries = indicatorSeriesRef.current?.SMA?.sma;
+    const smaSeries = indicatorSeriesRef.current?.SMA?.ma;
     if (!smaSeries) return;
 
-    const styleConfig = indicatorStyle?.SMA?.sma;
+    const styleConfig = indicatorStyle?.SMA?.ma;
 
     smaSeries.applyOptions({
-      color: styleConfig?.color || "#2962ff",
+      color: styleConfig?.color,
       lineWidth: styleConfig?.width || 2,
+      lineStyle: styleConfig?.lineStyle ?? 0,
       visible: styleConfig?.visible ?? true,
     });
 
   }, [
-    indicatorStyle?.SMA?.sma?.color,
-    indicatorStyle?.SMA?.sma?.width,
-    indicatorStyle?.SMA?.sma?.visible,
+    indicatorStyle?.SMA?.ma?.color,
+    indicatorStyle?.SMA?.ma?.width,
+    indicatorStyle?.SMA?.ma?.visible,
+    indicatorStyle?.SMA?.ma?.lineStyle,
   ]);
 
   return null;

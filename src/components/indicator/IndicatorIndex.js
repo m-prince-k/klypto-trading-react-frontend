@@ -5,5 +5,6 @@ import SMAPlot from "./SMA/SMAPlot";
 export const indicatorComponents = {
   RSI: RSIPlot,
   SMA: SMAPlot,
+  
 //   EMA: EMAPlot,
 };

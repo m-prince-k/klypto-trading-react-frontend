@@ -11,7 +11,7 @@ import {
 
 export const ChartProprties = {
   width: 1300,
-  height: 500,
+  height: 600,
 
   layout: {
     background: { type: "solid", color: "#ffffff" },
@@ -239,15 +239,6 @@ export const chartOptions = [
   { value: "histogram", label: "Histogram", icon: FiBarChart2 },
 ];
 
-export const INDICATOR_COLORS = [
-  "#fa15ae", // yellow
-  "#438506", // pink
-  "#34d399", // green
-  "#a78bfa", // purple
-  "#71e6fb", // blue
-  "#f83838", // red
-];
-
 export const getSeriesColor = (series) => {
   if (!series || !series.options) return "#999";
 
@@ -430,15 +421,14 @@ export const getRowsByIndicator = (indicator) => {
   switch (indicator) {
     case "RSI":
       return [
-        { key: "rsi", label: "RSI", type: "line", color: "#26a69a" },
+        { key: "rsi", label: "RSI", type: "line" },
         {
           key: "smoothingMA",
           label: "Smoothing MA",
           type: "line",
-          color: "#fffc30",
         },
 
-        { key: "upper", label: "RSI Upper Band", value: 70, color: "#ef5350" },
+        { key: "upper", label: "RSI Upper Band", value: 70, },
 
         {
           key: "middle",
@@ -447,7 +437,7 @@ export const getRowsByIndicator = (indicator) => {
           color: "#9e9e9e",
         },
 
-        { key: "lower", label: "RSI Lower Band", value: 30, color: "#26a69a" },
+        { key: "lower", label: "RSI Lower Band", value: 30,  },
 
         {
   key: "bandFill",
@@ -474,11 +464,7 @@ export const getRowsByIndicator = (indicator) => {
       ];
     case "SMA":
       return [
-        { key: "ma", label: "Moving Average", type: "line" },
-        { key: "smaMa", label: "SMA-based MA", type: "line" },
-        { key: "bbUpper", label: "Upper Bollinger Band", type: "band" },
-        { key: "bbLower", label: "Lower Bollinger Band", type: "band" },
-        { key: "bbFill", label: "Bollinger Bands Fill", type: "fill" },
+        { key: "ma", label: "MA", type: "line" },
       ];
 
     case "EMA":

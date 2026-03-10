@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Modal, Button, Tabs, Tab, Row, Col, Form } from "react-bootstrap";
 import IndicatorStyle from "./IndicatorStyle";
-import {updateIndicatorStyle}  from "../../util/ChartFunctions";
+// import { updateIndicatorStyle } from "../../util/ChartFunctions";
 
 export default function IndicatorPropertyDialog({
   setIndicatorProperty,
@@ -361,26 +361,25 @@ export default function IndicatorPropertyDialog({
      OK BUTTON
   ========================== */
   const handleIndicatorPropertyChange = () => {
+    console.log(indicatorStyle, "styleeeeeeee");
 
-  console.log(indicatorStyle, "styleeeeeeee");
+    // updateIndicatorStyle(
+    //   activeBarIndicator,
+    //   indicatorStyle,
+    //   indicatorSeriesRef,
+    // );
 
-  updateIndicatorStyle(
-    activeBarIndicator,
-    indicatorStyle,
-    indicatorSeriesRef
-  );
+    /* ===== CREATE PAYLOAD FOR ACTIVE INDICATOR ===== */
 
-  /* ===== CREATE PAYLOAD FOR ACTIVE INDICATOR ===== */
+    const payload = {
+      indicator: activeBarIndicator,
+      config: indicatorConfigs?.[activeBarIndicator] || {},
+    };
 
-  const payload = {
-    indicator: activeBarIndicator,
-    config: indicatorConfigs?.[activeBarIndicator] || {}
+    console.log(payload, "payload for api");
+
+    setIndicatorProperty(false);
   };
-
-  console.log(payload, "payload for api");
-
-  setIndicatorProperty(false);
-};
   const handleCancel = () => {
     setIndicatorConfigs((prev) => ({
       ...prev,
@@ -398,7 +397,7 @@ export default function IndicatorPropertyDialog({
     showOffset = true,
   }) {
     return (
-      <section className="mt-3">
+      <section className="mt-3 px-3">
         {showLength && currentConfig?.length !== undefined && (
           <Form.Group
             as={Row}
@@ -468,116 +467,116 @@ export default function IndicatorPropertyDialog({
   }
 
   const toggleSmoothing = (value) => {
-  setIndicatorConfigs((prev) => ({
-    ...prev,
-    [activeBarIndicator]: {
-      ...prev[activeBarIndicator],
-      smoothing: {
-        ...prev[activeBarIndicator].smoothing,
-        enableMA: value,
+    setIndicatorConfigs((prev) => ({
+      ...prev,
+      [activeBarIndicator]: {
+        ...prev[activeBarIndicator],
+        smoothing: {
+          ...prev[activeBarIndicator].smoothing,
+          enableMA: value,
+        },
       },
-    },
-  }));
-};
+    }));
+  };
 
- function SmoothingSection() {
-  if (!currentConfig?.smoothing) return null;
+  function SmoothingSection() {
+    if (!currentConfig?.smoothing) return null;
 
-  const smoothing = currentConfig.smoothing;
+    const smoothing = currentConfig.smoothing;
 
-  return (
-    <>
-      <hr />
+    return (
+      <>
+        <hr />
 
-      {/* HEADER WITH CHECKBOX */}
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h6 className="m-0">Smoothing</h6>
+        {/* HEADER WITH CHECKBOX */}
+        <div className="d-flex justify-content-between px-3 align-items-center mb-3">
+          <h6 className="m-0">Smoothing</h6>
 
-        <Form.Check
-          type="checkbox"
-          label="Enable"
-          checked={smoothing.enableMA}
-          onChange={(e) => toggleSmoothing(e.target.checked)}
-        />
-      </div>
+          <Form.Check
+            type="checkbox"
+            label="Enable"
+            checked={smoothing.enableMA}
+            onChange={(e) => toggleSmoothing(e.target.checked)}
+          />
+        </div>
 
-      {/* SHOW FORM ONLY IF ENABLED */}
-      {smoothing.enableMA && (
-        <section>
-          {/* TYPE */}
-          <Form.Group
-            as={Row}
-            className="mb-3"
-            controlId="smoothingType"
-            style={{ alignItems: "center" }}
-          >
-            <Form.Label style={labelStyle}>Type</Form.Label>
+        {/* SHOW FORM ONLY IF ENABLED */}
+        {smoothing.enableMA && (
+          <section className="px-3">
+            {/* TYPE */}
+            <Form.Group
+              as={Row}
+              className="mb-3"
+              controlId="smoothingType"
+              style={{ alignItems: "center" }}
+            >
+              <Form.Label style={labelStyle}>Type</Form.Label>
 
-            <Col>
-              <Form.Select
-                value={smoothing.type}
-                onChange={(e) => updateSmoothing("type", e.target.value)}
-              >
-                {[
-                  "None",
-                  "SMA",
-                  "EMA",
-                  "WMA",
-                  "SMA + Bollinger Bands",
-                  "VWMA",
-                  "SMMA (RMA)",
-                ].map((opt) => (
-                  <option key={opt}>{opt}</option>
-                ))}
-              </Form.Select>
-            </Col>
-          </Form.Group>
+              <Col>
+                <Form.Select
+                  value={smoothing.type}
+                  onChange={(e) => updateSmoothing("type", e.target.value)}
+                >
+                  {[
+                    "None",
+                    "SMA",
+                    "EMA",
+                    "WMA",
+                    "SMA + Bollinger Bands",
+                    "VWMA",
+                    "SMMA (RMA)",
+                  ].map((opt) => (
+                    <option key={opt}>{opt}</option>
+                  ))}
+                </Form.Select>
+              </Col>
+            </Form.Group>
 
-          {/* LENGTH */}
-          <Form.Group
-            as={Row}
-            className="mb-3"
-            controlId="smoothingLength"
-            style={{ alignItems: "center" }}
-          >
-            <Form.Label style={labelStyle}>Length</Form.Label>
+            {/* LENGTH */}
+            <Form.Group
+              as={Row}
+              className="mb-3"
+              controlId="smoothingLength"
+              style={{ alignItems: "center" }}
+            >
+              <Form.Label style={labelStyle}>Length</Form.Label>
 
-            <Col>
-              <Form.Control
-                type="number"
-                value={smoothing.length}
-                onChange={(e) =>
-                  updateSmoothing("length", Number(e.target.value))
-                }
-              />
-            </Col>
-          </Form.Group>
+              <Col>
+                <Form.Control
+                  type="number"
+                  value={smoothing.length}
+                  onChange={(e) =>
+                    updateSmoothing("length", Number(e.target.value))
+                  }
+                />
+              </Col>
+            </Form.Group>
 
-          {/* BB STD DEV */}
-          <Form.Group
-            as={Row}
-            className="mb-3"
-            controlId="bbStdDev"
-            style={{ alignItems: "center" }}
-          >
-            <Form.Label style={labelStyle}>BB Std Dev</Form.Label>
+            {/* BB STD DEV */}
+            <Form.Group
+              as={Row}
+              className="mb-3"
+              controlId="bbStdDev"
+              style={{ alignItems: "center" }}
+            >
+              <Form.Label style={labelStyle}>BB Std Dev</Form.Label>
 
-            <Col>
-              <Form.Control
-                type="number"
-                value={smoothing.bbStdDev}
-                disabled={smoothing.type !== "SMA + Bollinger Bands"}
-                onChange={(e) =>
-                  updateSmoothing("bbStdDev", Number(e.target.value))
-                }
-              />
-            </Col>
-          </Form.Group>
-        </section>
-      )}
-    </>
-  );
-}
+              <Col>
+                <Form.Control
+                  type="number"
+                  value={smoothing.bbStdDev}
+                  disabled={smoothing.type !== "SMA + Bollinger Bands"}
+                  onChange={(e) =>
+                    updateSmoothing("bbStdDev", Number(e.target.value))
+                  }
+                />
+              </Col>
+            </Form.Group>
+          </section>
+        )}
+      </>
+    );
+  }
 
   /* =========================
      RENDER PER INDICATOR
@@ -1822,33 +1821,128 @@ export default function IndicatorPropertyDialog({
       show={indicatorProperty}
       onHide={() => setIndicatorProperty(false)}
       centered
+      contentClassName="border-0 shadow-lg"
+      style={{ borderRadius: 16 }}
     >
-      <Modal.Header closeButton>
-        <Modal.Title>{activeBarIndicator}</Modal.Title>
+      <Modal.Header closeButton className="border-0 pb-0 px-4 pt-4">
+        <Modal.Title
+          style={{
+            fontSize: 17,
+            fontWeight: 700,
+            color: "#111827",
+            letterSpacing: "-0.2px",
+          }}
+        >
+          {activeBarIndicator}
+        </Modal.Title>
       </Modal.Header>
 
-      <Modal.Body>
-        <Tabs defaultActiveKey="inputs">
-          <Tab eventKey="inputs" title="Inputs">
-            {renderIndicatorSetting()}
+      <Modal.Body className="px-0 pt-0 pb-0">
+        <Tabs
+          defaultActiveKey="inputs"
+          className="px-4 mb-0"
+          style={{
+            borderBottom: "1.5px solid #f0f0f0",
+            gap: 4,
+          }}
+        >
+          {["inputs", "style", "visibility"].map(
+            (key) =>
+              // We still use Tab components, styling via CSS below
+              null,
+          )}
+
+          <Tab
+            eventKey="inputs"
+            title={
+              <span style={{ fontSize: 14, fontWeight: 600, padding: "0 2px" }}>
+                Inputs
+              </span>
+            }
+          >
+            <div className="px-4 py-3">{renderIndicatorSetting()}</div>
           </Tab>
 
-          <Tab eventKey="style" title="Style">
-            <IndicatorStyle
-              indicatorStyle={indicatorStyle}
-              setIndicatorStyle={setIndicatorStyle}
-              activeBarIndicator={activeBarIndicator}
-            />
+          <Tab
+            eventKey="style"
+            title={
+              <span style={{ fontSize: 14, fontWeight: 600, padding: "0 2px" }}>
+                Style
+              </span>
+            }
+          >
+            <div className="px-4 py-3">
+              <IndicatorStyle
+                indicatorStyle={indicatorStyle}
+                setIndicatorStyle={setIndicatorStyle}
+                activeBarIndicator={activeBarIndicator}
+              />
+            </div>
           </Tab>
         </Tabs>
+
+        {/* Inline style overrides for Bootstrap nav-tabs */}
+        <style>{`
+      .nav-tabs {
+        border-bottom: 1.5px solid #f0f0f0 !important;
+      }
+      .nav-tabs .nav-link {
+        border: none !important;
+        border-bottom: 2.5px solid transparent !important;
+        color: #9ca3af !important;
+        font-weight: 600 !important;
+        font-size: 14px !important;
+        padding: 10px 14px !important;
+        margin-bottom: -1.5px !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        transition: color 0.15s ease, border-color 0.15s ease !important;
+      }
+      .nav-tabs .nav-link:hover {
+        color: #374151 !important;
+        border-bottom-color: #d1d5db !important;
+      }
+      .nav-tabs .nav-link.active {
+        color: #111827 !important;
+        border-bottom: 2.5px solid #111827 !important;
+        background: transparent !important;
+      }
+      .tab-content {
+        border: none !important;
+      }
+    `}</style>
       </Modal.Body>
 
-      <Modal.Footer>
-        <Button variant="light" onClick={handleCancel}>
+      <Modal.Footer className="border-0 px-4 pb-4 pt-2" style={{ gap: 8 }}>
+        <Button
+          variant="light"
+          onClick={handleCancel}
+          style={{
+            fontSize: 14,
+            fontWeight: 600,
+            borderRadius: 8,
+            padding: "8px 20px",
+            border: "1.5px solid #e5e7eb",
+            color: "#374151",
+            background: "#f9fafb",
+          }}
+        >
           Cancel
         </Button>
 
-        <Button variant="dark" onClick={handleIndicatorPropertyChange}>
+        <Button
+          variant="dark"
+          onClick={handleIndicatorPropertyChange}
+          style={{
+            fontSize: 14,
+            fontWeight: 600,
+            borderRadius: 8,
+            padding: "8px 20px",
+            background: "#111827",
+            border: "none",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.18)",
+          }}
+        >
           Ok
         </Button>
       </Modal.Footer>

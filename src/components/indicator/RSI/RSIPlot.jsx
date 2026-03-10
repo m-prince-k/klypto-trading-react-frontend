@@ -8,76 +8,85 @@ export default function RSIPlot({
   indicatorSeriesRef,
   addSeries,
 }) {
-
-  /* ================= INITIAL PLOT ================= */
+  /* ================= CREATE RSI ================= */
 
   useEffect(() => {
-
     if (!result) return;
 
+    /* REMOVE OLD RSI COMPLETELY */
+    if (indicatorSeriesRef.current?.RSI) {
+      Object.values(indicatorSeriesRef.current.RSI).forEach((s) => {
+        if (s?.setData) {
+          try {
+            s.setData([]);
+          } catch {}
+        }
+      });
+
+      indicatorSeriesRef.current.RSI = null;
+    }
+
     const groupedSeries = {};
+    let rsiData = [];
 
     const upper = indicatorStyle?.RSI?.upper?.value ?? 70;
     const lower = indicatorStyle?.RSI?.lower?.value ?? 30;
 
+    const bandFill = indicatorStyle?.RSI?.bandFill;
     const obFill = indicatorStyle?.RSI?.obFill;
     const osFill = indicatorStyle?.RSI?.osFill;
 
-    let rsiData = [];
+    /* ================= MAIN LINES ================= */
 
     Object.entries(result.data).forEach(([lineName, lineData]) => {
-
       const rowConfig = rows?.find((r) => r.key === lineName);
       const styleConfig = indicatorStyle?.RSI?.[lineName];
 
       const series = addSeries("RSI", LineSeries, {
-        color: styleConfig?.color || rowConfig?.color || "#26a69a",
+        color: styleConfig?.color || rowConfig?.color || "rgba(38,166,154,1)",
         lineWidth: styleConfig?.width || 2,
         visible: styleConfig?.visible ?? true,
+        priceLineVisible: false,
+        lastValueVisible: lineName === "rsi" || lineName === "smoothingMA",
       });
 
       if (!series) return;
 
       series.setData(lineData);
-
       groupedSeries[lineName] = series;
 
       if (lineName === "rsi") rsiData = lineData;
-
     });
 
-    const bandData = [];
+    /* ================= BAND BACKGROUND ================= */
 
-rsiData.forEach((p) => {
-  bandData.push({
-    time: p.time,
-    value: upper,
-  });
-});
+    const bandData = rsiData.map((p) => ({
+      time: p.time,
+      value: upper,
+    }));
 
-bandBackgroundSeries.setData(bandData);
+    const bandBackgroundSeries = addSeries("RSI", BaselineSeries, {
+      baseValue: { type: "price", price: lower },
 
-    const bandFill = indicatorStyle?.RSI?.bandFill;
+      topFillColor1: bandFill?.topFillColor1,
+      topFillColor2: bandFill?.topFillColor2,
 
-const bandBackgroundSeries = addSeries("RSI", BaselineSeries, {
-  baseValue: { type: "price", price: lower },
+      bottomFillColor1: "rgba(0,0,0,0)",
+      bottomFillColor2: "rgba(0,0,0,0)",
 
-  topFillColor1: bandFill?.topFillColor1,
-  topFillColor2: bandFill?.topFillColor2,
+      topLineColor: "transparent",
+      bottomLineColor: "transparent",
 
-  bottomFillColor1: "rgba(0,0,0,0)",
-  bottomFillColor2: "rgba(0,0,0,0)",
+      visible: bandFill?.visible ?? true,
+      priceLineVisible: false,
+      lastValueVisible: false,
+    });
 
-  topLineColor: "transparent",
-  bottomLineColor: "transparent",
+    bandBackgroundSeries.setData(bandData);
 
-  visible: bandFill?.visible ?? true,
-});
-
-    /* ================= OVERBOUGHT GRADIENT ================= */
+    /* ================= OVERBOUGHT ================= */
 
     const overboughtSeries = addSeries("RSI", BaselineSeries, {
-
       baseValue: { type: "price", price: upper },
 
       topFillColor1: obFill?.topFillColor1,
@@ -90,12 +99,13 @@ const bandBackgroundSeries = addSeries("RSI", BaselineSeries, {
       bottomLineColor: "transparent",
 
       visible: obFill?.visible ?? true,
+      priceLineVisible: false,
+      lastValueVisible: false,
     });
 
-    /* ================= OVERSOLD GRADIENT ================= */
+    /* ================= OVERSOLD ================= */
 
     const oversoldSeries = addSeries("RSI", BaselineSeries, {
-
       baseValue: { type: "price", price: lower },
 
       bottomFillColor1: osFill?.bottomFillColor1,
@@ -108,6 +118,8 @@ const bandBackgroundSeries = addSeries("RSI", BaselineSeries, {
       bottomLineColor: "transparent",
 
       visible: osFill?.visible ?? true,
+      priceLineVisible: false,
+      lastValueVisible: false,
     });
 
     /* ================= GRADIENT DATA ================= */
@@ -116,18 +128,16 @@ const bandBackgroundSeries = addSeries("RSI", BaselineSeries, {
     const oversoldData = [];
 
     rsiData.forEach((p) => {
+      overboughtData.push({
+        time: p.time,
+        value: p.value > upper ? p.value : upper,
+      });
 
-  overboughtData.push({
-    time: p.time,
-    value: p.value > upper ? p.value : upper,
-  });
-
-  oversoldData.push({
-    time: p.time,
-    value: p.value < lower ? p.value : lower,
-  });
-
-});
+      oversoldData.push({
+        time: p.time,
+        value: p.value < lower ? p.value : lower,
+      });
+    });
 
     overboughtSeries.setData(overboughtData);
     oversoldSeries.setData(oversoldData);
@@ -135,136 +145,170 @@ const bandBackgroundSeries = addSeries("RSI", BaselineSeries, {
     groupedSeries.bandBackground = bandBackgroundSeries;
     groupedSeries.overboughtFill = overboughtSeries;
     groupedSeries.oversoldFill = oversoldSeries;
-    groupedSeries._rsiData = rsiData;
 
     indicatorSeriesRef.current.RSI = groupedSeries;
-
   }, [result]);
 
-
-
-  /* ================= STYLE + BAND UPDATE ================= */
+  /* ================= STYLE + VISIBILITY ================= */
 
   useEffect(() => {
-
     const rsiGroup = indicatorSeriesRef.current?.RSI;
     if (!rsiGroup) return;
-
-    const rsiSeries = rsiGroup.rsi;
-    const smoothingSeries = rsiGroup.smoothingMA;
-
-    if (!rsiSeries) return;
 
     const rsiStyle = indicatorStyle?.RSI?.rsi;
     const smoothingStyle = indicatorStyle?.RSI?.smoothingMA;
 
-    const upper = indicatorStyle?.RSI?.upper;
-    const middle = indicatorStyle?.RSI?.middle;
-    const lower = indicatorStyle?.RSI?.lower;
     const bandFill = indicatorStyle?.RSI?.bandFill;
-
-
     const obFill = indicatorStyle?.RSI?.obFill;
     const osFill = indicatorStyle?.RSI?.osFill;
 
     /* ================= UPDATE RSI ================= */
 
-    rsiSeries.applyOptions({
-      color: rsiStyle?.color,
-      lineWidth: rsiStyle?.width,
-      visible: rsiStyle?.visible,
-    });
-
-    /* ================= UPDATE SMOOTHING ================= */
-
-    if (smoothingSeries) {
-      smoothingSeries.applyOptions({
-        color: smoothingStyle?.color,
-        lineWidth: smoothingStyle?.width,
-        visible: smoothingStyle?.visible,
+    console.log(rsiStyle, "styleeeeeee");
+    if (rsiGroup.rsi) {
+      rsiGroup.rsi.applyOptions({
+        color: rsiStyle?.color,
+        lineWidth: rsiStyle?.width,
+        lineStyle: rsiStyle?.lineStyle ?? 0,
+        visible: rsiStyle?.visible,
+        lastValueVisible: rsiStyle?.visible,
+        opacity: rsiStyle?.opacity,
       });
     }
 
-    /* ================= CREATE BANDS IF NOT EXIST ================= */
+    /* ================= UPDATE SMA ================= */
 
-    if (!rsiGroup._priceLines) {
+    if (rsiGroup.smoothingMA) {
+      rsiGroup.smoothingMA.applyOptions({
+        color: smoothingStyle?.color,
+        opacity: smoothingStyle?.opacity,
 
-      rsiGroup._priceLines = {
-        upper: rsiSeries.createPriceLine({
-          price: upper?.value ?? 70,
-          color: upper?.color || "#9e9e9e",
-          lineWidth: upper?.width ?? 1,
-          lineStyle: 2,
-          axisLabelVisible: false,
-        }),
-
-        middle: rsiSeries.createPriceLine({
-          price: middle?.value ?? 50,
-          color: middle?.color || "#9e9e9e",
-          lineWidth: middle?.width ?? 1,
-          lineStyle: 2,
-          axisLabelVisible: false,
-        }),
-
-        lower: rsiSeries.createPriceLine({
-          price: lower?.value ?? 30,
-          color: lower?.color || "#9e9e9e",
-          lineWidth: lower?.width ?? 1,
-          lineStyle: 2,
-          axisLabelVisible: false,
-        }),
-      };
-
+        lineWidth: smoothingStyle?.width,
+        lineStyle: smoothingStyle?.lineStyle ?? 0,
+        visible: smoothingStyle?.visible,
+        lastValueVisible: smoothingStyle?.visible,
+      });
     }
 
-    /* ================= UPDATE BANDS ================= */
+    /* ================= RSI BANDS ================= */
 
-    const lines = rsiGroup._priceLines;
+    const rsiSeries = rsiGroup.rsi;
 
-    lines.upper.applyOptions({
-  price: upper?.value,
-  color: upper?.color,
-  lineWidth: upper?.width,
-  visible: upper?.visible,
-});
+    const upper = indicatorStyle?.RSI?.upper;
+    const middle = indicatorStyle?.RSI?.middle;
+    const lower = indicatorStyle?.RSI?.lower;
 
-    lines.middle.applyOptions({
-      price: middle?.value,
-      color: middle?.color,
-      lineWidth: middle?.width,
-  visible: middle?.visible,
+    /* CREATE ONCE */
 
-    });
+    /* ================= RSI BANDS ================= */
 
-    lines.lower.applyOptions({
-      price: lower?.value,
-      color: lower?.color,
-      lineWidth: lower?.width,
-  visible: lower?.visible,
+    if (!rsiGroup._bands) rsiGroup._bands = {};
 
-    });
+    const bands = rsiGroup._bands;
 
-    /* ================= UPDATE GRADIENT COLORS ================= */
+    /* ================= UPPER BAND ================= */
+
+    if (upper?.visible) {
+      if (!bands.upper) {
+        bands.upper = rsiSeries.createPriceLine({
+          price: upper?.value ?? 70,
+          color: upper?.color || "rgba(158,158,158,1)",
+          opacity: upper?.opacity || 100,
+          lineWidth: upper?.width ?? 1,
+          lineStyle: upper?.lineStyle ?? 2,
+          axisLabelVisible: false,
+          title: "",
+        });
+      }
+
+      bands.upper.applyOptions({
+        price: upper?.value,
+        color: upper?.color,
+        opacity: upper?.opacity,
+        lineWidth: upper?.width,
+        lineStyle: upper?.lineStyle ?? 2,
+      });
+    } else if (bands.upper) {
+      rsiSeries.removePriceLine(bands.upper);
+      bands.upper = null;
+    }
+
+    /* ================= MIDDLE BAND ================= */
+
+    if (middle?.visible) {
+      if (!bands.middle) {
+        bands.middle = rsiSeries.createPriceLine({
+          price: middle?.value ?? 50,
+          color: middle?.color || "rgba(158,158,158,1)",
+          opacity: middle?.opacity || 100,
+          lineWidth: middle?.width ?? 1,
+          lineStyle: middle?.lineStyle ?? 2,
+          axisLabelVisible: false,
+          title: "",
+        });
+      }
+
+      bands.middle.applyOptions({
+        price: middle?.value,
+        color: middle?.color,
+        opacity: middle?.opacity,
+        lineWidth: middle?.width,
+        lineStyle: middle?.lineStyle ?? 2,
+      });
+    } else if (bands.middle) {
+      rsiSeries.removePriceLine(bands.middle);
+      bands.middle = null;
+    }
+
+    /* ================= LOWER BAND ================= */
+
+    if (lower?.visible) {
+      if (!bands.lower) {
+        bands.lower = rsiSeries.createPriceLine({
+          price: lower?.value ?? 30,
+          color: lower?.color || "rgba(158,158,158,1)",
+          opacity: lower?.opacity || 100,
+          lineWidth: lower?.width ?? 1,
+          lineStyle: lower?.lineStyle ?? 2,
+          axisLabelVisible: false,
+          title: "",
+        });
+      }
+
+      bands.lower.applyOptions({
+        price: lower?.value,
+        color: lower?.color,
+        opacity: lower?.opacity,
+        lineWidth: lower?.width,
+        lineStyle: lower?.lineStyle ?? 2,
+      });
+    } else if (bands.lower) {
+      rsiSeries.removePriceLine(bands.lower);
+      bands.lower = null;
+    }
+    /* ================= UPDATE BACKGROUND ================= */
+
     rsiGroup.bandBackground?.applyOptions({
-  topFillColor1: bandFill?.topFillColor1,
-  topFillColor2: bandFill?.topFillColor2,
-  visible: bandFill?.visible,
-});
+      visible: bandFill?.visible,
+      topFillColor1: bandFill?.topFillColor1,
+      topFillColor2: bandFill?.topFillColor2,
+    });
+
+    /* ================= UPDATE OVERBOUGHT ================= */
 
     rsiGroup.overboughtFill?.applyOptions({
-      baseValue: { type: "price", price: upper?.value },
+      visible: obFill?.visible,
       topFillColor1: obFill?.topFillColor1,
       topFillColor2: obFill?.topFillColor2,
-      visible: obFill?.visible,
     });
+
+    /* ================= UPDATE OVERSOLD ================= */
 
     rsiGroup.oversoldFill?.applyOptions({
-      baseValue: { type: "price", price: lower?.value },
+      visible: osFill?.visible,
       bottomFillColor1: osFill?.bottomFillColor1,
       bottomFillColor2: osFill?.bottomFillColor2,
-      visible: osFill?.visible,
     });
-
   }, [indicatorStyle]);
 
   return null;
