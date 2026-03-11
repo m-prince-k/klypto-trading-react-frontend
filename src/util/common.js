@@ -428,7 +428,7 @@ export const getRowsByIndicator = (indicator) => {
           type: "line",
         },
 
-        { key: "upper", label: "RSI Upper Band", value: 70, },
+        { key: "upper", label: "RSI Upper Band", value: 70 },
 
         {
           key: "middle",
@@ -437,15 +437,15 @@ export const getRowsByIndicator = (indicator) => {
           color: "#9e9e9e",
         },
 
-        { key: "lower", label: "RSI Lower Band", value: 30,  },
+        { key: "lower", label: "RSI Lower Band", value: 30 },
 
         {
-  key: "bandFill",
-  label: "RSI Background Fill",
-  type: "fill",
-  topFillColor1: "rgba(140,120,255,0.05)",
-  topFillColor2: "rgba(140,120,255,0.05)",
-},
+          key: "bandFill",
+          label: "RSI Background Fill",
+          type: "fill",
+          topFillColor1: "rgba(140,120,255,0.05)",
+          topFillColor2: "rgba(140,120,255,0.05)",
+        },
         {
           key: "obFill",
           label: "Overbought Gradient Fill",
@@ -453,7 +453,6 @@ export const getRowsByIndicator = (indicator) => {
           topFillColor1: "rgba(38,166,154,0.5)",
           topFillColor2: "rgba(38,166,154,0.1)",
         },
-
         {
           key: "osFill",
           label: "Oversold Gradient Fill",
@@ -463,9 +462,7 @@ export const getRowsByIndicator = (indicator) => {
         },
       ];
     case "SMA":
-      return [
-        { key: "ma", label: "MA", type: "line" },
-      ];
+      return [{ key: "ma", label: "MA", type: "line" }];
 
     case "EMA":
       return [{ key: "ema", label: "EMA", type: "line" }];
@@ -481,22 +478,29 @@ export const getRowsByIndicator = (indicator) => {
       return [{ key: "tema", label: "TEMA", type: "line" }];
     case "KAMA":
       return [{ key: "kama", label: "KAMA", type: "line" }];
-    case "Ichimoku Cloud":
+    case "IchimokuCloud":
       return [
         { key: "conversionLine", label: "Conversion Line", type: "line" },
         { key: "baseLine", label: "Base Line", type: "line" },
-        { key: "laggingSpan", label: "Lagging Span", type: "line" },
-        { key: "leadingSpanA", label: "Leading Span A", type: "line" },
-        { key: "leadingSpanB", label: "Leading Span B", type: "line" },
-        { key: "kumoUpper", label: "Kumo Upper Line", type: "line" },
-        { key: "kumoLower", label: "Kumo Lower Line", type: "line" },
-        {
-          key: "cloudFill",
-          label: "Cloud Fill",
-          type: "area",
-          color0: "rgba(38,166,154,0.4)",
 
-          color1: "rgba(239,83,80,0.4)",
+        { key: "leadLine1", label: "Leading Span A", type: "line" },
+        { key: "leadLine2", label: "Leading Span B", type: "line" },
+
+        { key: "laggingSpan", label: "Lagging Span", type: "line" },
+
+        { key: "kumoCloudUpper", label: "Kumo Cloud Upper Line", type: "line" },
+        { key: "kumoCloudLower", label: "Kumo Cloud Lower Line", type: "line" },
+
+        {
+          key: "cloudFillBullish",
+          label: "Cloud Fill Color 1",
+          type: "fill",
+        },
+
+        {
+          key: "cloudFillBearish",
+          label: "Cloud Fill Color 2",
+          type: "fill",
         },
       ];
 

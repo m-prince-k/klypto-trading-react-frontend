@@ -11,7 +11,7 @@ const COLORS = [
   "#990000","#e69138","#f1c232","#274e13","#134f5c","#0b5394","#351c75","#741b47",
 ];
 
-const getOpacityFromRGBA = (rgba) => {
+export const getOpacityFromRGBA = (rgba) => {
   if (!rgba) return 100;
   const match = rgba.match(/rgba?\(([^)]+)\)/);
   if (!match) return 100;
@@ -20,7 +20,7 @@ const getOpacityFromRGBA = (rgba) => {
   return Math.round(parseFloat(parts[3]) * 100);
 };
 
-const getColorFromRGBA = (rgba) => {
+export const getColorFromRGBA = (rgba) => {
   if (!rgba) return "#6fa8dc";
   const match = rgba.match(/rgba?\(([^)]+)\)/);
   if (!match) return rgba;

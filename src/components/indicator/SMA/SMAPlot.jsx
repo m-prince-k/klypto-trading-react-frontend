@@ -11,40 +11,41 @@ export default function SMAPlot({
 
   /* ================= CREATE SMA ================= */
 
-  useEffect(() => {
+useEffect(() => {
 
-    if (!result) return;
+  if (!result) return;
 
-    const indicator = "SMA";
+  const indicator = "SMA";
+  const styleConfig = indicatorStyle?.SMA?.ma;
 
-    const styleConfig = indicatorStyle?.SMA?.ma;
+  let series = indicatorSeriesRef.current?.SMA?.ma;
 
-    /* remove previous SMA series */
+  /* series already exists → just update data */
 
-    const existing = indicatorSeriesRef.current?.SMA?.ma;
-
-    if (existing) {
-      try {
-        chartRef.current?.removeSeries(existing);
-      } catch {}
-    }
-
-    const series = addSeries(indicator, LineSeries, {
-      color: styleConfig?.color,
-      lineWidth: styleConfig?.width || 2,
-      lineStyle: styleConfig?.lineStyle ?? 0,
-      visible: styleConfig?.visible ?? true,
-    });
-
-    if (!series) return;
-
+  if (series) {
     series.setData(result.data);
+    return;
+  }
 
-    indicatorSeriesRef.current.SMA = {
-      ma: series,
-    };
+  /* create series */
 
-  }, [result]);
+  series = addSeries(indicator, LineSeries, {
+    color: styleConfig?.color,
+    lineWidth: styleConfig?.width || 2,
+    lineStyle: styleConfig?.lineStyle ?? 0,
+    visible: styleConfig?.visible ?? true,
+  });
+
+  if (!series) return;
+
+  series.setData(result.data);
+
+  indicatorSeriesRef.current.SMA = {
+    ...indicatorSeriesRef.current.SMA,
+    ma: series,
+  };
+
+}, [result]);
 
 
 

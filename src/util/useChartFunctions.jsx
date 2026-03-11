@@ -15,12 +15,10 @@ export default function useChartFunctions({
       response = await apiService.post(
         `api/listing?symbol=${selectedCurrency || "BTCUSD"}&interval=${timeframeValue || "1m"}&limit=1000`,
       );
-      // console.log(response, "resssssssssssssss")
     } else {
       response = await apiService.post(
         `api/listing?symbol=${selectedCurrency || "BTCUSD"}&limit=1000&interval=${timeframeValue || "1m"}`,
       );
-      // console.log(response, "resssssssssssssss")
     }
     return response;
   }
@@ -45,8 +43,9 @@ export default function useChartFunctions({
         if (!result) continue;
 
         const rows = getRowsByIndicator(indicator);
+        const normalizedType = indicator.replace(/[\s/]+/g, "");
 
-        switch (indicator) {
+        switch (normalizedType) {
           /* ================= RSI ================= */
 
           case "RSI": {
@@ -76,24 +75,39 @@ export default function useChartFunctions({
             latestIndicatorValuesRef.current.SMA = ma?.[ma.length - 1]?.value;
             break;
           }
-          case "EMA": {
-            removeSeries(indicatorSeriesRef, chartRef, indicator);
 
-            const styleConfig = indicatorStyle?.EMA?.ema;
-
-            const series = addSeries(indicator, LineSeries, {
-              color: styleConfig?.color || "#ff9800",
-              lineWidth: styleConfig?.width || 2,
-              visible: styleConfig?.visible ?? true,
-            });
-
-            if (!series) break;
-
-            series.setData(result.data);
-
-            indicatorSeriesRef.current["EMA"] = {
-              ema: series,
+          case "IchimokuCloud": {
+            indicatorSeriesRef.current.IchimokuCloud = {
+              result,
+              rows,
             };
+            const conversionLine = result?.data?.conversionLine;
+            const baseLine = result?.data?.baseLine;
+            const leadLine1 = result?.data?.leadLine1;
+            const leadLine2 = result?.data?.leadLine2;
+            const laggingSpan = result?.data?.laggingSpan;
+
+            latestIndicatorValuesRef.current.IchimokuCloud = {
+              conversionLine:
+                conversionLine?.[conversionLine.length - 1]?.value,
+              baseLine: baseLine?.[baseLine.length - 1]?.value,
+              leadLine1: leadLine1?.[leadLine1.length - 1]?.value,
+              leadLine2: leadLine2?.[leadLine2.length - 1]?.value,
+              laggingSpan: laggingSpan?.[laggingSpan.length - 1]?.value,
+            };
+
+            break;
+          }
+
+          case "EMA": {
+            indicatorSeriesRef.current.EMA = {
+              result,
+              rows,
+            };
+
+            const ema = result?.data;
+
+            latestIndicatorValuesRef.current.EMA = ema?.[ema.length - 1]?.value;
 
             break;
           }
@@ -210,18 +224,20 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
     );
   }
 
-  // console.log("Raw indicator data for", type, ":", response);
+  console.log("Raw indicator data for", type, ":", response);
 
-  const mapLine = (arr) =>
-    arr?.map((d) => ({
-      time: Number(d.time),
-      value: Number(d.value),
-    })) ?? [];
+  const mapLine = (arr, field) =>
+    arr
+      ?.map((d) => ({
+        time: Number(d.time),
+        value: d[field] != null ? Number(d[field]) : null,
+      }))
+      .filter((d) => d.value !== null) ?? [];
 
+  console.log("mapped conversion", response.data, "conversionLine");
   switch (normalizedType) {
     /* ---------------- SINGLE VALUE ---------------- */
 
-    case "EMA":
     case "HMA":
     case "DEMA":
     case "TEMA":
@@ -274,6 +290,18 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
             .map((d) => ({
               time: d.time, // timestamp
               value: d.sma, // SMA value
+            })) ?? [],
+      };
+
+    case "EMA":
+      return {
+        type: "single",
+        data:
+          response.data
+            ?.filter((d) => d.ema != null && d.time != null)
+            .map((d) => ({
+              time: d.time,
+              value: d.ema,
             })) ?? [],
       };
 
@@ -440,14 +468,18 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
       return {
         type: "multi",
         data: {
-          tenkan: mapLine(response.data?.tenkan),
-          kijun: mapLine(response.data?.kijun),
-          spanA: mapLine(response.data?.spanA),
-          spanB: mapLine(response.data?.spanB),
-          chikou: mapLine(response.data?.chikou),
+          conversionLine: mapLine(response.data, "conversionLine"),
+          baseLine: mapLine(response.data, "baseLine"),
+
+          leadLine1: mapLine(response.data, "leadLine1"),
+          leadLine2: mapLine(response.data, "leadLine2"),
+
+          laggingSpan: mapLine(response.data, "laggingSpan"),
+
+          kumoCloudUpper: mapLine(response.data, "kumoCloudUpper"),
+          kumoCloudLower: mapLine(response.data, "kumoCloudLower"),
         },
       };
-
     case "ChandeKrollStop":
       return {
         type: "multi",

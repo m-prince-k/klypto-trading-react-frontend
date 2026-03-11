@@ -1,7 +1,5 @@
-import React, { useEffect, useState } from "react";
 import { Modal, Button, Tabs, Tab, Row, Col, Form } from "react-bootstrap";
 import IndicatorStyle from "./IndicatorStyle";
-// import { updateIndicatorStyle } from "../../util/ChartFunctions";
 
 export default function IndicatorPropertyDialog({
   setIndicatorProperty,
@@ -290,7 +288,6 @@ export default function IndicatorPropertyDialog({
   ========================== */
 
   const currentConfig = indicatorConfigs[activeBarIndicator];
-  // console.log(currentConfig);
 
   /* =========================
      UPDATE PROPERTY
@@ -361,13 +358,6 @@ export default function IndicatorPropertyDialog({
      OK BUTTON
   ========================== */
   const handleIndicatorPropertyChange = () => {
-    console.log(indicatorStyle, "styleeeeeeee");
-
-    // updateIndicatorStyle(
-    //   activeBarIndicator,
-    //   indicatorStyle,
-    //   indicatorSeriesRef,
-    // );
 
     /* ===== CREATE PAYLOAD FOR ACTIVE INDICATOR ===== */
 
@@ -376,10 +366,18 @@ export default function IndicatorPropertyDialog({
       config: indicatorConfigs?.[activeBarIndicator] || {},
     };
 
-    console.log(payload, "payload for api");
+    // console.log(payload, "payload for api");
 
     setIndicatorProperty(false);
   };
+
+  const payload = {
+    indicator: activeBarIndicator,
+    config: indicatorConfigs?.[activeBarIndicator] || {},
+  };
+
+  // console.log(payload, "payload for api");
+
   const handleCancel = () => {
     setIndicatorConfigs((prev) => ({
       ...prev,

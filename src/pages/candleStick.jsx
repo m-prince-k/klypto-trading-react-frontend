@@ -436,9 +436,99 @@ export default function Candlestick() {
         lineStyle: 0,
         opacity: 100,
       },
-
-      
     },
+    IchimokuCloud: {
+      conversionLine: {
+        color: "rgba(41,98,255,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+
+      baseLine: {
+        color: "rgba(255,109,0,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+
+      leadLine1: {
+        color: "rgba(63,81,181,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+
+      leadLine2: {
+        color: "rgba(216,27,96,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+
+      laggingSpan: {
+        color: "rgba(156,39,176,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+
+      kumoCloudUpper: {
+        color: "rgb(130, 132, 141)",
+        width: 2,
+        lineStyle: 0,
+        visible: false,
+      },
+
+      kumoCloudLower: {
+        color: "rgb(130, 132, 141)",
+        width: 2,
+        lineStyle: 0,
+        visible: false,
+      },
+
+      cloudFillBullish: {
+        color: "rgba(67,160,71,0.35)",
+        opacity: 35,
+        visible: true,
+      },
+
+      cloudFillBearish: {
+        color: "rgba(244,67,54,0.35)",
+        opacity: 35,
+        visible: true,
+      },
+    },
+    EMA: {
+    ema: {
+      color: "rgb(0,0,0)",
+      width: 1,
+      lineStyle: 0,
+      opacity: 100,
+      visible: true
+    }
+  },
+
+  DEMA: {
+    dema: {
+      color: "rgb(0,0,0)",
+      width: 1,
+      lineStyle: 0,
+      opacity: 100,
+      visible: true
+    }
+  },
+
+  TEMA: {
+    tema: {
+      color: "rgb(0,0,0)",
+      width: 1,
+      lineStyle: 0,
+      opacity: 100,
+      visible: true
+    }
+  }
+
   };
 
   const [indicatorStyle, setIndicatorStyle] = useState(indicatorStyleDefault);
@@ -446,8 +536,6 @@ export default function Candlestick() {
   const closeAlert = () => {
     setShowAlertForm(false);
   };
-  const TIME_AXIS_HEIGHT = 28;
-  const PANE_HEIGHT = 140;
 
   /* =========================
    ADD SERIES
@@ -524,23 +612,23 @@ export default function Candlestick() {
     const pane = panesRef.current[paneKey];
     if (!pane) return;
 
-    // Check if any indicator still belongs to this pane
-    const stillUsed = Object.keys(indicatorSeriesRef.current).some(
-      (key) => resolvePaneKey(key) === paneKey,
+    const stillUsed = Object.entries(indicatorSeriesRef.current).some(
+      ([indicatorKey, series]) => {
+        if (!series || indicatorKey.startsWith("_")) return false;
+        return resolvePaneKey(indicatorKey) === paneKey;
+      },
     );
 
     if (stillUsed) return;
 
     try {
-      // remove chart instance
       if (pane.chart) pane.chart.remove();
 
-      // remove DOM elements
-      if (pane.div && pane.div.parentNode) {
+      if (pane.div?.parentNode) {
         pane.div.parentNode.removeChild(pane.div);
       }
 
-      if (pane.splitter && pane.splitter.parentNode) {
+      if (pane.splitter?.parentNode) {
         pane.splitter.parentNode.removeChild(pane.splitter);
       }
     } catch (e) {
@@ -704,55 +792,92 @@ export default function Candlestick() {
 RENDER INDICATOR VALUE
 ========================================================= */
 
-  const renderValue = (indicator, value) => {
-    if (value == null) return "--";
+const renderValue = (indicator, value) => {
+  if (value == null) return "--";
 
-    /* SINGLE VALUE (SMA etc) */
+  /* ================= SINGLE VALUE ================= */
 
-    if (typeof value === "number") {
-      const color =
-        indicatorStyle?.[indicator]?.sma?.color ||
-        indicatorStyle?.[indicator]?.ma?.color ||
-        "#333";
+  if (typeof value === "number") {
+    const style =
+      indicatorStyle?.[indicator]?.sma ||
+      indicatorStyle?.[indicator]?.ma;
 
-      return <span style={{ color }}>{value.toFixed(2)}</span>;
+    if (style?.visible === false) return null;
+
+    const color = style?.color || "#333";
+
+    return <span style={{ color }}>{value.toFixed(2)}</span>;
+  }
+
+  /* ================= MULTI VALUE ================= */
+
+  if (typeof value === "object") {
+
+    let keys = [];
+
+    if (indicator === "RSI") {
+      keys = ["rsi", "smoothingMA"];
     }
 
-    /* MULTI VALUE (RSI etc) */
-
-    if (typeof value === "object") {
-      // Only allow these keys for RSI
-      const allowedKeys =
-        indicator === "RSI" ? ["rsi", "smoothingMA"] : Object.keys(value);
-
-      return Object.entries(value)
-        .filter(([key]) => allowedKeys.includes(key))
-        .map(([key, val]) => {
-          const color = indicatorStyle?.[indicator]?.[key]?.color || "#333";
-
-          return (
-            <span key={key} style={{ marginRight: 8, color }}>
-              {Number.isFinite(val) ? val.toFixed(2) : "--"}
-            </span>
-          );
-        });
+    else if (indicator === "IchimokuCloud") {
+      keys = [
+        "conversionLine",
+        "baseLine",
+        "leadLine1",
+        "leadLine2",
+        "laggingSpan",
+        "kumoCloudUpper",
+        "kumoCloudLower",
+      ];
     }
 
-    return "--";
-  };
+    else {
+      keys = Object.keys(value);
+    }
+
+    return keys
+      .filter((key) => {
+        const style = indicatorStyle?.[indicator]?.[key];
+
+        if (style?.visible === false) return false;
+
+        return value[key] != null;
+      })
+      .map((key) => {
+
+        const val = value[key];
+
+        const color =
+          indicatorStyle?.[indicator]?.[key]?.color || "#333";
+
+        return (
+          <span key={key} style={{ marginRight: 8, color }}>
+            {Number.isFinite(val) ? val.toFixed(2) : "--"}
+          </span>
+        );
+      });
+  }
+
+  return "--";
+};
+
   const renderIndicators = () => {
     return selectedIndicator.map((indicator) => {
-      const Component = indicatorComponents[indicator];
+      const normalizedType = indicator.replace(/[\s/]+/g, "");
+
+      const Component = indicatorComponents[normalizedType];
+      // console.log(Component, indicator, "dataaaaaa");
 
       if (!Component) return null;
 
-      const data = indicatorSeriesRef.current[indicator];
+      const data = indicatorSeriesRef.current[normalizedType];
+      console.log(data, "dataaaaaa");
 
       if (!data) return null;
 
       return (
         <Component
-          key={indicator}
+          key={normalizedType}
           result={data.result}
           rows={data.rows}
           indicatorStyle={indicatorStyle}
@@ -1372,72 +1497,72 @@ ATTACH MAIN CHART
               {/* -----------------INDICATOR BAR------------------- */}
 
               {selectedIndicator?.length > 0 && (
-                  <div className="absolute top-10 left-2 flex flex-col gap-1 z-50">
-                    {selectedIndicator &&
-                      selectedIndicator?.map((indicator, index) => {
-                        const value = liveIndicatorData[indicator];
-                        console.log(liveIndicatorData, "------------");
-                        return (
-                          <div
-                            key={index}
-                            className="flex w-full justify-between items-center gap-3 bg-white shadow-sm border border-slate-200 rounded-3 px-3 h-8 text-xs "
-                          >
-                            <span className="font-medium w-full text-slate-800 flex items-center gap-2">
-                              {indicator} : {timeframeValue} :
-                              <span style={{ display: "flex", gap: 6 }}>
-                                {renderValue(indicator, value)}
-                              </span>
+                <div className="absolute top-10 left-2 flex flex-col gap-1 z-50">
+                  {selectedIndicator &&
+                    selectedIndicator?.map((indicator, index) => {
+                      const normalizedType = indicator.replace(/[\s/]+/g, "");
+                      const value = liveIndicatorData[normalizedType];
+                      return (
+                        <div
+                          key={index}
+                          className="flex w-full justify-between items-center gap-3 bg-white shadow-sm border border-slate-200 rounded-3 px-3 h-8 text-xs "
+                        >
+                          <span className="font-medium w-full text-slate-800 flex items-center gap-2">
+                            {indicator} : {timeframeValue} :
+                            <span style={{ display: "flex", gap: 6 }}>
+                              {renderValue(normalizedType, value)}
                             </span>
+                          </span>
 
-                            <div className="flex items-center gap-2">
-                              <button
-                                title={
-                                  indicatorVisibility[indicator]
-                                    ? "Hide Indicator"
-                                    : "Show Indicator"
-                                }
-                                onClick={() =>
-                                  toggleIndicatorVisibility(indicator)
-                                }
-                                className="text-slate-600"
-                              >
-                                {indicatorVisibility[indicator] ? (
-                                  <IoEyeOutline size={18} />
-                                ) : (
-                                  <IoEyeOffOutline size={18} />
-                                )}
-                              </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              title={
+                                indicatorVisibility[normalizedType]
+                                  ? "Hide Indicator"
+                                  : "Show Indicator"
+                              }
+                              onClick={() =>
+                                toggleIndicatorVisibility(normalizedType)
+                              }
+                              className="text-slate-600"
+                            >
+                              {indicatorVisibility[normalizedType] ? (
+                                <IoEyeOutline size={18} />
+                              ) : (
+                                <IoEyeOffOutline size={18} />
+                              )}
+                            </button>
 
-                              <button
-                                title="Indicator Settings"
-                                onClick={() => {
-                                  setActiveBarIndicator(indicator);
-                                  setIndicatorProperty((prev) => !prev);
-                                }}
-                                className="text-slate-600"
-                              >
-                                <IoSettingsOutline size={18} />
-                              </button>
+                            <button
+                              title="Indicator Settings"
+                              onClick={() => {
+                                setActiveBarIndicator(indicator);
+                                setIndicatorProperty((prev) => !prev);
+                              }}
+                              className="text-slate-600"
+                            >
+                              <IoSettingsOutline size={18} />
+                            </button>
 
-                              <button
-                                title="Source Code"
-                                onClick={() => {
-                                  setActiveSourceIndicator(indicator);
-                                  setShowSourcePanel(true);
-                                }}
-                                className="text-slate-600"
-                              >
-                                <FaCode size={18} />
-                              </button>
+                            <button
+                              title="Source Code"
+                              onClick={() => {
+                                setActiveSourceIndicator(indicator);
+                                setShowSourcePanel(true);
+                              }}
+                              className="text-slate-600"
+                            >
+                              <FaCode size={18} />
+                            </button>
 
-                              <button
-                                onClick={() => removeIndicator(indicator)}
-                                className="text-slate-600"
-                              >
-                                <IoCloseSharp size={18} />
-                              </button>
+                            <button
+                              onClick={() => removeIndicator(normalizedType)}
+                              className="text-slate-600"
+                            >
+                              <IoCloseSharp size={18} />
+                            </button>
 
-                              {/* <DropdownMenu.Root>
+                            {/* <DropdownMenu.Root>
                                 <DropdownMenu.Trigger asChild>
                                   <button className="text-slate-500 hover:text-slate-800">
                                     <FiMoreHorizontal size={18} />
@@ -1474,22 +1599,21 @@ ATTACH MAIN CHART
                                   </DropdownMenu.Content>
                                 </DropdownMenu.Portal>
                               </DropdownMenu.Root> */}
-                            </div>
-
-                            {showAlertForm && (
-                              <IndicatorAlert
-                                onClose={closeAlert}
-                                value={value}
-                                liveOhlcv={liveOhlcv}
-                                symbol={selectedCurrency}
-                              />
-                            )}
                           </div>
-                        );
-                      })}
-                  </div>
-                )}
-                
+
+                          {showAlertForm && (
+                            <IndicatorAlert
+                              onClose={closeAlert}
+                              value={value}
+                              liveOhlcv={liveOhlcv}
+                              symbol={selectedCurrency}
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
 
               {/* {selectedIndicator.map((indicator, index) => {
                 const value = liveIndicatorData[indicator];
@@ -1516,7 +1640,6 @@ ATTACH MAIN CHART
                   />
                 );
               })} */}
-
             </div>
           </div>
           <div className="col-md-3">
