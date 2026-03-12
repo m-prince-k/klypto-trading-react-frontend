@@ -1,212 +1,265 @@
 import { useEffect } from "react";
 import { LineSeries, AreaSeries } from "lightweight-charts";
 
+/* ================= CLOUD BUILDER ================= */
+
+function buildCloud(spanA, spanB) {
+  const bullish = [];
+  const bearish = [];
+
+  for (let i = 0; i < spanA.length; i++) {
+    const a = spanA[i];
+    const b = spanB[i];
+
+    if (!a || !b) continue;
+
+    if (a.value > b.value) {
+      bullish.push({
+        time: a.time,
+        value: a.value,
+      });
+    }
+
+    if (b.value > a.value) {
+      bearish.push({
+        time: b.time,
+        value: b.value,
+      });
+    }
+  }
+
+  return { bullish, bearish };
+}
+
 export default function IchimokuCloudPlot({
   result,
   indicatorStyle,
   indicatorSeriesRef,
-  addSeries
+  addSeries,
 }) {
 
-  const buildCloud = (spanA, spanB, bullishColor, bearishColor) => {
+  /* ================= CREATE SERIES ================= */
 
-    const upper = [];
-    const lower = [];
+  useEffect(() => {
+    if (!result) return;
 
-    spanA.forEach((p,i)=>{
-
-      const b = spanB[i];
-      if(!b) return;
-
-      const bullish = p.value >= b.value;
-
-      const color = bullish ? bullishColor : bearishColor;
-
-      upper.push({
-        time:p.time,
-        value:Math.max(p.value,b.value),
-        color
+    if (indicatorSeriesRef.current?.IchimokuCloud) {
+      Object.values(indicatorSeriesRef.current.IchimokuCloud).forEach((s) => {
+        if (s?.setData) {
+          try {
+            s.setData([]);
+          } catch {}
+        }
       });
 
-      lower.push({
-        time:p.time,
-        value:Math.min(p.value,b.value),
-        color
-      });
-
-    });
-
-    return {upper,lower};
-  };
-
-
-
-  useEffect(()=>{
-
-    if(!result) return;
-
-    if(indicatorSeriesRef.current?.IchimokuCloud){
-
-      Object.values(indicatorSeriesRef.current.IchimokuCloud).forEach(s=>{
-        try{s.setData([])}catch{}
-      });
-
-      indicatorSeriesRef.current.IchimokuCloud=null;
+      indicatorSeriesRef.current.IchimokuCloud = null;
     }
 
     const style = indicatorStyle?.IchimokuCloud ?? {};
+    const grouped = {};
 
-    const grouped={};
+    /* ================= DATA ================= */
 
     const conversionLine = result?.data?.conversionLine || [];
     const baseLine = result?.data?.baseLine || [];
     const spanA = result?.data?.leadLine1 || [];
     const spanB = result?.data?.leadLine2 || [];
     const laggingSpan = result?.data?.laggingSpan || [];
+
     const kumoUpper = result?.data?.kumoCloudUpper || [];
     const kumoLower = result?.data?.kumoCloudLower || [];
 
-
-
     /* ================= LINES ================= */
 
-    const conversionSeries = addSeries("main",LineSeries,{
-      color:style?.conversionLine?.color,
-      lineWidth:style?.conversionLine?.width ?? 2,
-      lineStyle:style?.conversionLine?.lineStyle ?? 0,
-      visible:style?.conversionLine?.visible ?? true
+    const conversionSeries = addSeries("main", LineSeries, {
+      color: style?.conversionLine?.color,
+      lineWidth: style?.conversionLine?.width ?? 2,
+      visible: style?.conversionLine?.visible ?? true,
     });
 
-    const baseSeries = addSeries("main",LineSeries,{
-      color:style?.baseLine?.color,
-      lineWidth:style?.baseLine?.width ?? 2,
-      lineStyle:style?.baseLine?.lineStyle ?? 0,
-      visible:style?.baseLine?.visible ?? true
+    const baseSeries = addSeries("main", LineSeries, {
+      color: style?.baseLine?.color,
+      lineWidth: style?.baseLine?.width ?? 2,
+      visible: style?.baseLine?.visible ?? true,
     });
 
-    const spanASeries = addSeries("main",LineSeries,{
-      color:style?.leadLine1?.color,
-      lineWidth:style?.leadLine1?.width ?? 2,
-      visible:style?.leadLine1?.visible ?? true
+    const spanASeries = addSeries("main", LineSeries, {
+      color: style?.leadLine1?.color,
+      lineWidth: style?.leadLine1?.width ?? 2,
+      visible: style?.leadLine1?.visible ?? true,
     });
 
-    const spanBSeries = addSeries("main",LineSeries,{
-      color:style?.leadLine2?.color,
-      lineWidth:style?.leadLine2?.width ?? 2,
-      visible:style?.leadLine2?.visible ?? true
+    const spanBSeries = addSeries("main", LineSeries, {
+      color: style?.leadLine2?.color,
+      lineWidth: style?.leadLine2?.width ?? 2,
+      visible: style?.leadLine2?.visible ?? true,
     });
 
-    const laggingSeries = addSeries("main",LineSeries,{
-      color:style?.laggingSpan?.color,
-      lineWidth:style?.laggingSpan?.width ?? 2,
-      visible:style?.laggingSpan?.visible ?? true
+    const laggingSeries = addSeries("main", LineSeries, {
+      color: style?.laggingSpan?.color,
+      lineWidth: style?.laggingSpan?.width ?? 2,
+      visible: style?.laggingSpan?.visible ?? true,
     });
 
-    const kumoUpperSeries = addSeries("main",LineSeries,{
-      color:style?.kumoCloudUpper?.color,
-      lineWidth:style?.kumoCloudUpper?.width ?? 2,
-      visible:style?.kumoCloudUpper?.visible ?? true
+    const kumoUpperSeries = addSeries("main", LineSeries, {
+      color: style?.kumoCloudUpper?.color,
+      lineWidth: style?.kumoCloudUpper?.width ?? 2,
+      visible: style?.kumoCloudUpper?.visible ?? true,
     });
 
-    const kumoLowerSeries = addSeries("main",LineSeries,{
-      color:style?.kumoCloudLower?.color,
-      lineWidth:style?.kumoCloudLower?.width ?? 2,
-      visible:style?.kumoCloudLower?.visible ?? true
+    const kumoLowerSeries = addSeries("main", LineSeries, {
+      color: style?.kumoCloudLower?.color,
+      lineWidth: style?.kumoCloudLower?.width ?? 2,
+      visible: style?.kumoCloudLower?.visible ?? true,
     });
 
+    /* ================= CLOUD SERIES ================= */
 
-
-    /* ================= CLOUD ================= */
-
-    const bullishColor =
-      style?.cloudFillBullish?.color ?? "rgba(67,160,71,0.35)";
-
-    const bearishColor =
-      style?.cloudFillBearish?.color ?? "rgba(244,67,54,0.35)";
-
-    const cloudUpperSeries = addSeries("main",AreaSeries,{
-      lineWidth:0,
-      topColor:bullishColor,
-      bottomColor:bullishColor,
-      lastValueVisible:false,
-      priceLineVisible:false,
-      visible:style?.cloudFillBullish?.visible ?? true
+    const bullishCloudSeries = addSeries("main", AreaSeries, {
+      lineWidth: 0,
+      topColor: style?.cloudFillBullish?.color,
+      bottomColor: style?.cloudFillBullish?.color,
+      visible: style?.cloudFillBullish?.visible ?? true,
+      priceLineVisible: false,
+      lastValueVisible: false,
     });
 
-    const cloudLowerSeries = addSeries("main",AreaSeries,{
-      lineWidth:0,
-      topColor:bearishColor,
-      bottomColor:bearishColor,
-      lastValueVisible:false,
-      priceLineVisible:false,
-      visible:style?.cloudFillBearish?.visible ?? true
+    const bearishCloudSeries = addSeries("main", AreaSeries, {
+      lineWidth: 0,
+      topColor: style?.cloudFillBearish?.color,
+      bottomColor: style?.cloudFillBearish?.color,
+      visible: style?.cloudFillBearish?.visible ?? true,
+      priceLineVisible: false,
+      lastValueVisible: false,
     });
 
-    const cloud = buildCloud(spanA,spanB,bullishColor,bearishColor);
+    /* ================= BUILD CLOUD ================= */
 
-    cloudUpperSeries.setData(cloud.upper);
-    cloudLowerSeries.setData(cloud.lower);
+    const cloud = buildCloud(spanA, spanB);
 
+    bullishCloudSeries.setData(cloud.bullish);
+    bearishCloudSeries.setData(cloud.bearish);
 
-
-    /* ================= SET DATA ================= */
+    /* ================= SET LINE DATA ================= */
 
     conversionSeries.setData(conversionLine);
     baseSeries.setData(baseLine);
     spanASeries.setData(spanA);
     spanBSeries.setData(spanB);
     laggingSeries.setData(laggingSpan);
+
     kumoUpperSeries.setData(kumoUpper);
     kumoLowerSeries.setData(kumoLower);
 
+    /* ================= STORE ================= */
+
+    grouped.conversionLine = conversionSeries;
+    grouped.baseLine = baseSeries;
+    grouped.leadLine1 = spanASeries;
+    grouped.leadLine2 = spanBSeries;
+    grouped.laggingSpan = laggingSeries;
+
+    grouped.kumoCloudUpper = kumoUpperSeries;
+    grouped.kumoCloudLower = kumoLowerSeries;
+
+    grouped.bullishCloud = bullishCloudSeries;
+    grouped.bearishCloud = bearishCloudSeries;
+
+    indicatorSeriesRef.current.IchimokuCloud = grouped;
+
+  }, [result]);
 
 
-    grouped.conversionLine=conversionSeries;
-    grouped.baseLine=baseSeries;
-    grouped.leadLine1=spanASeries;
-    grouped.leadLine2=spanBSeries;
-    grouped.laggingSpan=laggingSeries;
-    grouped.kumoCloudUpper=kumoUpperSeries;
-    grouped.kumoCloudLower=kumoLowerSeries;
-    grouped.cloudUpper=cloudUpperSeries;
-    grouped.cloudLower=cloudLowerSeries;
 
-    indicatorSeriesRef.current.IchimokuCloud=grouped;
+  /* ================= STYLE UPDATE ================= */
 
-  },[result]);
+  useEffect(() => {
 
+    const group = indicatorSeriesRef.current?.IchimokuCloud;
+    if (!group) return;
 
+    const style = indicatorStyle?.IchimokuCloud ?? {};
 
-  useEffect(()=>{
+    /* ===== MAIN LINES ===== */
 
-    const group=indicatorSeriesRef.current?.IchimokuCloud;
-    if(!group) return;
+    if (group.conversionLine) {
+      group.conversionLine.applyOptions({
+        color: style?.conversionLine?.color,
+        lineWidth: style?.conversionLine?.width,
+        lineStyle: style?.conversionLine?.lineStyle ?? 0,
+        visible: style?.conversionLine?.visible,
+      });
+    }
 
-    const style=indicatorStyle?.IchimokuCloud ?? {};
+    if (group.baseLine) {
+      group.baseLine.applyOptions({
+        color: style?.baseLine?.color,
+        lineWidth: style?.baseLine?.width,
+        lineStyle: style?.baseLine?.lineStyle ?? 0,
+        visible: style?.baseLine?.visible,
+      });
+    }
 
-    group.conversionLine?.applyOptions(style.conversionLine);
-    group.baseLine?.applyOptions(style.baseLine);
-    group.leadLine1?.applyOptions(style.leadLine1);
-    group.leadLine2?.applyOptions(style.leadLine2);
-    group.laggingSpan?.applyOptions(style.laggingSpan);
-    group.kumoCloudUpper?.applyOptions(style.kumoCloudUpper);
-    group.kumoCloudLower?.applyOptions(style.kumoCloudLower);
+    if (group.leadLine1) {
+      group.leadLine1.applyOptions({
+        color: style?.leadLine1?.color,
+        lineWidth: style?.leadLine1?.width,
+        lineStyle: style?.leadLine1?.lineStyle ?? 0,
+        visible: style?.leadLine1?.visible,
+      });
+    }
 
-    group.cloudUpper?.applyOptions({
-      topColor:style?.cloudFillBullish?.color,
-      bottomColor:style?.cloudFillBullish?.color,
-      visible:style?.cloudFillBullish?.visible ?? true
+    if (group.leadLine2) {
+      group.leadLine2.applyOptions({
+        color: style?.leadLine2?.color,
+        lineWidth: style?.leadLine2?.width,
+        lineStyle: style?.leadLine2?.lineStyle ?? 0,
+        visible: style?.leadLine2?.visible,
+      });
+    }
+
+    if (group.laggingSpan) {
+      group.laggingSpan.applyOptions({
+        color: style?.laggingSpan?.color,
+        lineWidth: style?.laggingSpan?.width,
+        lineStyle: style?.laggingSpan?.lineStyle ?? 0,
+        visible: style?.laggingSpan?.visible,
+      });
+    }
+
+    if (group.kumoCloudUpper) {
+      group.kumoCloudUpper.applyOptions({
+        color: style?.kumoCloudUpper?.color,
+        lineWidth: style?.kumoCloudUpper?.width,
+        lineStyle: style?.kumoCloudUpper?.lineStyle ?? 0,
+        visible: style?.kumoCloudUpper?.visible,
+      });
+    }
+
+    if (group.kumoCloudLower) {
+      group.kumoCloudLower.applyOptions({
+        color: style?.kumoCloudLower?.color,
+        lineWidth: style?.kumoCloudLower?.width,
+        lineStyle: style?.kumoCloudLower?.lineStyle ?? 0,
+        visible: style?.kumoCloudLower?.visible,
+      });
+    }
+
+    /* ===== CLOUD ===== */
+
+    group.bullishCloud?.applyOptions({
+      visible: style?.cloudFillBullish?.visible,
+      topColor: style?.cloudFillBullish?.color,
+      bottomColor: style?.cloudFillBullish?.color,
     });
 
-    group.cloudLower?.applyOptions({
-      topColor:style?.cloudFillBearish?.color,
-      bottomColor:style?.cloudFillBearish?.color,
-      visible:style?.cloudFillBearish?.visible ?? true
+    group.bearishCloud?.applyOptions({
+      visible: style?.cloudFillBearish?.visible,
+      topColor: style?.cloudFillBearish?.color,
+      bottomColor: style?.cloudFillBearish?.color,
     });
 
-  },[indicatorStyle]);
-
-
+  }, [indicatorStyle]);
 
   return null;
 }

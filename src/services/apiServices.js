@@ -1,6 +1,7 @@
 import axios from "axios";
 
 const token = localStorage.getItem("session") && JSON.parse(localStorage.getItem("session"));
+console.log(localStorage.getItem("session"), "tokeeeeennnnnnnn")
 
 // 🔹 Create axios instance
 const api = axios.create({

@@ -475,16 +475,16 @@ export default function Candlestick() {
 
       kumoCloudUpper: {
         color: "rgb(130, 132, 141)",
-        width: 2,
+        width: 1,
         lineStyle: 0,
-        visible: false,
+        visible: true,
       },
 
       kumoCloudLower: {
         color: "rgb(130, 132, 141)",
-        width: 2,
+        width: 1,
         lineStyle: 0,
-        visible: false,
+        visible: true,
       },
 
       cloudFillBullish: {
@@ -883,6 +883,7 @@ const renderValue = (indicator, value) => {
           indicatorStyle={indicatorStyle}
           indicatorSeriesRef={indicatorSeriesRef}
           addSeries={addSeries}
+          chartRef={chartRef}
         />
       );
     });
