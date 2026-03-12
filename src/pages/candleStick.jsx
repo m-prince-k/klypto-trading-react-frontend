@@ -118,25 +118,22 @@ export default function Candlestick() {
   const [indicatorConfigs, setIndicatorConfigs] = useState({
     SMA: {
       length: 9,
-      source: "Close",
+      source: "close",
       offset: 0,
-      smoothing: {
-        enableMA: true,
-        type: "SMA + Bollinger Bands",
-        length: 14,
-        bbStdDev: 2,
-      },
+      maType: "none",
+      maLength: 14,
+      bbStdDev: 2,
     },
 
     EMA: {
       length: 9,
-      source: "Close",
+      source: "close",
       offset: 0,
     },
 
     WMA: {
       length: 9,
-      source: "Close",
+      source: "close",
       offset: 0,
     },
 
@@ -161,7 +158,7 @@ export default function Candlestick() {
       source: "Close",
     },
 
-    "Ichimoku Cloud": {
+    IchimokuCloud: {
       conversionLength: 9,
       baseLength: 26,
       spanBLength: 52,
@@ -196,13 +193,10 @@ export default function Candlestick() {
 
     RSI: {
       length: 14,
-      source: "Close",
-      smoothing: {
-        enableMA: true,
-        type: "SMA",
-        length: 14,
-        bbStdDev: 2,
-      },
+      source: "close",
+      maType: "SMA",
+      maLength: 14,
+      bbStdDev: 2,
     },
 
     Stochastic: {
@@ -232,7 +226,6 @@ export default function Candlestick() {
       length: 20,
       source: "HLC3",
       smoothing: {
-        enableMA: true,
         type: "SMA",
         length: 14,
         bbStdDev: 2,
@@ -312,7 +305,6 @@ export default function Candlestick() {
     },
     OBV: {
       smoothing: {
-        enableMA: true,
         type: "None",
         length: 14,
         bbStdDev: 2,
@@ -416,6 +408,7 @@ export default function Candlestick() {
         topFillColor1: "rgba(140,120,255,0.05)",
         topFillColor2: "rgba(140,120,255,0.05)",
       },
+
       obFill: {
         visible: true,
         topFillColor1: "rgba(38,166,154,0.012)",
@@ -426,6 +419,23 @@ export default function Candlestick() {
         visible: true,
         bottomFillColor1: "rgba(239,83,80,0.012)",
         bottomFillColor2: "rgba(239,83,80,0.4)",
+      },
+
+      /* ================== BOLLINGER BANDS ================== */
+      bbUpperBand: {
+        visible: true,
+        color: "#4caf50",
+        width: 1,
+      },
+      bbLowerBand: {
+        visible: true,
+        color: "#f44336",
+        width: 1,
+      },
+      bbFill: {
+        visible: true,
+        topColor: "rgba(76,175,80,0.2)",
+        bottomColor: "rgba(76,175,80,0.05)",
       },
     },
     SMA: {
@@ -500,35 +510,44 @@ export default function Candlestick() {
       },
     },
     EMA: {
-    ema: {
-      color: "rgb(0,0,0)",
-      width: 1,
-      lineStyle: 0,
-      opacity: 100,
-      visible: true
-    }
-  },
+      ema: {
+        color: "rgb(0,0,0)",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+        visible: true,
+      },
+    },
+    WMA: {
+      wma: {
+        color: "rgb(0,0,0)",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+        visible: true,
+      },
+    },
 
-  DEMA: {
-    dema: {
-      color: "rgb(0,0,0)",
-      width: 1,
-      lineStyle: 0,
-      opacity: 100,
-      visible: true
-    }
-  },
 
-  TEMA: {
-    tema: {
-      color: "rgb(0,0,0)",
-      width: 1,
-      lineStyle: 0,
-      opacity: 100,
-      visible: true
-    }
-  }
+    DEMA: {
+      dema: {
+        color: "rgb(0,0,0)",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+        visible: true,
+      },
+    },
 
+    TEMA: {
+      tema: {
+        color: "rgb(0,0,0)",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+        visible: true,
+      },
+    },
   };
 
   const [indicatorStyle, setIndicatorStyle] = useState(indicatorStyleDefault);
@@ -622,13 +641,13 @@ export default function Candlestick() {
     if (stillUsed) return;
 
     try {
-      if (pane.chart) pane.chart.remove();
-
-      if (pane.div?.parentNode) {
+      /* REMOVE DOM ELEMENT */
+      if (pane.div && pane.div.parentNode) {
         pane.div.parentNode.removeChild(pane.div);
       }
 
-      if (pane.splitter?.parentNode) {
+      /* REMOVE SPLITTER */
+      if (pane.splitter && pane.splitter.parentNode) {
         pane.splitter.parentNode.removeChild(pane.splitter);
       }
     } catch (e) {
@@ -653,20 +672,20 @@ export default function Candlestick() {
 
     /* MULTI SERIES */
     if (entry && typeof entry === "object" && !entry.priceScale) {
-      Object.entries(entry).forEach(([key, series]) => {
-        if (key.startsWith("_")) return; // skip internal data
-
-        if (!series || typeof series.applyOptions !== "function") return;
+      Object.values(entry).forEach((series) => {
+        if (!series) return;
+        if (typeof series.setData !== "function") return;
 
         try {
           chart.removeSeries(series);
-        } catch (e) {}
+        } catch {}
       });
     } else {
-      /* SINGLE SERIES (SMA, EMA etc) */
+      /* SINGLE SERIES */
+
       try {
         chart.removeSeries(entry);
-      } catch (e) {}
+      } catch {}
     }
 
     delete indicatorSeriesRef.current[indicator];
@@ -792,74 +811,66 @@ export default function Candlestick() {
 RENDER INDICATOR VALUE
 ========================================================= */
 
-const renderValue = (indicator, value) => {
-  if (value == null) return "--";
+  const renderValue = (indicator, value) => {
+    if (value == null) return "--";
 
-  /* ================= SINGLE VALUE ================= */
+    /* ================= SINGLE VALUE ================= */
 
-  if (typeof value === "number") {
-    const style =
-      indicatorStyle?.[indicator]?.sma ||
-      indicatorStyle?.[indicator]?.ma;
+    if (typeof value === "number") {
+      const style =
+        indicatorStyle?.[indicator]?.sma || indicatorStyle?.[indicator]?.ma;
 
-    if (style?.visible === false) return null;
+      if (style?.visible === false) return null;
 
-    const color = style?.color || "#333";
+      const color = style?.color || "#333";
 
-    return <span style={{ color }}>{value.toFixed(2)}</span>;
-  }
-
-  /* ================= MULTI VALUE ================= */
-
-  if (typeof value === "object") {
-
-    let keys = [];
-
-    if (indicator === "RSI") {
-      keys = ["rsi", "smoothingMA"];
+      return <span style={{ color }}>{value.toFixed(2)}</span>;
     }
 
-    else if (indicator === "IchimokuCloud") {
-      keys = [
-        "conversionLine",
-        "baseLine",
-        "leadLine1",
-        "leadLine2",
-        "laggingSpan",
-        "kumoCloudUpper",
-        "kumoCloudLower",
-      ];
+    /* ================= MULTI VALUE ================= */
+
+    if (typeof value === "object") {
+      let keys = [];
+
+      if (indicator === "RSI") {
+        keys = ["rsi", "smoothingMA"];
+      } else if (indicator === "IchimokuCloud") {
+        keys = [
+          "conversionLine",
+          "baseLine",
+          "leadLine1",
+          "leadLine2",
+          "laggingSpan",
+          "kumoCloudUpper",
+          "kumoCloudLower",
+        ];
+      } else {
+        keys = Object.keys(value);
+      }
+
+      return keys
+        .filter((key) => {
+          const style = indicatorStyle?.[indicator]?.[key];
+
+          if (style?.visible === false) return false;
+
+          return value[key] != null;
+        })
+        .map((key) => {
+          const val = value[key];
+
+          const color = indicatorStyle?.[indicator]?.[key]?.color || "#333";
+
+          return (
+            <span key={key} style={{ marginRight: 8, color }}>
+              {Number.isFinite(val) ? val.toFixed(2) : "--"}
+            </span>
+          );
+        });
     }
 
-    else {
-      keys = Object.keys(value);
-    }
-
-    return keys
-      .filter((key) => {
-        const style = indicatorStyle?.[indicator]?.[key];
-
-        if (style?.visible === false) return false;
-
-        return value[key] != null;
-      })
-      .map((key) => {
-
-        const val = value[key];
-
-        const color =
-          indicatorStyle?.[indicator]?.[key]?.color || "#333";
-
-        return (
-          <span key={key} style={{ marginRight: 8, color }}>
-            {Number.isFinite(val) ? val.toFixed(2) : "--"}
-          </span>
-        );
-      });
-  }
-
-  return "--";
-};
+    return "--";
+  };
 
   const renderIndicators = () => {
     return selectedIndicator.map((indicator) => {
@@ -871,7 +882,7 @@ const renderValue = (indicator, value) => {
       if (!Component) return null;
 
       const data = indicatorSeriesRef.current[normalizedType];
-      console.log(data, "dataaaaaa");
+      // console.log(data, "dataaaaaa");
 
       if (!data) return null;
 
@@ -884,6 +895,7 @@ const renderValue = (indicator, value) => {
           indicatorSeriesRef={indicatorSeriesRef}
           addSeries={addSeries}
           chartRef={chartRef}
+          indicatorConfigs={indicatorConfigs}
         />
       );
     });
@@ -1267,6 +1279,7 @@ ATTACH MAIN CHART
     indicatorSeriesRef,
     indicatorStyle,
     latestIndicatorValuesRef,
+    indicatorConfigs,
   });
 
   // Zoom In
@@ -1301,89 +1314,6 @@ ATTACH MAIN CHART
   const resetZoom = () => {
     chartRef.current?.timeScale().fitContent();
   };
-
-  // const getRowsByIndicator = (indicator) => {
-  //   switch (indicator) {
-  //     /* ================= RSI ================= */
-  //     case "RSI":
-  //       return [
-  //         { key: "rsi", label: "RSI", type: "line", color: "#26a69a" },
-  //         {
-  //           key: "rsiMa",
-  //           label: "RSI-based MA",
-  //           type: "line",
-  //           color: "#ff9800",
-  //         },
-
-  //         {
-  //           key: "upper",
-  //           label: "RSI Upper Band",
-  //           type: "band",
-  //           showValue: true,
-  //           value: 70, // default
-  //           color: "#ef5350",
-  //         },
-  //         {
-  //           key: "middle",
-  //           label: "RSI Middle Band",
-  //           type: "band",
-  //           showValue: true,
-  //           value: 50, // default
-  //           color: "#9e9e9e",
-  //         },
-  //         {
-  //           key: "lower",
-  //           label: "RSI Lower Band",
-  //           type: "band",
-  //           showValue: true,
-  //           value: 30, // default
-  //           color: "#26a69a",
-  //         },
-
-  //         {
-  //           key: "bgFill",
-  //           label: "RSI Background Fill",
-  //           type: "fill",
-  //           color0: "rgba(38,166,154,0.1)",
-  //           color1: "rgba(38,166,154,0.1)",
-  //         },
-  //         {
-  //           key: "obFill",
-  //           label: "Overbought Gradient Fill",
-  //           type: "fill",
-  //           color0: "rgba(239,83,80,0.2)",
-  //           color1: "rgba(239,83,80,0.4)",
-  //         },
-  //         {
-  //           key: "osFill",
-  //           label: "Oversold Gradient Fill",
-  //           type: "fill",
-  //           color0: "rgba(38,166,154,0.2)",
-  //           color1: "rgba(38,166,154,0.4)",
-  //         },
-  //       ];
-  //     default:
-  //       return [];
-  //   }
-  // };
-
-  // const updateIndicator = (indicator, style) => {
-  //   const series = indicatorSeries[indicator];
-
-  //   if (!series) return;
-
-  //   Object.keys(style).forEach((key) => {
-  //     const config = style[key];
-
-  //     if (series[key]) {
-  //       series[key].applyOptions({
-  //         color: config.color,
-  //         lineWidth: config.width,
-  //         visible: config.visible,
-  //       });
-  //     }
-  //   });
-  // };
 
   return (
     <>
@@ -1748,6 +1678,11 @@ ATTACH MAIN CHART
               indicatorStyle={indicatorStyle}
               setIndicatorStyle={setIndicatorStyle}
               indicatorSeriesRef={indicatorSeriesRef}
+              selectedCurrency={selectedCurrency}
+              timeframeValue={timeframeValue}
+              chartRef={chartRef}
+              addSeries={addSeries}
+              latestIndicatorValuesRef={latestIndicatorValuesRef}
             />
           </div>
         </div>

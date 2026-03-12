@@ -8,6 +8,7 @@ export default function useChartFunctions({
   indicatorSeriesRef,
   indicatorStyle,
   latestIndicatorValuesRef,
+  indicatorConfigs,
 }) {
   async function fetchDataByCurrency(selectedCurrency, timeframeValue) {
     let response;
@@ -44,22 +45,39 @@ export default function useChartFunctions({
 
         const rows = getRowsByIndicator(indicator);
         const normalizedType = indicator.replace(/[\s/]+/g, "");
+        const config = indicatorConfigs?.[normalizedType] || {};
+        const { maType, maLength } = config;
+        console.log(maType, "-------------------------------");
 
         switch (normalizedType) {
           /* ================= RSI ================= */
 
           case "RSI": {
+            const rsiData = result?.data?.rsi ?? [];
+            const smoothingData = result?.data?.smoothingMA ?? [];
+            const bbUpperData = result?.data?.bbUpperBand ?? [];
+            const bbLowerData = result?.data?.bbLowerBand ?? [];
+
             indicatorSeriesRef.current.RSI = {
               result,
               rows,
             };
-            const rsi = result?.data?.rsi;
-            const sma = result?.data?.smoothingMA;
+
+            console.log(result, "rehsvdhvkjvsndf");
 
             latestIndicatorValuesRef.current.RSI = {
-              rsi: rsi?.[rsi.length - 1]?.value,
-              smoothingMA: sma?.[sma.length - 1]?.value,
+              rsi: rsiData[rsiData.length - 1]?.value,
+              smoothingMA: smoothingData[smoothingData.length - 1]?.value,
+              bbUpperBand:
+                bbUpperData.length > 0
+                  ? bbUpperData[bbUpperData.length - 1]?.value
+                  : null,
+              bbLowerBand:
+                bbLowerData.length > 0
+                  ? bbLowerData[bbLowerData.length - 1]?.value
+                  : null,
             };
+
             break;
           }
 
@@ -108,6 +126,19 @@ export default function useChartFunctions({
             const ema = result?.data;
 
             latestIndicatorValuesRef.current.EMA = ema?.[ema.length - 1]?.value;
+
+            break;
+          }
+          case "WMA": {
+            indicatorSeriesRef.current.WMA = {
+              ...indicatorSeriesRef.current.WMA,
+              result,
+              rows,
+            };
+
+            const wma = result?.data;
+
+            latestIndicatorValuesRef.current.WMA = wma?.[wma.length - 1]?.value;
 
             break;
           }
@@ -353,6 +384,21 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
                 time: d.time,
                 value: d.smoothingMA,
               })) ?? [],
+          bbUpperBand:
+            response.data
+              ?.filter((d) => d.bbUpperBand != null && d.time != null)
+              .map((d) => ({
+                time: d.time,
+                value: d.bbUpperBand,
+              })) ?? [],
+
+          bbLowerBand:
+            response.data
+              ?.filter((d) => d.bbLowerBand != null && d.time != null)
+              .map((d) => ({
+                time: d.time,
+                value: d.bbLowerBand,
+              })) ?? [],
         },
       };
 
@@ -363,7 +409,7 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
         type: "single",
         data:
           response.data
-            ?.filter((d) => d.wma != null && d.time != null)
+            ?.filter((d) => d.value != null && d.time != null)
             .map((d) => ({
               time: d.time,
               value: d.value,

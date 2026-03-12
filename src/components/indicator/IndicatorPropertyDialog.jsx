@@ -1,5 +1,8 @@
 import { Modal, Button, Tabs, Tab, Row, Col, Form } from "react-bootstrap";
 import IndicatorStyle from "./IndicatorStyle";
+import apiService from "../../services/apiServices";
+import useChartFunctions from "../../util/useChartFunctions";
+import { updateIndicatorFromInput } from "./IndicatorIndex";
 
 export default function IndicatorPropertyDialog({
   setIndicatorProperty,
@@ -10,6 +13,12 @@ export default function IndicatorPropertyDialog({
   indicatorStyle,
   setIndicatorStyle,
   indicatorSeriesRef,
+  selectedCurrency,
+  timeframeValue,
+  chartRef,
+  addSeries,
+  latestIndicatorValuesRef,
+  
 }) {
   const labelStyle = {
     display: "inline-block",
@@ -287,17 +296,20 @@ export default function IndicatorPropertyDialog({
      CURRENT CONFIG
   ========================== */
 
-  const currentConfig = indicatorConfigs[activeBarIndicator];
+  const normalizedType = activeBarIndicator.replace(/[\s/]+/g, "");
+  const currentConfig = indicatorConfigs[normalizedType];
 
   /* =========================
      UPDATE PROPERTY
   ========================== */
 
+  const { fetchIndicatorData } = useChartFunctions
+
   const updateIndicatorConfig = (key, value) => {
     setIndicatorConfigs((prev) => ({
       ...prev,
-      [activeBarIndicator]: {
-        ...prev[activeBarIndicator],
+      [normalizedType]: {
+        ...prev[normalizedType],
         [key]: value,
       },
     }));
@@ -306,8 +318,8 @@ export default function IndicatorPropertyDialog({
   const updateProperty = (key, value) => {
     setIndicatorConfigs((prev) => ({
       ...prev,
-      [activeBarIndicator]: {
-        ...prev[activeBarIndicator],
+      [normalizedType]: {
+        ...prev[normalizedType],
         [key]: value,
       },
     }));
@@ -343,40 +355,67 @@ export default function IndicatorPropertyDialog({
   };
 
   const updateSmoothing = (key, value) => {
-    setIndicatorConfigs((prev) => ({
-      ...prev,
-      [activeBarIndicator]: {
-        ...prev[activeBarIndicator],
-        smoothing: {
-          ...prev[activeBarIndicator].smoothing,
+    setIndicatorConfigs((prev) => {
+      const currentIndicatorConfig = prev?.[normalizedType] || {};
+
+      return {
+        ...prev,
+        [normalizedType]: {
+          ...currentIndicatorConfig,
           [key]: value,
         },
-      },
-    }));
+      };
+    });
   };
   /* =========================
      OK BUTTON
   ========================== */
-  const handleIndicatorPropertyChange = () => {
+ const handleIndicatorPropertyChange = async () => {
 
-    /* ===== CREATE PAYLOAD FOR ACTIVE INDICATOR ===== */
-
-    const payload = {
-      indicator: activeBarIndicator,
-      config: indicatorConfigs?.[activeBarIndicator] || {},
-    };
-
-    // console.log(payload, "payload for api");
-
-    setIndicatorProperty(false);
-  };
+  const config = indicatorConfigs?.[normalizedType] || {};
+  const { maType, maLength } = config;
 
   const payload = {
-    indicator: activeBarIndicator,
-    config: indicatorConfigs?.[activeBarIndicator] || {},
+    type: normalizedType,
+    ...config,
   };
 
-  // console.log(payload, "payload for api");
+  console.log(payload, "payloadddddddddd");
+
+  try {
+
+    const response = await apiService.post(
+      `/api/updateIndicator?symbol=${selectedCurrency}&interval=${timeframeValue}`,
+      payload,
+    );
+
+    console.log("Indicator updated:", response);
+
+    updateIndicatorFromInput(
+      normalizedType,
+      response,
+      indicatorSeriesRef,
+      latestIndicatorValuesRef,
+      maType
+    );
+
+  } catch (error) {
+
+    if (error.response) {
+      console.error("Server responded with error:");
+      console.error("Status:", error.response.status);
+      console.error("Data:", error.response.data);
+    } 
+    else if (error.request) {
+      console.error("No response received from server");
+      console.error(error.request);
+    } 
+    else {
+      console.error("Request setup error:", error.message);
+    }
+
+  }
+};
 
   const handleCancel = () => {
     setIndicatorConfigs((prev) => ({
@@ -431,7 +470,7 @@ export default function IndicatorPropertyDialog({
               >
                 {["Close", "Open", "High", "Low", "HL2", "HLC3", "OHLC4"].map(
                   (opt) => (
-                    <option key={opt} value={opt}>
+                    <option key={opt} value={opt.toLowerCase()}>
                       {opt}
                     </option>
                   ),
@@ -464,124 +503,96 @@ export default function IndicatorPropertyDialog({
     );
   }
 
-  const toggleSmoothing = (value) => {
-    setIndicatorConfigs((prev) => ({
-      ...prev,
-      [activeBarIndicator]: {
-        ...prev[activeBarIndicator],
-        smoothing: {
-          ...prev[activeBarIndicator].smoothing,
-          enableMA: value,
-        },
-      },
-    }));
-  };
-
   function SmoothingSection() {
-    if (!currentConfig?.smoothing) return null;
+    if (!currentConfig) return null;
 
-    const smoothing = currentConfig.smoothing;
-
+    const smoothingTypes = [
+      "None",
+      "SMA",
+      "EMA",
+      "WMA",
+      "SMA + Bollinger Bands",
+      "VWMA",
+      "SMMA (RMA)",
+    ];
     return (
       <>
         <hr />
 
-        {/* HEADER WITH CHECKBOX */}
-        <div className="d-flex justify-content-between px-3 align-items-center mb-3">
-          <h6 className="m-0">Smoothing</h6>
+        <section className="px-3">
+          {/* TYPE */}
+          <Form.Group
+            as={Row}
+            className="mb-3"
+            controlId="smoothingType"
+            style={{ alignItems: "center" }}
+          >
+            <Form.Label style={labelStyle}>Type</Form.Label>
 
-          <Form.Check
-            type="checkbox"
-            label="Enable"
-            checked={smoothing.enableMA}
-            onChange={(e) => toggleSmoothing(e.target.checked)}
-          />
-        </div>
+            <Col>
+              <Form.Select
+                value={currentConfig?.maType || "none"}
+                onChange={(e) => updateSmoothing("maType", e.target.value)}
+              >
+                {smoothingTypes.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </Form.Select>
+            </Col>
+          </Form.Group>
 
-        {/* SHOW FORM ONLY IF ENABLED */}
-        {smoothing.enableMA && (
-          <section className="px-3">
-            {/* TYPE */}
-            <Form.Group
-              as={Row}
-              className="mb-3"
-              controlId="smoothingType"
-              style={{ alignItems: "center" }}
-            >
-              <Form.Label style={labelStyle}>Type</Form.Label>
+          {/* LENGTH */}
+          <Form.Group
+            as={Row}
+            className="mb-3"
+            controlId="smoothingLength"
+            style={{ alignItems: "center" }}
+          >
+            <Form.Label style={labelStyle}>Length</Form.Label>
 
-              <Col>
-                <Form.Select
-                  value={smoothing.type}
-                  onChange={(e) => updateSmoothing("type", e.target.value)}
-                >
-                  {[
-                    "None",
-                    "SMA",
-                    "EMA",
-                    "WMA",
-                    "SMA + Bollinger Bands",
-                    "VWMA",
-                    "SMMA (RMA)",
-                  ].map((opt) => (
-                    <option key={opt}>{opt}</option>
-                  ))}
-                </Form.Select>
-              </Col>
-            </Form.Group>
+            <Col>
+              <Form.Control
+                type="number"
+                value={currentConfig?.maLength ?? ""}
+                onChange={(e) =>
+                  updateSmoothing("maLength", Number(e.target.value))
+                }
+              />
+            </Col>
+          </Form.Group>
 
-            {/* LENGTH */}
-            <Form.Group
-              as={Row}
-              className="mb-3"
-              controlId="smoothingLength"
-              style={{ alignItems: "center" }}
-            >
-              <Form.Label style={labelStyle}>Length</Form.Label>
+          {/* BB STD DEV */}
+          <Form.Group
+            as={Row}
+            className="mb-3"
+            controlId="bbStdDev"
+            style={{ alignItems: "center" }}
+          >
+            <Form.Label style={labelStyle}>BB Std Dev</Form.Label>
 
-              <Col>
-                <Form.Control
-                  type="number"
-                  value={smoothing.length}
-                  onChange={(e) =>
-                    updateSmoothing("length", Number(e.target.value))
-                  }
-                />
-              </Col>
-            </Form.Group>
-
-            {/* BB STD DEV */}
-            <Form.Group
-              as={Row}
-              className="mb-3"
-              controlId="bbStdDev"
-              style={{ alignItems: "center" }}
-            >
-              <Form.Label style={labelStyle}>BB Std Dev</Form.Label>
-
-              <Col>
-                <Form.Control
-                  type="number"
-                  value={smoothing.bbStdDev}
-                  disabled={smoothing.type !== "SMA + Bollinger Bands"}
-                  onChange={(e) =>
-                    updateSmoothing("bbStdDev", Number(e.target.value))
-                  }
-                />
-              </Col>
-            </Form.Group>
-          </section>
-        )}
+            <Col>
+              <Form.Control
+                type="number"
+                value={currentConfig?.bbStdDev ?? ""}
+                disabled={currentConfig?.maType !== "SMA + Bollinger Bands"}
+                onChange={(e) =>
+                  updateSmoothing("bbStdDev", Number(e.target.value))
+                }
+              />
+            </Col>
+          </Form.Group>
+        </section>
       </>
     );
   }
-
   /* =========================
      RENDER PER INDICATOR
   ========================== */
 
   function renderIndicatorSetting() {
-    switch (activeBarIndicator) {
+    switch (normalizedType) {
       case "SMA":
       case "EMA":
         return (
@@ -645,7 +656,7 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "Ichimoku Cloud":
+      case "IchimokuCloud":
         return (
           <>
             <div className="mb-3">
@@ -653,7 +664,7 @@ export default function IndicatorPropertyDialog({
               <input
                 type="number"
                 className="form-control"
-                value={currentConfig.conversionLength}
+                value={currentConfig?.conversionLength}
                 onChange={(e) =>
                   updateProperty("conversionLength", Number(e.target.value))
                 }
@@ -665,7 +676,7 @@ export default function IndicatorPropertyDialog({
               <input
                 type="number"
                 className="form-control"
-                value={currentConfig.baseLength}
+                value={currentConfig?.baseLength}
                 onChange={(e) =>
                   updateProperty("baseLength", Number(e.target.value))
                 }
@@ -677,7 +688,7 @@ export default function IndicatorPropertyDialog({
               <input
                 type="number"
                 className="form-control"
-                value={currentConfig.spanBLength}
+                value={currentConfig?.spanBLength}
                 onChange={(e) =>
                   updateProperty("spanBLength", Number(e.target.value))
                 }
@@ -689,7 +700,7 @@ export default function IndicatorPropertyDialog({
               <input
                 type="number"
                 className="form-control"
-                value={currentConfig.laggingSpan}
+                value={currentConfig?.laggingSpan}
                 onChange={(e) =>
                   updateProperty("laggingSpan", Number(e.target.value))
                 }

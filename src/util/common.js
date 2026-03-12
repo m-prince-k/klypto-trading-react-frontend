@@ -460,10 +460,30 @@ export const getRowsByIndicator = (indicator) => {
           bottomFillColor1: "rgba(239,83,80,0.5)",
           bottomFillColor2: "rgba(239,83,80,0.1)",
         },
+        {
+          key: "bbUpperBand",
+          label: "BB Upper Band",
+          type: "line",
+          color: "#4caf50",
+          width: 1,
+        },
+        {
+          key: "bbLowerBand",
+          label: "BB Lower Band",
+          type: "line",
+          color: "#f44336",
+          width: 1,
+        },
+        {
+          key: "bbFill",
+          label: "BB Fill Area",
+          type: "fill",
+          topColor: "rgba(76,175,80,0.2)",
+          bottomColor: "rgba(76,175,80,0.05)",
+        },
       ];
     case "SMA":
       return [{ key: "ma", label: "MA", type: "line" }];
-
     case "EMA":
       return [{ key: "ema", label: "EMA", type: "line" }];
     case "WMA":

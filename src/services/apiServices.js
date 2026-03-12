@@ -1,11 +1,11 @@
 import axios from "axios";
 
 const token = localStorage.getItem("session") && JSON.parse(localStorage.getItem("session"));
-console.log(localStorage.getItem("session"), "tokeeeeennnnnnnn")
+// console.log(localStorage.getItem("session"), "tokennnnnnn kkkkkkkkkkkkkkkkkkkkk")
 
 // 🔹 Create axios instance
 const api = axios.create({
-  baseURL: "https://loiteringly-homeliest-breana.ngrok-free.dev", // change to your API
+  baseURL: "http://192.168.1.5:4000", // change to your API
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
@@ -38,36 +38,47 @@ api.interceptors.response.use((response) => response?.data,(error) => {
 );
 
 // 🔹 API Methods
-const authHeaders = {
-  "Content-Type": "application/json",
-  Authorization: `Bearer ${token}`,
+const getAuthHeaders = () => {
+  const session =
+    JSON.parse(localStorage.getItem("session")) ||
+    JSON.parse(sessionStorage.getItem("session"));
+
+  const token = session?.token;
+
+  return {
+    "Content-Type": "application/json",
+    Authorization: token ? `Bearer ${token}` : "",
+  };
 };
+
+// console.log(localStorage.getItem("session"), "tokennnnnnn kkkkkkkkkkkkkkkkkkkkk")
+
 
 const apiService = {
   get: (url, params = {}) =>
     api.get(url, {
-      headers: authHeaders,
+      headers: getAuthHeaders(),
       params,
     }),
 
   post: (url, data = {}) =>
     api.post(url, data, {
-      headers: authHeaders,
+      headers: getAuthHeaders(),
     }),
 
   put: (url, data = {}) =>
     api.put(url, data, {
-      headers: authHeaders,
+      headers: getAuthHeaders(),
     }),
 
   patch: (url, data = {}) =>
     api.patch(url, data, {
-      headers: authHeaders,
+      headers: getAuthHeaders(),
     }),
 
   delete: (url) =>
     api.delete(url, {
-      headers: authHeaders,
+      headers: getAuthHeaders(),
     }),
 };
 
