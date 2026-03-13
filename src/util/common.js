@@ -560,16 +560,15 @@ export const getRowsByIndicator = (indicator) => {
 
     case "Aroon":
       return [
-        { key: "aroonUp", label: "Aroon Up", type: "line", color: "#26a69a" },
+        { key: "aroonUp", label: "Aroon Up", type: "line" },
         {
           key: "aroonDown",
           label: "Aroon Down",
           type: "line",
-          color: "#ef5350",
         },
       ];
 
-    case "Aroon Oscillator":
+    case "AroonOscillator":
       return [
         {
           key: "oscillator",
@@ -1480,6 +1479,7 @@ export const PANE_INDICATORS = new Set([
   "ROC",
   "Williams%R",
   "UltimateOscillator",
+  "Aroon",
   "AroonOscillator",
   "ChandeMomentumOscillator", // CMO
   "TRIX",

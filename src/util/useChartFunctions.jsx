@@ -84,13 +84,19 @@ export default function useChartFunctions({
           /* ================= SMA ================= */
 
           case "SMA": {
+            const smaData = result?.data?.sma ?? [];
+            const smoothingData = result?.data?.smoothingMA ?? [];
+
             indicatorSeriesRef.current.SMA = {
               result,
               rows,
             };
-            const ma = result?.data?.ma;
 
-            latestIndicatorValuesRef.current.SMA = ma?.[ma.length - 1]?.value;
+            latestIndicatorValuesRef.current.SMA = {
+              sma: smaData[smaData.length - 1]?.value,
+              smoothingMA: smoothingData[smoothingData.length - 1]?.value,
+            };
+
             break;
           }
 
@@ -118,53 +124,137 @@ export default function useChartFunctions({
           }
 
           case "EMA": {
+            const emaData = result?.data?.ema ?? [];
+            const smoothingData = result?.data?.smoothingMA ?? [];
+
             indicatorSeriesRef.current.EMA = {
               result,
               rows,
             };
 
-            const ema = result?.data;
-
-            latestIndicatorValuesRef.current.EMA = ema?.[ema.length - 1]?.value;
+            latestIndicatorValuesRef.current.EMA = {
+              ema: emaData[emaData.length - 1]?.value,
+              smoothingMA: smoothingData[smoothingData.length - 1]?.value,
+            };
 
             break;
           }
           case "WMA": {
+            const wmaData = result?.data?.wma ?? [];
+
             indicatorSeriesRef.current.WMA = {
-              ...indicatorSeriesRef.current.WMA,
               result,
               rows,
             };
 
-            const wma = result?.data;
-
-            latestIndicatorValuesRef.current.WMA = wma?.[wma.length - 1]?.value;
+            latestIndicatorValuesRef.current.WMA = {
+              wma: wmaData[wmaData.length - 1]?.value,
+            };
 
             break;
           }
           case "HMA": {
-            removeSeries(indicatorSeriesRef, chartRef, indicator);
+            const hmaData = result?.data?.hma ?? [];
 
-            const styleConfig = indicatorStyle?.HMA?.hma;
-
-            const series = addSeries(indicator, LineSeries, {
-              color: styleConfig?.color || "#9c27b0",
-              lineWidth: styleConfig?.width || 2,
-              visible: styleConfig?.visible ?? true,
-            });
-
-            if (!series) break;
-
-            series.setData(result.data);
-
-            indicatorSeriesRef.current["HMA"] = {
-              hma: series,
+            indicatorSeriesRef.current.HMA = {
+              result,
+              rows,
             };
 
-            console.log(
-              "Stored HMA series:",
-              indicatorSeriesRef.current["HMA"],
-            );
+            latestIndicatorValuesRef.current.HMA = {
+              hma: hmaData[hmaData.length - 1]?.value,
+            };
+
+            break;
+          }
+          case "DEMA": {
+            const demaData = result?.data?.dema ?? [];
+
+            indicatorSeriesRef.current.DEMA = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.DEMA = {
+              dema: demaData[demaData.length - 1]?.value,
+            };
+
+            break;
+          }
+          case "TEMA": {
+            const temaData = result?.data?.tema ?? [];
+
+            indicatorSeriesRef.current.TEMA = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.TEMA = {
+              tema: temaData[temaData.length - 1]?.value,
+            };
+
+            break;
+          }
+          case "KAMA": {
+            const kamaData = result?.data?.kama ?? [];
+
+            indicatorSeriesRef.current.KAMA = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.KAMA = {
+              kama: kamaData[kamaData.length - 1]?.value,
+            };
+
+            break;
+          }
+          case "SuperTrend": {
+            const upTrend = result?.data?.upTrend ?? [];
+            const downTrend = result?.data?.downTrend ?? [];
+
+            indicatorSeriesRef.current.SuperTrend = {
+              result,
+              rows,
+            };
+
+            const last =
+              upTrend[upTrend.length - 1]?.value ??
+              downTrend[downTrend.length - 1]?.value;
+
+            latestIndicatorValuesRef.current.SuperTrend = {
+              supertrend: last,
+            };
+
+            break;
+          }
+          case "Aroon": {
+            const aroonUp = result?.data?.aroonUp ?? [];
+            const aroonDown = result?.data?.aroonDown ?? [];
+
+            indicatorSeriesRef.current.Aroon = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.Aroon = {
+              aroonUp: aroonUp[aroonUp.length - 1]?.value,
+              aroonDown: aroonDown[aroonDown.length - 1]?.value,
+            };
+
+            break;
+          }
+          case "AroonOscillator": {
+            const osc = result?.data ?? [];
+
+            indicatorSeriesRef.current.AroonOscillator = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.AroonOscillator = {
+              oscillator: osc[osc.length - 1]?.value,
+            };
 
             break;
           }
@@ -244,16 +334,9 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
 
   let response;
 
-  if (normalizedType === "RSI") {
-    response = await apiService.post(
-      `/api/indicatorDetails?symbol=${selectedCurrency}&interval=${timeframeValue}&type=${normalizedType}`,
-      { maType: "SMA" },
-    );
-  } else {
-    response = await apiService.post(
-      `/api/indicatorDetails?symbol=${selectedCurrency}&interval=${timeframeValue}&type=${normalizedType}`,
-    );
-  }
+  response = await apiService.post(
+    `/api/indicatorDetails?symbol=${selectedCurrency}&interval=${timeframeValue}&type=${normalizedType}`,
+  );
 
   console.log("Raw indicator data for", type, ":", response);
 
@@ -269,14 +352,8 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
   switch (normalizedType) {
     /* ---------------- SINGLE VALUE ---------------- */
 
-    case "HMA":
-    case "DEMA":
-    case "TEMA":
-    case "AMA":
     case "ADX":
-    case "SuperTrend":
-    case "Aroon":
-    case "AroonOscillator":
+
     case "Momentum":
     case "ROC":
     case "AwesomeOscillator":
@@ -304,36 +381,145 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
       return {
         type: "single",
         data:
-          response.data
+          (await response.data
             ?.filter((d) => d.value != null && d.time != null)
             .map((d) => ({
               time: d.time,
               value: d.value,
-            })) ?? [],
+            }))) ?? [],
       };
 
     case "SMA":
       return {
-        type: "single",
-        data:
-          response.data
-            ?.filter((d) => d.sma != null && d.time != null) // only valid SMA points
-            .map((d) => ({
-              time: d.time, // timestamp
-              value: d.sma, // SMA value
-            })) ?? [],
+        type: "multi",
+        data: {
+          sma:
+            response.data
+              ?.filter((d) => d.sma != null && d.time != null)
+              .map((d) => ({
+                time: d.time,
+                value: d.sma,
+              })) ?? [],
+
+          smoothingMA:
+            response.data
+              ?.filter((d) => d.smoothingMA != null && d.time != null)
+              .map((d) => ({
+                time: d.time,
+                value: d.smoothingMA,
+              })) ?? [],
+        },
       };
 
     case "EMA":
       return {
+        type: "multi",
+        data: {
+          ema:
+            response.data
+              ?.filter((d) => d.ema != null && d.time != null)
+              .map((d) => ({
+                time: d.time,
+                value: d.ema,
+              })) ?? [],
+
+          smoothingMA:
+            response.data
+              ?.filter((d) => d.smoothingMA != null && d.time != null)
+              .map((d) => ({
+                time: d.time,
+                value: d.smoothingMA,
+              })) ?? [],
+        },
+      };
+
+    case "HMA":
+      return {
+        type: "multi",
+        data: {
+          hma:
+            response.data
+              ?.filter((d) => d.value != null && d.time != null)
+              .map((d) => ({
+                time: d.time,
+                value: d.value,
+              })) ?? [],
+        },
+      };
+    case "DEMA":
+      return {
+        type: "multi",
+        data: {
+          dema:
+            response.data
+              ?.filter((d) => d.value != null && d.time != null)
+              .map((d) => ({
+                time: d.time,
+                value: d.value,
+              })) ?? [],
+        },
+      };
+
+    case "TEMA":
+      return {
+        type: "multi",
+        data: {
+          tema:
+            response.data
+              ?.filter((d) => d.value != null && d.time != null)
+              .map((d) => ({
+                time: d.time,
+                value: d.value,
+              })) ?? [],
+        },
+      };
+    case "KAMA":
+      return {
+        type: "multi",
+        data: {
+          kama:
+            response.data
+              ?.filter((d) => d.value != null && d.time != null)
+              .map((d) => ({
+                time: d.time,
+                value: d.value,
+              })) ?? [],
+        },
+      };
+    case "AroonOscillator":
+      return {
         type: "single",
         data:
           response.data
-            ?.filter((d) => d.ema != null && d.time != null)
+            ?.filter((d) => d.aroonOsc != null && d.time != null)
             .map((d) => ({
               time: d.time,
-              value: d.ema,
+              value: d.aroonOsc,
             })) ?? [],
+      };
+
+    case "SuperTrend":
+      return {
+        type: "multi",
+        data: {
+          upTrend:
+            response.data?.map((d) => ({
+              time: d.time,
+              value: d.upTrend ?? null,
+            })) ?? [],
+
+          downTrend:
+            response.data?.map((d) => ({
+              time: d.time,
+              value: d.downTrend ?? null,
+            })) ?? [],
+
+          bodyMiddle:
+            response.data?.map((d) => ({
+              time: d.time,
+              value: d.bodyMiddle,
+            })) ?? [],
+        },
       };
 
     case "ZigZag": {
@@ -384,6 +570,7 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
                 time: d.time,
                 value: d.smoothingMA,
               })) ?? [],
+
           bbUpperBand:
             response.data
               ?.filter((d) => d.bbUpperBand != null && d.time != null)
@@ -402,18 +589,29 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
         },
       };
 
+    case "Aroon":
+      return {
+        type: "multi",
+        data: {
+          aroonUp: response.data?.aroonUpSeries ?? [],
+          aroonDown: response.data?.aroonDownSeries ?? [],
+        },
+      };
+
     /* ---------------- NESTED VALUE ---------------- */
 
     case "WMA":
       return {
-        type: "single",
-        data:
-          response.data
-            ?.filter((d) => d.value != null && d.time != null)
-            .map((d) => ({
-              time: d.time,
-              value: d.value,
-            })) ?? [],
+        type: "multi",
+        data: {
+          wma:
+            response.data
+              ?.filter((d) => d.value != null && d.time != null)
+              .map((d) => ({
+                time: d.time,
+                value: d.value,
+              })) ?? [],
+        },
       };
 
     case "CCI": {

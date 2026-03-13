@@ -1,18 +1,19 @@
-export default function SMAInput(
+export default function EMAInput(
   response,
   indicatorSeriesRef,
   latestIndicatorValuesRef,
   maType
 ) {
+
   const rows = Array.isArray(response?.data) ? response.data : [];
 
-  /* ================= SMA ================= */
+  /* ================= EMA ================= */
 
-  const smaData = rows
-    .filter((d) => d.sma != null && d.time != null)
+  const emaData = rows
+    .filter((d) => d.ema != null && d.time != null)
     .map((d) => ({
       time: Number(d.time),
-      value: Number(d.sma),
+      value: Number(d.ema),
     }))
     .sort((a, b) => a.time - b.time);
 
@@ -26,35 +27,41 @@ export default function SMAInput(
     }))
     .sort((a, b) => a.time - b.time);
 
-  const series = indicatorSeriesRef.current?.SMA;
+  const series = indicatorSeriesRef.current?.EMA;
+
   if (!series) return;
 
-  /* ================= UPDATE SMA ================= */
+  /* ================= UPDATE EMA ================= */
 
-  series.sma?.setData(smaData);
+  series.ema?.setData(emaData);
 
   /* ================= UPDATE SMOOTHING ================= */
 
   if (maType !== "none") {
     series.smoothingMA?.setData(smoothingData);
 
-    latestIndicatorValuesRef.current.SMA.smoothingMA =
+    latestIndicatorValuesRef.current.EMA.smoothingMA =
       smoothingData[smoothingData.length - 1]?.value;
+
   } else {
+
+    /* clear smoothing line */
+
     series.smoothingMA?.setData([]);
-    latestIndicatorValuesRef.current.SMA.smoothingMA = null;
+
+    latestIndicatorValuesRef.current.EMA.smoothingMA = null;
   }
 
-  /* ================= HOVER VALUES ================= */
+  /* ================= UPDATE HOVER VALUES ================= */
 
-  latestIndicatorValuesRef.current.SMA.sma =
-    smaData[smaData.length - 1]?.value;
+  latestIndicatorValuesRef.current.EMA.ema =
+    emaData[emaData.length - 1]?.value;
 
   /* ================= STORE RESULT ================= */
 
-  indicatorSeriesRef.current.SMA.result = {
+  indicatorSeriesRef.current.EMA.result = {
     data: {
-      sma: smaData,
+      ema: emaData,
       smoothingMA: maType !== "none" ? smoothingData : [],
     },
   };

@@ -3,49 +3,53 @@ import { LineSeries } from "lightweight-charts";
 
 export default function SMAPlot({
   result,
+  rows,
   indicatorStyle,
   indicatorSeriesRef,
-  addSeries,
-  chartRef,
+  addSeries
 }) {
 
   /* ================= CREATE SMA ================= */
 
-useEffect(() => {
+  useEffect(() => {
 
-  if (!result) return;
+    if (!result) return;
 
-  const indicator = "SMA";
-  const styleConfig = indicatorStyle?.SMA?.ma;
+    if (indicatorSeriesRef.current?.SMA) {
+      Object.values(indicatorSeriesRef.current.SMA).forEach((s) => {
+        if (s?.setData) {
+          try { s.setData([]); } catch {}
+        }
+      });
 
-  let series = indicatorSeriesRef.current?.SMA?.ma;
+      indicatorSeriesRef.current.SMA = null;
+    }
 
-  /* series already exists → just update data */
+    const groupedSeries = {};
 
-  if (series) {
-    series.setData(result.data);
-    return;
-  }
+    Object.entries(result.data).forEach(([lineName, lineData]) => {
 
-  /* create series */
+      const rowConfig = rows?.find((r) => r.key === lineName);
+      const styleConfig = indicatorStyle?.SMA?.[lineName];
 
-  series = addSeries(indicator, LineSeries, {
-    color: styleConfig?.color,
-    lineWidth: styleConfig?.width || 2,
-    lineStyle: styleConfig?.lineStyle ?? 0,
-    visible: styleConfig?.visible ?? true,
-  });
+      const series = addSeries("SMA", LineSeries, {
+        color: styleConfig?.color || rowConfig?.color || "#2196f3",
+        lineWidth: styleConfig?.width || 2,
+        visible: styleConfig?.visible ?? true,
+        priceLineVisible: false,
+        lastValueVisible: true,
+      });
 
-  if (!series) return;
+      if (!series) return;
 
-  series.setData(result.data);
+      series.setData(lineData);
 
-  indicatorSeriesRef.current.SMA = {
-    ...indicatorSeriesRef.current.SMA,
-    ma: series,
-  };
+      groupedSeries[lineName] = series;
+    });
 
-}, [result]);
+    indicatorSeriesRef.current.SMA = groupedSeries;
+
+  }, [result]);
 
 
 
@@ -53,24 +57,35 @@ useEffect(() => {
 
   useEffect(() => {
 
-    const smaSeries = indicatorSeriesRef.current?.SMA?.ma;
-    if (!smaSeries) return;
+    const smaGroup = indicatorSeriesRef.current?.SMA;
+    if (!smaGroup) return;
 
-    const styleConfig = indicatorStyle?.SMA?.ma;
+    const smaStyle = indicatorStyle?.SMA?.sma;
+    const smoothingStyle = indicatorStyle?.SMA?.smoothingMA;
 
-    smaSeries.applyOptions({
-      color: styleConfig?.color,
-      lineWidth: styleConfig?.width || 2,
-      lineStyle: styleConfig?.lineStyle ?? 0,
-      visible: styleConfig?.visible ?? true,
-    });
+    if (smaGroup.sma) {
+      smaGroup.sma.applyOptions({
+        color: smaStyle?.color,
+        lineWidth: smaStyle?.width,
+        lineStyle: smaStyle?.lineStyle ?? 0,
+        visible: smaStyle?.visible,
+        lastValueVisible: smaStyle?.visible,
+        opacity: smaStyle?.opacity,
+      });
+    }
 
-  }, [
-    indicatorStyle?.SMA?.ma?.color,
-    indicatorStyle?.SMA?.ma?.width,
-    indicatorStyle?.SMA?.ma?.visible,
-    indicatorStyle?.SMA?.ma?.lineStyle,
-  ]);
+    if (smaGroup.smoothingMA) {
+      smaGroup.smoothingMA.applyOptions({
+        color: smoothingStyle?.color,
+        lineWidth: smoothingStyle?.width,
+        lineStyle: smoothingStyle?.lineStyle ?? 0,
+        visible: smoothingStyle?.visible,
+        lastValueVisible: smoothingStyle?.visible,
+        opacity: smoothingStyle?.opacity,
+      });
+    }
+
+  }, [indicatorStyle]);
 
   return null;
 }

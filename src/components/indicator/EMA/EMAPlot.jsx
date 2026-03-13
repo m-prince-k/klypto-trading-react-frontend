@@ -30,28 +30,32 @@ export default function EMAPlot({
 
     const groupedSeries = {};
 
-    const emaData = result?.data || [];
+    /* ================= CREATE LINES ================= */
 
-    const style = indicatorStyle?.EMA?.ema ?? {};
+    Object.entries(result.data).forEach(([lineName, lineData]) => {
 
-    const emaSeries = addSeries("main", LineSeries, {
-      color: style?.color || "#ff9800",
-      lineWidth: style?.width || 2,
-      lineStyle: style?.lineStyle ?? 0,
-      visible: style?.visible ?? true,
-      priceLineVisible: false,
-      lastValueVisible: true
+      const rowConfig = rows?.find((r) => r.key === lineName);
+      const styleConfig = indicatorStyle?.EMA?.[lineName];
+
+      const series = addSeries("EMA", LineSeries, {
+        color: styleConfig?.color || rowConfig?.color || "#ff9800",
+        lineWidth: styleConfig?.width || 2,
+        visible: styleConfig?.visible ?? true,
+        priceLineVisible: false,
+        lastValueVisible: true,
+      });
+
+      if (!series) return;
+
+      series.setData(lineData);
+
+      groupedSeries[lineName] = series;
     });
-
-    if (!emaSeries) return;
-
-    emaSeries.setData(emaData);
-
-    groupedSeries.ema = emaSeries;
 
     indicatorSeriesRef.current.EMA = groupedSeries;
 
   }, [result]);
+
 
 
   /* ================= STYLE UPDATE ================= */
@@ -62,16 +66,34 @@ export default function EMAPlot({
 
     if (!emaGroup) return;
 
-    const style = indicatorStyle?.EMA?.ema ?? {};
+    const emaStyle = indicatorStyle?.EMA?.ema;
+    const smoothingStyle = indicatorStyle?.EMA?.smoothingMA;
 
-    emaGroup.ema?.applyOptions({
-      color: style?.color,
-      lineWidth: style?.width,
-      lineStyle: style?.lineStyle ?? 0,
-      visible: style?.visible,
-      lastValueVisible: style?.visible,
-      opacity: style?.opacity
-    });
+    /* EMA */
+
+    if (emaGroup.ema) {
+      emaGroup.ema.applyOptions({
+        color: emaStyle?.color,
+        lineWidth: emaStyle?.width,
+        lineStyle: emaStyle?.lineStyle ?? 0,
+        visible: emaStyle?.visible,
+        lastValueVisible: emaStyle?.visible,
+        opacity: emaStyle?.opacity,
+      });
+    }
+
+    /* SMOOTHING */
+
+    if (emaGroup.smoothingMA) {
+      emaGroup.smoothingMA.applyOptions({
+        color: smoothingStyle?.color,
+        lineWidth: smoothingStyle?.width,
+        lineStyle: smoothingStyle?.lineStyle ?? 0,
+        visible: smoothingStyle?.visible,
+        lastValueVisible: smoothingStyle?.visible,
+        opacity: smoothingStyle?.opacity,
+      });
+    }
 
   }, [indicatorStyle]);
 

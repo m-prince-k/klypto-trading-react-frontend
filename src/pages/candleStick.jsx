@@ -129,6 +129,9 @@ export default function Candlestick() {
       length: 9,
       source: "close",
       offset: 0,
+      maType: "none",
+      maLength: 14,
+      bbStdDev: 2,
     },
 
     WMA: {
@@ -139,12 +142,12 @@ export default function Candlestick() {
 
     HMA: {
       length: 9,
-      source: "Close",
+      source: "close",
     },
 
     DEMA: {
       length: 9,
-      source: "Close",
+      source: "close",
     },
 
     TEMA: {
@@ -155,7 +158,7 @@ export default function Candlestick() {
       ERlength: 10,
       fastLength: 2,
       slowLength: 30,
-      source: "Close",
+      source: "close",
     },
 
     IchimokuCloud: {
@@ -164,7 +167,7 @@ export default function Candlestick() {
       spanBLength: 52,
       laggingSpan: 26,
     },
-    "Parabolic SAR": {
+    ParabolicSAR: {
       start: 0.02,
       increment: 0.02,
       maxValue: 0.02,
@@ -177,7 +180,7 @@ export default function Candlestick() {
     Aroon: {
       length: 14,
     },
-    "Aroon Oscillator": {
+    AroonOscillator: {
       length: 14,
     },
     ADX: {
@@ -446,6 +449,13 @@ export default function Candlestick() {
         lineStyle: 0,
         opacity: 100,
       },
+      smoothingMA: {
+        visible: true,
+        color: "rgb(255, 202, 28)",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+      },
     },
     IchimokuCloud: {
       conversionLine: {
@@ -517,6 +527,13 @@ export default function Candlestick() {
         opacity: 100,
         visible: true,
       },
+      smoothingMA: {
+        visible: true,
+        color: "rgb(255, 202, 28)",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+      },
     },
     WMA: {
       wma: {
@@ -527,7 +544,15 @@ export default function Candlestick() {
         visible: true,
       },
     },
-
+    HMA: {
+      hma: {
+        visible: true,
+        color: "rgba(0,0,0)",
+        width: 2,
+        lineStyle: 0,
+        opacity: 100,
+      },
+    },
 
     DEMA: {
       dema: {
@@ -545,6 +570,100 @@ export default function Candlestick() {
         width: 1,
         lineStyle: 0,
         opacity: 100,
+        visible: true,
+      },
+    },
+    SuperTrend: {
+      upTrend: {
+        color: "rgb(38,166,154)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+        opacity: 1,
+      },
+
+      downTrend: {
+        color: "rgb(239,83,80)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+        opacity: 1,
+      },
+
+      bodyMiddle: {
+        color: "rgb(255,255,255)",
+        width: 1,
+        lineStyle: 2,
+        visible: false,
+        opacity: 0.6,
+      },
+
+      upTrendBg: {
+        color0: "rgba(38,166,154,0.2)",
+        color1: "rgba(38,166,154,0.05)",
+        visible: true,
+      },
+
+      downTrendBg: {
+        color0: "rgba(239,83,80,0.2)",
+        color1: "rgba(239,83,80,0.05)",
+        visible: true,
+      },
+    },
+    Aroon: {
+      aroonUp: {
+        color: "rgb(38,166,154)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+        opacity: 1,
+      },
+
+      aroonDown: {
+        color: "rgb(239,83,80)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+        opacity: 1,
+      },
+    },
+    AroonOscillator: {
+      oscillator: {
+        color0: "rgb(38,166,154)",
+        color1: "rgb(239,83,80)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+        opacity: 1,
+      },
+
+      center: {
+        color: "rgb(158,158,158)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: 0,
+      },
+
+      upperLevel: {
+        color: "rgb(255,152,0)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: 90,
+      },
+
+      lowerLevel: {
+        color: "rgb(3,169,244)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: -90,
+      },
+
+      oscillatorFill: {
+        color0: "rgba(38,166,154,0.2)",
+        color1: "rgba(239,83,80,0.2)",
         visible: true,
       },
     },
@@ -622,6 +741,10 @@ export default function Candlestick() {
         return "volume";
       case "ATR":
         return "ATR";
+      case "Aroon":
+        return "Aroon";
+      case "AroonOscillator":
+        return "AroonOscillator";
       default:
         return "momentum";
     }

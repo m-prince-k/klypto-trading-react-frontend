@@ -18,7 +18,6 @@ export default function IndicatorPropertyDialog({
   chartRef,
   addSeries,
   latestIndicatorValuesRef,
-  
 }) {
   const labelStyle = {
     display: "inline-block",
@@ -303,7 +302,7 @@ export default function IndicatorPropertyDialog({
      UPDATE PROPERTY
   ========================== */
 
-  const { fetchIndicatorData } = useChartFunctions
+  const { fetchIndicatorData } = useChartFunctions;
 
   const updateIndicatorConfig = (key, value) => {
     setIndicatorConfigs((prev) => ({
@@ -370,52 +369,45 @@ export default function IndicatorPropertyDialog({
   /* =========================
      OK BUTTON
   ========================== */
- const handleIndicatorPropertyChange = async () => {
+  const handleIndicatorPropertyChange = async () => {
+    const config = indicatorConfigs?.[normalizedType] || {};
+    const { maType, maLength } = config;
 
-  const config = indicatorConfigs?.[normalizedType] || {};
-  const { maType, maLength } = config;
+    const payload = {
+      type: normalizedType,
+      ...config,
+    };
 
-  const payload = {
-    type: normalizedType,
-    ...config,
-  };
+    console.log(payload, "payloadddddddddd");
 
-  console.log(payload, "payloadddddddddd");
+    try {
+      const response = await apiService.post(
+        `/api/updateIndicator?symbol=${selectedCurrency}&interval=${timeframeValue}`,
+        payload,
+      );
 
-  try {
+      console.log("Indicator updated:", response);
 
-    const response = await apiService.post(
-      `/api/updateIndicator?symbol=${selectedCurrency}&interval=${timeframeValue}`,
-      payload,
-    );
-
-    console.log("Indicator updated:", response);
-
-    updateIndicatorFromInput(
-      normalizedType,
-      response,
-      indicatorSeriesRef,
-      latestIndicatorValuesRef,
-      maType
-    );
-
-  } catch (error) {
-
-    if (error.response) {
-      console.error("Server responded with error:");
-      console.error("Status:", error.response.status);
-      console.error("Data:", error.response.data);
-    } 
-    else if (error.request) {
-      console.error("No response received from server");
-      console.error(error.request);
-    } 
-    else {
-      console.error("Request setup error:", error.message);
+      updateIndicatorFromInput(
+        normalizedType,
+        response,
+        indicatorSeriesRef,
+        latestIndicatorValuesRef,
+        maType,
+      );
+    } catch (error) {
+      if (error.response) {
+        console.error("Server responded with error:");
+        console.error("Status:", error.response.status);
+        console.error("Data:", error.response.data);
+      } else if (error.request) {
+        console.error("No response received from server");
+        console.error(error.request);
+      } else {
+        console.error("Request setup error:", error.message);
+      }
     }
-
-  }
-};
+  };
 
   const handleCancel = () => {
     setIndicatorConfigs((prev) => ({
@@ -623,10 +615,12 @@ export default function IndicatorPropertyDialog({
               <input
                 type="number"
                 className="form-control"
+                min="1"
                 value={currentConfig.ERlength}
-                onChange={(e) =>
-                  updateProperty("ERlength", Number(e.target.value))
-                }
+                onChange={(e) => {
+                  const value = Math.max(1, Number(e.target.value));
+                  updateProperty("ERlength", value);
+                }}
               />
             </div>
 
@@ -635,10 +629,12 @@ export default function IndicatorPropertyDialog({
               <input
                 type="number"
                 className="form-control"
+                min="1"
                 value={currentConfig.fastLength}
-                onChange={(e) =>
-                  updateProperty("fastLength", Number(e.target.value))
-                }
+                onChange={(e) => {
+                  const value = Math.max(1, Number(e.target.value));
+                  updateProperty("fastLength", value);
+                }}
               />
             </div>
 
@@ -647,10 +643,12 @@ export default function IndicatorPropertyDialog({
               <input
                 type="number"
                 className="form-control"
+                min="1"
                 value={currentConfig.slowLength}
-                onChange={(e) =>
-                  updateProperty("slowLength", Number(e.target.value))
-                }
+                onChange={(e) => {
+                  const value = Math.max(1, Number(e.target.value));
+                  updateProperty("slowLength", value);
+                }}
               />
             </div>
           </>
@@ -709,7 +707,7 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "Parabolic SAR":
+      case "ParabolicSAR":
         return (
           <>
             <div className="mb-3">
@@ -717,7 +715,7 @@ export default function IndicatorPropertyDialog({
               <input
                 type="number"
                 className="form-control"
-                value={currentConfig.start}
+                value={currentConfig?.start}
                 onChange={(e) =>
                   updateProperty("start", Number(e.target.value))
                 }
@@ -729,7 +727,7 @@ export default function IndicatorPropertyDialog({
               <input
                 type="number"
                 className="form-control"
-                value={currentConfig.increment}
+                value={currentConfig?.increment}
                 onChange={(e) =>
                   updateProperty("increment", Number(e.target.value))
                 }
@@ -741,7 +739,7 @@ export default function IndicatorPropertyDialog({
               <input
                 type="number"
                 className="form-control"
-                value={currentConfig.maxValue}
+                value={currentConfig?.maxValue}
                 onChange={(e) =>
                   updateProperty("maxValue", Number(e.target.value))
                 }
@@ -782,7 +780,7 @@ export default function IndicatorPropertyDialog({
       case "Aroon":
         return <BaseSettings showOffset={false} showSource={false} />;
 
-      case "Aroon Oscillator":
+      case "AroonOscillator":
         return <BaseSettings showOffset={false} showSource={false} />;
 
       case "ADX":
