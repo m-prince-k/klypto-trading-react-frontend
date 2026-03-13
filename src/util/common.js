@@ -778,8 +778,6 @@ export const getRowsByIndicator = (indicator) => {
           value: -100,
           color: "#26a69a",
         },
-
-        // Background fill
         {
           key: "bgFill",
           label: "CCI Background Fill",
@@ -1486,6 +1484,8 @@ export const PANE_INDICATORS = new Set([
   "FisherTransform",
   "KlingerOscillator",
   "ATR",
+  "ADX",
+  "CCI",
   "ChoppinessIndex",
   "Volume",
   "ChaikinMoneyFlow",

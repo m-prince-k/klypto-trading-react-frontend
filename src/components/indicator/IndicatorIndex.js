@@ -4,8 +4,8 @@ import SMAPlot from "./SMA/SMAPlot";
 import EMAPlot from "./EMA/EMAPlot";
 import RSIInput from "./RSI/RSIInput";
 import SMAInput from "./SMA/SMAInput";
-import WMAPlot from "./WMA/WMAPlot"
-import WMAInput from "./WMA/WMAInput"
+import WMAPlot from "./WMA/WMAPlot";
+import WMAInput from "./WMA/WMAInput";
 import IchimokuCloudInput from "./IchimokuCloud/IchimokuCloudInput";
 import EMAInput from "./EMA/EMAInput";
 import HMAPlot from "./HMA/HMAPlot";
@@ -20,20 +20,28 @@ import SuperTrendPlot from "./SuperTrend/SuperTrendPlot";
 import SuperTrendInput from "./SuperTrend/SuperTrendInput";
 import AroonInput from "./Aroon/AroonInput";
 import AroonPlot from "./Aroon/AroonPlot";
+import AroonOscillatorInput from "./AroonOscillator/AroonOscillatorInput";
+import ADXPlot from "./ADX/ADXPlot";
+import AroonOscillatorPlot from "./AroonOscillator/AroonOscillatorPlot";
+import ADXInput from "./ADX/ADXInput";
+import CCIInput from "./CCI/CCIInput";
+import CCIPlot from "./CCI/CCIPlot";
 
 export const indicatorComponents = {
   RSI: RSIPlot,
   SMA: SMAPlot,
   IchimokuCloud: IchimokuCloudPlot,
   EMA: EMAPlot,
-  WMA: WMAPlot ,
+  WMA: WMAPlot,
   HMA: HMAPlot,
   DEMA: DEMAPlot,
   TEMA: TEMAPlot,
   KAMA: KAMAPlot,
-  
   SuperTrend: SuperTrendPlot,
-  Aroon: AroonPlot
+  Aroon: AroonPlot,
+  AroonOscillator: AroonOscillatorPlot,
+  ADX: ADXPlot,
+  CCI: CCIPlot,
 };
 
 export const indicatorInputs = {
@@ -48,7 +56,9 @@ export const indicatorInputs = {
   KAMA: KAMAInput,
   SuperTrend: SuperTrendInput,
   Aroon: AroonInput,
-
+  AroonOscillator: AroonOscillatorInput,
+  ADX: ADXInput,
+  CCI: CCIInput,
 };
 
 export function updateIndicatorFromInput(
@@ -56,7 +66,7 @@ export function updateIndicatorFromInput(
   response,
   indicatorSeriesRef,
   latestIndicatorValuesRef,
-  maType
+  maType,
 ) {
   const handler = indicatorInputs[indicatorType];
   if (!handler) {
@@ -64,5 +74,5 @@ export function updateIndicatorFromInput(
     return;
   }
 
-  handler(response, indicatorSeriesRef, latestIndicatorValuesRef,maType);
+  handler(response, indicatorSeriesRef, latestIndicatorValuesRef, maType);
 }

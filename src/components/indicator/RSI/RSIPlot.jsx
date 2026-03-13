@@ -9,34 +9,41 @@ export default function RSIPlot({
   addSeries,
   indicatorConfigs,
 }) {
+
   /* ================= CREATE RSI ================= */
+
   useEffect(() => {
+
     if (!result) return;
 
-    /* REMOVE OLD RSI COMPLETELY */
     if (indicatorSeriesRef.current?.RSI) {
+
       Object.values(indicatorSeriesRef.current.RSI).forEach((s) => {
         if (s?.setData) {
-          try {
-            s.setData([]);
-          } catch {}
+          try { s.setData([]); } catch {}
         }
       });
+
       indicatorSeriesRef.current.RSI = null;
+
     }
 
     const groupedSeries = {};
     let rsiData = [];
 
     const upper = indicatorStyle?.RSI?.upper?.value ?? 70;
+    const middle = indicatorStyle?.RSI?.middle?.value ?? 50;
     const lower = indicatorStyle?.RSI?.lower?.value ?? 30;
 
     const bandFill = indicatorStyle?.RSI?.bandFill;
     const obFill = indicatorStyle?.RSI?.obFill;
     const osFill = indicatorStyle?.RSI?.osFill;
 
+
     /* ================= MAIN LINES ================= */
+
     Object.entries(result.data).forEach(([lineName, lineData]) => {
+
       const rowConfig = rows?.find((r) => r.key === lineName);
       const styleConfig = indicatorStyle?.RSI?.[lineName];
 
@@ -51,101 +58,118 @@ export default function RSIPlot({
       if (!series) return;
 
       series.setData(lineData);
+
       groupedSeries[lineName] = series;
 
       if (lineName === "rsi") rsiData = lineData;
+
     });
 
-    /* ================= BOLLINGER BANDS (SMA+BB) ================= */
-     const config = indicatorConfigs?.["RSI"] || {};
-  const maType  = config;
 
-    console.log(result, "resssssss");
-    console.log(maType, "tyeeeee");
+    /* ================= LEVEL LINES ================= */
 
+    const makeLevelData = (value) =>
+      rsiData.map((p) => ({
+        time: p.time,
+        value,
+      }));
 
-    if (maType === "SMA + Bollinger Bands") {
-      const upperBandData = result.data.bbUpperBand || [];
-      const lowerBandData = result.data.bbLowerBand || [];
+    const upperLine = addSeries("RSI", LineSeries,{
+      color: indicatorStyle?.RSI?.upper?.color,
+      lineWidth: indicatorStyle?.RSI?.upper?.width ?? 1,
+      lineStyle: indicatorStyle?.RSI?.upper?.lineStyle ?? 2,
+      visible: indicatorStyle?.RSI?.upper?.visible ?? true,
+      priceLineVisible:false,
+      lastValueVisible:false
+    });
 
-      const upperSeries = addSeries("RSI", LineSeries, {
-        color: indicatorStyle?.RSI?.bbUpperBand?.color || "#4caf50",
-        lineWidth: indicatorStyle?.RSI?.bbUpperBand?.width || 1,
-      });
-      const lowerSeries = addSeries("RSI", LineSeries, {
-        color: indicatorStyle?.RSI?.bbLowerBand?.color || "#f44336",
-        lineWidth: indicatorStyle?.RSI?.bbLowerBand?.width || 1,
-      });
+    const middleLine = addSeries("RSI", LineSeries,{
+      color: indicatorStyle?.RSI?.middle?.color,
+      lineWidth: indicatorStyle?.RSI?.middle?.width ?? 1,
+      lineStyle: indicatorStyle?.RSI?.middle?.lineStyle ?? 2,
+      visible: indicatorStyle?.RSI?.middle?.visible ?? true,
+      priceLineVisible:false,
+      lastValueVisible:false
+    });
 
-      const fillSeries = addSeries("RSI", AreaSeries, {
-        topSeries: upperSeries,
-        bottomSeries: lowerSeries,
-        topColor: indicatorStyle?.RSI?.bbFill?.topColor || "rgba(76,175,80,0.2)",
-        bottomColor:
-          indicatorStyle?.RSI?.bbFill?.bottomColor || "rgba(76,175,80,0.05)",
-      });
+    const lowerLine = addSeries("RSI", LineSeries,{
+      color: indicatorStyle?.RSI?.lower?.color,
+      lineWidth: indicatorStyle?.RSI?.lower?.width ?? 1,
+      lineStyle: indicatorStyle?.RSI?.lower?.lineStyle ?? 2,
+      visible: indicatorStyle?.RSI?.lower?.visible ?? true,
+      priceLineVisible:false,
+      lastValueVisible:false
+    });
 
-      upperSeries.setData(upperBandData);
-      lowerSeries.setData(lowerBandData);
+    upperLine.setData(makeLevelData(upper));
+    middleLine.setData(makeLevelData(middle));
+    lowerLine.setData(makeLevelData(lower));
 
-      groupedSeries.bbUpperBand = upperSeries;
-      groupedSeries.bbLowerBand = lowerSeries;
-      groupedSeries.bbFill = fillSeries;
-    }
+    groupedSeries.upper = upperLine;
+    groupedSeries.middle = middleLine;
+    groupedSeries.lower = lowerLine;
+
 
     /* ================= BAND BACKGROUND ================= */
+
     const bandData = rsiData.map((p) => ({
       time: p.time,
       value: upper,
     }));
 
-    const bandBackgroundSeries = addSeries("RSI", BaselineSeries, {
-      baseValue: { type: "price", price: lower },
+    const bandBackgroundSeries = addSeries("RSI", BaselineSeries,{
+      baseValue:{ type:"price", price: lower },
       topFillColor1: bandFill?.topFillColor1,
       topFillColor2: bandFill?.topFillColor2,
-      bottomFillColor1: "rgba(0,0,0,0)",
-      bottomFillColor2: "rgba(0,0,0,0)",
-      topLineColor: "transparent",
-      bottomLineColor: "transparent",
+      bottomFillColor1:"rgba(0,0,0,0)",
+      bottomFillColor2:"rgba(0,0,0,0)",
+      topLineColor:"transparent",
+      bottomLineColor:"transparent",
       visible: bandFill?.visible ?? true,
-      priceLineVisible: false,
-      lastValueVisible: false,
+      priceLineVisible:false,
+      lastValueVisible:false
     });
+
     bandBackgroundSeries.setData(bandData);
 
+
     /* ================= OVERBOUGHT ================= */
-    const overboughtSeries = addSeries("RSI", BaselineSeries, {
-      baseValue: { type: "price", price: upper },
+
+    const overboughtSeries = addSeries("RSI", BaselineSeries,{
+      baseValue:{ type:"price", price: upper },
       topFillColor1: obFill?.topFillColor1,
       topFillColor2: obFill?.topFillColor2,
-      bottomFillColor1: "rgba(0,0,0,0)",
-      bottomFillColor2: "rgba(0,0,0,0)",
-      topLineColor: "transparent",
-      bottomLineColor: "transparent",
+      bottomFillColor1:"rgba(0,0,0,0)",
+      bottomFillColor2:"rgba(0,0,0,0)",
+      topLineColor:"transparent",
+      bottomLineColor:"transparent",
       visible: obFill?.visible ?? true,
-      priceLineVisible: false,
-      lastValueVisible: false,
+      priceLineVisible:false,
+      lastValueVisible:false
     });
+
 
     /* ================= OVERSOLD ================= */
-    const oversoldSeries = addSeries("RSI", BaselineSeries, {
-      baseValue: { type: "price", price: lower },
+
+    const oversoldSeries = addSeries("RSI", BaselineSeries,{
+      baseValue:{ type:"price", price: lower },
       bottomFillColor1: osFill?.bottomFillColor1,
       bottomFillColor2: osFill?.bottomFillColor2,
-      topFillColor1: "rgba(0,0,0,0)",
-      topFillColor2: "rgba(0,0,0,0)",
-      topLineColor: "transparent",
-      bottomLineColor: "transparent",
+      topFillColor1:"rgba(0,0,0,0)",
+      topFillColor2:"rgba(0,0,0,0)",
+      topLineColor:"transparent",
+      bottomLineColor:"transparent",
       visible: osFill?.visible ?? true,
-      priceLineVisible: false,
-      lastValueVisible: false,
+      priceLineVisible:false,
+      lastValueVisible:false
     });
 
-    /* ================= GRADIENT DATA ================= */
+
     const overboughtData = [];
     const oversoldData = [];
 
     rsiData.forEach((p) => {
+
       overboughtData.push({
         time: p.time,
         value: p.value > upper ? p.value : upper,
@@ -155,25 +179,49 @@ export default function RSIPlot({
         time: p.time,
         value: p.value < lower ? p.value : lower,
       });
+
     });
 
     overboughtSeries.setData(overboughtData);
     oversoldSeries.setData(oversoldData);
 
+
     groupedSeries.bandBackground = bandBackgroundSeries;
     groupedSeries.overboughtFill = overboughtSeries;
     groupedSeries.oversoldFill = oversoldSeries;
 
+    /* ⭐ FIX: STORE RSI DATA */
+
+    groupedSeries.rsiData = rsiData;
+
     indicatorSeriesRef.current.RSI = groupedSeries;
+
   }, [result]);
 
-  /* ================= STYLE + VISIBILITY ================= */
+
+  /* ================= STYLE UPDATE ================= */
+
   useEffect(() => {
+
     const rsiGroup = indicatorSeriesRef.current?.RSI;
     if (!rsiGroup) return;
 
-    const rsiStyle = indicatorStyle?.RSI?.rsi;
+    const rsiData = rsiGroup.rsiData ?? [];
+
+    console.log(rsiData,"rsidata");
+
+     const upperValue = indicatorStyle?.RSI?.upper?.value ?? 70;
+    const middleValue = indicatorStyle?.RSI?.middle?.value ?? 50;
+    const lowerValue = indicatorStyle?.RSI?.lower?.value ?? 30;
+    const makeLevel = (v)=> rsiData.map(p=>({time:p.time,value:v}));
+
+    rsiGroup.upper?.setData(makeLevel(upperValue));
+    rsiGroup.middle?.setData(makeLevel(middleValue));
+    rsiGroup.lower?.setData(makeLevel(lowerValue));
+     const rsiStyle = indicatorStyle?.RSI?.rsi;
     const smoothingStyle = indicatorStyle?.RSI?.smoothingMA;
+   
+
     const bandFill = indicatorStyle?.RSI?.bandFill;
     const obFill = indicatorStyle?.RSI?.obFill;
     const osFill = indicatorStyle?.RSI?.osFill;
@@ -201,6 +249,29 @@ export default function RSIPlot({
         lastValueVisible: smoothingStyle?.visible,
       });
     }
+    if (rsiGroup.upper)
+      rsiGroup.upper?.applyOptions({
+        color: indicatorStyle?.RSI?.upper?.color,
+        lineWidth: indicatorStyle?.RSI?.upper?.width,
+        lineStyle: indicatorStyle?.RSI?.upper?.lineStyle ?? 0,
+        visible: indicatorStyle?.RSI?.upper?.visible,
+      });
+
+    if (rsiGroup.middle)
+      rsiGroup.middle?.applyOptions({
+        color: indicatorStyle?.RSI?.middle?.color,
+        lineWidth: indicatorStyle?.RSI?.middle?.width,
+        lineStyle: indicatorStyle?.RSI?.middle?.lineStyle ?? 0,
+        visible: indicatorStyle?.RSI?.middle?.visible,
+      });
+
+    if (rsiGroup.lower)
+      rsiGroup.lower?.applyOptions({
+        color: indicatorStyle?.RSI?.lower?.color,
+        lineWidth: indicatorStyle?.RSI?.lower?.width,
+        lineStyle: indicatorStyle?.RSI?.lower?.lineStyle ?? 0,
+        visible: indicatorStyle?.RSI?.lower?.visible,
+      });
 
     /* ================= UPDATE BANDS ================= */
     if (rsiGroup.bbUpperBand)
@@ -244,7 +315,9 @@ export default function RSIPlot({
       bottomFillColor1: osFill?.bottomFillColor1,
       bottomFillColor2: osFill?.bottomFillColor2,
     });
-  }, [indicatorStyle]);
+
+  },[indicatorStyle]);
 
   return null;
+
 }

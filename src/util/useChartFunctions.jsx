@@ -258,6 +258,34 @@ export default function useChartFunctions({
 
             break;
           }
+          case "ADX": {
+            indicatorSeriesRef.current.ADX = {
+              result,
+              rows,
+            };
+
+            const adx = result?.data?.adx ?? [];
+
+            latestIndicatorValuesRef.current.ADX = {
+              adx: adx[adx.length - 1]?.value,
+            };
+
+            break;
+          }
+          case "CCI": {
+            indicatorSeriesRef.current.CCI = {
+              result,
+              rows,
+            };
+
+            const cci = result?.data?.cciLine ?? [];
+
+            latestIndicatorValuesRef.current.CCI = {
+              cciLine: cci[cci.length - 1]?.value,
+            };
+
+            break;
+          }
 
           /* ================= MACD ================= */
 
@@ -352,8 +380,6 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
   switch (normalizedType) {
     /* ---------------- SINGLE VALUE ---------------- */
 
-    case "ADX":
-
     case "Momentum":
     case "ROC":
     case "AwesomeOscillator":
@@ -432,6 +458,29 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
               })) ?? [],
         },
       };
+
+    case "CCI": {
+      return {
+        type: "multi",
+        data: {
+          cciLine:
+            response.data
+              ?.filter((d) => d.cci != null && d.time != null)
+              .map((d) => ({
+                time: d.time,
+                value: d.cci,
+              })) ?? [],
+
+          cciMa:
+            response.data
+              ?.filter((d) => d.cciMA != null && d.time != null)
+              .map((d) => ({
+                time: d.time,
+                value: d.cciMA,
+              })) ?? [],
+        },
+      };
+    }
 
     case "HMA":
       return {
@@ -537,6 +586,19 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
           })),
       };
     }
+    case "ADX":
+      return {
+        type: "multi",
+        data: {
+          adx:
+            response.data
+              ?.filter((d) => d.adx != null && d.time != null)
+              .map((d) => ({
+                time: d.time,
+                value: d.adx,
+              })) ?? [],
+        },
+      };
 
     case "ATR":
       return {
@@ -613,21 +675,6 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
               })) ?? [],
         },
       };
-
-    case "CCI": {
-      const rows = Array.isArray(response?.data) ? response.data : [];
-
-      console.log("CCI rows:", rows.length);
-      console.log("CCI sample:", rows[0]);
-
-      return {
-        type: "single",
-        data: rows.map((d) => ({
-          time: d.time,
-          value: d.cci,
-        })),
-      };
-    }
 
     case "PivotPoints(Standard)": {
       const d = response?.data ?? {};

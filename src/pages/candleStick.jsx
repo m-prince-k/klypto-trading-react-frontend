@@ -208,16 +208,16 @@ export default function Candlestick() {
       dSmoothing: 3, // %D Smoothing
     },
 
-    "Stochastic RSI": {
+    StochasticRSI: {
       rsiLength: 14, // RSI period
-      rsiSource: "Close", // RSI source (dropdown)
+      rsiSource: "close", // RSI source (dropdown)
       stochasticLength: 14, // %K length of Stochastic
       kSmoothing: 3, // %K smoothing
       dSmoothing: 3, // %D smoothing
     },
 
     MACD: {
-      source: "Close",
+      source: "close",
       fastLength: 12, // Fast EMA/SMA
       slowLength: 26, // Slow EMA/SMA
       signalLength: 9, // Signal line length
@@ -227,91 +227,87 @@ export default function Candlestick() {
 
     CCI: {
       length: 20,
-      source: "HLC3",
-      smoothing: {
-        type: "SMA",
-        length: 14,
-        bbStdDev: 2,
-      },
+      source: "hlc3",
+      maType: "SMA",
+      maLength: 14,
+      bbStdDev: 2,
     },
     Momentum: {
       length: 10,
-      source: "Close",
+      source: "close",
     },
     ROC: {
       length: 9,
-      source: "Close",
+      source: "close",
     },
-    "Williams %R": {
+    "Williams%R": {
       length: 14,
-      source: "Close",
+      source: "close",
     },
-    "Ultimate Oscillator": {
+    UltimateOscillator: {
       fastLength: 7, // Fast period
       middleLength: 14, // Middle period
       slowLength: 28, // Slow period
     },
     "Chande Momentum Oscillator": {
       length: 9,
-      source: "Close",
+      source: "close",
     },
     TRIX: {
       length: 18,
     },
-    "Fisher Transform": {
+    FisherTransform: {
       length: 9,
     },
     ATR: {
       length: 14,
       smoothing: "RMA",
     },
-    "Bollinger Bands": {
+    BollingerBands: {
       length: 20,
       maType: "SMA", // default moving average type
       stdDev: 2,
-      source: "Close",
+      source: "close",
       offset: 0,
     },
-    "Bollinger Band Width": {
+    BollingerBandWidth: {
       length: 20,
       stdDev: 2,
-      source: "Close",
+      source: "close",
       highestExpansionLength: 125,
       lowestContractionLength: 125,
     },
-    "Keltner Channels": {
+    KeltnerChannels: {
       length: 20,
-      source: "Close",
+      source: "close",
       multiplier: 2,
       atrLength: 10,
       bandsStyle: "Average True Range",
       useEMA: true,
     },
-    "Donchian Channels": {
+    DonchianChannels: {
       length: 20,
       offset: 0,
     },
-    "Choppiness Index": {
+    ChoppinessIndex: {
       length: 14,
       offset: 0,
     },
-    "Standard Deviation": {
+    StandardDeviation: {
       length: 20,
-      source: "Close",
+      source: "close",
     },
     Volume: {
       maLength: 20,
       colorByPrevious: false,
     },
-    "Historical Volatility": {
+    HistoricalVolatility: {
       length: 10,
     },
     OBV: {
-      smoothing: {
-        type: "None",
-        length: 14,
-        bbStdDev: 2,
-      },
+      maType: "none",
+      maLlength: 14,
+      bbStdDev: 2,
     },
     "Percentage Volume Oscillator": {
       fastLength: 12,
@@ -339,7 +335,7 @@ export default function Candlestick() {
     VWAP: {
       hideOnDailyOrAbove: true,
       anchorPeriod: "Daily",
-      source: "HLC3",
+      source: "hlc3",
       offset: 0,
 
       bandSettings: {
@@ -370,7 +366,6 @@ export default function Candlestick() {
         lineStyle: 0,
         opacity: 100,
       },
-
       smoothingMA: {
         visible: true,
         color: "rgb(255, 202, 28)",
@@ -378,7 +373,6 @@ export default function Candlestick() {
         lineStyle: 0,
         opacity: 100,
       },
-
       upper: {
         visible: true,
         value: 70,
@@ -387,7 +381,6 @@ export default function Candlestick() {
         lineStyle: 2,
         opacity: 100,
       },
-
       middle: {
         visible: false,
         value: 50,
@@ -396,7 +389,6 @@ export default function Candlestick() {
         lineStyle: 2,
         opacity: 100,
       },
-
       lower: {
         visible: true,
         value: 30,
@@ -405,26 +397,21 @@ export default function Candlestick() {
         lineStyle: 2,
         opacity: 100,
       },
-
       bandFill: {
         visible: true,
         topFillColor1: "rgba(140,120,255,0.05)",
         topFillColor2: "rgba(140,120,255,0.05)",
       },
-
       obFill: {
         visible: true,
         topFillColor1: "rgba(38,166,154,0.012)",
         topFillColor2: "rgba(38,166,154,0.2)",
       },
-
       osFill: {
         visible: true,
         bottomFillColor1: "rgba(239,83,80,0.012)",
         bottomFillColor2: "rgba(239,83,80,0.4)",
       },
-
-      /* ================== BOLLINGER BANDS ================== */
       bbUpperBand: {
         visible: true,
         color: "#4caf50",
@@ -464,55 +451,47 @@ export default function Candlestick() {
         lineStyle: 0,
         visible: true,
       },
-
       baseLine: {
         color: "rgba(255,109,0,1)",
         width: 1,
         lineStyle: 0,
         visible: true,
       },
-
       leadLine1: {
         color: "rgba(63,81,181,1)",
         width: 1,
         lineStyle: 0,
         visible: true,
       },
-
       leadLine2: {
         color: "rgba(216,27,96,1)",
         width: 1,
         lineStyle: 0,
         visible: true,
       },
-
       laggingSpan: {
         color: "rgba(156,39,176,1)",
         width: 1,
         lineStyle: 0,
         visible: true,
       },
-
       kumoCloudUpper: {
         color: "rgb(130, 132, 141)",
         width: 1,
         lineStyle: 0,
         visible: true,
       },
-
       kumoCloudLower: {
         color: "rgb(130, 132, 141)",
         width: 1,
         lineStyle: 0,
         visible: true,
       },
-
       cloudFillBullish: {
         color: "rgba(67,160,71,0.35)",
         opacity: 35,
         visible: true,
       },
-
       cloudFillBearish: {
         color: "rgba(244,67,54,0.35)",
         opacity: 35,
@@ -553,7 +532,6 @@ export default function Candlestick() {
         opacity: 100,
       },
     },
-
     DEMA: {
       dema: {
         color: "rgb(0,0,0)",
@@ -563,7 +541,6 @@ export default function Candlestick() {
         visible: true,
       },
     },
-
     TEMA: {
       tema: {
         color: "rgb(0,0,0)",
@@ -579,17 +556,15 @@ export default function Candlestick() {
         width: 2,
         lineStyle: 0,
         visible: true,
-        opacity: 1,
+        opacity: 100,
       },
-
       downTrend: {
         color: "rgb(239,83,80)",
         width: 2,
         lineStyle: 0,
         visible: true,
-        opacity: 1,
+        opacity: 100,
       },
-
       bodyMiddle: {
         color: "rgb(255,255,255)",
         width: 1,
@@ -597,13 +572,11 @@ export default function Candlestick() {
         visible: false,
         opacity: 0.6,
       },
-
       upTrendBg: {
         color0: "rgba(38,166,154,0.2)",
         color1: "rgba(38,166,154,0.05)",
         visible: true,
       },
-
       downTrendBg: {
         color0: "rgba(239,83,80,0.2)",
         color1: "rgba(239,83,80,0.05)",
@@ -618,7 +591,6 @@ export default function Candlestick() {
         visible: true,
         opacity: 1,
       },
-
       aroonDown: {
         color: "rgb(239,83,80)",
         width: 1,
@@ -636,7 +608,6 @@ export default function Candlestick() {
         visible: true,
         opacity: 1,
       },
-
       center: {
         color: "rgb(158,158,158)",
         width: 1,
@@ -644,7 +615,6 @@ export default function Candlestick() {
         visible: true,
         value: 0,
       },
-
       upperLevel: {
         color: "rgb(255,152,0)",
         width: 1,
@@ -652,7 +622,6 @@ export default function Candlestick() {
         visible: true,
         value: 90,
       },
-
       lowerLevel: {
         color: "rgb(3,169,244)",
         width: 1,
@@ -660,10 +629,60 @@ export default function Candlestick() {
         visible: true,
         value: -90,
       },
-
       oscillatorFill: {
         color0: "rgba(38,166,154,0.2)",
         color1: "rgba(239,83,80,0.2)",
+        visible: true,
+      },
+    },
+    ADX: {
+      adx: {
+        color: "rgb(255,152,0)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+        opacity: 1,
+      },
+    },
+    CCI: {
+      cciLine: {
+        color: "rgb(38,166,154)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+        opacity: 1,
+      },
+      cciMa: {
+        color: "rgb(255,152,0)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+        opacity: 1,
+      },
+      upperBand: {
+        color: "rgb(38,166,154)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: 100,
+      },
+      middleBand: {
+        color: "rgb(158,158,158)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: 0,
+      },
+      lowerBand: {
+        color: "rgb(38,166,154)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: -100,
+      },
+      bgFill: {
+        topFillColor1: "rgba(38,166,154,0.05)",
+        topFillColor2: "rgba(38,166,154,0.05)",
         visible: true,
       },
     },
@@ -743,6 +762,10 @@ export default function Candlestick() {
         return "ATR";
       case "Aroon":
         return "Aroon";
+      case "ADX":
+        return "ADX";
+      case "CCI":
+        return "CCI";
       case "AroonOscillator":
         return "AroonOscillator";
       default:
@@ -1484,6 +1507,7 @@ ATTACH MAIN CHART
             )}
             {renderIndicators()}
           </div>
+          {/* main chart */}
           <div className="col-md-7">
             <div
               ref={containerRef}

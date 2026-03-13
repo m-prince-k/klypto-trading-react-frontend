@@ -1049,10 +1049,10 @@ export default function IndicatorPropertyDialog({
       case "ROC": {
         return <BaseSettings showOffset={false} />;
       }
-      case "Williams %R": {
+      case "Williams%R": {
         return <BaseSettings showOffset={false} />;
       }
-      case "Ultimate Oscillator":
+      case "UltimateOscillator":
         return (
           <>
             <div className="mb-3">
@@ -1117,7 +1117,7 @@ export default function IndicatorPropertyDialog({
             </div>
           </>
         );
-      case "Bollinger Bands":
+      case "BollingerBands":
         return (
           <>
             <BaseSettings />
@@ -1150,7 +1150,7 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "Bollinger Band Width":
+      case "BollingerBandWidth":
         return (
           <>
             <BaseSettings showOffset={false} />
@@ -1204,7 +1204,7 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "Keltner Channels":
+      case "KeltnerChannels":
         return (
           <>
             <BaseSettings showOffset={false} />
@@ -1260,7 +1260,7 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "Donchian Channels":
+      case "DonchianChannels":
         return (
           <>
             <BaseSettings showSource={false} />
