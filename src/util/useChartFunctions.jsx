@@ -53,6 +53,8 @@ export default function useChartFunctions({
           /* ================= RSI ================= */
 
           case "RSI": {
+            removeSeries(indicatorSeriesRef, chartRef, indicator);
+
             const rsiData = result?.data?.rsi ?? [];
             const smoothingData = result?.data?.smoothingMA ?? [];
             const bbUpperData = result?.data?.bbUpperBand ?? [];
@@ -82,8 +84,9 @@ export default function useChartFunctions({
           }
 
           /* ================= SMA ================= */
-
           case "SMA": {
+            removeSeries(indicatorSeriesRef, chartRef, indicator);
+
             const smaData = result?.data?.sma ?? [];
             const smoothingData = result?.data?.smoothingMA ?? [];
 
@@ -93,8 +96,8 @@ export default function useChartFunctions({
             };
 
             latestIndicatorValuesRef.current.SMA = {
-              sma: smaData[smaData.length - 1]?.value,
-              smoothingMA: smoothingData[smoothingData.length - 1]?.value,
+              sma: smaData?.[smaData.length - 1]?.value ?? null,
+              smoothingMA: smoothingData?.[smoothingData.length - 1]?.value ?? null,
             };
 
             break;

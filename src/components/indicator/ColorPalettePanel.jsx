@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Form } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 
@@ -11,317 +11,174 @@ const COLORS = [
   "#990000","#e69138","#f1c232","#274e13","#134f5c","#0b5394","#351c75","#741b47",
 ];
 
-export const getOpacityFromRGBA = (rgba) => {
-  if (!rgba) return 100;
-  const match = rgba.match(/rgba?\(([^)]+)\)/);
-  if (!match) return 100;
-  const parts = match[1].split(",");
-  if (parts.length < 4) return 100;
-  return Math.round(parseFloat(parts[3]) * 100);
-};
+/* ================= UTILS ================= */
 
-export const getColorFromRGBA = (rgba) => {
-  if (!rgba) return "#6fa8dc";
-  const match = rgba.match(/rgba?\(([^)]+)\)/);
-  if (!match) return rgba;
-
-  const parts = match[1].split(",");
-
-  const r = parseInt(parts[0]).toString(16).padStart(2, "0");
-  const g = parseInt(parts[1]).toString(16).padStart(2, "0");
-  const b = parseInt(parts[2]).toString(16).padStart(2, "0");
-
+export const getColorFromRGBA = (colorStr) => {
+  if (!colorStr) return "#2962ff";
+  if (colorStr.startsWith("#")) return colorStr;
+  const match = colorStr.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  if (!match) return "#2962ff";
+  const r = parseInt(match[1], 10).toString(16).padStart(2, "0");
+  const g = parseInt(match[2], 10).toString(16).padStart(2, "0");
+  const b = parseInt(match[3], 10).toString(16).padStart(2, "0");
   return `#${r}${g}${b}`;
 };
 
+export const getOpacityFromRGBA = (colorStr) => {
+  if (!colorStr || colorStr.startsWith("#")) return 100;
+  // This captures the last number (the alpha) in the rgba string
+  const match = colorStr.match(/rgba?\(.*,\s*([\d.]+)\)/);
+  return match ? Math.round(parseFloat(match[1]) * 100) : 100;
+};
+
+const hexToRGBA = (hex, op) => {
+  if (!hex || hex.includes('NaN') || hex.length < 7) return `rgba(41, 98, 255, ${op / 100})`;
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${op / 100})`;
+};
+
+/* ================= COMPONENT ================= */
+
 export default function ColorPalettePanel({
-  mode = "line",
+  mode = "line", // "line" or "fill"
   currentStyle = {},
   onChange,
 }) {
-
-  const initialColor =
-    currentStyle.color ||
-    getColorFromRGBA(
-      currentStyle.topFillColor1 || currentStyle.bottomFillColor1
+  /**
+   * ⭐ AGNOSTIC SOURCE DETECTION
+   * Instead of checking for "obFill", we check which key exists in the object.
+   * We prioritize the "main" color (index 2) so the opacity slider doesn't get stuck at 2%.
+   */
+  const getPrimarySource = () => {
+    return (
+      currentStyle.topFillColor2 || 
+      currentStyle.bottomFillColor2 || 
+      currentStyle.color || 
+      currentStyle.topFillColor1 || 
+      currentStyle.bottomFillColor1 || 
+      "#2962ff"
     );
+  };
 
-  const initialOpacity =
-    currentStyle.opacity ??
-    getOpacityFromRGBA(
-      currentStyle.topFillColor2 || currentStyle.bottomFillColor2
-    );
-
-  const [color, setColor] = useState(initialColor);
-  const [opacity, setOpacity] = useState(initialOpacity);
+  const [color, setColor] = useState(() => getColorFromRGBA(getPrimarySource()));
+  const [opacity, setOpacity] = useState(() => getOpacityFromRGBA(getPrimarySource()));
   const [width, setWidth] = useState(currentStyle.width ?? 2);
   const [lineStyle, setLineStyle] = useState(currentStyle.lineStyle ?? 0);
 
-  const hexToRGBA = (hex, op) => {
-    const r = parseInt(hex.slice(1,3),16);
-    const g = parseInt(hex.slice(3,5),16);
-    const b = parseInt(hex.slice(5,7),16);
-    return `rgba(${r},${g},${b},${op/100})`;
-  };
+  // Sync internal state when the user selects a different row
+  useEffect(() => {
+    const source = getPrimarySource();
+    setColor(getColorFromRGBA(source));
+    setOpacity(getOpacityFromRGBA(source));
+    setWidth(currentStyle.width ?? 2);
+    setLineStyle(currentStyle.lineStyle ?? 0);
+  }, [currentStyle]);
 
   const previewColor = hexToRGBA(color, opacity);
 
-  /* ================= LINE UPDATE ================= */
-
   const updateLine = (updates = {}) => {
-
     const newColor = updates.color ?? color;
     const newOpacity = updates.opacity ?? opacity;
-    const newWidth = updates.width ?? width;
-    const newStyle = updates.lineStyle ?? lineStyle;
-
     onChange({
       color: hexToRGBA(newColor, newOpacity),
       opacity: newOpacity,
-      width: newWidth,
-      lineStyle: newStyle,
+      width: updates.width ?? width,
+      lineStyle: updates.lineStyle ?? lineStyle,
     });
   };
 
-  /* ================= FILL UPDATE ================= */
-
   const updateFill = (hexColor, op = opacity) => {
+    const r = parseInt(hexColor.slice(1, 3), 16);
+    const g = parseInt(hexColor.slice(3, 5), 16);
+    const b = parseInt(hexColor.slice(5, 7), 16);
 
-    const r = parseInt(hexColor.slice(1,3),16);
-    const g = parseInt(hexColor.slice(3,5),16);
-    const b = parseInt(hexColor.slice(5,7),16);
-
-    const main = `rgba(${r},${g},${b},${op/100})`;
+    const main = `rgba(${r},${g},${b},${op / 100})`;
     const faint = `rgba(${r},${g},${b},0.02)`;
 
-    if (mode === "bandFill") {
-      onChange({
-        topFillColor1: main,
-        topFillColor2: main,
-      });
+    // ⭐ STRUCTURAL UPDATES
+    // If the indicator uses a gradient (color2 exists), update both. 
+    // Otherwise, update the primary color field.
+    if (currentStyle.topFillColor2 !== undefined) {
+      onChange({ topFillColor1: faint, topFillColor2: main });
+    } else if (currentStyle.bottomFillColor2 !== undefined) {
+      onChange({ bottomFillColor1: faint, bottomFillColor2: main });
+    } else if (currentStyle.topFillColor1 !== undefined) {
+      onChange({ topFillColor1: main, topFillColor2: main });
+    } else if (currentStyle.bottomFillColor1 !== undefined) {
+      onChange({ bottomFillColor1: main, bottomFillColor2: main });
+    } else {
+      onChange({ color: main });
     }
-
-    if (mode === "obFill") {
-      onChange({
-        topFillColor1: faint,
-        topFillColor2: main,
-      });
-    }
-
-    if (mode === "osFill") {
-      onChange({
-        bottomFillColor1: faint,
-        bottomFillColor2: main,
-      });
-    }
-
   };
-
-  /* ================= COLOR SELECT ================= */
 
   const selectColor = (c) => {
-
     setColor(c);
-
-    if (mode === "line") {
-      updateLine({
-        color: c,
-        opacity
-      });
-    } else {
-      updateFill(c, opacity);
-    }
-
+    if (mode === "line") updateLine({ color: c });
+    else updateFill(c, opacity);
   };
-
-  /* ================= OPACITY SLIDER ================= */
 
   const updateOpacity = (v) => {
-
     setOpacity(v);
-
-    if (mode === "line") {
-      updateLine({
-        color,
-        opacity: v
-      });
-    } else {
-      updateFill(color, v);
-    }
-
-  };
-
-  const selectWidth = (w) => {
-    setWidth(w);
-    updateLine({ width: w });
-  };
-
-  const selectStyle = (s) => {
-    setLineStyle(s);
-    updateLine({ lineStyle: s });
+    if (mode === "line") updateLine({ opacity: v });
+    else updateFill(color, v);
   };
 
   return (
-    <div
-      style={{
-        width: 300,
-        padding: 14,
-        background: "#f7f7f7",
-        borderRadius: 8,
-        boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-      }}
-    >
-
-      {/* PREVIEW */}
-
-      <div
-        style={{
-          height: 40,
-          background: "#fff",
-          borderRadius: 6,
-          marginBottom: 12,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          border: "1px solid #ddd",
-        }}
-      >
+    <div style={{ width: 300, padding: 14, background: "#f7f7f7", borderRadius: 8, boxShadow: "0 4px 16px rgba(0,0,0,0.15)" }}>
+      {/* PREVIEW BOX */}
+      <div style={{ height: 40, background: "#fff", borderRadius: 6, marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #ddd" }}>
         {mode === "line" ? (
-          <div
-            style={{
-              width: 80,
-              borderTop:
-                lineStyle === 2
-                  ? `${width}px dashed ${previewColor}`
-                  : lineStyle === 1
-                  ? `${width}px dotted ${previewColor}`
-                  : `${width}px solid ${previewColor}`,
-            }}
-          />
+          <div style={{ width: 80, borderTop: lineStyle === 2 ? `${width}px dashed ${previewColor}` : lineStyle === 1 ? `${width}px dotted ${previewColor}` : `${width}px solid ${previewColor}` }} />
         ) : (
-          <div
-            style={{
-              width: 80,
-              height: 20,
-              borderRadius: 4,
-              background: previewColor,
-            }}
-          />
+          <div style={{ width: 80, height: 20, borderRadius: 4, background: previewColor }} />
         )}
       </div>
 
       {/* COLOR GRID */}
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(10,1fr)",
-          gap: 6,
-          marginBottom: 12,
-        }}
-      >
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(10,1fr)", gap: 6, marginBottom: 12 }}>
         {COLORS.map((c, i) => (
-          <div
-            key={i}
-            onClick={() => selectColor(c)}
-            style={{
-              width: 22,
-              height: 22,
-              borderRadius: 4,
-              background: c,
-              cursor: "pointer",
-              border: c === color ? "2px solid #4c8bf5" : "1px solid #ccc",
-            }}
-          />
+          <div key={i} onClick={() => selectColor(c)} style={{ width: 22, height: 22, borderRadius: 4, background: c, cursor: "pointer", border: c.toLowerCase() === color.toLowerCase() ? "2px solid #4c8bf5" : "1px solid #ccc" }} />
         ))}
       </div>
 
-      {/* OPACITY */}
-
+      {/* OPACITY SLIDER */}
       <div style={{ marginBottom: 14 }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
           <span>Opacity</span>
           <span>{opacity}%</span>
         </div>
-
-        <Form.Range
-          min={0}
-          max={100}
-          value={opacity}
-          onChange={(e) => updateOpacity(Number(e.target.value))}
-        />
+        <Form.Range min={0} max={100} value={opacity} onChange={(e) => updateOpacity(Number(e.target.value))} />
       </div>
 
       {mode === "line" && (
         <>
-          {/* WIDTH */}
-
+          {/* THICKNESS */}
           <div style={{ marginBottom: 14 }}>
             <div style={{ fontSize: 13, marginBottom: 6 }}>Thickness</div>
-
             <div style={{ display: "flex" }}>
-              {[1,2,3,4].map((w)=>(
-                <div
-                  key={w}
-                  onClick={()=>selectWidth(w)}
-                  style={{
-                    flex:1,
-                    height:36,
-                    background: width===w ? "#2c2c2e":"#e9ecef",
-                    display:"flex",
-                    alignItems:"center",
-                    justifyContent:"center",
-                    cursor:"pointer"
-                  }}
-                >
-                  <div
-                    style={{
-                      height:w,
-                      width:28,
-                      background: width===w ? "#fff":"#333"
-                    }}
-                  />
+              {[1, 2, 3, 4].map((w) => (
+                <div key={w} onClick={() => updateLine({ width: w })} style={{ flex: 1, height: 36, background: width === w ? "#2c2c2e" : "#e9ecef", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                  <div style={{ height: w, width: 28, background: width === w ? "#fff" : "#333" }} />
                 </div>
               ))}
             </div>
           </div>
 
           {/* LINE STYLE */}
-
           <div>
-            <div style={{ fontSize:13, marginBottom:6 }}>Line style</div>
-
-            <div style={{ display:"flex" }}>
-              {[{v:0},{v:2},{v:1}].map(({v})=>(
-                <div
-                  key={v}
-                  onClick={()=>selectStyle(v)}
-                  style={{
-                    flex:1,
-                    height:36,
-                    background: lineStyle===v ? "#2c2c2e":"#e9ecef",
-                    display:"flex",
-                    alignItems:"center",
-                    justifyContent:"center",
-                    cursor:"pointer"
-                  }}
-                >
-                  <div
-                    style={{
-                      width:30,
-                      borderTop:
-                        v===2 ? "2px dashed #333"
-                        : v===1 ? "2px dotted #333"
-                        : "2px solid #333"
-                    }}
-                  />
+            <div style={{ fontSize: 13, marginBottom: 6 }}>Line style</div>
+            <div style={{ display: "flex" }}>
+              {[{ v: 0 }, { v: 2 }, { v: 1 }].map(({ v }) => (
+                <div key={v} onClick={() => updateLine({ lineStyle: v })} style={{ flex: 1, height: 36, background: lineStyle === v ? "#2c2c2e" : "#e9ecef", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                  <div style={{ width: 30, borderTop: v === 2 ? "2px dashed #333" : v === 1 ? "2px dotted #333" : "2px solid #333" }} />
                 </div>
               ))}
             </div>
           </div>
         </>
       )}
-
     </div>
   );
 }

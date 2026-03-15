@@ -6,19 +6,33 @@ export default function SMAPlot({
   rows,
   indicatorStyle,
   indicatorSeriesRef,
-  addSeries
+  addSeries,
+  indicatorConfigs,
 }) {
 
-  /* ================= CREATE SMA ================= */
+  /* ================= CREATE SERIES ================= */
 
   useEffect(() => {
 
     if (!result) return;
 
+    const config = indicatorConfigs?.SMA || {};
+
+    const maType = config?.maType;
+
+    const isSmoothingEnabled =
+      maType === "SMA";
+
+    const isBBEnabled =
+      maType === "SMA + Bollinger Bands";
+
+    /* REMOVE OLD SERIES */
+
     if (indicatorSeriesRef.current?.SMA) {
+
       Object.values(indicatorSeriesRef.current.SMA).forEach((s) => {
         if (s?.setData) {
-          try { s.setData([]); } catch {}
+          try { s.setData([]) } catch {}
         }
       });
 
@@ -27,30 +41,56 @@ export default function SMAPlot({
 
     const groupedSeries = {};
 
+    /* ================= CREATE LINES ================= */
+
     Object.entries(result.data).forEach(([lineName, lineData]) => {
 
-      const rowConfig = rows?.find((r) => r.key === lineName);
-      const styleConfig = indicatorStyle?.SMA?.[lineName];
+      if (!lineData?.length) return;
+
+      /* Skip smoothing when not needed */
+
+      if (lineName === "smoothingMA" && !isSmoothingEnabled)
+        return;
+
+      /* Skip BB lines when BB disabled */
+
+      if ((lineName === "bbUpper" || lineName === "bbLower") && !isBBEnabled)
+        return;
+
+      /* Convert API key → style key */
+
+      const styleKey = lineName === "sma" ? "ma" : lineName;
+
+      const rowConfig = rows?.find((r) => r.key === styleKey);
+      const styleConfig = indicatorStyle?.SMA?.[styleKey];
 
       const series = addSeries("SMA", LineSeries, {
-        color: styleConfig?.color || rowConfig?.color || "#2196f3",
+
+        color: styleConfig?.color || rowConfig?.color || "#2962ff",
+
         lineWidth: styleConfig?.width || 2,
+
+        lineStyle: styleConfig?.lineStyle ?? 0,
+
         visible: styleConfig?.visible ?? true,
+
         priceLineVisible: false,
+
         lastValueVisible: true,
+
       });
 
       if (!series) return;
 
       series.setData(lineData);
 
-      groupedSeries[lineName] = series;
+      groupedSeries[styleKey] = series;
+
     });
 
     indicatorSeriesRef.current.SMA = groupedSeries;
 
-  }, [result]);
-
+  }, [result, indicatorConfigs]);
 
 
   /* ================= STYLE UPDATE ================= */
@@ -58,32 +98,32 @@ export default function SMAPlot({
   useEffect(() => {
 
     const smaGroup = indicatorSeriesRef.current?.SMA;
+
     if (!smaGroup) return;
 
-    const smaStyle = indicatorStyle?.SMA?.sma;
-    const smoothingStyle = indicatorStyle?.SMA?.smoothingMA;
+    Object.entries(smaGroup).forEach(([lineName, seriesInstance]) => {
 
-    if (smaGroup.sma) {
-      smaGroup.sma.applyOptions({
-        color: smaStyle?.color,
-        lineWidth: smaStyle?.width,
-        lineStyle: smaStyle?.lineStyle ?? 0,
-        visible: smaStyle?.visible,
-        lastValueVisible: smaStyle?.visible,
-        opacity: smaStyle?.opacity,
-      });
-    }
+      const style = indicatorStyle?.SMA?.[lineName];
 
-    if (smaGroup.smoothingMA) {
-      smaGroup.smoothingMA.applyOptions({
-        color: smoothingStyle?.color,
-        lineWidth: smoothingStyle?.width,
-        lineStyle: smoothingStyle?.lineStyle ?? 0,
-        visible: smoothingStyle?.visible,
-        lastValueVisible: smoothingStyle?.visible,
-        opacity: smoothingStyle?.opacity,
+      if (!style || !seriesInstance) return;
+
+      seriesInstance.applyOptions({
+
+        color: style.color,
+
+        lineWidth: style.width,
+
+        lineStyle: style.lineStyle ?? 0,
+
+        visible: style.visible,
+
+        lastValueVisible: style.visible,
+
+        opacity: style.opacity,
+
       });
-    }
+
+    });
 
   }, [indicatorStyle]);
 

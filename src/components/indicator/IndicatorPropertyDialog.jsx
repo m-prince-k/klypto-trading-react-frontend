@@ -371,7 +371,7 @@ export default function IndicatorPropertyDialog({
   ========================== */
   const handleIndicatorPropertyChange = async () => {
     const config = indicatorConfigs?.[normalizedType] || {};
-    const { maType, maLength } = config;
+    const { maType } = config;
 
     const payload = {
       type: normalizedType,

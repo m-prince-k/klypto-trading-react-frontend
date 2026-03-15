@@ -116,7 +116,6 @@ export const ChartProprties = {
     mode: 0, // Normal interaction
   },
 };
-
 export function getIndicatorChartProperties(height = 140, width = 1280) {
   return {
     ...ChartProprties,
@@ -427,14 +426,11 @@ export const getRowsByIndicator = (indicator) => {
           label: "Smoothing MA",
           type: "line",
         },
-
         { key: "upper", label: "RSI Upper Band", value: 70 },
-
         {
           key: "middle",
           label: "RSI Middle Band",
           value: 50,
-          color: "#9e9e9e",
         },
 
         { key: "lower", label: "RSI Lower Band", value: 30 },
@@ -450,36 +446,28 @@ export const getRowsByIndicator = (indicator) => {
           key: "obFill",
           label: "Overbought Gradient Fill",
           type: "fill",
-          topFillColor1: "rgba(38,166,154,0.5)",
-          topFillColor2: "rgba(38,166,154,0.1)",
         },
         {
           key: "osFill",
           label: "Oversold Gradient Fill",
           type: "fill",
-          bottomFillColor1: "rgba(239,83,80,0.5)",
-          bottomFillColor2: "rgba(239,83,80,0.1)",
         },
         {
           key: "bbUpperBand",
           label: "BB Upper Band",
           type: "line",
-          color: "#4caf50",
           width: 1,
         },
         {
           key: "bbLowerBand",
           label: "BB Lower Band",
           type: "line",
-          color: "#f44336",
           width: 1,
         },
         {
           key: "bbFill",
           label: "BB Fill Area",
           type: "fill",
-          topColor: "rgba(76,175,80,0.2)",
-          bottomColor: "rgba(76,175,80,0.05)",
         },
       ];
     case "SMA":
@@ -567,9 +555,9 @@ export const getRowsByIndicator = (indicator) => {
           type: "line",
         },
       ];
-
     case "AroonOscillator":
       return [
+
         {
           key: "oscillator",
           label: "Oscillator",
@@ -577,6 +565,7 @@ export const getRowsByIndicator = (indicator) => {
           color0: "#26a69a",
           color1: "#ef5350",
         },
+
         {
           key: "center",
           label: "Center Line",
@@ -585,6 +574,7 @@ export const getRowsByIndicator = (indicator) => {
           showValue: true,
           value: 0,
         },
+
         {
           key: "upperLevel",
           label: "Upper Level",
@@ -593,6 +583,7 @@ export const getRowsByIndicator = (indicator) => {
           showValue: true,
           value: 90,
         },
+
         {
           key: "lowerLevel",
           label: "Lower Level",
@@ -601,13 +592,25 @@ export const getRowsByIndicator = (indicator) => {
           showValue: true,
           value: -90,
         },
+
+        /* FILL ABOVE CENTER */
+
         {
-          key: "oscillatorFill",
-          label: "Oscillator Fill",
+          key: "oscillatorFillBull",
+          label: "Oscillator Fill (Bullish)",
           type: "area",
-          color0: "rgba(38,166,154,0.2)",
-          color1: "rgba(239,83,80,0.2)",
+          color0: "rgba(38,166,154,0.25)",
         },
+
+        /* FILL BELOW CENTER */
+
+        {
+          key: "oscillatorFillBear",
+          label: "Oscillator Fill (Bearish)",
+          type: "area",
+          color0: "rgba(239,83,80,0.25)",
+        },
+
       ];
     case "ADX":
       return [{ key: "adx", label: "ADX", type: "line" }];
@@ -741,52 +744,62 @@ export const getRowsByIndicator = (indicator) => {
           color: "#9e9e9e",
         },
       ];
-
     case "CCI":
       return [
-        // Lines
-        { key: "cciLine", label: "CCI", type: "line", color: "#26a69a" },
+
+        { key: "cci", label: "CCI", type: "line" },
+
+        { key: "smoothingMA", label: "Smoothing MA", type: "line" },
+
         {
-          key: "cciMa",
-          label: "CCI-based MA",
+          key: "upper",
+          label: "Upper Level",
           type: "line",
-          color: "#ff9800",
-        },
-
-        // Bands
-        {
-          key: "upperBand",
-          label: "Upper Band",
-          type: "band",
-          showValue: true,
           value: 100,
-          color: "#ef5350",
-        },
-        {
-          key: "middleBand",
-          label: "Middle Band",
-          type: "band",
           showValue: true,
-          value: 0,
-          color: "#9e9e9e",
         },
-        {
-          key: "lowerBand",
-          label: "Lower Band",
-          type: "band",
-          showValue: true,
-          value: -100,
-          color: "#26a69a",
-        },
-        {
-          key: "bgFill",
-          label: "CCI Background Fill",
-          type: "fill",
-          color0: "rgba(38,166,154,0.05)",
-          color1: "rgba(38,166,154,0.05)",
-        },
-      ];
 
+        {
+          key: "middle",
+          label: "Middle Level",
+          type: "line",
+          value: 0,
+          showValue: true,
+        },
+
+        {
+          key: "lower",
+          label: "Lower Level",
+          type: "line",
+          value: -100,
+          showValue: true,
+        },
+
+        {
+          key: "bandFill",
+          label: "Band Fill",
+          type: "area",
+        },
+
+        {
+          key: "obFill",
+          label: "Overbought Fill",
+          type: "area",
+        },
+
+        {
+          key: "osFill",
+          label: "Oversold Fill",
+          type: "area",
+        },
+
+        { key: "bbUpperBand", label: "BB Upper Band", type: "line" },
+
+        { key: "bbLowerBand", label: "BB Lower Band", type: "line" },
+
+        { key: "bbFill", label: "BB Fill", type: "area" },
+
+      ];
     case "Momentum":
       return [{ key: "momentum", label: "Momentum", type: "line" }];
 

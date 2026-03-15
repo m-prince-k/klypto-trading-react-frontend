@@ -9,16 +9,16 @@ export default function AroonOscillatorPlot({
   addSeries
 }) {
 
-  /* CREATE INDICATOR */
+  /* ================= CREATE INDICATOR ================= */
 
   useEffect(() => {
 
     if (!result) return;
 
     if (indicatorSeriesRef.current?.AroonOscillator) {
-      Object.values(indicatorSeriesRef.current.AroonOscillator).forEach((s) => {
+      Object.values(indicatorSeriesRef.current.AroonOscillator).forEach((s)=>{
         if (s?.setData) {
-          try { s.setData([]); } catch {}
+          try { s.setData([]) } catch {}
         }
       });
       indicatorSeriesRef.current.AroonOscillator = null;
@@ -27,46 +27,60 @@ export default function AroonOscillatorPlot({
     const groupedSeries = {};
     const oscData = result.data;
 
-    const center = indicatorStyle?.AroonOscillator?.center?.value ?? 0;
-    const upper = indicatorStyle?.AroonOscillator?.upperLevel?.value ?? 90;
-    const lower = indicatorStyle?.AroonOscillator?.lowerLevel?.value ?? -90;
+    const style = indicatorStyle?.AroonOscillator;
 
-    /* OSCILLATOR LINE */
+    const center = style?.center?.value ?? 0;
+    const upper = style?.upperLevel?.value ?? 90;
+    const lower = style?.lowerLevel?.value ?? -90;
 
-    const oscSeries = addSeries("AroonOscillator", LineSeries, {
-      color: indicatorStyle?.AroonOscillator?.oscillator?.color0,
-      lineWidth: indicatorStyle?.AroonOscillator?.oscillator?.width || 2,
-      visible: indicatorStyle?.AroonOscillator?.oscillator?.visible ?? true,
+    /* ================= OSCILLATOR ================= */
+
+    const oscSeries = addSeries("AroonOscillator", BaselineSeries,{
+      baseValue: { type: "price", price: center },
+
+      topLineColor: style?.oscillator?.color0,
+      bottomLineColor: style?.oscillator?.color1,
+
+      topFillColor1: style?.oscillatorFillBull?.color0,
+      topFillColor2: style?.oscillatorFillBull?.color0,
+
+      bottomFillColor1: style?.oscillatorFillBear?.color0,
+      bottomFillColor2: style?.oscillatorFillBear?.color0,
+
+      lineWidth: style?.oscillator?.width || 2,
+      visible: style?.oscillator?.visible ?? true,
+
       lastValueVisible: true
     });
 
     oscSeries.setData(oscData);
+
     groupedSeries.oscillator = oscSeries;
 
-    /* LEVEL LINES */
+    /* ================= LEVEL LINES ================= */
 
     const makeLevelData = (value) =>
-      oscData.map(p => ({ time: p.time, value }));
+      oscData.map((p)=>({time:p.time,value}));
 
-    const upperSeries = addSeries("AroonOscillator", LineSeries,{
-      color: indicatorStyle?.AroonOscillator?.upperLevel?.color,
-      lineWidth: indicatorStyle?.AroonOscillator?.upperLevel?.width,
-      lineStyle: indicatorStyle?.AroonOscillator?.upperLevel?.lineStyle,
-      visible: indicatorStyle?.AroonOscillator?.upperLevel?.visible
+    const upperSeries = addSeries("AroonOscillator",LineSeries,{
+      color: style?.upperLevel?.color,
+      lineWidth: style?.upperLevel?.width,
+      lineStyle: style?.upperLevel?.lineStyle ?? 0,
+      visible: style?.upperLevel?.visible
     });
 
-    const centerSeries = addSeries("AroonOscillator", LineSeries,{
-      color: indicatorStyle?.AroonOscillator?.center?.color,
-      lineWidth: indicatorStyle?.AroonOscillator?.center?.width,
-      lineStyle: indicatorStyle?.AroonOscillator?.center?.lineStyle,
-      visible: indicatorStyle?.AroonOscillator?.center?.visible
+    const centerSeries = addSeries("AroonOscillator",LineSeries,{
+      color: style?.center?.color,
+      lineWidth: style?.center?.width,
+      lineStyle: style?.center?.lineStyle ?? 0,
+      visible: style?.center?.visible
     });
 
-    const lowerSeries = addSeries("AroonOscillator", LineSeries,{
-      color: indicatorStyle?.AroonOscillator?.lowerLevel?.color,
-      lineWidth: indicatorStyle?.AroonOscillator?.lowerLevel?.width,
-      lineStyle: indicatorStyle?.AroonOscillator?.lowerLevel?.lineStyle,
-      visible: indicatorStyle?.AroonOscillator?.lowerLevel?.visible
+    const lowerSeries = addSeries("AroonOscillator",LineSeries,{
+      color: style?.lowerLevel?.color,
+      lineWidth: style?.lowerLevel?.width,
+      lineStyle: style?.lowerLevel?.lineStyle ?? 0,
+      visible: style?.lowerLevel?.visible
     });
 
     upperSeries.setData(makeLevelData(upper));
@@ -77,31 +91,14 @@ export default function AroonOscillatorPlot({
     groupedSeries.center = centerSeries;
     groupedSeries.lowerLevel = lowerSeries;
 
-    /* OSCILLATOR FILL */
-
-    const fillSeries = addSeries("AroonOscillator", BaselineSeries,{
-      baseValue: { type: "price", price: center },
-      topFillColor1: indicatorStyle?.AroonOscillator?.oscillatorFill?.color0,
-      topFillColor2: indicatorStyle?.AroonOscillator?.oscillatorFill?.color0,
-      bottomFillColor1: indicatorStyle?.AroonOscillator?.oscillatorFill?.color1,
-      bottomFillColor2: indicatorStyle?.AroonOscillator?.oscillatorFill?.color1,
-      topLineColor: "transparent",
-      bottomLineColor: "transparent",
-      visible: indicatorStyle?.AroonOscillator?.oscillatorFill?.visible
-    });
-
-    fillSeries.setData(oscData);
-
-    groupedSeries.oscillatorFill = fillSeries;
-
     indicatorSeriesRef.current.AroonOscillator = groupedSeries;
 
   }, [result]);
 
 
-  /* STYLE UPDATE */
+  /* ================= STYLE UPDATE ================= */
 
-  useEffect(() => {
+  useEffect(()=>{
 
     const group = indicatorSeriesRef.current?.AroonOscillator;
     if (!group) return;
@@ -109,10 +106,10 @@ export default function AroonOscillatorPlot({
     const style = indicatorStyle?.AroonOscillator;
 
     group.oscillator?.applyOptions({
-      color: style?.oscillator?.color0,
+      topLineColor: style?.oscillator?.color0,
+      bottomLineColor: style?.oscillator?.color1,
       lineWidth: style?.oscillator?.width,
-      visible: style?.oscillator?.visible,
-      opacity: style?.oscillator?.opacity
+      visible: style?.oscillator?.visible
     });
 
     group.center?.applyOptions({
@@ -131,12 +128,6 @@ export default function AroonOscillatorPlot({
       color: style?.lowerLevel?.color,
       lineWidth: style?.lowerLevel?.width,
       visible: style?.lowerLevel?.visible
-    });
-
-    group.oscillatorFill?.applyOptions({
-      topFillColor1: style?.oscillatorFill?.color0,
-      bottomFillColor1: style?.oscillatorFill?.color1,
-      visible: style?.oscillatorFill?.visible
     });
 
   }, [indicatorStyle]);

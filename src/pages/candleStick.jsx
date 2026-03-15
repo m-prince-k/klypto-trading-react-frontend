@@ -1,13 +1,5 @@
 import "bootstrap/dist/css/bootstrap.min.css"; //this is for temp
-import {
-  createChart,
-  CandlestickSeries,
-  LineSeries,
-  BarSeries,
-  AreaSeries,
-  HistogramSeries,
-  BaselineSeries,
-} from "lightweight-charts";
+import { createChart, CandlestickSeries, LineSeries, BarSeries, AreaSeries, HistogramSeries, BaselineSeries, } from "lightweight-charts";
 import IndicatorRuleBuilder from "../components/scanner/IndicatorRuleBuilder";
 import { LuCirclePlus, LuCircleMinus } from "react-icons/lu";
 import { RiResetRightLine } from "react-icons/ri";
@@ -15,25 +7,11 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { FaCode } from "react-icons/fa6";
 import ChartHeader from "../components/tradingModals/ChartHeader";
 import IndicatorBuildingListing from "../components/scanner/IndicatorBuilderListing";
-import {
-  ChartProprties,
-  TIMEFRAME_TO_SECONDS,
-  SINGLE_VALUE_CHARTS,
-  chartSeriesStyles,
-  convertToHeikinAshi,
-  PANE_INDICATORS,
-} from "../util/common";
+import { ChartProprties, TIMEFRAME_TO_SECONDS, SINGLE_VALUE_CHARTS, chartSeriesStyles, convertToHeikinAshi, PANE_INDICATORS, } from "../util/common";
 import SourceCodePanel from "../components/indicator/SourceCodePanel";
 import ChartRightSidebar from "../components/chart/rightbar/ChartRightSidebar";
 import ChartLeftSidebar from "../components/chart/leftbar/ChartLeftSidebar";
-import {
-  IoCloseSharp,
-  IoEyeOffOutline,
-  IoEyeOutline,
-  IoLink,
-  IoSettingsOutline,
-} from "react-icons/io5";
-import { FiMoreHorizontal } from "react-icons/fi";
+import { IoCloseSharp, IoEyeOffOutline, IoEyeOutline, IoLink, IoSettingsOutline, } from "react-icons/io5";
 import IndicatorAlert from "../components/indicator/IndicatorAlert";
 import IndicatorPropertyDialog from "../components/indicator/IndicatorPropertyDialog";
 import useChartFunctions from "../util/useChartFunctions";
@@ -59,37 +37,30 @@ export default function Candlestick() {
   const [liveOhlcv, setLiveOhlcv] = useState({});
   const [liveIndicatorData, setLiveIndicatorData] = useState({});
   const [showAlertForm, setShowAlertForm] = useState(false);
-  // const [openSettings, setOpenSettings] = useState(false);
   const [indicatorProperty, setIndicatorProperty] = useState(false);
   const [indicatorLoading, setIndicatorLoading] = useState(false);
   const mainChartHeightRef = useRef(500);
-
   const [showSourcePanel, setShowSourcePanel] = useState(false);
   const [activeSourceIndicator, setActiveSourceIndicator] = useState(null);
-
   const [indicatorVisibility, setIndicatorVisibility] = useState({});
   const [activeBarIndicator, setActiveBarIndicator] = useState("");
 
   const toggleIndicatorVisibility = (indicator) => {
     const currentVisible = indicatorVisibility[indicator] ?? true;
     const newVisibility = !currentVisible;
-
     const seriesGroup = indicatorSeriesRef.current?.[indicator];
-
     if (seriesGroup) {
       Object.values(seriesGroup).forEach((series) => {
         if (series?.applyOptions) {
           series.applyOptions({ visible: newVisibility });
         }
       });
-
       if (seriesGroup._priceLines) {
         Object.values(seriesGroup._priceLines).forEach((line) => {
           line?.applyOptions({ visible: newVisibility });
         });
       }
     }
-
     setIndicatorVisibility((prev) => ({
       ...prev,
       [indicator]: newVisibility,
@@ -97,21 +68,14 @@ export default function Candlestick() {
   };
   const paneIndexRef = useRef({});
 
-  /* =========================
-   GET PANE INDEX
-========================= */
-
+  //  GET PANE INDEX
   const getPaneIndex = (indicator) => {
     if (!PANE_INDICATORS.has(indicator)) return 0;
-
     if (paneIndexRef.current[indicator] !== undefined) {
       return paneIndexRef.current[indicator];
     }
-
     const nextPane = Object.keys(paneIndexRef.current).length + 1;
-
     paneIndexRef.current[indicator] = nextPane;
-
     return nextPane;
   };
 
@@ -124,7 +88,6 @@ export default function Candlestick() {
       maLength: 14,
       bbStdDev: 2,
     },
-
     EMA: {
       length: 9,
       source: "close",
@@ -139,21 +102,17 @@ export default function Candlestick() {
       source: "close",
       offset: 0,
     },
-
     HMA: {
       length: 9,
       source: "close",
     },
-
     DEMA: {
       length: 9,
       source: "close",
     },
-
     TEMA: {
       length: 9,
     },
-
     KAMA: {
       ERlength: 10,
       fastLength: 2,
@@ -187,13 +146,11 @@ export default function Candlestick() {
       smoothing: 14,
       diLength: 14,
     },
-
     "Chande Kroll Stop": {
-      atrLength: 10, // default p
-      atrCoefficient: 1, // default x
-      stopLength: 9, // default q
+      atrLength: 10,
+      atrCoefficient: 1,
+      stopLength: 9,
     },
-
     RSI: {
       length: 14,
       source: "close",
@@ -201,30 +158,26 @@ export default function Candlestick() {
       maLength: 14,
       bbStdDev: 2,
     },
-
     Stochastic: {
-      kLength: 14, // %K Length
-      kSmoothing: 1, // %K Smoothing
-      dSmoothing: 3, // %D Smoothing
+      kLength: 14,
+      kSmoothing: 1,
+      dSmoothing: 3,
     },
-
     StochasticRSI: {
-      rsiLength: 14, // RSI period
-      rsiSource: "close", // RSI source (dropdown)
-      stochasticLength: 14, // %K length of Stochastic
-      kSmoothing: 3, // %K smoothing
-      dSmoothing: 3, // %D smoothing
+      rsiLength: 14,
+      rsiSource: "close",
+      stochasticLength: 14,
+      kSmoothing: 3,
+      dSmoothing: 3,
     },
-
     MACD: {
       source: "close",
-      fastLength: 12, // Fast EMA/SMA
-      slowLength: 26, // Slow EMA/SMA
-      signalLength: 9, // Signal line length
-      oscillatorMAType: "EMA", // dropdown: "EMA" or "SMA"
+      fastLength: 12,
+      slowLength: 26,
+      signalLength: 9,
+      oscillatorMAType: "EMA",
       signalMAType: "EMA",
     },
-
     CCI: {
       length: 20,
       source: "hlc3",
@@ -245,9 +198,9 @@ export default function Candlestick() {
       source: "close",
     },
     UltimateOscillator: {
-      fastLength: 7, // Fast period
-      middleLength: 14, // Middle period
-      slowLength: 28, // Slow period
+      fastLength: 7,
+      middleLength: 14,
+      slowLength: 28,
     },
     "Chande Momentum Oscillator": {
       length: 9,
@@ -265,7 +218,7 @@ export default function Candlestick() {
     },
     BollingerBands: {
       length: 20,
-      maType: "SMA", // default moving average type
+      maType: "SMA",
       stdDev: 2,
       source: "close",
       offset: 0,
@@ -313,8 +266,8 @@ export default function Candlestick() {
       fastLength: 12,
       slowLength: 26,
       signalLength: 9,
-      oscMaType: "EMA", // EMA | SMA
-      signalMaType: "EMA", // EMA | SMA
+      oscMaType: "EMA",
+      signalMaType: "EMA",
     },
     "Chaikin Money Flow": {
       length: 20,
@@ -337,10 +290,8 @@ export default function Candlestick() {
       anchorPeriod: "Daily",
       source: "hlc3",
       offset: 0,
-
       bandSettings: {
-        calculationMode: "Standard Deviation", // or "Percentage"
-
+        calculationMode: "Standard Deviation",
         band1: { enabled: true, multiplier: 1 },
         band2: { enabled: false, multiplier: 2 },
         band3: { enabled: false, multiplier: 3 },
@@ -368,7 +319,7 @@ export default function Candlestick() {
       },
       smoothingMA: {
         visible: true,
-        color: "rgb(255, 202, 28)",
+        color: "rgba(255,202,28,1)",
         width: 1,
         lineStyle: 0,
         opacity: 100,
@@ -438,7 +389,22 @@ export default function Candlestick() {
       },
       smoothingMA: {
         visible: true,
-        color: "rgb(255, 202, 28)",
+        color: "rgba(255, 202, 28,1)",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+      },
+      bbUpper: {
+        visible: true,
+        color: "rgba(239,83,80,1)",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+      },
+
+      bbLower: {
+        visible: true,
+        color: "rgba(38,166,154,1)",
         width: 1,
         lineStyle: 0,
         opacity: 100,
@@ -476,13 +442,13 @@ export default function Candlestick() {
         visible: true,
       },
       kumoCloudUpper: {
-        color: "rgb(130, 132, 141)",
+        color: "rgba(130, 132, 141,1)",
         width: 1,
         lineStyle: 0,
         visible: true,
       },
       kumoCloudLower: {
-        color: "rgb(130, 132, 141)",
+        color: "rgba(130, 132, 141,1)",
         width: 1,
         lineStyle: 0,
         visible: true,
@@ -500,7 +466,7 @@ export default function Candlestick() {
     },
     EMA: {
       ema: {
-        color: "rgb(0,0,0)",
+        color: "rgba(0,0,0,1)",
         width: 1,
         lineStyle: 0,
         opacity: 100,
@@ -508,7 +474,22 @@ export default function Candlestick() {
       },
       smoothingMA: {
         visible: true,
-        color: "rgb(255, 202, 28)",
+        color: "rgba(255, 202, 28,1)",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+      },
+      bbUpper: {
+        visible: true,
+        color: "rgba(239,83,80,1)",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+      },
+
+      bbLower: {
+        visible: true,
+        color: "rgba(38,166,154,1)",
         width: 1,
         lineStyle: 0,
         opacity: 100,
@@ -516,7 +497,7 @@ export default function Candlestick() {
     },
     WMA: {
       wma: {
-        color: "rgb(0,0,0)",
+        color: "rgba(0,0,0,1)",
         width: 1,
         lineStyle: 0,
         opacity: 100,
@@ -534,7 +515,7 @@ export default function Candlestick() {
     },
     DEMA: {
       dema: {
-        color: "rgb(0,0,0)",
+        color: "rgba(0,0,0,1)",
         width: 1,
         lineStyle: 0,
         opacity: 100,
@@ -543,7 +524,7 @@ export default function Candlestick() {
     },
     TEMA: {
       tema: {
-        color: "rgb(0,0,0)",
+        color: "rgba(0,0,0,1)",
         width: 1,
         lineStyle: 0,
         opacity: 100,
@@ -552,21 +533,21 @@ export default function Candlestick() {
     },
     SuperTrend: {
       upTrend: {
-        color: "rgb(38,166,154)",
+        color: "rgba(38,166,154,1)",
         width: 2,
         lineStyle: 0,
         visible: true,
         opacity: 100,
       },
       downTrend: {
-        color: "rgb(239,83,80)",
+        color: "rgba(239,83,80,1)",
         width: 2,
         lineStyle: 0,
         visible: true,
         opacity: 100,
       },
       bodyMiddle: {
-        color: "rgb(255,255,255)",
+        color: "rgba(255,255,255,1)",
         width: 1,
         lineStyle: 2,
         visible: false,
@@ -585,99 +566,107 @@ export default function Candlestick() {
     },
     Aroon: {
       aroonUp: {
-        color: "rgb(38,166,154)",
+        color: "rgba(38,166,154,1)",
         width: 1,
         lineStyle: 0,
         visible: true,
-        opacity: 1,
+        opacity: 100,
       },
       aroonDown: {
-        color: "rgb(239,83,80)",
+        color: "rgba(239,83,80,1)",
         width: 1,
         lineStyle: 0,
         visible: true,
-        opacity: 1,
+        opacity: 100,
       },
     },
     AroonOscillator: {
       oscillator: {
-        color0: "rgb(38,166,154)",
-        color1: "rgb(239,83,80)",
+        visible: true,
+        color0: "rgba(38,166,154,1)",
+        color1: "rgba(239,83,80,1)",
         width: 2,
         lineStyle: 0,
-        visible: true,
-        opacity: 1,
+        opacity: 100,
       },
       center: {
-        color: "rgb(158,158,158)",
-        width: 1,
-        lineStyle: 2,
         visible: true,
         value: 0,
+        color: "rgba(158,158,158,1)",
+        width: 1,
+        lineStyle: 2,
+        opacity: 100,
       },
       upperLevel: {
-        color: "rgb(255,152,0)",
-        width: 1,
-        lineStyle: 2,
         visible: true,
         value: 90,
-      },
-      lowerLevel: {
-        color: "rgb(3,169,244)",
+        color: "rgba(255,152,0,1)",
         width: 1,
         lineStyle: 2,
+        opacity: 100,
+      },
+      lowerLevel: {
         visible: true,
         value: -90,
+        color: "rgba(3,169,244,1)",
+        width: 1,
+        lineStyle: 2,
+        opacity: 100,
       },
-      oscillatorFill: {
-        color0: "rgba(38,166,154,0.2)",
-        color1: "rgba(239,83,80,0.2)",
+      oscillatorFillBull: {
         visible: true,
+        color0: "rgba(38,166,154,0.25)",
       },
+      oscillatorFillBear: {
+        visible: true,
+        color0: "rgba(239,83,80,0.25)",
+      }
     },
     ADX: {
       adx: {
-        color: "rgb(255,152,0)",
+        color: "rgba(255,152,0,1)",
         width: 2,
         lineStyle: 0,
         visible: true,
-        opacity: 1,
+        opacity: 100,
       },
     },
     CCI: {
       cciLine: {
-        color: "rgb(38,166,154)",
+        color: "rgba(38,166,154,1)",
         width: 2,
         lineStyle: 0,
         visible: true,
-        opacity: 1,
+        opacity: 100,
       },
       cciMa: {
-        color: "rgb(255,152,0)",
+        color: "rgba(255,152,0,1)",
         width: 2,
         lineStyle: 0,
         visible: true,
-        opacity: 1,
+        opacity: 100,
       },
       upperBand: {
-        color: "rgb(38,166,154)",
+        color: "rgba(38,166,154,1)",
         width: 1,
         lineStyle: 2,
         visible: true,
         value: 100,
+        opacity: 100,
       },
       middleBand: {
-        color: "rgb(158,158,158)",
+        color: "rgba(158,158,158,1)",
         width: 1,
         lineStyle: 2,
         visible: true,
         value: 0,
       },
       lowerBand: {
-        color: "rgb(38,166,154)",
+        color: "rgba(38,166,154,1)",
         width: 1,
         lineStyle: 2,
         visible: true,
+        opacity: 100,
         value: -100,
       },
       bgFill: {
@@ -694,15 +683,11 @@ export default function Candlestick() {
     setShowAlertForm(false);
   };
 
-  /* =========================
-   ADD SERIES
-========================= */
-
+  //  ADD SERIES
   const addSeries = (indicator, SeriesType, options = {}) => {
     if (!chartRef.current) return null;
 
     const paneIndex = getPaneIndex(indicator);
-
     const series = chartRef.current.addSeries(
       SeriesType,
       {
@@ -711,19 +696,13 @@ export default function Candlestick() {
       },
       paneIndex,
     );
-
     return series;
   };
 
-  /* =========================
-     ✅ CHART SYNC ENGINE
-  ========================== */
-
+  //  ✅ CHART SYNC ENGINE
   function syncCharts(sourceChart, logicalRange) {
     if (!logicalRange || syncingRef.current) return;
-
     syncingRef.current = true;
-
     const charts = [
       chartRef.current,
       ...Object.values(panesRef.current).map((p) => p.chart),
@@ -733,10 +712,8 @@ export default function Candlestick() {
       if (!chart || chart === sourceChart) return;
       chart.timeScale().setVisibleLogicalRange(logicalRange);
     });
-
     syncingRef.current = false;
   }
-
   function attachSync(chart) {
     if (!chart) return;
 
@@ -745,11 +722,7 @@ export default function Candlestick() {
       syncCharts(chart, range);
     });
   }
-
-  /* =========================
-     ✅ PANE MANAGEMENT
-  ========================== */
-
+  //  ✅ PANE MANAGEMENT
   function resolvePaneKey(type) {
     switch (type) {
       case "RSI":
@@ -783,15 +756,12 @@ export default function Candlestick() {
         return resolvePaneKey(indicatorKey) === paneKey;
       },
     );
-
     if (stillUsed) return;
-
     try {
       /* REMOVE DOM ELEMENT */
       if (pane.div && pane.div.parentNode) {
         pane.div.parentNode.removeChild(pane.div);
       }
-
       /* REMOVE SPLITTER */
       if (pane.splitter && pane.splitter.parentNode) {
         pane.splitter.parentNode.removeChild(pane.splitter);
@@ -799,23 +769,17 @@ export default function Candlestick() {
     } catch (e) {
       console.error("Pane cleanup error:", e);
     }
-
     delete panesRef.current[paneKey];
   }
 
-  /* =========================
-     ✅ INDICATOR REMOVAL
-  ========================== */
+  //  ✅ INDICATOR REMOVAL
   const removeIndicator = useCallback((indicator) => {
     const entry = indicatorSeriesRef.current[indicator];
     if (!entry) return;
-
     const paneKey = resolvePaneKey(indicator);
     const pane = panesRef.current[paneKey];
     const chart = pane?.chart ?? chartRef.current;
-
     if (!chart) return;
-
     /* MULTI SERIES */
     if (entry && typeof entry === "object" && !entry.priceScale) {
       Object.values(entry).forEach((series) => {
@@ -824,14 +788,13 @@ export default function Candlestick() {
 
         try {
           chart.removeSeries(series);
-        } catch {}
+        } catch { }
       });
     } else {
       /* SINGLE SERIES */
-
       try {
         chart.removeSeries(entry);
-      } catch {}
+      } catch { }
     }
 
     delete indicatorSeriesRef.current[indicator];
@@ -855,12 +818,8 @@ export default function Candlestick() {
     });
     chartRef.current = chart;
     attachSync(chart);
-    /* =======================
-     3️⃣ WebSocket Trades
-  ======================== */
-
+    //   WebSocket Trades
     const socket = new WebSocket("wss://socket.delta.exchange");
-
     socket.onopen = () => {
       socket.send(
         JSON.stringify({
@@ -878,7 +837,6 @@ export default function Candlestick() {
     };
 
     let currentCandle = null;
-
     socket.onmessage = (event) => {
       const msg = JSON.parse(event.data);
       if (!msg?.mark_price || !msg?.timestamp) return;
@@ -939,7 +897,7 @@ export default function Candlestick() {
 
           try {
             chart.removeSeries(series);
-          } catch (e) {}
+          } catch (e) { }
         });
 
         delete indicatorSeriesRef.current[indicator];
@@ -953,14 +911,10 @@ export default function Candlestick() {
       return [...prev, indicator];
     });
   }, []);
-  /* =========================================================
-RENDER INDICATOR VALUE
-========================================================= */
+  // RENDER INDICATOR VALUE
 
   const renderValue = (indicator, value) => {
     if (value == null) return "--";
-
-    /* ================= SINGLE VALUE ================= */
 
     if (typeof value === "number") {
       const style =
@@ -972,8 +926,6 @@ RENDER INDICATOR VALUE
 
       return <span style={{ color }}>{value.toFixed(2)}</span>;
     }
-
-    /* ================= MULTI VALUE ================= */
 
     if (typeof value === "object") {
       let keys = [];
@@ -1014,22 +966,16 @@ RENDER INDICATOR VALUE
           );
         });
     }
-
     return "--";
   };
 
   const renderIndicators = () => {
     return selectedIndicator.map((indicator) => {
       const normalizedType = indicator.replace(/[\s/]+/g, "");
-
       const Component = indicatorComponents[normalizedType];
-      // console.log(Component, indicator, "dataaaaaa");
-
       if (!Component) return null;
 
       const data = indicatorSeriesRef.current[normalizedType];
-      // console.log(data, "dataaaaaa");
-
       if (!data) return null;
 
       return (
@@ -1047,18 +993,14 @@ RENDER INDICATOR VALUE
     });
   };
 
-  /* =========================================================
-SYNC CROSSHAIR
-========================================================= */
+  // SYNC CROSSHAIR
 
   const updateIndicatorValues = (param) => {
     const updates = {};
 
     Object.entries(indicatorSeriesRef.current).forEach(([indicator, group]) => {
       if (!group) return;
-
       const indicatorValues = {};
-
       Object.entries(group).forEach(([lineName, series]) => {
         if (
           lineName === "_priceLines" ||
@@ -1084,21 +1026,15 @@ SYNC CROSSHAIR
     });
 
     if (Object.keys(updates).length > 0) {
-      /* store latest values */
       latestIndicatorValuesRef.current = updates;
-
-      /* update UI */
       setLiveIndicatorData(updates);
     }
   };
 
-  /* =========================================================
-ATTACH CROSSHAIR
-========================================================= */
+  // ATTACH CROSSHAIR
 
   const attachCrosshair = useCallback((chart, chartKey) => {
-    if (!chart) return () => {};
-
+    if (!chart) return () => { };
     const handler = (param) => {
       if (!param?.point || param.time === undefined) {
         const charts = [
@@ -1112,12 +1048,9 @@ ATTACH CROSSHAIR
         if (latestIndicatorValuesRef.current) {
           setLiveIndicatorData(latestIndicatorValuesRef.current);
         }
-
         return;
       }
-
       /* ================= SYNC ALL CHARTS ================= */
-
       const charts = [
         chartRef.current,
         ...Object.values(panesRef.current).map((p) => p.chart),
@@ -1132,9 +1065,7 @@ ATTACH CROSSHAIR
           param.time,
         );
       });
-
       /* ================= UPDATE CANDLE ================= */
-
       if (seriesRef.current) {
         const candle = param.seriesData?.get(seriesRef.current);
 
@@ -1147,9 +1078,7 @@ ATTACH CROSSHAIR
           });
         }
       }
-
       /* ================= UPDATE INDICATORS ================= */
-
       updateIndicatorValues(param);
     };
 
@@ -1158,16 +1087,13 @@ ATTACH CROSSHAIR
     return () => chart.unsubscribeCrosshairMove(handler);
   }, []);
 
-  /* =========================================================
-ATTACH MAIN CHART
-========================================================= */
+  // ATTACH MAIN CHART
 
   useEffect(() => {
     const charts = [
       chartRef.current,
       ...Object.values(panesRef.current).map((p) => p.chart),
     ];
-
     const detachers = charts
       .filter(Boolean)
       .map((chart) => attachCrosshair(chart));
@@ -1376,25 +1302,21 @@ ATTACH MAIN CHART
 
       default:
         async function fetchCandleStickData() {
-          setIndicatorLoading(true); // START LOADER
-
+          setIndicatorLoading(true);
           try {
             const response = await fetchDataByCurrency(
               selectedCurrency,
               timeframeValue,
               chartType,
             );
-
             seriesRef.current = chartRef.current.addSeries(
               CandlestickSeries,
               chartSeriesStyles.candlestick,
             );
-
             if (response) {
               console.log(response, "response");
               seriesRef?.current?.setData(response.data);
             }
-
             chartRef.current.timeScale().fitContent();
 
             await fetchIndicatorData(
@@ -1405,10 +1327,9 @@ ATTACH MAIN CHART
           } catch (err) {
             console.error("Chart load error", err);
           } finally {
-            setIndicatorLoading(false); // STOP LOADER
+            setIndicatorLoading(false);
           }
         }
-
         fetchCandleStickData();
     }
   }, [
@@ -1455,12 +1376,10 @@ ATTACH MAIN CHART
       to: range.to + 1,
     });
   };
-
   // 🔄 Reset Zoom
   const resetZoom = () => {
     chartRef.current?.timeScale().fitContent();
   };
-
   return (
     <>
       <section className="trading-view-wrapper">
@@ -1491,7 +1410,6 @@ ATTACH MAIN CHART
                 chartRef={chartRef}
                 containerRef={containerRef}
               /> */}
-
             {indicatorLoading && (
               <div
                 style={{
@@ -1523,7 +1441,6 @@ ATTACH MAIN CHART
               {/* -------------------------------sub-header live Values----------------------- */}
               <div className="flex px-2 top-2 z-10 absolute items-center gap-2 bg-slate-100 justify-start">
                 {/* LEFT: Symbol */}
-
                 <div className="text-sm text-slate-950">
                   {selectedCurrency} : {timeframeValue} :
                 </div>
@@ -1554,15 +1471,12 @@ ATTACH MAIN CHART
                       <h6 className="px-2 py-1 mb-0">
                         O: <span className={valueColor}>{liveOhlcv?.open}</span>
                       </h6>
-
                       <h6 className="px-2 py-1 mb-0">
                         H: <span className={valueColor}>{liveOhlcv?.high}</span>
                       </h6>
-
                       <h6 className="px-2 py-1 mb-0">
                         L: <span className={valueColor}>{liveOhlcv?.low}</span>
                       </h6>
-
                       <h6 className="px-2 py-1 mb-0">
                         C:{" "}
                         <span className={valueColor}>{liveOhlcv?.close}</span>
@@ -1639,44 +1553,6 @@ ATTACH MAIN CHART
                             >
                               <IoCloseSharp size={18} />
                             </button>
-
-                            {/* <DropdownMenu.Root>
-                                <DropdownMenu.Trigger asChild>
-                                  <button className="text-slate-500 hover:text-slate-800">
-                                    <FiMoreHorizontal size={18} />
-                                  </button>
-                                </DropdownMenu.Trigger>
-
-                                <DropdownMenu.Portal>
-                                  <DropdownMenu.Content
-                                    sideOffset={6}
-                                    className="w-56 rounded-3 bg-white shadow-lg border border-gray-200 text-sm z-50"
-                                  >
-                                    <DropdownMenu.Item
-                                      onClick={() => setShowAlertForm(true)}
-                                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer outline-none"
-                                    >
-                                      Add Alert
-                                    </DropdownMenu.Item>
-
-                                    <DropdownMenu.Item className="px-4 py-2 hover:bg-gray-100 cursor-pointer outline-none">
-                                      Add Strategy / Indicator
-                                    </DropdownMenu.Item>
-
-                                    <DropdownMenu.Separator className="h-px bg-gray-200 my-1" />
-
-                                    <DropdownMenu.Item asChild>
-                                      <a
-                                        href="<LINK>"
-                                        target="_blank"
-                                        className="block px-4 py-2 hover:bg-gray-100 outline-none"
-                                      >
-                                        View Source Code
-                                      </a>
-                                    </DropdownMenu.Item>
-                                  </DropdownMenu.Content>
-                                </DropdownMenu.Portal>
-                              </DropdownMenu.Root> */}
                           </div>
 
                           {showAlertForm && (
@@ -1692,14 +1568,10 @@ ATTACH MAIN CHART
                     })}
                 </div>
               )}
-
               {/* {selectedIndicator.map((indicator, index) => {
                 const value = liveIndicatorData[indicator];
-
                 const paneIndex = paneIndexRef.current[indicator];
-
                 if (paneIndex === undefined || paneIndex === 0) return null;
-
                 return (
                   <IndicatorBar
                     key={indicator}
@@ -1731,10 +1603,7 @@ ATTACH MAIN CHART
           indicator={activeSourceIndicator}
           onClose={() => setShowSourcePanel(false)}
         />
-
-        {/* -------------------------market part start here-------------------- */}
       </section>
-
       <section className="market-trading-part">
         <div className="container p-0 m-0">
           <div className="row">
@@ -1804,8 +1673,6 @@ ATTACH MAIN CHART
                 onClose={() => setOpenForm(false)}
               />
             </div>
-
-            {/* Backdrop (IMPORTANT for UX) */}
             {openForm && (
               <div
                 className="position-fixed top-0 start-0 w-100 vh-100 bg-dark bg-opacity-25"
@@ -1813,9 +1680,7 @@ ATTACH MAIN CHART
                 onClick={() => setOpenForm(false)}
               />
             )}
-
-            {/* ------------------------------------------indicator sub part property show in modal------------------------------- */}
-
+            {/* --------------indicator sub part property show in modal-------------- */}
             <IndicatorPropertyDialog
               setIndicatorProperty={setIndicatorProperty}
               indicatorProperty={indicatorProperty}
@@ -1834,7 +1699,6 @@ ATTACH MAIN CHART
           </div>
         </div>
       </section>
-
       <div className="">
         {/* <IndicatorRuleBuilder /> */}
         <IndicatorBuildingListing
