@@ -296,7 +296,7 @@
 //   type,
 //   timeframeValue,
 // ) {
-//   const normalizedType = type.replace(/[\s/]+/g, "");
+//   const normalizedType = type.replace(/[\s/%]+/g, "");;
 
 //   let response;
 
@@ -350,7 +350,7 @@
 //     case "HistoricalVolatility":
 //     case "ChoppinessIndex":
 //     case "AccumulationDistribution":
-//     case "Williams%R":
+//     case "WilliamsR":
 //     case "UltimateOscillator":
 //     case "StochasticRSI":
 //     case "ParabolicSAR":

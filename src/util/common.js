@@ -745,79 +745,60 @@ export const getRowsByIndicator = (indicator) => {
         },
       ];
     case "CCI":
-      return [
+  return [
 
-        { key: "cci", label: "CCI", type: "line" },
+    { key: "cciLine", label: "CCI", type: "line" },
 
-        { key: "smoothingMA", label: "Smoothing MA", type: "line" },
+    { key: "cciMa", label: "Smoothing MA", type: "line" },
 
-        {
-          key: "upper",
-          label: "Upper Level",
-          type: "line",
-          value: 100,
-          showValue: true,
-        },
+    {
+      key: "upperBand",
+      label: "Upper Level",
+      type: "line",
+      value: 100,
+      showValue: true,
+    },
 
-        {
-          key: "middle",
-          label: "Middle Level",
-          type: "line",
-          value: 0,
-          showValue: true,
-        },
+    {
+      key: "middleBand",
+      label: "Middle Level",
+      type: "line",
+      value: 0,
+      showValue: true,
+    },
 
-        {
-          key: "lower",
-          label: "Lower Level",
-          type: "line",
-          value: -100,
-          showValue: true,
-        },
+    {
+      key: "lowerBand",
+      label: "Lower Level",
+      type: "line",
+      value: -100,
+      showValue: true,
+    },
 
-        {
-          key: "bandFill",
-          label: "Band Fill",
-          type: "area",
-        },
+    {
+      key: "bgFill",
+      label: "Band Fill",
+      type: "fill",
+    }
 
-        {
-          key: "obFill",
-          label: "Overbought Fill",
-          type: "area",
-        },
-
-        {
-          key: "osFill",
-          label: "Oversold Fill",
-          type: "area",
-        },
-
-        { key: "bbUpperBand", label: "BB Upper Band", type: "line" },
-
-        { key: "bbLowerBand", label: "BB Lower Band", type: "line" },
-
-        { key: "bbFill", label: "BB Fill", type: "area" },
-
-      ];
-    case "Momentum":
+  ]; case "Momentum":
       return [{ key: "momentum", label: "Momentum", type: "line" }];
 
     case "ROC":
-      return [
-        { key: "momentum", label: "Momentum", type: "line" },
-        // Zero line
-        {
-          key: "zeroLine",
-          label: "Zero Line",
-          type: "line",
-          showValue: true,
-          value: 0,
-          color: "#9e9e9e",
-        },
-      ];
+  return [
+    { key: "roc", label: "ROC", type: "line" },
 
-    case "Williams %R":
+    {
+      key: "zeroLine",
+      label: "Zero Line",
+      type: "line",
+      showValue: false,
+      value: 0,
+      color: "#9e9e9e",
+    },
+  ];
+
+    case "WilliamsR":
       return [
         // Lines
         { key: "r", label: "%R", type: "line", color: "#26a69a" },
@@ -1488,7 +1469,7 @@ export const PANE_INDICATORS = new Set([
   "MACDHistogram",
   "CCI",
   "ROC",
-  "Williams%R",
+  "WilliamsR",
   "UltimateOscillator",
   "Aroon",
   "AroonOscillator",
@@ -1498,7 +1479,7 @@ export const PANE_INDICATORS = new Set([
   "KlingerOscillator",
   "ATR",
   "ADX",
-  "CCI",
+  "Momentum",
   "ChoppinessIndex",
   "Volume",
   "ChaikinMoneyFlow",

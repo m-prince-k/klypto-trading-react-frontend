@@ -26,6 +26,14 @@ import AroonOscillatorPlot from "./AroonOscillator/AroonOscillatorPlot";
 import ADXInput from "./ADX/ADXInput";
 import CCIInput from "./CCI/CCIInput";
 import CCIPlot from "./CCI/CCIPlot";
+import MomentumInput from "./Momentum/MomentumInput";
+import MomentumPlot from "./Momentum/MomentumPlot";
+import ROCPlot from "./ROC/ROCPlot";
+import ROCInput from "./ROC/ROCInput";
+import WilliamsRInput from "./WilliamsR/WilliamsRInput";
+import WilliamsRPlot from "./WilliamsR/WilliamsRPlot";
+import ATRPlot from "./ATR/ATRPlot";
+import ATRInput from "./ATR/ATRInput";
 
 export const indicatorComponents = {
   RSI: RSIPlot,
@@ -42,6 +50,10 @@ export const indicatorComponents = {
   AroonOscillator: AroonOscillatorPlot,
   ADX: ADXPlot,
   CCI: CCIPlot,
+  Momentum: MomentumPlot,
+  ROC: ROCPlot,
+  WilliamsR : WilliamsRPlot,
+  ATR: ATRPlot,
 };
 
 export const indicatorInputs = {
@@ -59,6 +71,10 @@ export const indicatorInputs = {
   AroonOscillator: AroonOscillatorInput,
   ADX: ADXInput,
   CCI: CCIInput,
+  Momentum:MomentumInput,
+  ROC:ROCInput,
+  WilliamsR : WilliamsRInput,
+  ATR: ATRInput,
 };
 
 export function updateIndicatorFromInput(

@@ -295,7 +295,7 @@ export default function IndicatorPropertyDialog({
      CURRENT CONFIG
   ========================== */
 
-  const normalizedType = activeBarIndicator.replace(/[\s/]+/g, "");
+const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
   const currentConfig = indicatorConfigs[normalizedType];
 
   /* =========================
@@ -1049,7 +1049,7 @@ export default function IndicatorPropertyDialog({
       case "ROC": {
         return <BaseSettings showOffset={false} />;
       }
-      case "Williams%R": {
+      case "WilliamsR": {
         return <BaseSettings showOffset={false} />;
       }
       case "UltimateOscillator":

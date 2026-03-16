@@ -1,5 +1,13 @@
 import "bootstrap/dist/css/bootstrap.min.css"; //this is for temp
-import { createChart, CandlestickSeries, LineSeries, BarSeries, AreaSeries, HistogramSeries, BaselineSeries, } from "lightweight-charts";
+import {
+  createChart,
+  CandlestickSeries,
+  LineSeries,
+  BarSeries,
+  AreaSeries,
+  HistogramSeries,
+  BaselineSeries,
+} from "lightweight-charts";
 import IndicatorRuleBuilder from "../components/scanner/IndicatorRuleBuilder";
 import { LuCirclePlus, LuCircleMinus } from "react-icons/lu";
 import { RiResetRightLine } from "react-icons/ri";
@@ -7,11 +15,24 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { FaCode } from "react-icons/fa6";
 import ChartHeader from "../components/tradingModals/ChartHeader";
 import IndicatorBuildingListing from "../components/scanner/IndicatorBuilderListing";
-import { ChartProprties, TIMEFRAME_TO_SECONDS, SINGLE_VALUE_CHARTS, chartSeriesStyles, convertToHeikinAshi, PANE_INDICATORS, } from "../util/common";
+import {
+  ChartProprties,
+  TIMEFRAME_TO_SECONDS,
+  SINGLE_VALUE_CHARTS,
+  chartSeriesStyles,
+  convertToHeikinAshi,
+  PANE_INDICATORS,
+} from "../util/common";
 import SourceCodePanel from "../components/indicator/SourceCodePanel";
 import ChartRightSidebar from "../components/chart/rightbar/ChartRightSidebar";
 import ChartLeftSidebar from "../components/chart/leftbar/ChartLeftSidebar";
-import { IoCloseSharp, IoEyeOffOutline, IoEyeOutline, IoLink, IoSettingsOutline, } from "react-icons/io5";
+import {
+  IoCloseSharp,
+  IoEyeOffOutline,
+  IoEyeOutline,
+  IoLink,
+  IoSettingsOutline,
+} from "react-icons/io5";
 import IndicatorAlert from "../components/indicator/IndicatorAlert";
 import IndicatorPropertyDialog from "../components/indicator/IndicatorPropertyDialog";
 import useChartFunctions from "../util/useChartFunctions";
@@ -193,7 +214,7 @@ export default function Candlestick() {
       length: 9,
       source: "close",
     },
-    "Williams%R": {
+    WilliamsR: {
       length: 14,
       source: "close",
     },
@@ -202,7 +223,7 @@ export default function Candlestick() {
       middleLength: 14,
       slowLength: 28,
     },
-    "Chande Momentum Oscillator": {
+    ChandeMomentumOscillator: {
       length: 9,
       source: "close",
     },
@@ -620,7 +641,7 @@ export default function Candlestick() {
       oscillatorFillBear: {
         visible: true,
         color0: "rgba(239,83,80,0.25)",
-      }
+      },
     },
     ADX: {
       adx: {
@@ -634,14 +655,14 @@ export default function Candlestick() {
     CCI: {
       cciLine: {
         color: "rgba(38,166,154,1)",
-        width: 2,
+        width: 1,
         lineStyle: 0,
         visible: true,
         opacity: 100,
       },
       cciMa: {
         color: "rgba(255,152,0,1)",
-        width: 2,
+        width: 1,
         lineStyle: 0,
         visible: true,
         opacity: 100,
@@ -673,6 +694,79 @@ export default function Candlestick() {
         topFillColor1: "rgba(38,166,154,0.05)",
         topFillColor2: "rgba(38,166,154,0.05)",
         visible: true,
+      },
+    },
+    Momentum: {
+      momentum: {
+        visible: true,
+        color: "rgba(33, 150, 243, 1)",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+      },
+    },
+    ROC: {
+      roc: {
+        color: "rgba(33,150,243,1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+        opacity: 100,
+      },
+      zeroLine: {
+        color: "rgba(158,158,158,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: 0,
+      },
+    },
+    WilliamsR: {
+      r: {
+        visible: true,
+        color: "rgba(38,166,154,1)",
+        width: 2,
+        lineStyle: 0,
+        opacity: 100,
+      },
+
+      upperBand: {
+        visible: true,
+        color: "rgba(239,83,80,1)",
+        width: 1,
+        lineStyle: 2,
+        value: -20,
+      },
+
+      middleBand: {
+        visible: true,
+        color: "rgba(158,158,158,1)",
+        width: 1,
+        lineStyle: 2,
+        value: -50,
+      },
+
+      lowerBand: {
+        visible: true,
+        color: "rgba(38,166,154,1)",
+        width: 1,
+        lineStyle: 2,
+        value: -80,
+      },
+
+      bg: {
+        visible: true,
+        color0: "rgba(38,166,154,0.08)",
+        color1: "rgba(38,166,154,0.02)",
+      },
+    },
+    ATR: {
+      atr: {
+        visible: true,
+        color: "rgba(0, 0, 0,1)",
+        width: 2,
+        lineStyle: 0,
+        opacity: 100,
       },
     },
   };
@@ -739,8 +833,14 @@ export default function Candlestick() {
         return "ADX";
       case "CCI":
         return "CCI";
+      case "ROC":
+        return "ROC";
+      case "WilliamsR":
+        return "WilliamsR";
       case "AroonOscillator":
         return "AroonOscillator";
+      case "Momentum":
+        return "Momentum";
       default:
         return "momentum";
     }
@@ -788,13 +888,13 @@ export default function Candlestick() {
 
         try {
           chart.removeSeries(series);
-        } catch { }
+        } catch {}
       });
     } else {
       /* SINGLE SERIES */
       try {
         chart.removeSeries(entry);
-      } catch { }
+      } catch {}
     }
 
     delete indicatorSeriesRef.current[indicator];
@@ -897,7 +997,7 @@ export default function Candlestick() {
 
           try {
             chart.removeSeries(series);
-          } catch (e) { }
+          } catch (e) {}
         });
 
         delete indicatorSeriesRef.current[indicator];
@@ -971,7 +1071,7 @@ export default function Candlestick() {
 
   const renderIndicators = () => {
     return selectedIndicator.map((indicator) => {
-      const normalizedType = indicator.replace(/[\s/]+/g, "");
+      const normalizedType = indicator.replace(/[\s/%]+/g, "");
       const Component = indicatorComponents[normalizedType];
       if (!Component) return null;
 
@@ -1034,7 +1134,7 @@ export default function Candlestick() {
   // ATTACH CROSSHAIR
 
   const attachCrosshair = useCallback((chart, chartKey) => {
-    if (!chart) return () => { };
+    if (!chart) return () => {};
     const handler = (param) => {
       if (!param?.point || param.time === undefined) {
         const charts = [
@@ -1492,7 +1592,7 @@ export default function Candlestick() {
                 <div className="absolute top-10 left-2 flex flex-col gap-1 z-50">
                   {selectedIndicator &&
                     selectedIndicator?.map((indicator, index) => {
-                      const normalizedType = indicator.replace(/[\s/]+/g, "");
+                      const normalizedType = indicator.replace(/[\s/%]+/g, "");
                       const value = liveIndicatorData[normalizedType];
                       return (
                         <div

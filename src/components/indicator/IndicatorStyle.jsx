@@ -8,8 +8,7 @@ export default function IndicatorStyle({
   setIndicatorStyle,
   activeBarIndicator,
 }) {
-  const normalizedType = activeBarIndicator.replace(/[\s/]+/g, "");
-
+const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
   const selectedStyle = indicatorStyle?.[normalizedType];
   const rows = getRowsByIndicator(normalizedType);
 
