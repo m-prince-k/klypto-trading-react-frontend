@@ -3,6 +3,7 @@ import IndicatorStyle from "./IndicatorStyle";
 import apiService from "../../services/apiServices";
 import useChartFunctions from "../../util/useChartFunctions";
 import { updateIndicatorFromInput } from "./IndicatorIndex";
+import { useState } from "react";
 
 export default function IndicatorPropertyDialog({
   setIndicatorProperty,
@@ -21,298 +22,15 @@ export default function IndicatorPropertyDialog({
 }) {
   const labelStyle = {
     display: "inline-block",
-    width: "150px", // Set this to the width of the longest label
+    width: "150px",
     textAlign: "left",
     marginRight: "1rem",
   };
-  /* =========================
-     PER-INDICATOR CONFIG STATE
-  ========================== */
 
-  // const [indicatorConfigs, setIndicatorConfigs] = useState({
-  //   SMA: {
-  //     length: 9,
-  //     source: "Close",
-  //     offset: 0,
-  //     smoothing: {
-  //       type: "SMA + Bollinger Bands",
-  //       length: 14,
-  //       bbStdDev: 2,
-  //     },
-  //   },
-
-  //   EMA: {
-  //     length: 9,
-  //     source: "Close",
-  //     offset: 0,
-  //   },
-
-  //   WMA: {
-  //     length: 9,
-  //     source: "Close",
-  //     offset: 0,
-  //   },
-
-  //   HMA: {
-  //     length: 9,
-  //     source: "Close",
-  //   },
-
-  //   DEMA: {
-  //     length: 9,
-  //     source: "Close",
-  //   },
-
-  //   TEMA: {
-  //     length: 9,
-  //   },
-
-  //   KAMA: {
-  //     ERlength: 10,
-  //     fastLength: 2,
-  //     slowLength: 30,
-  //     source: "Close",
-  //   },
-
-  //   "Ichimoku Cloud": {
-  //     conversionLength: 9,
-  //     baseLength: 26,
-  //     spanBLength: 52,
-  //     laggingSpan: 26,
-  //   },
-  //   "Parabolic SAR": {
-  //     start: 0.02,
-  //     increment: 0.02,
-  //     maxValue: 0.02,
-  //   },
-  //   SuperTrend: {
-  //     atrLength: 10,
-  //     factor: 3,
-  //   },
-
-  //   Aroon: {
-  //     length: 14,
-  //   },
-  //   "Aroon Oscillator": {
-  //     length: 14,
-  //   },
-  //   ADX: {
-  //     smoothing: 14,
-  //     diLength: 14,
-  //   },
-
-  //   "Chande Kroll Stop": {
-  //     atrLength: 10, // default p
-  //     atrCoefficient: 1, // default x
-  //     stopLength: 9, // default q
-  //   },
-
-  //   RSI: {
-  //     length: 14,
-  //     source: "Close",
-  //     smoothing: {
-  //       type: "SMA",
-  //       length: 14,
-  //       bbStdDev: 2,
-  //     },
-  //   },
-
-  //   Stochastic: {
-  //     kLength: 14, // %K Length
-  //     kSmoothing: 1, // %K Smoothing
-  //     dSmoothing: 3, // %D Smoothing
-  //   },
-
-  //   "Stochastic RSI": {
-  //     rsiLength: 14, // RSI period
-  //     rsiSource: "Close", // RSI source (dropdown)
-  //     stochasticLength: 14, // %K length of Stochastic
-  //     kSmoothing: 3, // %K smoothing
-  //     dSmoothing: 3, // %D smoothing
-  //   },
-
-  //   MACD: {
-  //     source: "Close",
-  //     fastLength: 12, // Fast EMA/SMA
-  //     slowLength: 26, // Slow EMA/SMA
-  //     signalLength: 9, // Signal line length
-  //     oscillatorMAType: "EMA", // dropdown: "EMA" or "SMA"
-  //     signalMAType: "EMA",
-  //   },
-
-  //   CCI: {
-  //     length: 20,
-  //     source: "HLC3",
-  //     smoothing: {
-  //       type: "SMA",
-  //       length: 14,
-  //       bbStdDev: 2,
-  //     },
-  //   },
-  //   Momentum: {
-  //     length: 10,
-  //     source: "Close",
-  //   },
-  //   ROC: {
-  //     length: 9,
-  //     source: "Close",
-  //   },
-  //   "Williams %R": {
-  //     length: 14,
-  //     source: "Close",
-  //   },
-  //   "Ultimate Oscillator": {
-  //     fastLength: 7, // Fast period
-  //     middleLength: 14, // Middle period
-  //     slowLength: 28, // Slow period
-  //   },
-  //   "Chande Momentum Oscillator": {
-  //     length: 9,
-  //     source: "Close",
-  //   },
-  //   TRIX: {
-  //     length: 18,
-  //   },
-  //   "Fisher Transform": {
-  //     length: 9,
-  //   },
-  //   ATR: {
-  //     length: 14,
-  //     smoothing: "RMA",
-  //   },
-  //   "Bollinger Bands": {
-  //     length: 20,
-  //     maType: "SMA", // default moving average type
-  //     stdDev: 2,
-  //     source: "Close",
-  //     offset: 0,
-  //   },
-  //   "Bollinger Band Width": {
-  //     length: 20,
-  //     stdDev: 2,
-  //     source: "Close",
-  //     highestExpansionLength: 125,
-  //     lowestContractionLength: 125,
-  //   },
-  //   "Keltner Channels": {
-  //     length: 20,
-  //     source: "Close",
-  //     multiplier: 2,
-  //     atrLength: 10,
-  //     bandsStyle: "Average True Range",
-  //     useEMA: true,
-  //   },
-  //   "Donchian Channels": {
-  //     length: 20,
-  //     offset: 0,
-  //   },
-  //   "Choppiness Index": {
-  //     length: 14,
-  //     offset: 0,
-  //   },
-  //   "Standard Deviation": {
-  //     length: 20,
-  //     source: "Close",
-  //   },
-  //   Volume: {
-  //     maLength: 20,
-  //     colorByPrevious: false,
-  //   },
-  //   "Historical Volatility": {
-  //     length: 10,
-  //   },
-  //   OBV: {
-  //     smoothing: {
-  //       type: "None",
-  //       length: 14,
-  //       bbStdDev: 2,
-  //     },
-  //   },
-  //   "Percentage Volume Oscillator": {
-  //     fastLength: 12,
-  //     slowLength: 26,
-  //     signalLength: 9,
-  //     oscMaType: "EMA", // EMA | SMA
-  //     signalMaType: "EMA", // EMA | SMA
-  //   },
-  //   "Chaikin Money Flow": {
-  //     length: 20,
-  //   },
-  //   MFI: {
-  //     length: 14,
-  //   },
-  //   "Ease of Movement": {
-  //     length: 14,
-  //     divisor: 10000,
-  //   },
-  //   "Negative Volume Index": {
-  //     emaLength: 255,
-  //   },
-  //   "Positive Volume Index": {
-  //     emaLength: 255,
-  //   },
-  //   VWAP: {
-  //     hideOnDailyOrAbove: true,
-  //     anchorPeriod: "Daily",
-  //     source: "HLC3",
-  //     offset: 0,
-
-  //     bandSettings: {
-  //       calculationMode: "Standard Deviation", // or "Percentage"
-
-  //       band1: { enabled: true, multiplier: 1 },
-  //       band2: { enabled: false, multiplier: 2 },
-  //       band3: { enabled: false, multiplier: 3 },
-  //     },
-  //   },
-  //   "Zig Zag": {
-  //     priceDeviation: 5,
-  //     pivotLegs: 10,
-  //     lineColor: "#2962ff",
-  //     extendToLastBar: true,
-  //     displayReversalPrice: false,
-  //     displayCumulativeVolume: false,
-  //     reversalPriceChangeMode: "absolute",
-  //   },
-  // });
-
-  // const [indicatorStyle, setIndicatorStyle] = useState(indicatorStyleDefault);
-
-  // const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
-  // const [tempIndicatorStyle, setTempIndicatorStyle] = useState({});
-
-  // const [condition,setCondition]=useState({
-  //   length:0
-  // });
-  // useEffect(() => {
-  //   if (activeBarIndicator) {
-  //     setTempIndicatorConfig(indicatorConfigs[activeBarIndicator] || {});
-  //     // setTempIndicatorStyle(indicatorStyle || {});
-  //   }
-  // }, [activeBarIndicator]);
-
-  /* =========================
-     CURRENT CONFIG
-  ========================== */
-
-const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
+  const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
   const currentConfig = indicatorConfigs[normalizedType];
+  const [indicatorLoading, setIndicatorLoading] = useState(false);
 
-  /* =========================
-     UPDATE PROPERTY
-  ========================== */
-
-  const { fetchIndicatorData } = useChartFunctions;
-
-  const updateIndicatorConfig = (key, value) => {
-    setIndicatorConfigs((prev) => ({
-      ...prev,
-      [normalizedType]: {
-        ...prev[normalizedType],
-        [key]: value,
-      },
-    }));
-  };
 
   const updateProperty = (key, value) => {
     setIndicatorConfigs((prev) => ({
@@ -379,8 +97,10 @@ const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
     };
 
     console.log(payload, "payloadddddddddd");
-
+    setIndicatorLoading(true);
     try {
+      setIndicatorLoading(true); // START LOADER
+
       const response = await apiService.post(
         `/api/updateIndicator?symbol=${selectedCurrency}&interval=${timeframeValue}`,
         payload,
@@ -395,6 +115,8 @@ const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
         latestIndicatorValuesRef,
         maType,
       );
+
+      setIndicatorProperty(false);
     } catch (error) {
       if (error.response) {
         console.error("Server responded with error:");
@@ -406,6 +128,8 @@ const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
       } else {
         console.error("Request setup error:", error.message);
       }
+    } finally {
+      setIndicatorLoading(false); // STOP LOADER
     }
   };
 
@@ -416,169 +140,190 @@ const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
     }));
     setIndicatorProperty(false);
   };
-  /* =========================
-     BASE SETTINGS COMPONENT
-  ========================== */
 
-  function BaseSettings({
-    showLength = true,
-    showSource = true,
-    showOffset = true,
-  }) {
-    return (
-      <section className="mt-3 px-3">
-        {showLength && currentConfig?.length !== undefined && (
-          <Form.Group
-            as={Row}
-            className="mb-3"
-            controlId="length"
-            style={{ alignItems: "center" }}
-          >
-            <Form.Label style={labelStyle}>Length</Form.Label>
-            <Col>
-              <Form.Control
-                type="number"
-                value={currentConfig?.length ?? ""}
-                onChange={(e) =>
-                  updateIndicatorConfig("length", Number(e.target.value))
-                }
-              />
-            </Col>
-          </Form.Group>
-        )}
+/* =========================
+   BASE SETTINGS COMPONENT
+========================== */
+function BaseSettings({ showLength = true, showSource = true, showOffset = true }) {
+  return (
+    <section className="mt-3 px-3">
+      {/* LENGTH */}
+      {showLength && currentConfig?.length !== undefined && (
+        <div className="mb-3">
+          <label className="form-label">Length</label>
+          <input
+            type="number"
+            className="form-control"
+            min="1"
+            value={currentConfig.length}
+            onChange={(e) => {
+              const value = e.target.value === "" ? "" : Math.max(1, Number(e.target.value));
+              updateProperty("length", value);
+            }}
+          />
+        </div>
+      )}
 
-        {showSource && currentConfig?.source !== undefined && (
-          <Form.Group
-            as={Row}
-            className="mb-3"
-            controlId="source"
-            style={{ alignItems: "center" }}
+      {/* SOURCE */}
+      {showSource && currentConfig?.source !== undefined && (
+        <div className="mb-3">
+          <label className="form-label">Source</label>
+          <select
+            className="form-select"
+            value={currentConfig.source}
+            onChange={(e) => updateProperty("source", e.target.value)}
           >
-            <Form.Label style={labelStyle}>Source</Form.Label>
-            <Col>
-              <Form.Select
-                value={currentConfig?.source}
-                onChange={(e) => updateProperty("source", e.target.value)}
-              >
-                {["Close", "Open", "High", "Low", "HL2", "HLC3", "OHLC4"].map(
-                  (opt) => (
-                    <option key={opt} value={opt.toLowerCase()}>
-                      {opt}
-                    </option>
-                  ),
-                )}
-              </Form.Select>
-            </Col>
-          </Form.Group>
-        )}
+            {["Close", "Open", "High", "Low", "HL2", "HLC3", "OHLC4"].map((opt) => (
+              <option key={opt} value={opt.toLowerCase()}>
+                {opt}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
-        {showOffset && currentConfig?.offset !== undefined && (
-          <Form.Group
-            as={Row}
-            className="mb-3"
-            controlId="offset"
-            style={{ alignItems: "center" }}
+      {/* OFFSET */}
+      {showOffset && currentConfig?.offset !== undefined && (
+        <div className="mb-3">
+          <label className="form-label">Offset</label>
+          <input
+            type="number"
+            className="form-control"
+            min="0"
+            value={currentConfig.offset}
+            onChange={(e) => {
+              const value = e.target.value === "" ? "" : Math.max(0, Number(e.target.value));
+              updateProperty("offset", value);
+            }}
+          />
+        </div>
+      )}
+    </section>
+  );
+}
+
+/* =========================
+   SMOOTHING SECTION
+========================== */
+function SmoothingSection() {
+  if (!currentConfig) return null;
+
+  const smoothingTypes = [
+    "None",
+    "SMA",
+    "EMA",
+    "WMA",
+    "SMA + Bollinger Bands",
+    "VWMA",
+    "SMMA (RMA)",
+  ];
+
+  return (
+    <>
+      <hr />
+      <section className="px-3">
+        {/* TYPE */}
+        <div className="mb-3">
+          <label className="form-label">Type</label>
+          <select
+            className="form-select"
+            value={currentConfig.maType || "none"}
+            onChange={(e) => updateProperty("maType", e.target.value)}
           >
-            <Form.Label style={labelStyle}>Offset</Form.Label>
-            <Col>
-              <Form.Control
-                type="number"
-                value={currentConfig.offset}
-                onChange={(e) =>
-                  updateProperty("offset", Number(e.target.value))
-                }
-              />
-            </Col>
-          </Form.Group>
-        )}
+            {smoothingTypes.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* LENGTH */}
+        <div className="mb-3">
+          <label className="form-label">Length</label>
+          <input
+            type="number"
+            className="form-control"
+            min="1"
+            value={currentConfig.maLength}
+            onChange={(e) => {
+              const value = e.target.value === "" ? "" : Math.max(1, Number(e.target.value));
+              updateProperty("maLength", value);
+            }}
+          />
+        </div>
+
+        {/* BB STD DEV */}
+        <div className="mb-3">
+          <label className="form-label">BB Std Dev</label>
+          <input
+            type="number"
+            className="form-control"
+            min="0"
+            disabled={currentConfig.maType !== "SMA + Bollinger Bands"}
+            value={currentConfig.bbStdDev}
+            onChange={(e) => {
+              const value = e.target.value === "" ? "" : Math.max(0, Number(e.target.value));
+              updateProperty("bbStdDev", value);
+            }}
+          />
+        </div>
       </section>
-    );
+    </>
+  );
+}
+
+/* =========================
+   RENDER PER INDICATOR
+========================== */
+function renderIndicatorSetting() {
+  switch (normalizedType) {
+    case "SMA":
+    case "EMA":
+      return (
+        <>
+          <BaseSettings />
+          <SmoothingSection />
+        </>
+      );
+
+    case "WMA":
+      return <BaseSettings />;
+
+    case "HMA":
+    case "DEMA":
+      return <BaseSettings showOffset={false} />;
+
+    case "TEMA":
+    case "TRIX":
+    case "Fisher Transform":
+      return <BaseSettings showOffset={false} showSource={false} />;
+
+    case "KAMA":
+      return (
+        <>
+          <BaseSettings showOffset={false} showLength={false} />
+
+          <div className="mb-3">
+            <label className="form-label">ER Length</label>
+            <input
+              type="number"
+              className="form-control"
+              min="1"
+              value={currentConfig.ERlength}
+              onChange={(e) => {
+                const value = e.target.value === "" ? "" : Math.max(1, Number(e.target.value));
+                updateProperty("ERlength", value);
+              }}
+            />
+          </div>
+        </>
+      );
+
+    default:
+      return null;
   }
-
-  function SmoothingSection() {
-    if (!currentConfig) return null;
-
-    const smoothingTypes = [
-      "None",
-      "SMA",
-      "EMA",
-      "WMA",
-      "SMA + Bollinger Bands",
-      "VWMA",
-      "SMMA (RMA)",
-    ];
-    return (
-      <>
-        <hr />
-
-        <section className="px-3">
-          {/* TYPE */}
-          <Form.Group
-            as={Row}
-            className="mb-3"
-            controlId="smoothingType"
-            style={{ alignItems: "center" }}
-          >
-            <Form.Label style={labelStyle}>Type</Form.Label>
-
-            <Col>
-              <Form.Select
-                value={currentConfig?.maType || "none"}
-                onChange={(e) => updateSmoothing("maType", e.target.value)}
-              >
-                {smoothingTypes.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </Form.Select>
-            </Col>
-          </Form.Group>
-
-          {/* LENGTH */}
-          <Form.Group
-            as={Row}
-            className="mb-3"
-            controlId="smoothingLength"
-            style={{ alignItems: "center" }}
-          >
-            <Form.Label style={labelStyle}>Length</Form.Label>
-
-            <Col>
-              <Form.Control
-                type="number"
-                value={currentConfig?.maLength ?? ""}
-                onChange={(e) =>
-                  updateSmoothing("maLength", Number(e.target.value))
-                }
-              />
-            </Col>
-          </Form.Group>
-
-          {/* BB STD DEV */}
-          <Form.Group
-            as={Row}
-            className="mb-3"
-            controlId="bbStdDev"
-            style={{ alignItems: "center" }}
-          >
-            <Form.Label style={labelStyle}>BB Std Dev</Form.Label>
-
-            <Col>
-              <Form.Control
-                type="number"
-                value={currentConfig?.bbStdDev ?? ""}
-                disabled={currentConfig?.maType !== "SMA + Bollinger Bands"}
-                onChange={(e) =>
-                  updateSmoothing("bbStdDev", Number(e.target.value))
-                }
-              />
-            </Col>
-          </Form.Group>
-        </section>
-      </>
-    );
-  }
+}
   /* =========================
      RENDER PER INDICATOR
   ========================== */
@@ -615,7 +360,7 @@ const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
               <input
                 type="number"
                 className="form-control"
-                min="1"
+                min="0"
                 value={currentConfig.ERlength}
                 onChange={(e) => {
                   const value = Math.max(1, Number(e.target.value));
@@ -629,7 +374,7 @@ const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
               <input
                 type="number"
                 className="form-control"
-                min="1"
+                min="0"
                 value={currentConfig.fastLength}
                 onChange={(e) => {
                   const value = Math.max(1, Number(e.target.value));
@@ -643,7 +388,7 @@ const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
               <input
                 type="number"
                 className="form-control"
-                min="1"
+                min=""
                 value={currentConfig.slowLength}
                 onChange={(e) => {
                   const value = Math.max(1, Number(e.target.value));
@@ -1696,11 +1441,11 @@ const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
           </>
         );
 
-      case "Zig Zag":
+      case "ZigZag":
         return (
           <>
             {/* Price Deviation */}
-            {/* <div className="row mb-3 align-items-center">
+            <div className="row mb-3 align-items-center">
               <div className="col-6">
                 <label className="form-label">
                   Price Deviation for Reversal (%)
@@ -1716,10 +1461,10 @@ const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
                   }
                 />
               </div>
-            </div> */}
+            </div> 
 
             {/* Pivot Legs */}
-            {/* <div className="row mb-3 align-items-center">
+            <div className="row mb-3 align-items-center">
               <div className="col-6">
                 <label className="form-label">Pivot Legs</label>
               </div>
@@ -1733,10 +1478,10 @@ const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
                   }
                 />
               </div>
-            </div> */}
+            </div> 
 
             {/* Line Color */}
-            {/* <div className="row mb-3 align-items-center">
+             <div className="row mb-3 align-items-center">
               <div className="col-6">
                 <label className="form-label">Line Color</label>
               </div>
@@ -1748,10 +1493,10 @@ const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
                   onChange={(e) => updateProperty("lineColor", e.target.value)}
                 />
               </div>
-            </div> */}
+            </div> 
 
             {/* Extend to Last Bar */}
-            {/* <div className="form-check mb-2">
+            <div className="form-check mb-2">
               <input
                 type="checkbox"
                 className="form-check-input"
@@ -1761,10 +1506,10 @@ const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
                 }
               />
               <label className="form-check-label">Extend to Last Bar</label>
-            </div> */}
+            </div> 
 
             {/* Display Reversal Price */}
-            {/* <div className="form-check mb-2">
+            <div className="form-check mb-2">
               <input
                 type="checkbox"
                 className="form-check-input"
@@ -1774,10 +1519,10 @@ const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
                 }
               />
               <label className="form-check-label">Display Reversal Price</label>
-            </div> */}
+            </div> 
 
             {/* Display Cumulative Volume */}
-            {/* <div className="form-check mb-2">
+            <div className="form-check mb-2">
               <input
                 type="checkbox"
                 className="form-check-input"
@@ -1789,10 +1534,10 @@ const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
               <label className="form-check-label">
                 Display Cumulative Volume
               </label>
-            </div> */}
+            </div> 
 
             {/* Display Reversal Price Change Mode */}
-            {/* <div className="row mb-3 align-items-center">
+            <div className="row mb-3 align-items-center">
               <div className="col-6">
                 <label className="form-label">
                   Display Reversal Price Change
@@ -1801,7 +1546,7 @@ const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
               <div className="col-6">
                 <select
                   className="form-select"
-                  value={indicatorConfig.properties.reversalPriceChangeMode}
+                  value={indicatorConfigs?.properties.reversalPriceChangeMode}
                   onChange={(e) =>
                     updateProperty("reversalPriceChangeMode", e.target.value)
                   }
@@ -1810,7 +1555,7 @@ const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
                   <option value="percent">Percent</option>
                 </select>
               </div>
-            </div> */}
+            </div>
           </>
         );
 

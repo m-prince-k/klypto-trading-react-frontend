@@ -1,86 +1,116 @@
-// -------------React kumo cloud fill b/w two lines --------
+import React, { useEffect, useRef, useState } from "react";
+import { createChart, CandlestickSeries, LineSeries } from "lightweight-charts";
+import axios from "axios";
 
-import React, { useEffect, useRef } from "react";
-import { AreaSeries, createChart, LineSeries } from "lightweight-charts";
+export default function Testing() {
+  const chartRef = useRef(null);
+  const [chart, setChart] = useState(null);
+  const [candleSeries, setCandleSeries] = useState(null);
 
-export default function IchimokuCloud() {
-  const chartRef = useRef();
+  // Track which indicators are selected
+  const [selectedIndicators, setSelectedIndicators] = useState({});
+  // Cache API data so we don't call again
+  const [indicatorDataCache, setIndicatorDataCache] = useState({});
 
+  const indicatorsList = ["EMA", "SMA", "RSI", "MACD"];
+
+  // Initialize chart on mount
   useEffect(() => {
-    const chart = createChart(chartRef.current, {
-      width: 900,
-      height: 400,
-      layout: {
-        background: { color: "#ffffff" },
-        textColor: "#000",
-      }
-    });
+    const container = chartRef.current;
+    const newChart = createChart(container, { width: container.clientWidth, height: 500 });
+    const candles = newChart.addSeries(CandlestickSeries);
+    setChart(newChart);
+    setCandleSeries(candles);
 
-    // Senkou Span A
-    const spanA = chart.addSeries(LineSeries,{
-      color: "#00a000",
-      lineWidth: 2
-    });
-
-    // Senkou Span B
-    const spanB = chart.addSeries(LineSeries,{
-      color: "#d00000",
-      lineWidth: 2
-    });
-
-    // GREEN CLOUD
-    const cloudGreen = chart.addSeries(AreaSeries,{
-      lineColor: "transparent",
-      topColor: "rgba(0,200,0,0.4)",
-      bottomColor: "rgba(0,200,0,0.1)"
-    });
-
-    // RED CLOUD
-    const cloudRed = chart.addSeries(AreaSeries,{
-      lineColor: "transparent",
-      topColor: "rgba(200,0,0,0.4)",
-      bottomColor: "rgba(200,0,0,0.1)"
-    });
-
-    const spanAData = [
-      { time: "2024-01-01", value: 100 },
-      { time: "2024-01-02", value: 110 },
-      { time: "2024-01-03", value: 105 },
-      { time: "2024-01-04", value: 115 }
-    ];
-
-    const spanBData = [
-      { time: "2024-01-01", value: 95 },
-      { time: "2024-01-02", value: 100 },
-      { time: "2024-01-03", value: 102 },
-      { time: "2024-01-04", value: 108 }
-    ];
-
-    spanA.setData(spanAData);
-    spanB.setData(spanBData);
-
-    const greenCloudData = [];
-    const redCloudData = [];
-
-    for (let i = 0; i < spanAData.length; i++) {
-      const time = spanAData[i].time;
-      const a = spanAData[i].value;
-      const b = spanBData[i].value;
-
-      if (a > b) {
-        greenCloudData.push({ time, value: a });
-        redCloudData.push({ time, value: b });
-      } else {
-        greenCloudData.push({ time, value: b });
-        redCloudData.push({ time, value: a });
-      }
+    // Dummy candle data
+    const candleData = [];
+    let price = 100;
+    const start = new Date(2024, 2, 1);
+    for (let i = 0; i < 150; i++) {
+      price += (Math.random() - 0.5) * 4;
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      candleData.push({
+        time:`${yyyy}-${mm}-${dd}`,
+        open: price - 2,
+        high: price + 3,
+        low: price - 3,
+        close: price,
+      });
     }
+    candles.setData(candleData);
 
-    cloudGreen.setData(greenCloudData);
-    cloudRed.setData(redCloudData);
-
-    return () => chart.remove();
+    return () => newChart.remove();
   }, []);
 
-  return <div ref={chartRef}></div>;
+  // Handle checkbox changes
+  const handleCheckboxChange = async (e) => {
+    const { name, checked } = e.target;
+    setSelectedIndicators((prev) => ({ ...prev, [name]: checked }));
+
+    if (checked && !indicatorDataCache[name]) {
+      try {
+        // Call API only once per indicator
+        const res = await axios.get(`/api/indicators/${name.toLowerCase()}`);
+        const data = res.data; // Assume array [{time, value}]
+        setIndicatorDataCache((prev) => ({ ...prev, [name]: data }));
+
+        // Add series to chart
+        const series = chart.addLineSeries({ color: getIndicatorColor(name), lineWidth: 2 });
+        series.setData(data);
+
+        setIndicatorDataCache((prev) => ({
+          ...prev,
+          [name]: { ...prev[name], series }, // store series reference to remove later
+        }));
+      } catch (err) {
+        console.error(err);
+      }
+    } else if (!checked && indicatorDataCache[name]?.series) {
+      // Remove series if unchecked
+      chart.removeSeries(indicatorDataCache[name].series);
+      setIndicatorDataCache((prev) => ({
+        ...prev,
+        [name]: { ...prev[name], series: null },
+      }));
+    }
+  };
+
+  const getIndicatorColor = (name) => {
+    switch (name) {
+      case "EMA":
+        return "#2962FF";
+      case "SMA":
+        return "#FF5252";
+      case "RSI":
+        return "#00BCD4";
+      case "MACD":
+        return "#FFA500";
+      default:
+        return "#000";
+    }
+  };
+
+  return (
+    <div>
+      <h2>Indicators Chart</h2>
+      <div style={{ display: "flex", gap: "15px", marginBottom: "10px" }}>
+        {indicatorsList.map((indi) => (
+          <label key={indi}>
+            <input
+              type="checkbox"
+              name={indi}
+              checked={!!selectedIndicators[indi]}
+              onChange={handleCheckboxChange}
+            />{" "}
+            {indi}
+          </label>
+        ))}
+      </div>
+      <div ref={chartRef} style={{ width: "100%", height: "500px" }}></div>
+    </div>
+  );
 }

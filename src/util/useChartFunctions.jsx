@@ -1,6 +1,7 @@
 import { LineSeries, HistogramSeries } from "lightweight-charts";
 import apiService from "../services/apiServices";
 import { getRowsByIndicator } from "./common";
+import { useRef } from "react";
 
 export default function useChartFunctions({
   chartRef,
@@ -25,6 +26,7 @@ export default function useChartFunctions({
   }
 
   /* ================= FETCH INDICATORS ================= */
+  const plottedIndicatorsRef = useRef(new Set()); // track indicators already fetched & plotted
 
   async function fetchIndicatorData(
     selectedIndicator,
@@ -33,7 +35,12 @@ export default function useChartFunctions({
   ) {
     if (!selectedIndicator?.length) return;
 
+    console.log(plottedIndicatorsRef, "plottedddddddddd")
+
     for (const indicator of selectedIndicator) {
+       if (plottedIndicatorsRef.current.has(indicator)) {
+      continue; // already fetched & plotted, skip API
+    }
       try {
         const result = await fetchDataForIndicators(
           selectedCurrency,
@@ -54,7 +61,7 @@ export default function useChartFunctions({
           /* ================= RSI ================= */
 
           case "RSI": {
-            removeSeries(indicatorSeriesRef, chartRef, indicator);
+            
 
             const rsiData = result?.data?.rsi ?? [];
             const smoothingData = result?.data?.smoothingMA ?? [];
@@ -86,7 +93,7 @@ export default function useChartFunctions({
 
           /* ================= SMA ================= */
           case "SMA": {
-            removeSeries(indicatorSeriesRef, chartRef, indicator);
+            
 
             const smaData = result?.data?.sma ?? [];
             const smoothingData = result?.data?.smoothingMA ?? [];
@@ -106,7 +113,7 @@ export default function useChartFunctions({
           }
 
           case "IchimokuCloud": {
-            removeSeries(indicatorSeriesRef, chartRef, indicator);
+            
 
             indicatorSeriesRef.current.IchimokuCloud = {
               result,
@@ -131,7 +138,7 @@ export default function useChartFunctions({
           }
 
           case "EMA": {
-            removeSeries(indicatorSeriesRef, chartRef, indicator);
+            
 
             const emaData = result?.data?.ema ?? [];
             const smoothingData = result?.data?.smoothingMA ?? [];
@@ -149,7 +156,7 @@ export default function useChartFunctions({
             break;
           }
           case "WMA": {
-            removeSeries(indicatorSeriesRef, chartRef, indicator);
+            
 
             const wmaData = result?.data?.wma ?? [];
 
@@ -165,7 +172,7 @@ export default function useChartFunctions({
             break;
           }
           case "HMA": {
-            removeSeries(indicatorSeriesRef, chartRef, indicator);
+            
 
             const hmaData = result?.data?.hma ?? [];
 
@@ -181,7 +188,7 @@ export default function useChartFunctions({
             break;
           }
           case "DEMA": {
-            removeSeries(indicatorSeriesRef, chartRef, indicator);
+            
 
             const demaData = result?.data?.dema ?? [];
 
@@ -197,7 +204,7 @@ export default function useChartFunctions({
             break;
           }
           case "TEMA": {
-            removeSeries(indicatorSeriesRef, chartRef, indicator);
+            
 
             const temaData = result?.data?.tema ?? [];
 
@@ -213,7 +220,7 @@ export default function useChartFunctions({
             break;
           }
           case "KAMA": {
-            removeSeries(indicatorSeriesRef, chartRef, indicator);
+            
 
             const kamaData = result?.data?.kama ?? [];
 
@@ -229,7 +236,7 @@ export default function useChartFunctions({
             break;
           }
           case "SuperTrend": {
-            removeSeries(indicatorSeriesRef, chartRef, indicator);
+            
 
             const upTrend = result?.data?.upTrend ?? [];
             const downTrend = result?.data?.downTrend ?? [];
@@ -250,7 +257,7 @@ export default function useChartFunctions({
             break;
           }
           case "Aroon": {
-            removeSeries(indicatorSeriesRef, chartRef, indicator);
+            
 
             const aroonUp = result?.data?.aroonUp ?? [];
             const aroonDown = result?.data?.aroonDown ?? [];
@@ -268,7 +275,7 @@ export default function useChartFunctions({
             break;
           }
           case "AroonOscillator": {
-            removeSeries(indicatorSeriesRef, chartRef, indicator);
+            
 
             const osc = result?.data ?? [];
 
@@ -284,7 +291,7 @@ export default function useChartFunctions({
             break;
           }
           case "ADX": {
-            removeSeries(indicatorSeriesRef, chartRef, indicator);
+            
 
             indicatorSeriesRef.current.ADX = {
               result,
@@ -300,7 +307,7 @@ export default function useChartFunctions({
             break;
           }
           case "CCI": {
-            removeSeries(indicatorSeriesRef, chartRef, indicator);
+            
 
             const cciLine = result?.data?.cciLine ?? [];
             const cciMa = result?.data?.cciMa ?? [];
@@ -319,7 +326,7 @@ export default function useChartFunctions({
           }
 
           case "Momentum": {
-            removeSeries(indicatorSeriesRef, chartRef, indicator);
+            
 
             const momentum = result?.data?.momentum ?? [];
 
@@ -351,7 +358,7 @@ export default function useChartFunctions({
           }
 
           case "WilliamsR": {
-            removeSeries(indicatorSeriesRef, chartRef, indicator);
+            
 
             indicatorSeriesRef.current["WilliamsR"] = {
               result,
@@ -367,38 +374,7 @@ export default function useChartFunctions({
             break;
           }
 
-          /* ================= MACD ================= */
-
-          case "MACD": {
-            const groupedSeries = {};
-
-            Object.entries(result.data).forEach(([lineName, lineData]) => {
-              let series;
-
-              if (lineName === "histogram") {
-                series = addSeries(indicator, HistogramSeries, {
-                  color: "#26a69a",
-                });
-              } else {
-                series = addSeries(indicator, LineSeries, {
-                  lineWidth: 2,
-                });
-              }
-
-              if (!series) return;
-
-              series.setData(lineData);
-
-              groupedSeries[lineName] = series;
-            });
-
-            indicatorSeriesRef.current[indicator] = groupedSeries;
-
-            break;
-          }
-
           case "ATR": {
-            removeSeries(indicatorSeriesRef, chartRef, indicator);
 
             indicatorSeriesRef.current.ATR = {
               result,
@@ -419,12 +395,13 @@ export default function useChartFunctions({
           default:
             console.warn("Indicator not handled:", indicator);
         }
+        // plottedIndicatorsRef.current.add(indicator);
+
       } catch (error) {
         console.log(error, "Indicator loading error");
       }
     }
   }
-
   return {
     fetchDataByCurrency,
     fetchIndicatorData,
@@ -703,13 +680,12 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
       return {
         type: "single",
 
-        data:
-          response.data
-            ?.filter((d) => d.atr != null && d.time != null)
-            .map((d) => ({
-              time: d.time,
-              value: d.atr,
-            })) ?? [],
+        data: (response?.data ?? [])
+          .filter((d) => d && d.atr != null && d.time != null)
+          .map((d) => ({
+            time: Number(d.time),
+            value: Number(d.atr),
+          })),
       };
 
     case "RSI":

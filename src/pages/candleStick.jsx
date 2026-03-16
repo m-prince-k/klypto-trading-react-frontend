@@ -1018,45 +1018,41 @@ export default function Candlestick() {
 
     if (typeof value === "number") {
       const style =
-        indicatorStyle?.[indicator]?.sma || indicatorStyle?.[indicator]?.ma;
+        indicatorStyle?.[indicator]?.sma ||
+        indicatorStyle?.[indicator]?.ma ||
+        indicatorStyle?.[indicator]?.[indicator?.toLowerCase()];
 
       if (style?.visible === false) return null;
 
       const color = style?.color || "#333";
 
-      return <span style={{ color }}>{value.toFixed(2)}</span>;
+      return <span style={{ color }}>{Number(value).toFixed(2)}</span>;
     }
 
     if (typeof value === "object") {
-      let keys = [];
-
-      if (indicator === "RSI") {
-        keys = ["rsi", "smoothingMA"];
-      } else if (indicator === "IchimokuCloud") {
-        keys = [
-          "conversionLine",
-          "baseLine",
-          "leadLine1",
-          "leadLine2",
-          "laggingSpan",
-          "kumoCloudUpper",
-          "kumoCloudLower",
-        ];
-      } else {
-        keys = Object.keys(value);
-      }
+      const keys =
+        indicator === "RSI"
+          ? ["rsi", "smoothingMA"]
+          : indicator === "IchimokuCloud"
+            ? [
+                "conversionLine",
+                "baseLine",
+                "leadLine1",
+                "leadLine2",
+                "laggingSpan",
+                "kumoCloudUpper",
+                "kumoCloudLower",
+              ]
+            : Object.keys(value);
 
       return keys
         .filter((key) => {
           const style = indicatorStyle?.[indicator]?.[key];
-
           if (style?.visible === false) return false;
-
           return value[key] != null;
         })
         .map((key) => {
           const val = value[key];
-
           const color = indicatorStyle?.[indicator]?.[key]?.color || "#333";
 
           return (
@@ -1066,140 +1062,103 @@ export default function Candlestick() {
           );
         });
     }
+
     return "--";
   };
-
   const renderIndicators = () => {
-    return selectedIndicator.map((indicator) => {
-      const normalizedType = indicator.replace(/[\s/%]+/g, "");
-      const Component = indicatorComponents[normalizedType];
-      if (!Component) return null;
+  return selectedIndicator.map((indicator) => {
+    const normalizedType = indicator.replace(/[\s/%]+/g, "");
+    const Component = indicatorComponents[normalizedType];
+    if (!Component) return null;
 
-      const data = indicatorSeriesRef.current[normalizedType];
-      if (!data) return null;
+    const data = indicatorSeriesRef.current?.[normalizedType]; // can be undefined initially
 
-      return (
-        <Component
-          key={normalizedType}
-          result={data.result}
-          rows={data.rows}
-          indicatorStyle={indicatorStyle}
-          indicatorSeriesRef={indicatorSeriesRef}
-          addSeries={addSeries}
-          chartRef={chartRef}
-          indicatorConfigs={indicatorConfigs}
-        />
-      );
-    });
-  };
+    return (
+      <Component
+        key={normalizedType}
+        result={data?.result} // pass undefined if not yet fetched
+        rows={data?.rows}
+        indicatorStyle={indicatorStyle}
+        indicatorSeriesRef={indicatorSeriesRef}
+        addSeries={addSeries}
+        chartRef={chartRef}
+        indicatorConfigs={indicatorConfigs}
+        timeframeValue={timeframeValue} // pass timeframe so useEffect can trigger update
+      />
+    );
+  });
+};
 
   // SYNC CROSSHAIR
+const updateIndicatorValues = (param) => {
+  const updates = {};
 
-  const updateIndicatorValues = (param) => {
-    const updates = {};
+  Object.entries(indicatorSeriesRef.current).forEach(([indicator, group]) => {
+    if (!group) return;
 
-    Object.entries(indicatorSeriesRef.current).forEach(([indicator, group]) => {
-      if (!group) return;
-      const indicatorValues = {};
-      Object.entries(group).forEach(([lineName, series]) => {
-        if (
-          lineName === "_priceLines" ||
-          lineName === "overboughtArea" ||
-          lineName === "oversoldArea"
-        )
-          return;
+    const indicatorValues = {};
 
-        const price = param.seriesData?.get(series);
+    Object.entries(group).forEach(([lineName, series]) => {
+      if (!series || typeof series.setData !== "function") return;
 
-        if (price !== undefined) {
-          const value = typeof price === "object" ? price.value : price;
-
-          indicatorValues[lineName] = value;
-        }
-      });
-
-      if (Object.keys(indicatorValues).length === 1) {
-        updates[indicator] = Object.values(indicatorValues)[0];
-      } else if (Object.keys(indicatorValues).length > 0) {
-        updates[indicator] = indicatorValues;
+      const price = param.seriesData?.get(series);
+      if (price !== undefined) {
+        indicatorValues[lineName] = typeof price === "object" ? price.value : price;
       }
     });
 
-    if (Object.keys(updates).length > 0) {
-      latestIndicatorValuesRef.current = updates;
-      setLiveIndicatorData(updates);
+    if (Object.keys(indicatorValues).length === 1) {
+      updates[indicator] = Object.values(indicatorValues)[0];
+    } else if (Object.keys(indicatorValues).length > 0) {
+      updates[indicator] = indicatorValues;
     }
-  };
+  });
 
+  if (Object.keys(updates).length > 0) {
+    latestIndicatorValuesRef.current = updates;
+    setLiveIndicatorData(updates); // <- triggers renderValue
+  }
+};
   // ATTACH CROSSHAIR
 
-  const attachCrosshair = useCallback((chart, chartKey) => {
-    if (!chart) return () => {};
-    const handler = (param) => {
-      if (!param?.point || param.time === undefined) {
-        const charts = [
-          chartRef.current,
-          ...Object.values(panesRef.current).map((p) => p.chart),
-        ];
+ const attachCrosshair = useCallback((chart) => {
+  if (!chart) return () => {};
+  const handler = (param) => {
+    const charts = [chartRef.current, ...Object.values(panesRef.current).map((p) => p.chart)].filter(Boolean);
 
-        charts.forEach((c) => c?.clearCrosshairPosition?.());
+    // clear crosshair if invalid
+    if (!param?.point || param.time === undefined) {
+      charts.forEach((c) => c.clearCrosshairPosition?.());
+      setLiveIndicatorData(latestIndicatorValuesRef.current);
+      return;
+    }
 
-        /* restore latest indicator values */
-        if (latestIndicatorValuesRef.current) {
-          setLiveIndicatorData(latestIndicatorValuesRef.current);
-        }
-        return;
-      }
-      /* ================= SYNC ALL CHARTS ================= */
-      const charts = [
-        chartRef.current,
-        ...Object.values(panesRef.current).map((p) => p.chart),
-      ];
+    // sync crosshair
+    charts.forEach((c) => {
+      c.setCrosshairPosition(param.point?.x ?? 0, param.point?.y ?? 0, param.time);
+    });
 
-      charts.forEach((c) => {
-        if (!c) return;
+    // update candles
+    const candle = param.seriesData?.get(seriesRef.current);
+    if (candle) setLiveOhlcv({ ...candle });
 
-        c.setCrosshairPosition(
-          param.point?.x ?? 0,
-          param.point?.y ?? 0,
-          param.time,
-        );
-      });
-      /* ================= UPDATE CANDLE ================= */
-      if (seriesRef.current) {
-        const candle = param.seriesData?.get(seriesRef.current);
+    // update indicators
+    updateIndicatorValues(param);
+  };
 
-        if (candle) {
-          setLiveOhlcv({
-            open: candle.open,
-            high: candle.high,
-            low: candle.low,
-            close: candle.close,
-          });
-        }
-      }
-      /* ================= UPDATE INDICATORS ================= */
-      updateIndicatorValues(param);
-    };
-
-    chart.subscribeCrosshairMove(handler);
-
-    return () => chart.unsubscribeCrosshairMove(handler);
-  }, []);
+  chart.subscribeCrosshairMove(handler);
+  return () => chart.unsubscribeCrosshairMove(handler);
+}, []);
 
   // ATTACH MAIN CHART
 
-  useEffect(() => {
-    const charts = [
-      chartRef.current,
-      ...Object.values(panesRef.current).map((p) => p.chart),
-    ];
-    const detachers = charts
-      .filter(Boolean)
-      .map((chart) => attachCrosshair(chart));
+useEffect(() => {
+  // Reattach crosshair whenever series references change
+  const charts = [chartRef.current, ...Object.values(panesRef.current).map(p => p.chart)].filter(Boolean);
+  const detachHandlers = charts.map(c => attachCrosshair(c));
 
-    return () => detachers.forEach((detach) => detach());
-  }, [attachCrosshair]);
+  return () => detachHandlers.forEach(d => d());
+}, [indicatorSeriesRef.current, timeframeValue]);
 
   // Main useEffect for chart type/data changes
   useEffect(() => {
@@ -1449,36 +1408,29 @@ export default function Candlestick() {
     indicatorConfigs,
   });
 
-  // Zoom In
-  const zoomIn = () => {
-    const chart = chartRef.current;
-    if (!chart) return;
-
-    const range = chart.timeScale().getVisibleLogicalRange();
-    if (!range) return;
-
-    chart.timeScale().setVisibleLogicalRange({
-      from: range.from + 1,
-      to: range.to - 1,
+  const zoomCharts = (delta) => {
+    const charts = [
+      chartRef.current,
+      ...Object.values(panesRef.current).map((p) => p.chart),
+    ].filter(Boolean);
+    charts.forEach((chart) => {
+      const range = chart.timeScale().getVisibleLogicalRange();
+      if (!range) return;
+      chart.timeScale().setVisibleLogicalRange({
+        from: range.from + delta,
+        to: range.to - delta,
+      });
     });
   };
 
-  // 🔎 Zoom Out
-  const zoomOut = () => {
-    const chart = chartRef.current;
-    if (!chart) return;
-
-    const range = chart.timeScale().getVisibleLogicalRange();
-    if (!range) return;
-
-    chart.timeScale().setVisibleLogicalRange({
-      from: range.from - 1,
-      to: range.to + 1,
-    });
-  };
-  // 🔄 Reset Zoom
+  const zoomIn = () => zoomCharts(1);
+  const zoomOut = () => zoomCharts(-1);
   const resetZoom = () => {
-    chartRef.current?.timeScale().fitContent();
+    const charts = [
+      chartRef.current,
+      ...Object.values(panesRef.current).map((p) => p.chart),
+    ].filter(Boolean);
+    charts.forEach((chart) => chart.timeScale().fitContent());
   };
   return (
     <>
@@ -1692,9 +1644,9 @@ export default function Candlestick() {
               })} */}
             </div>
           </div>
-          <div className="col-md-3">
+          {/* <div className="col-md-3">
             <ChartRightSidebar />
-          </div>
+          </div> */}
         </div>
         {/* </div> */}
 
