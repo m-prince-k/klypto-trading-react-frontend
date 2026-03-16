@@ -1479,6 +1479,7 @@ export const PANE_INDICATORS = new Set([
   "KlingerOscillator",
   "ATR",
   "ADX",
+  "MFI",
   "Momentum",
   "ChoppinessIndex",
   "Volume",

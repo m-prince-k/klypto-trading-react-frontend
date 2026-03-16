@@ -366,6 +366,22 @@ export default function useChartFunctions({
 
             break;
           }
+          case "MFI": {
+            removeSeries(indicatorSeriesRef, chartRef, indicator);
+
+            const mfiLine = result?.data?.mfiLine ?? [];
+
+            indicatorSeriesRef.current.MFI = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.MFI = {
+              mfiLine: mfiLine[mfiLine.length - 1]?.value,
+            };
+
+            break;
+          }
 
           /* ================= MACD ================= */
 
@@ -463,7 +479,6 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
     case "OBV":
     case "VolumeOscillator":
     case "ChaikinMoneyFlow":
-    case "MFI":
     case "EaseofMovement":
     case "NegativeVolumeIndex":
     case "PositiveVolumeIndex":
@@ -652,6 +667,20 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
               .map((d) => ({
                 time: d.time,
                 value: d.mom,
+              })) ?? [],
+        },
+      };
+
+    case "MFI":
+      return {
+        type: "multi",
+        data: {
+          mfiLine:
+            response.data
+              ?.filter((d) => d.mfi != null && d.time != null)
+              .map((d) => ({
+                time: d.time,
+                value: d.mfi,
               })) ?? [],
         },
       };

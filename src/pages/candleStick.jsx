@@ -769,6 +769,45 @@ export default function Candlestick() {
         opacity: 100,
       },
     },
+MFI: {
+  mfiLine: {
+    color: "rgba(41, 98, 255, 1)",
+    width: 2,
+    lineStyle: 0,
+    visible: true,
+    opacity: 1,
+  },
+
+  upperBand: {
+    value: 80,
+    color: "rgba(120, 123, 134, 0.8)",
+    width: 1,
+    lineStyle: 2,
+    visible: true,
+  },
+
+  middleBand: {
+    value: 50,
+    color: "rgba(120, 123, 134, 0.6)",
+    width: 1,
+    lineStyle: 2,
+    visible: true,
+  },
+
+  lowerBand: {
+    value: 20,
+    color: "rgba(120, 123, 134, 0.8)",
+    width: 1,
+    lineStyle: 2,
+    visible: true,
+  },
+
+  bgFill: {
+    visible: true,
+    topFillColor1: "rgba(41, 98, 255, 0.25)",
+    topFillColor2: "rgba(41, 98, 255, 0.08)",
+  },
+},
   };
 
   const [indicatorStyle, setIndicatorStyle] = useState(indicatorStyleDefault);
@@ -841,6 +880,8 @@ export default function Candlestick() {
         return "AroonOscillator";
       case "Momentum":
         return "Momentum";
+      case "MFI":
+        return "MFI";
       default:
         return "momentum";
     }
