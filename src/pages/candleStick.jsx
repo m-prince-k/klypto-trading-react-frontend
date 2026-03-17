@@ -141,23 +141,23 @@ export default function Candlestick() {
       source: "close",
     },
 
-    IchimokuCloud: {
+    ICHIMOKU: {
       conversionLength: 9,
       baseLength: 26,
       spanBLength: 52,
       laggingSpan: 26,
     },
-    ParabolicSAR: {
+    PSAR: {
       start: 0.02,
       increment: 0.02,
       maxValue: 0.02,
     },
-    SuperTrend: {
+    SUPERTREND: {
       atrLength: 10,
       factor: 3,
     },
 
-    Aroon: {
+    AROON: {
       length: 14,
     },
     AroonOscillator: {
@@ -206,7 +206,7 @@ export default function Candlestick() {
       maLength: 14,
       bbStdDev: 2,
     },
-    Momentum: {
+    MOM: {
       length: 10,
       source: "close",
     },
@@ -214,7 +214,7 @@ export default function Candlestick() {
       length: 9,
       source: "close",
     },
-    WilliamsR: {
+    WPR: {
       length: 14,
       source: "close",
     },
@@ -290,7 +290,7 @@ export default function Candlestick() {
       oscMaType: "EMA",
       signalMaType: "EMA",
     },
-    "Chaikin Money Flow": {
+    CMF: {
       length: 20,
     },
     MFI: {
@@ -376,12 +376,12 @@ export default function Candlestick() {
       },
       obFill: {
         visible: true,
-        topFillColor1: "rgba(38,166,154,0.012)",
-        topFillColor2: "rgba(38,166,154,0.2)",
+        topFillColor1: "rgba(38, 166, 106, 0.1)",
+        topFillColor2: "rgba(38, 166, 106, 0.2)",
       },
       osFill: {
         visible: true,
-        bottomFillColor1: "rgba(239,83,80,0.012)",
+        bottomFillColor1: "rgba(239, 83, 80, 0.1)",
         bottomFillColor2: "rgba(239,83,80,0.4)",
       },
       bbUpperBand: {
@@ -435,7 +435,7 @@ export default function Candlestick() {
         bottomColor: "rgba(76,175,80,0.05)",
       },
     },
-    IchimokuCloud: {
+    ICHIMOKU: {
       conversionLine: {
         color: "rgba(41,98,255,1)",
         width: 1,
@@ -561,7 +561,7 @@ export default function Candlestick() {
         visible: true,
       },
     },
-    SuperTrend: {
+    SUPERTREND: {
       upTrend: {
         color: "rgba(38,166,154,1)",
         width: 2,
@@ -594,7 +594,7 @@ export default function Candlestick() {
         visible: true,
       },
     },
-    Aroon: {
+    AROON: {
       aroonUp: {
         color: "rgba(38,166,154,1)",
         width: 1,
@@ -654,7 +654,7 @@ export default function Candlestick() {
     },
     ADX: {
       adx: {
-        color: "rgba(255,152,0,1)",
+        color: "rgba(250, 35, 6, 1)",
         width: 2,
         lineStyle: 0,
         visible: true,
@@ -705,7 +705,7 @@ export default function Candlestick() {
         visible: true,
       },
     },
-    Momentum: {
+    MOM: {
       momentum: {
         visible: true,
         color: "rgba(33, 150, 243, 1)",
@@ -730,7 +730,7 @@ export default function Candlestick() {
         value: 0,
       },
     },
-    WilliamsR: {
+    WPR: {
       r: {
         visible: true,
         color: "rgba(38,166,154,1)",
@@ -817,6 +817,14 @@ export default function Candlestick() {
         topFillColor2: "rgba(41, 98, 255, 0.08)",
       },
     },
+    PSAR: {
+      psar: {
+        visible: true,
+        color: "rgba(41, 98, 255, 1)",
+        width: 1,
+        opacity: 100,
+      },
+    },
   };
 
   const [indicatorStyle, setIndicatorStyle] = useState(indicatorStyleDefault);
@@ -875,8 +883,8 @@ export default function Candlestick() {
         return "volume";
       case "ATR":
         return "ATR";
-      case "Aroon":
-        return "Aroon";
+      case "AROON":
+        return "AROON";
       case "ADX":
         return "ADX";
       case "CCI":
@@ -885,14 +893,12 @@ export default function Candlestick() {
         return "ROC";
       case "MFI":
         return "MFI";
-      case "WilliamsR":
-        return "WilliamsR";
+      case "WPR":
+        return "WPR";
       case "AroonOscillator":
         return "AroonOscillator";
-      case "Momentum":
-        return "Momentum";
-      default:
-        return "momentum";
+      case "MOM":
+        return "MOM";
     }
   }
 
@@ -1075,27 +1081,41 @@ export default function Candlestick() {
       if (style?.visible === false) return null;
 
       const color = style?.color || "#333";
-
       return <span style={{ color }}>{Number(value).toFixed(2)}</span>;
     }
 
     if (typeof value === "object") {
-      const keys =
-        indicator === "RSI"
-          ? ["rsi", "smoothingMA"]
-          : indicator === "IchimokuCloud"
-            ? [
-                "conversionLine",
-                "baseLine",
-                "leadLine1",
-                "leadLine2",
-                "laggingSpan",
-                "kumoCloudUpper",
-                "kumoCloudLower",
-              ]
-            : Object.keys(value);
+      let keysToShow;
 
-      return keys
+      switch (indicator) {
+        case "RSI":
+          keysToShow = ["rsi", "smoothingMA"];
+          break;
+        case "CCI":
+          keysToShow = ["cciLine", "cciMa"];
+          break;
+        case "ROC":
+          keysToShow = ["roc"];
+          break;
+        case "MOM":
+          keysToShow = ["mom"];
+          break;
+        case "ICHIMOKU":
+          keysToShow = [
+            "conversionLine",
+            "baseLine",
+            "leadLine1",
+            "leadLine2",
+            "laggingSpan",
+            "kumoCloudUpper",
+            "kumoCloudLower",
+          ];
+          break;
+        default:
+          keysToShow = Object.keys(value); // fallback for other indicators
+      }
+
+      return keysToShow
         .filter((key) => {
           const style = indicatorStyle?.[indicator]?.[key];
           if (style?.visible === false) return false;
@@ -1115,6 +1135,7 @@ export default function Candlestick() {
 
     return "--";
   };
+
   const renderIndicators = () => {
     return selectedIndicator.map((indicator) => {
       const normalizedType = indicator.replace(/[\s/%]+/g, "");
@@ -1226,240 +1247,150 @@ export default function Candlestick() {
   useEffect(() => {
     if (!chartRef.current) return;
 
-    if (seriesRef.current) {
+    const loadChart = async () => {
       try {
-        chartRef.current.removeSeries(seriesRef.current);
-      } catch (e) {
-        console.warn("Series already removed");
-      }
-      seriesRef.current = null;
-    }
+        const response = await fetchDataByCurrency(
+          selectedCurrency,
+          timeframeValue,
+          chartType,
+        );
 
-    switch (chartType) {
-      case "line":
-        async function LineData() {
-          const data = await fetchDataByCurrency(
-            selectedCurrency,
-            timeframeValue,
-            chartType,
-          );
-          seriesRef.current = chartRef.current.addSeries(
-            LineSeries,
-            chartSeriesStyles.line,
-          );
-          seriesRef.current.setData(
-            data?.map((d) => ({
-              time: d.time,
-              value: d?.close != null ? Number(d.close) : null,
-            })),
-          );
-          chartRef.current.timeScale().fitContent();
-          await fetchIndicatorData(
-            selectedIndicator,
-            selectedCurrency,
-            timeframeValue,
-          );
-        }
-        LineData();
-        break;
+        const data = response?.data || [];
 
-      case "bar":
-        async function BarData() {
-          const data = await fetchDataByCurrency(
-            selectedCurrency,
-            timeframeValue,
-            chartType,
-          );
-          seriesRef.current = chartRef.current.addSeries(
-            BarSeries,
-            chartSeriesStyles.bar,
-          );
-          seriesRef.current.setData(
-            data?.map((d) => ({
-              time: d.time,
-              open: d.open,
-              high: d.high,
-              low: d.low,
-              close: d.close,
-            })),
-          );
-          chartRef.current.timeScale().fitContent();
-          await fetchIndicatorData(
-            selectedIndicator,
-            selectedCurrency,
-            timeframeValue,
-          );
-        }
-        BarData();
-        break;
+        if (!Array.isArray(data) || !data.length) return;
 
-      case "area":
-        async function AreaData() {
-          const data = await fetchDataByCurrency(
-            selectedCurrency,
-            timeframeValue,
-            chartType,
-          );
-          seriesRef.current = chartRef.current.addSeries(
-            AreaSeries,
-            chartSeriesStyles.area,
-          );
-          seriesRef.current.setData(
-            data?.map((d) => ({
-              time: d?.time,
-              value: Number(d?.close),
-            })),
-          );
-          chartRef.current.timeScale().fitContent();
-          await fetchIndicatorData(
-            selectedIndicator,
-            selectedCurrency,
-            timeframeValue,
-          );
-        }
-        AreaData();
-        break;
-
-      case "baseline":
-        async function BaseLineData() {
-          const data = await fetchDataByCurrency(
-            selectedCurrency,
-            timeframeValue,
-            chartType,
-          );
-          seriesRef.current = chartRef.current.addSeries(BaselineSeries, {
-            ...chartSeriesStyles.baseline,
-            baseValue: {
-              type: "price",
-              price: Number(data?.[0]?.close ?? 0),
-            },
-          });
-          seriesRef.current.setData(
-            data?.map((d) => ({ time: d.time, value: d.close })),
-          );
-          chartRef.current.timeScale().fitContent();
-          await fetchIndicatorData(
-            selectedIndicator,
-            selectedCurrency,
-            timeframeValue,
-          );
-        }
-        BaseLineData();
-        break;
-
-      case "histogram":
-        async function HistogramData() {
-          const data = await fetchDataByCurrency(
-            selectedCurrency,
-            timeframeValue,
-            chartType,
-          );
-          seriesRef.current = chartRef.current.addSeries(
-            HistogramSeries,
-            chartSeriesStyles.histogram,
-          );
-          seriesRef.current.setData(
-            data?.map((d, index, arr) => {
-              const prev = arr[index - 1];
-              const isUp = prev ? d.close >= prev.close : true;
-              return {
-                time: d.time,
-                value: d.volume,
-                color: isUp ? "#22c55e" : "#ef4444",
-              };
-            }),
-          );
-          chartRef.current.timeScale().fitContent();
-          await fetchIndicatorData(
-            selectedIndicator,
-            selectedCurrency,
-            timeframeValue,
-          );
-        }
-        HistogramData();
-        break;
-
-      case "heikinashi":
-        async function HeikinAshiData() {
-          const data = await fetchDataByCurrency(
-            selectedCurrency,
-            timeframeValue,
-            chartType,
-          );
-          seriesRef.current = chartRef.current.addSeries(CandlestickSeries);
-          seriesRef.current.setData(convertToHeikinAshi(data));
-          chartRef.current.timeScale().fitContent();
-
-          await fetchIndicatorData(
-            selectedIndicator,
-            selectedCurrency,
-            timeframeValue,
-          );
-        }
-        HeikinAshiData();
-        break;
-
-      case "hollowcandles":
-        async function HollowCandlesData() {
-          const data = await fetchDataByCurrency(
-            selectedCurrency,
-            timeframeValue,
-            chartType,
-          );
-          seriesRef.current = chartRef.current.addSeries(
-            CandlestickSeries,
-            chartSeriesStyles.hollowcandles,
-          );
-          seriesRef.current.setData(data);
-          chartRef.current.timeScale().fitContent();
-          await fetchIndicatorData(
-            selectedIndicator,
-            selectedCurrency,
-            timeframeValue,
-          );
-        }
-        HollowCandlesData();
-        break;
-
-      default:
-        async function fetchCandleStickData() {
-          setIndicatorLoading(true);
+        // remove previous series
+        if (seriesRef.current) {
           try {
-            const response = await fetchDataByCurrency(
-              selectedCurrency,
-              timeframeValue,
-              chartType,
+            chartRef.current.removeSeries(seriesRef.current);
+          } catch (e) {}
+          seriesRef.current = null;
+        }
+
+        switch (chartType) {
+          case "line":
+            seriesRef.current = chartRef.current.addSeries(
+              LineSeries,
+              chartSeriesStyles.line,
             );
+
+            seriesRef.current.setData(
+              data.map((d) => ({
+                time: d.time,
+                value: Number(d.close),
+              })),
+            );
+            break;
+
+          case "bar":
+            seriesRef.current = chartRef.current.addSeries(
+              BarSeries,
+              chartSeriesStyles.bar,
+            );
+
+            seriesRef.current.setData(
+              data.map((d) => ({
+                time: d.time,
+                open: d.open,
+                high: d.high,
+                low: d.low,
+                close: d.close,
+              })),
+            );
+            break;
+
+          case "area":
+            seriesRef.current = chartRef.current.addSeries(
+              AreaSeries,
+              chartSeriesStyles.area,
+            );
+
+            seriesRef.current.setData(
+              data.map((d) => ({
+                time: d.time,
+                value: Number(d.close),
+              })),
+            );
+            break;
+
+          case "baseline":
+            seriesRef.current = chartRef.current.addSeries(BaselineSeries, {
+              ...chartSeriesStyles.baseline,
+              baseValue: {
+                type: "price",
+                price: Number(data[0]?.close ?? 0),
+              },
+            });
+
+            seriesRef.current.setData(
+              data.map((d) => ({
+                time: d.time,
+                value: Number(d.close),
+              })),
+            );
+            break;
+
+          case "histogram":
+            seriesRef.current = chartRef.current.addSeries(
+              HistogramSeries,
+              chartSeriesStyles.histogram,
+            );
+
+            seriesRef.current.setData(
+              data.map((d, index, arr) => {
+                const prev = arr[index - 1];
+                const isUp = prev ? d.close >= prev.close : true;
+
+                return {
+                  time: d.time,
+                  value: d.volume,
+                  color: isUp ? "#22c55e" : "#ef4444",
+                };
+              }),
+            );
+            break;
+
+          case "heikinashi":
             seriesRef.current = chartRef.current.addSeries(
               CandlestickSeries,
               chartSeriesStyles.candlestick,
             );
-            if (response) {
-              console.log(response, "response");
-              seriesRef?.current?.setData(response.data);
-            }
-            chartRef.current.timeScale().fitContent();
 
-            await fetchIndicatorData(
-              selectedIndicator,
-              selectedCurrency,
-              timeframeValue,
+            seriesRef.current.setData(convertToHeikinAshi(data));
+            break;
+
+          case "hollowcandles":
+            seriesRef.current = chartRef.current.addSeries(
+              CandlestickSeries,
+              chartSeriesStyles.hollowcandles,
             );
-          } catch (err) {
-            console.error("Chart load error", err);
-          } finally {
-            setIndicatorLoading(false);
-          }
+
+            seriesRef.current.setData(data);
+            break;
+
+          default:
+            seriesRef.current = chartRef.current.addSeries(
+              CandlestickSeries,
+              chartSeriesStyles.candlestick,
+            );
+
+            seriesRef.current.setData(data);
         }
-        fetchCandleStickData();
-    }
-  }, [
-    chartType,
-    rangeValue,
-    timeframeValue,
-    selectedCurrency,
-    selectedIndicator,
-  ]);
+
+        chartRef.current.timeScale().fitContent();
+
+        await fetchIndicatorData(
+          selectedIndicator,
+          selectedCurrency,
+          timeframeValue,
+        );
+      } catch (err) {
+        console.error("Chart load error", err);
+      }
+    };
+
+    loadChart();
+  }, [chartType, timeframeValue, selectedCurrency, selectedIndicator]);
 
   const { fetchDataByCurrency, fetchIndicatorData } = useChartFunctions({
     chartRef,

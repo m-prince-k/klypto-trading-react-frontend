@@ -72,8 +72,6 @@ export default function useChartFunctions({
               rows,
             };
 
-            console.log(result, "rehsvdhvkjvsndf");
-
             latestIndicatorValuesRef.current.RSI = {
               rsi: rsiData[rsiData.length - 1]?.value,
               smoothingMA: smoothingData[smoothingData.length - 1]?.value,
@@ -110,8 +108,8 @@ export default function useChartFunctions({
             break;
           }
 
-          case "IchimokuCloud": {
-            indicatorSeriesRef.current.IchimokuCloud = {
+          case "ICHIMOKU": {
+            indicatorSeriesRef.current.ICHIMOKU = {
               result,
               rows,
             };
@@ -121,7 +119,7 @@ export default function useChartFunctions({
             const leadLine2 = result?.data?.leadLine2;
             const laggingSpan = result?.data?.laggingSpan;
 
-            latestIndicatorValuesRef.current.IchimokuCloud = {
+            latestIndicatorValuesRef.current.ICHIMOKU = {
               conversionLine:
                 conversionLine?.[conversionLine.length - 1]?.value,
               baseLine: baseLine?.[baseLine.length - 1]?.value,
@@ -138,7 +136,6 @@ export default function useChartFunctions({
             const smoothingData = result?.data?.smoothingMA ?? [];
             const bbUpperData = result?.data?.bbUpper ?? [];
             const bbLowerData = result?.data?.bbLower ?? [];
-            console.log(result, "resllllll");
 
             indicatorSeriesRef.current.EMA = {
               result,
@@ -225,11 +222,11 @@ export default function useChartFunctions({
 
             break;
           }
-          case "SuperTrend": {
+          case "SUPERTREND": {
             const upTrend = result?.data?.upTrend ?? [];
             const downTrend = result?.data?.downTrend ?? [];
 
-            indicatorSeriesRef.current.SuperTrend = {
+            indicatorSeriesRef.current.SUPERTREND = {
               result,
               rows,
             };
@@ -238,22 +235,22 @@ export default function useChartFunctions({
               upTrend[upTrend.length - 1]?.value ??
               downTrend[downTrend.length - 1]?.value;
 
-            latestIndicatorValuesRef.current.SuperTrend = {
+            latestIndicatorValuesRef.current.SUPERTREND = {
               supertrend: last,
             };
 
             break;
           }
-          case "Aroon": {
+          case "AROON": {
             const aroonUp = result?.data?.aroonUp ?? [];
             const aroonDown = result?.data?.aroonDown ?? [];
 
-            indicatorSeriesRef.current.Aroon = {
+            indicatorSeriesRef.current.AROON = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.Aroon = {
+            latestIndicatorValuesRef.current.AROON = {
               aroonUp: aroonUp[aroonUp.length - 1]?.value,
               aroonDown: aroonDown[aroonDown.length - 1]?.value,
             };
@@ -305,16 +302,22 @@ export default function useChartFunctions({
             break;
           }
 
-          case "Momentum": {
-            const momentum = result?.data?.momentum ?? [];
+          case "MOM": {
+            const momentum = result?.data?.MOM ?? [];
 
-            indicatorSeriesRef.current.Momentum = {
-              result,
-              rows,
-            };
+            if (!indicatorSeriesRef.current.MOM) {
+              indicatorSeriesRef.current.MOM = {
+                MOM: null,
+                result: null,
+                rows: [],
+              };
+            }
 
-            latestIndicatorValuesRef.current.Momentum = {
-              momentum: momentum[momentum.length - 1]?.value,
+            indicatorSeriesRef.current.MOM.result = result;
+            indicatorSeriesRef.current.MOM.rows = rows;
+
+            latestIndicatorValuesRef.current.MOM = {
+              MOM: momentum[momentum.length - 1]?.value,
             };
 
             break;
@@ -374,6 +377,20 @@ export default function useChartFunctions({
 
             latestIndicatorValuesRef.current.MFI = {
               mfiLine: mfiLine[mfiLine.length - 1]?.value,
+            };
+
+            break;
+          }
+          case "PSAR": {
+            const psar = result;
+
+            indicatorSeriesRef.current.PSAR = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.PSAR = {
+              psar: psar?.[psar.length - 1]?.value,
             };
 
             break;
@@ -438,7 +455,6 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
     case "AccumulationDistribution":
     case "UltimateOscillator":
     case "StochasticRSI":
-    case "ParabolicSAR":
     case "ChandeMomentumOscillator":
       return {
         type: "single",
@@ -448,6 +464,18 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
             .map((d) => ({
               time: d.time,
               value: d.value,
+            }))) ?? [],
+      };
+
+    case "PSAR":
+      return {
+        type: "single",
+        data:
+          (await response.data
+            ?.filter((d) => d.sar != null && d.time != null)
+            .map((d) => ({
+              time: d.time,
+              value: d.sar,
             }))) ?? [],
       };
 
@@ -613,7 +641,7 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
             })) ?? [],
       };
 
-    case "SuperTrend":
+    case "SUPERTREND":
       return {
         type: "multi",
         data: {
@@ -637,7 +665,7 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
         },
       };
 
-    case "Momentum":
+    case "MOM":
       return {
         type: "multi",
         data: {
@@ -693,7 +721,7 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
               })) ?? [],
         },
       };
-      case "MFI":
+    case "MFI":
       return {
         type: "multi",
         data: {
@@ -706,7 +734,6 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
               })) ?? [],
         },
       };
-
 
     case "ATR":
       return {
@@ -758,7 +785,7 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
         },
       };
 
-    case "Aroon":
+    case "AROON":
       return {
         type: "multi",
         data: {
@@ -873,7 +900,7 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
 
     /* ---------------- MULTI LINE ---------------- */
 
-    case "IchimokuCloud":
+    case "ICHIMOKU":
       return {
         type: "multi",
         data: {

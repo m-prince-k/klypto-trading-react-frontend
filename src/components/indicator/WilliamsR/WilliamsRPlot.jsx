@@ -12,8 +12,8 @@ export default function WilliamsRPlot({
   useEffect(() => {
     if (!result?.data?.r) return;
 
-    if (indicatorSeriesRef.current?.WilliamsR) {
-      Object.values(indicatorSeriesRef.current.WilliamsR).forEach((s) => {
+    if (indicatorSeriesRef.current?.WPR) {
+      Object.values(indicatorSeriesRef.current.WPR).forEach((s) => {
         if (s?.setData) {
           try {
             s.setData([]);
@@ -21,7 +21,7 @@ export default function WilliamsRPlot({
         }
       });
 
-      indicatorSeriesRef.current.WilliamsR = null;
+      indicatorSeriesRef.current.WPR = null;
     }
 
     const groupedSeries = {};
@@ -54,7 +54,7 @@ export default function WilliamsRPlot({
 
     const makeLevel = (v) => rData.map((p) => ({ time: p.time, value: v }));
 
-    const upperBand = addSeries("WilliamsR", LineSeries, {
+    const upperBand = addSeries("WPR", LineSeries, {
       color: style?.upperBand?.color,
       lineWidth: style?.upperBand?.width,
       lineStyle: style?.upperBand?.lineStyle ?? 2,
@@ -65,7 +65,7 @@ export default function WilliamsRPlot({
 
     upperBand.setData(makeLevel(upper));
 
-    const middleBand = addSeries("WilliamsR", LineSeries, {
+    const middleBand = addSeries("WPR", LineSeries, {
       color: style?.middleBand?.color,
       lineWidth: style?.middleBand?.width,
       lineStyle: style?.middleBand?.lineStyle ?? 2,
@@ -76,7 +76,7 @@ export default function WilliamsRPlot({
 
     middleBand.setData(makeLevel(middle));
 
-    const lowerBand = addSeries("WilliamsR", LineSeries, {
+    const lowerBand = addSeries("WPR", LineSeries, {
       color: style?.lowerBand?.color,
       lineWidth: style?.lowerBand?.width,
       lineStyle: style?.lowerBand?.lineStyle ?? 2,
@@ -98,7 +98,7 @@ export default function WilliamsRPlot({
       value: upper,
     }));
 
-    const bgSeries = addSeries("WilliamsR", BaselineSeries, {
+    const bgSeries = addSeries("WPR", BaselineSeries, {
       baseValue: { type: "price", price: lower },
       topFillColor1: style?.bg?.color0,
       topFillColor2: style?.bg?.color1,
@@ -116,16 +116,16 @@ export default function WilliamsRPlot({
     groupedSeries.bg = bgSeries;
     groupedSeries.rData = rData;
 
-    indicatorSeriesRef.current.WilliamsR = groupedSeries;
+    indicatorSeriesRef.current.WPR = groupedSeries;
   }, [result]);
 
   /* ================= STYLE UPDATE ================= */
 
   useEffect(() => {
-    const group = indicatorSeriesRef.current?.WilliamsR;
+    const group = indicatorSeriesRef.current?.WPR;
     if (!group) return;
 
-    const style = indicatorStyle?.WilliamsR || {};
+    const style = indicatorStyle?.WPR || {};
     const data = group.rData ?? [];
 
     if (!data.length) return;

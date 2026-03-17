@@ -82,22 +82,35 @@ export const ListingModal = ({
   const filteredIndicators = (indicators ?? []).filter((item) => {
     if (!searchIndicator) return true;
 
+    const getInitials = (text) =>
+    text
+      .split(" ")
+      .map((w) => w[0])
+      .join("")
+      .toLowerCase();
+    const search = searchIndicator.toLowerCase().trim();
 
-    const search = searchIndicator.toLowerCase();
+    const label = item.label.toLowerCase();
+    const initials = getInitials(item.label);
 
-    return item.label?.toLowerCase().includes(search);
+    return (
+      label.includes(search) || // normal search
+      initials.includes(search) || // SMA type search
+      item.slug?.toLowerCase().includes(search)
+    );
   });
 
   const filteredCurrencies = currencies?.filter((curr) => {
     if (!searchCurrency) return true;
     const search = searchCurrency.toLowerCase();
-    // console.log(search, "searchCurrency");
 
     return (
       curr?.raw?.toLowerCase().includes(search) ||
       curr?.base?.toLowerCase().includes(search)
     );
   });
+
+  
 
   if (activeTab !== "Indicators") return null;
 
@@ -110,7 +123,7 @@ export const ListingModal = ({
         <div className="flex items-center justify-between  ">
           <h2 className="text-xl">{title}</h2>
           <IoCloseSharp
-          size={20}
+            size={20}
             onClick={onClose}
             className="cursor-pointer text-slate-400"
           />
@@ -220,11 +233,11 @@ export const ListingModal = ({
                         <label className="d-flex align-items-center gap-2 px-2 py-1 rounded">
                           <input
                             type="checkbox"
-                            checked={selectedIndicator.includes(item.label)}
-                            onChange={() => toggleIndicator(item.label)}
+                            checked={selectedIndicator.includes(item.slug)}
+                            onChange={() => toggleIndicator(item.slug)}
                             className="form-check-input cursor-pointer"
                           />
-                          <span>{item.label}</span>
+                          <span>{item.label}  </span>
                         </label>
                       </li>
                     ))}

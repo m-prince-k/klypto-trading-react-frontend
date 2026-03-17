@@ -36,49 +36,53 @@ import ATRPlot from "./ATR/ATRPlot";
 import ATRInput from "./ATR/ATRInput";
 import MFIPlot from "./MFI/MFIPlot";
 import MFIInput from "./MFI/MFIInput";
+import PSARPlot from "./PSAR/PSARPlot";
+import PSARInput from "./PSAR/PSARInput";
 
 export const indicatorComponents = {
   RSI: RSIPlot,
   SMA: SMAPlot,
-  IchimokuCloud: IchimokuCloudPlot,
+  ICHIMOKU: IchimokuCloudPlot,
   EMA: EMAPlot,
   WMA: WMAPlot,
   HMA: HMAPlot,
   DEMA: DEMAPlot,
   TEMA: TEMAPlot,
   KAMA: KAMAPlot,
-  SuperTrend: SuperTrendPlot,
-  Aroon: AroonPlot,
+  SUPERTREND: SuperTrendPlot,
+  AROON: AroonPlot,
   AroonOscillator: AroonOscillatorPlot,
   ADX: ADXPlot,
   CCI: CCIPlot,
-  Momentum: MomentumPlot,
+  MOM: MomentumPlot,
   ROC: ROCPlot,
-  WilliamsR : WilliamsRPlot,
+  WPR : WilliamsRPlot,
   ATR: ATRPlot,
   MFI: MFIPlot,
+  PSAR: PSARPlot,
 };
 
 export const indicatorInputs = {
   RSI: RSIInput,
   SMA: SMAInput,
-  IchimokuCloud: IchimokuCloudInput,
+  ICHIMOKU: IchimokuCloudInput,
   EMA: EMAInput,
   WMA: WMAInput,
   HMA: HMAInput,
   DEMA: DEMAInput,
   TEMA: TEMAInput,
   KAMA: KAMAInput,
-  SuperTrend: SuperTrendInput,
-  Aroon: AroonInput,
+  SUPERTREND: SuperTrendInput,
+  AROON: AroonInput,
   AroonOscillator: AroonOscillatorInput,
   ADX: ADXInput,
   CCI: CCIInput,
-  Momentum:MomentumInput,
+  MOM:MomentumInput,
   ROC:ROCInput,
-  WilliamsR : WilliamsRInput,
+  WPR : WilliamsRInput,
   ATR: ATRInput,
   MFI: MFIInput,
+  PSAR: PSARInput,
 };
 
 export function updateIndicatorFromInput(

@@ -95,6 +95,8 @@ export default function IndicatorPropertyDialog({
       ...config,
     };
 
+    
+
     console.log(payload, "payloadddddddddd");
     setIndicatorLoading(true);
     try {
@@ -419,7 +421,7 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "IchimokuCloud":
+      case "ICHIMOKU":
         return (
           <>
             <div className="mb-3">
@@ -472,7 +474,7 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "ParabolicSAR":
+      case "PSAR":
         return (
           <>
             <div className="mb-3">
@@ -542,7 +544,7 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "Aroon":
+      case "AROON":
         return <BaseSettings showOffset={false} showSource={false} />;
 
       case "AroonOscillator":
@@ -808,13 +810,13 @@ export default function IndicatorPropertyDialog({
           </>
         );
       }
-      case "Momentum": {
+      case "MOM": {
         return <BaseSettings showOffset={false} />;
       }
       case "ROC": {
         return <BaseSettings showOffset={false} />;
       }
-      case "WilliamsR": {
+      case "WPR": {
         return <BaseSettings showOffset={false} />;
       }
       case "UltimateOscillator":

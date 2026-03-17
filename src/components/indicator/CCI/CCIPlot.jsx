@@ -127,95 +127,59 @@ export default function CCIPlot({
 
   }, [result]);
 
+useEffect(() => {
+  const cciGroup = indicatorSeriesRef.current?.CCI;
+  if (!cciGroup || !cciGroup.cciLine) return;
 
+  const style = indicatorStyle?.CCI;
 
-  /* ================= STYLE UPDATE ================= */
+  // get current data from the series
+  const cciData = cciGroup.cciLine.data?.() ?? [];
 
-  useEffect(() => {
+  const upper = style?.upperBand?.value ?? 100;
+  const middle = style?.middleBand?.value ?? 0;
+  const lower = style?.lowerBand?.value ?? -100;
 
-    const cciGroup = indicatorSeriesRef.current?.CCI;
-    if (!cciGroup) return;
+  const makeLevel = (v) => cciData.map((p) => ({ time: p.time, value: v }));
 
-    const style = indicatorStyle?.CCI;
-    const data = cciGroup.cciData ?? [];
+  // Update band lines
+  cciGroup.upperBand?.setData(makeLevel(upper));
+  cciGroup.middleBand?.setData(makeLevel(middle));
+  cciGroup.lowerBand?.setData(makeLevel(lower));
 
-    const upper = style?.upperBand?.value ?? 100;
-    const middle = style?.middleBand?.value ?? 0;
-    const lower = style?.lowerBand?.value ?? -100;
-
-    const makeLevel = (v) =>
-      data.map((p) => ({ time: p.time, value: v }));
-
-
-    /* ================= UPDATE BAND VALUES ================= */
-
-    cciGroup.upperBand?.setData(makeLevel(upper));
-    cciGroup.middleBand?.setData(makeLevel(middle));
-    cciGroup.lowerBand?.setData(makeLevel(lower));
-
-
-    /* ================= UPDATE MAIN LINES ================= */
-
-    if (cciGroup.cciLine) {
-      cciGroup.cciLine.applyOptions({
-        color: style?.cciLine?.color,
-        lineWidth: style?.cciLine?.width,
-        lineStyle: style?.cciLine?.lineStyle,
-        visible: style?.cciLine?.visible,
-        opacity: style?.cciLine?.opacity,
-      });
-    }
-
-    if (cciGroup.cciMa) {
-      cciGroup.cciMa.applyOptions({
-        color: style?.cciMa?.color,
-        lineWidth: style?.cciMa?.width,
-        lineStyle: style?.cciMa?.lineStyle,
-        visible: style?.cciMa?.visible,
-        opacity: style?.cciMa?.opacity,
-      });
-    }
-
-
-    /* ================= UPDATE BAND STYLES ================= */
-
-    ["upperBand", "middleBand", "lowerBand"].forEach((key) => {
-
-      if (cciGroup[key]) {
-
-        cciGroup[key].applyOptions({
-          color: style?.[key]?.color,
-          lineWidth: style?.[key]?.width,
-          lineStyle: style?.[key]?.lineStyle,
-          visible: style?.[key]?.visible,
-        });
-
-      }
-
+  // Update main lines
+  if (cciGroup.cciLine) {
+    cciGroup.cciLine.applyOptions({
+      color: style?.cciLine?.color,
+      lineWidth: style?.cciLine?.width,
+      lineStyle: style?.cciLine?.lineStyle,
+      visible: style?.cciLine?.visible,
+      opacity: style?.cciLine?.opacity,
     });
+  }
 
+  if (cciGroup.cciMa) {
+    cciGroup.cciMa.applyOptions({
+      color: style?.cciMa?.color,
+      lineWidth: style?.cciMa?.width,
+      lineStyle: style?.cciMa?.lineStyle,
+      visible: style?.cciMa?.visible,
+      opacity: style?.cciMa?.opacity,
+    });
+  }
 
-    /* ================= UPDATE FILL ================= */
-
-    if (cciGroup.bgFill) {
-
-      const bandData = data.map((p) => ({
-        time: p.time,
-        value: upper,
-      }));
-
-      cciGroup.bgFill.applyOptions({
-        baseValue: { type: "price", price: lower },
-        visible: style?.bgFill?.visible,
-        topFillColor1: style?.bgFill?.topFillColor1,
-        topFillColor2: style?.bgFill?.topFillColor2,
-      });
-
-      cciGroup.bgFill.setData(bandData);
-
-    }
-
-  }, [indicatorStyle]);
-
+  // Update background fill
+  if (cciGroup.bgFill) {
+    cciGroup.bgFill.applyOptions({
+      visible: style?.bgFill?.visible,
+      topFillColor1: style?.bgFill?.topFillColor1,
+      topFillColor2: style?.bgFill?.topFillColor2,
+      bottomFillColor1: style?.bgFill?.bottomFillColor1 ?? "rgba(0,0,0,0)",
+      bottomFillColor2: style?.bgFill?.bottomFillColor2 ?? "rgba(0,0,0,0)",
+      baseValue: { type: "price", price: lower },
+    });
+    cciGroup.bgFill.setData(makeLevel(upper));
+  }
+}, [indicatorStyle]);
   return null;
 }

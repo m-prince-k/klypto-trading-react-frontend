@@ -316,22 +316,34 @@ export const OPERATORS = [
 ];
 
 export const convertToHeikinAshi = (data) => {
-  if (!data.length) return [];
+  if (!data || data.length === 0) return [];
 
-  let prevOpen = data[0].open;
-  let prevClose = data[0].close;
+  // console.log(data, "dataaaaaaaaaaaaa")
+  let prevOpen;
+  let prevClose;
 
-  return data.map((candle) => {
-    const haClose = (candle.open + candle.high + candle.low + candle.close) / 4;
+  return data?.map((candle, i) => {
+    const { open, high, low, close, time } = candle;
 
-    const haOpen = (prevOpen + prevClose) / 2;
-    const haHigh = Math.max(candle.high, haOpen, haClose);
-    const haLow = Math.min(candle.low, haOpen, haClose);
+    const haClose = (open + high + low + close) / 4;
+
+    let haOpen;
+
+    if (i === 0) {
+      // first candle
+      haOpen = (open + close) / 2;
+    } else {
+      haOpen = (prevOpen + prevClose) / 2;
+    }
+
+    const haHigh = Math.max(high, haOpen, haClose);
+    const haLow = Math.min(low, haOpen, haClose);
 
     prevOpen = haOpen;
     prevClose = haClose;
+
     return {
-      time: candle.time,
+      time,
       open: haOpen,
       high: haHigh,
       low: haLow,
@@ -552,7 +564,7 @@ export const getRowsByIndicator = (indicator, maType) => {
       return [{ key: "tema", label: "TEMA", type: "line" }];
     case "KAMA":
       return [{ key: "kama", label: "KAMA", type: "line" }];
-    case "IchimokuCloud":
+    case "ICHIMOKU":
       return [
         { key: "conversionLine", label: "Conversion Line", type: "line" },
         { key: "baseLine", label: "Base Line", type: "line" },
@@ -578,7 +590,7 @@ export const getRowsByIndicator = (indicator, maType) => {
         },
       ];
 
-    case "Parabolic SAR":
+    case "PSAR":
       return [{ key: "parabolicSAR", label: "Parabolic SAR", type: "line" }];
 
     case "SuperTrend":
@@ -612,7 +624,7 @@ export const getRowsByIndicator = (indicator, maType) => {
         },
       ];
 
-    case "Aroon":
+    case "AROON":
       return [
         { key: "aroonUp", label: "Aroon Up", type: "line" },
         {
@@ -844,7 +856,7 @@ export const getRowsByIndicator = (indicator, maType) => {
           type: "fill",
         },
       ];
-    case "Momentum":
+    case "MOM":
       return [{ key: "momentum", label: "Momentum", type: "line" }];
 
     case "ROC":
@@ -1295,7 +1307,6 @@ export const getRowsByIndicator = (indicator, maType) => {
           width: 2,
           visible: true,
         },
-        // Zero Line
         {
           key: "zeroLine",
           label: "Zero Line",
@@ -1524,9 +1535,9 @@ export const PANE_INDICATORS = new Set([
   "MACDHistogram",
   "CCI",
   "ROC",
-  "WilliamsR",
+  "WPR",
   "UltimateOscillator",
-  "Aroon",
+  "AROON",
   "AroonOscillator",
   "ChandeMomentumOscillator", // CMO
   "TRIX",
@@ -1535,7 +1546,7 @@ export const PANE_INDICATORS = new Set([
   "ATR",
   "ADX",
   "MFI",
-  "Momentum",
+  "MOM",
   "ChoppinessIndex",
   "Volume",
   "ChaikinMoneyFlow",
