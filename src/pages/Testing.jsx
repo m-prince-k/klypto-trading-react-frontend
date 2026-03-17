@@ -1,80 +1,115 @@
-import React, { useEffect, useRef, useState } from "react";
-import { createChart, CandlestickSeries, LineSeries } from "lightweight-charts";
+import React, { useEffect, useRef } from "react";
+import { createChart, CandlestickSeries } from "lightweight-charts";
 
-export default function Testing() {
-  const chartContainerRef = useRef(null);
-  const chartRef = useRef(null);
-  const candleSeriesRef = useRef(null);
-  const rsiSeriesRef = useRef(null);
-  const smaSeriesRef = useRef(null);
+const Testing = () => {
 
-  const [style, setStyle] = useState({
-    rsiColor: "#2962FF",
-    smaColor: "#FF6D00",
-    bgColor: "#2962FF",
-    bgOpacity: 0.2,
-    lineWidth: 2,
-    showRSI: true,
-    showSMA: true
-  });
+ const sampleData = [
+  { time: 1672531200, open: 100, high: 105, low: 95, close: 102 },
+  { time: 1672534800, open: 102, high: 108, low: 100, close: 107 },
+  { time: 1672538400, open: 107, high: 112, low: 105, close: 110 },
+  { time: 1672542000, open: 110, high: 115, low: 108, close: 109 },
+  { time: 1672545600, open: 109, high: 111, low: 103, close: 104 },
+  { time: 1672549200, open: 104, high: 106, low: 98, close: 100 },
+  { time: 1672552800, open: 100, high: 103, low: 95, close: 97 },
+  { time: 1672556400, open: 97, high: 102, low: 96, close: 101 },
+  { time: 1672560000, open: 101, high: 107, low: 100, close: 106 },
+  { time: 1672563600, open: 106, high: 110, low: 104, close: 108 },
 
-  // ---------- RSI CALCULATION ----------
-  function calculateRSI(data, length = 14) {
-    let gains = [];
-    let losses = [];
+  { time: 1672567200, open: 108, high: 109, low: 102, close: 103 },
+  { time: 1672570800, open: 103, high: 105, low: 99, close: 100 },
+  { time: 1672574400, open: 100, high: 104, low: 98, close: 103 },
+  { time: 1672578000, open: 103, high: 108, low: 101, close: 107 },
+  { time: 1672581600, open: 107, high: 112, low: 105, close: 111 },
+  { time: 1672585200, open: 111, high: 116, low: 109, close: 115 },
+  { time: 1672588800, open: 115, high: 120, low: 113, close: 118 },
+  { time: 1672592400, open: 118, high: 122, low: 116, close: 121 },
+  { time: 1672596000, open: 121, high: 125, low: 118, close: 119 },
+  { time: 1672599600, open: 119, high: 121, low: 114, close: 115 },
 
-    for (let i = 1; i < data.length; i++) {
-      const diff = data[i].close - data[i - 1].close;
-      gains.push(diff > 0 ? diff : 0);
-      losses.push(diff < 0 ? Math.abs(diff) : 0);
-    }
+  { time: 1672603200, open: 115, high: 117, low: 110, close: 111 },
+  { time: 1672606800, open: 111, high: 113, low: 105, close: 107 },
+  { time: 1672610400, open: 107, high: 109, low: 101, close: 103 },
+  { time: 1672614000, open: 103, high: 106, low: 98, close: 100 },
+  { time: 1672617600, open: 100, high: 104, low: 97, close: 102 },
+  { time: 1672621200, open: 102, high: 108, low: 100, close: 106 },
+  { time: 1672624800, open: 106, high: 112, low: 104, close: 110 },
+  { time: 1672628400, open: 110, high: 115, low: 108, close: 114 },
+  { time: 1672632000, open: 114, high: 118, low: 112, close: 117 },
+  { time: 1672635600, open: 117, high: 120, low: 115, close: 119 },
 
-    const rsi = [];
+  { time: 1672639200, open: 119, high: 122, low: 116, close: 118 },
+  { time: 1672642800, open: 118, high: 120, low: 112, close: 114 },
+  { time: 1672646400, open: 114, high: 116, low: 108, close: 110 },
+  { time: 1672650000, open: 110, high: 112, low: 104, close: 106 },
+  { time: 1672653600, open: 106, high: 108, low: 100, close: 102 },
+  { time: 1672657200, open: 102, high: 105, low: 98, close: 101 },
+  { time: 1672660800, open: 101, high: 107, low: 99, close: 105 },
+  { time: 1672664400, open: 105, high: 110, low: 103, close: 109 },
+  { time: 1672668000, open: 109, high: 114, low: 107, close: 113 },
+  { time: 1672671600, open: 113, high: 118, low: 111, close: 117 },
 
-    for (let i = length; i < gains.length; i++) {
-      const avgGain =
-        gains.slice(i - length, i).reduce((a, b) => a + b, 0) / length;
-      const avgLoss =
-        losses.slice(i - length, i).reduce((a, b) => a + b, 0) / length;
+  { time: 1672675200, open: 117, high: 121, low: 115, close: 120 },
+  { time: 1672678800, open: 120, high: 125, low: 118, close: 123 },
+  { time: 1672682400, open: 123, high: 127, low: 121, close: 125 },
+  { time: 1672686000, open: 125, high: 128, low: 122, close: 124 },
+  { time: 1672689600, open: 124, high: 126, low: 119, close: 120 },
+  { time: 1672693200, open: 120, high: 122, low: 115, close: 117 },
+  { time: 1672696800, open: 117, high: 119, low: 111, close: 113 },
+  { time: 1672700400, open: 113, high: 115, low: 108, close: 109 },
+  { time: 1672704000, open: 109, high: 111, low: 103, close: 105 },
+  { time: 1672707600, open: 105, high: 108, low: 100, close: 102 },
 
-      const rs = avgGain / avgLoss;
-      const value = 100 - 100 / (1 + rs);
+  { time: 1672711200, open: 102, high: 106, low: 99, close: 104 },
+  { time: 1672714800, open: 104, high: 110, low: 102, close: 108 },
+  { time: 1672718400, open: 108, high: 114, low: 106, close: 112 },
+  { time: 1672722000, open: 112, high: 118, low: 110, close: 116 },
+  { time: 1672725600, open: 116, high: 120, low: 114, close: 119 }
+];
+  const chartContainerRef = useRef();
 
-      rsi.push({
-        time: data[i + 1].time,
-        value: value
+  // 🔥 Convert normal candles → Heikin Ashi
+  const calculateHeikinAshi = (candles) => {
+    if (!candles || candles.length === 0) return [];
+
+    const haData = [];
+
+    candles.forEach((candle, i) => {
+      const { open, high, low, close, time } = candle;
+
+      const haClose = (open + high + low + close) / 4;
+
+      let haOpen;
+      if (i === 0) {
+        haOpen = (open + close) / 2;
+      } else {
+        const prev = haData[i - 1];
+        haOpen = (prev.open + prev.close) / 2;
+      }
+
+      const haHigh = Math.max(high, haOpen, haClose);
+      const haLow = Math.min(low, haOpen, haClose);
+
+      haData.push({
+        time,
+        open: haOpen,
+        high: haHigh,
+        low: haLow,
+        close: haClose
       });
-    }
+    });
 
-    return rsi;
-  }
+    return haData;
+  };
 
-  // ---------- SMA ----------
-  function calculateSMA(data, length = 14) {
-    const sma = [];
-
-    for (let i = length; i < data.length; i++) {
-      const avg =
-        data
-          .slice(i - length, i)
-          .reduce((sum, d) => sum + d.close, 0) / length;
-
-      sma.push({
-        time: data[i].time,
-        value: avg
-      });
-    }
-
-    return sma;
-  }
-
-  // ---------- Chart Init ----------
   useEffect(() => {
+    if (!chartContainerRef.current) return;
+
     const chart = createChart(chartContainerRef.current, {
+      width: chartContainerRef.current.clientWidth,
       height: 500,
       layout: {
         background: { color: "#0f172a" },
-        textColor: "#DDD"
+        textColor: "#d1d5db"
       },
       grid: {
         vertLines: { color: "#1f2937" },
@@ -82,156 +117,36 @@ export default function Testing() {
       }
     });
 
-    chartRef.current = chart;
-
-    const candleSeries = chart.addSeries(CandlestickSeries);
-    candleSeriesRef.current = candleSeries;
-
-    const rsiSeries = chart.addSeries(LineSeries, {
-      color: style.rsiColor,
-      lineWidth: style.lineWidth
+    const candleSeries = chart.addSeries(CandlestickSeries, {
+      upColor: "#26a69a",
+      downColor: "#ef5350",
+      borderUpColor: "#26a69a",
+      borderDownColor: "#ef5350",
+      wickUpColor: "#26a69a",
+      wickDownColor: "#ef5350"
     });
 
-    const smaSeries = chart.addSeries(LineSeries, {
-      color: style.smaColor,
-      lineWidth: style.lineWidth
-    });
+  
 
-    rsiSeriesRef.current = rsiSeries;
-    smaSeriesRef.current = smaSeries;
+    const haData = calculateHeikinAshi(sampleData);
 
-    // ---------- Dummy Data ----------
-    const data = [];
+    candleSeries.setData(haData);
 
-    let price = 30000;
-
-    for (let i = 0; i < 200; i++) {
-      const open = price;
-      const close = open + (Math.random() - 0.5) * 500;
-      const high = Math.max(open, close) + Math.random() * 200;
-      const low = Math.min(open, close) - Math.random() * 200;
-
-      price = close;
-
-      data.push({
-        time: 1700000000 + i * 60,
-        open,
-        high,
-        low,
-        close
+    const handleResize = () => {
+      chart.applyOptions({
+        width: chartContainerRef.current.clientWidth
       });
-    }
+    };
 
-    candleSeries.setData(data);
+    window.addEventListener("resize", handleResize);
 
-    const rsiData = calculateRSI(data);
-    const smaData = calculateSMA(data);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      chart.remove();
+    };
+  }, [sampleData]);
 
-    rsiSeries.setData(rsiData);
-    smaSeries.setData(smaData);
+  return <div ref={chartContainerRef} style={{ width: "100%" }} />;
+};
 
-    chart.timeScale().fitContent();
-
-    return () => chart.remove();
-  }, []);
-
-  // ---------- STYLE UPDATE ----------
-  useEffect(() => {
-    if (!rsiSeriesRef.current || !smaSeriesRef.current) return;
-
-    rsiSeriesRef.current.applyOptions({
-      color: style.rsiColor,
-      lineWidth: style.lineWidth,
-      visible: style.showRSI
-    });
-
-    smaSeriesRef.current.applyOptions({
-      color: style.smaColor,
-      lineWidth: style.lineWidth,
-      visible: style.showSMA
-    });
-
-  }, [style]);
-
-  return (
-    <div style={{ display: "flex" }}>
-      
-      {/* ---------- Indicator Palette ---------- */}
-      <div
-        style={{
-          width: 250,
-          padding: 15,
-          background: "#111827",
-          color: "white"
-        }}
-      >
-        <h4>Indicator Style</h4>
-
-        <label>RSI Color</label>
-        <input
-          type="color"
-          value={style.rsiColor}
-          onChange={(e) =>
-            setStyle({ ...style, rsiColor: e.target.value })
-          }
-        />
-
-        <br />
-
-        <label>SMA Color</label>
-        <input
-          type="color"
-          value={style.smaColor}
-          onChange={(e) =>
-            setStyle({ ...style, smaColor: e.target.value })
-          }
-        />
-
-        <br />
-
-        <label>Thickness</label>
-        <input
-          type="range"
-          min="1"
-          max="5"
-          value={style.lineWidth}
-          onChange={(e) =>
-            setStyle({ ...style, lineWidth: Number(e.target.value) })
-          }
-        />
-
-        <br />
-
-        <label>
-          <input
-            type="checkbox"
-            checked={style.showRSI}
-            onChange={(e) =>
-              setStyle({ ...style, showRSI: e.target.checked })
-            }
-          />
-          Show RSI
-        </label>
-
-        <br />
-
-        <label>
-          <input
-            type="checkbox"
-            checked={style.showSMA}
-            onChange={(e) =>
-              setStyle({ ...style, showSMA: e.target.checked })
-            }
-          />
-          Show SMA
-        </label>
-      </div>
-
-      {/* ---------- Chart ---------- */}
-      <div
-        ref={chartContainerRef}
-        style={{ flex: 1 }}
-      />
-    </div>
-  );
-}
+export default Testing;

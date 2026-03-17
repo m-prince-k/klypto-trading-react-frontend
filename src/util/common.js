@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { FiBarChart2, FiActivity } from "react-icons/fi";
 import * as XLSX from "xlsx";
 
-
 import {
   MdCandlestickChart,
   MdShowChart,
@@ -22,7 +21,7 @@ export const ChartProprties = {
   },
 
   localization: {
-    priceFormatter: price => price.toFixed(2), // TV-like formatting
+    priceFormatter: (price) => price.toFixed(2), // TV-like formatting
   },
 
   timeScale: {
@@ -34,10 +33,10 @@ export const ChartProprties = {
     rightBarStaysOnScroll: true,
     rightBarStaysOnScale: true,
 
-    rightBarSpacing: 80,     // ✅ Future space
-    barSpacing: 10,          // Slightly tighter like TV
+    rightBarSpacing: 80, // ✅ Future space
+    barSpacing: 10, // Slightly tighter like TV
 
-    minBarSpacing: 5,        // Prevent over-zoom crush
+    minBarSpacing: 5, // Prevent over-zoom crush
     fixLeftEdge: false,
     fixRightEdge: false,
 
@@ -56,11 +55,11 @@ export const ChartProprties = {
     mouseWheel: true,
     pinch: true,
     axisPressedMouseMove: true,
-    axisDoubleClickReset: true,  // ✅ TV behaviour
+    axisDoubleClickReset: true, // ✅ TV behaviour
   },
 
   kineticScroll: {
-    mouse: true,     // ✅ Smooth inertial scrolling like TV
+    mouse: true, // ✅ Smooth inertial scrolling like TV
     touch: true,
   },
 
@@ -69,12 +68,12 @@ export const ChartProprties = {
     borderColor: "#e2e8f0",
 
     scaleMargins: {
-      top: 0.1,      // TV-like tighter margins
+      top: 0.1, // TV-like tighter margins
       bottom: 0.1,
     },
 
     autoScale: true,
-    mode: 0,         // Normal (NOT log)
+    mode: 0, // Normal (NOT log)
     alignLabels: true,
     entireTextOnly: true,
   },
@@ -111,7 +110,7 @@ export const ChartProprties = {
       style: 2,
     },
   },
-  attributionLogo: false,   
+  attributionLogo: false,
 
   interaction: {
     mode: 0, // Normal interaction
@@ -144,7 +143,7 @@ export function getIndicatorChartProperties() {
 
 
 export const MiniChartProprties = {
-  width: 620,          // small footprint for hover
+  width: 620, // small footprint for hover
   height: 280,
 
   layout: {
@@ -164,7 +163,7 @@ export const MiniChartProprties = {
   },
 
   rightPriceScale: {
-    visible: false,     // hide price scale
+    visible: false, // hide price scale
     borderVisible: false,
   },
 
@@ -174,12 +173,12 @@ export const MiniChartProprties = {
   },
 
   timeScale: {
-    visible: false,     // hide time axis
+    visible: false, // hide time axis
     borderVisible: false,
     secondsVisible: false,
   },
 
-  handleScroll: false,  // 🔴 disable interactions
+  handleScroll: false, // 🔴 disable interactions
   handleScale: false,
 
   kineticScroll: {
@@ -192,7 +191,7 @@ export const MiniChartProprties = {
   },
 
   localization: {
-    priceFormatter: price =>
+    priceFormatter: (price) =>
       price.toLocaleString("en-IN", { maximumFractionDigits: 2 }),
   },
 };
@@ -250,12 +249,11 @@ export const INDICATOR_COLORS = [
   "#f83838", // red
 ];
 
-
 export const getSeriesColor = (series) => {
-    if (!series || !series.options) return "#999";
+  if (!series || !series.options) return "#999";
 
-    return series.options().color || "#999";
-  };
+  return series.options().color || "#999";
+};
 
 export const chartSeriesStyles = {
   candlestick: {
@@ -312,7 +310,6 @@ export const chartSeriesStyles = {
     },
     lastValueVisible: true,
   },
-
 };
 
 export const OPERATORS = [
@@ -329,35 +326,41 @@ export const OPERATORS = [
   { label: "Between ⇄", value: "between" },
 ];
 
-
 export const convertToHeikinAshi = (data) => {
-    if (!data.length) return [];
+  if (!data.length) return [];
 
-    let prevOpen = data[0].open;
-    let prevClose = data[0].close;
+  let prevOpen = data[0].open;
+  let prevClose = data[0].close;
 
-    return data.map((candle) => {
-      const haClose =
-        (candle.open + candle.high + candle.low + candle.close) / 4;
+  return data.map((candle) => {
+    const haClose = (candle.open + candle.high + candle.low + candle.close) / 4;
 
-      const haOpen = (prevOpen + prevClose) / 2;
-      const haHigh = Math.max(candle.high, haOpen, haClose);
-      const haLow = Math.min(candle.low, haOpen, haClose);
+    const haOpen = (prevOpen + prevClose) / 2;
+    const haHigh = Math.max(candle.high, haOpen, haClose);
+    const haLow = Math.min(candle.low, haOpen, haClose);
 
-      prevOpen = haOpen;
-      prevClose = haClose;
-      return {
-        time: candle.time,
-        open: haOpen,
-        high: haHigh,
-        low: haLow,
-        close: haClose,
-      };
-    });
-  };
+    prevOpen = haOpen;
+    prevClose = haClose;
+    return {
+      time: candle.time,
+      open: haOpen,
+      high: haHigh,
+      low: haLow,
+      close: haClose,
+    };
+  });
+};
 
-export const scanCategories = [ { id: 1, key: "range_breakouts", label: "Range Breakouts scan" }, { id: 2, key: "fundamental", label: "Fundamental Scans" }, { id: 3, key: "bullish", label: "Bullish scan" }, { id: 4, key: "bearish", label: "Bearish scan" }, { id: 5, key: "intraday_bullish", label: "Intraday Bullish scan" }, { id: 6, key: "intraday_bearish", label: "Intraday Bearish scan" }, { id: 7, key: "crossover", label: "Crossover" }, { id: 8, key: "other", label: "Other Scans" } ];
-
+export const scanCategories = [
+  { id: 1, key: "range_breakouts", label: "Range Breakouts scan" },
+  { id: 2, key: "fundamental", label: "Fundamental Scans" },
+  { id: 3, key: "bullish", label: "Bullish scan" },
+  { id: 4, key: "bearish", label: "Bearish scan" },
+  { id: 5, key: "intraday_bullish", label: "Intraday Bullish scan" },
+  { id: 6, key: "intraday_bearish", label: "Intraday Bearish scan" },
+  { id: 7, key: "crossover", label: "Crossover" },
+  { id: 8, key: "other", label: "Other Scans" },
+];
 
 export function handleExcelDownload(rows) {
   if (!rows || rows.length === 0) {
@@ -373,7 +376,6 @@ export function handleExcelDownload(rows) {
   XLSX.writeFile(workbook, "stocks.xlsx");
 }
 
-
 export function handleCSVDownload(rows) {
   if (!rows || rows.length === 0) {
     alert("No data to export");
@@ -385,18 +387,18 @@ export function handleCSVDownload(rows) {
   const csvContent = [
     headers.join(","),
 
-    ...rows.map(row =>
+    ...rows.map((row) =>
       headers
-        .map(key => {
+        .map((key) => {
           const value = row[key] ?? "";
           return `"${String(value).replace(/"/g, '""')}"`;
         })
-        .join(",")
-    )
+        .join(","),
+    ),
   ].join("\n");
 
   const blob = new Blob([csvContent], {
-    type: "text/csv;charset=utf-8;"
+    type: "text/csv;charset=utf-8;",
   });
 
   const url = window.URL.createObjectURL(blob);
@@ -411,15 +413,12 @@ export function handleCSVDownload(rows) {
   window.URL.revokeObjectURL(url);
 }
 
-
-export function handleCopy(rows=null) {
+export function handleCopy(rows = null) {
   if (!rows.length) return;
 
   const headers = Object.keys(rows[0]).join("\t");
 
-  const body = rows
-    .map(row => Object.values(row).join("\t"))
-    .join("\n");
+  const body = rows.map((row) => Object.values(row).join("\t")).join("\n");
 
   const text = headers + "\n" + body;
 
@@ -428,4 +427,45 @@ export function handleCopy(rows=null) {
   alert("Copied to clipboard ✔");
 }
 
+export const getRowsByIndicator = (indicator) => {
+  switch (indicator) {
+    case "RSI":
+      return [
+        { key: "rsi", label: "RSI", type: "line", color: "#26a69a" },
+        { key: "rsiMa", label: "RSI-based MA", type: "line", color: "#ff9800" },
 
+        { key: "upper", label: "RSI Upper Band", value: 70, color: "#ef5350" },
+        {
+          key: "middle",
+          label: "RSI Middle Band",
+          value: 50,
+          color: "#9e9e9e",
+        },
+        { key: "lower", label: "RSI Lower Band", value: 30, color: "#26a69a" },
+        // {
+        //   key: "bgFill",
+        //   label: "RSI Background Fill",
+        //   type: "fill",
+        //   color0: "rgba(38,166,154,0.1)",
+        //   color1: "rgba(38,166,154,0.1)",
+        // },
+        {
+          key: "obFill",
+          label: "Overbought Gradient Fill",
+          type: "fill",
+          color0: "rgba(239,83,80,0.2)",
+          color1: "rgba(239,83,80,0.4)",
+        },
+        {
+          key: "osFill",
+          label: "Oversold Gradient Fill",
+          type: "fill",
+          color0: "rgba(38,166,154,0.2)",
+          color1: "rgba(38,166,154,0.4)",
+        },
+      ];
+
+    default:
+      return [];
+  }
+};
