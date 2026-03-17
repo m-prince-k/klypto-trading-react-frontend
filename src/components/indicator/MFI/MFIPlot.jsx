@@ -3,6 +3,7 @@ import { LineSeries, BaselineSeries } from "lightweight-charts";
 
 export default function MFIPlot({
   result,
+  rows,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
@@ -14,6 +15,7 @@ export default function MFIPlot({
 
     if (!result) return;
 
+    // remove old series
     if (indicatorSeriesRef.current?.MFI) {
       Object.values(indicatorSeriesRef.current.MFI).forEach((s) => {
         if (s?.setData) {
@@ -24,9 +26,9 @@ export default function MFIPlot({
     }
 
     const groupedSeries = {};
-    let mfiData = [];
-
     const style = indicatorStyle?.MFI ?? {};
+
+    const mfiData = result?.data?.mfi ?? [];
 
     const upper = style?.upperBand?.value ?? 80;
     const middle = style?.middleBand?.value ?? 50;
@@ -34,39 +36,34 @@ export default function MFIPlot({
 
     const bgFill = style?.bgFill ?? {};
 
-    /* ================= MAIN LINE ================= */
+    /* ================= MAIN MFI LINE ================= */
 
-    Object.entries(result.data).forEach(([lineName, lineData]) => {
-
-      const styleConfig = style?.[lineName] ?? {};
-
-      const series = addSeries("MFI", LineSeries, {
-        color: styleConfig?.color,
-        lineWidth: styleConfig?.width ?? 2,
-        lineStyle: styleConfig?.lineStyle ?? 0,
-        visible: styleConfig?.visible ?? true,
-        priceLineVisible: false,
-        lastValueVisible: true,
-      });
-
-      if (!series) return;
-
-      series.setData(lineData);
-
-      groupedSeries[lineName] = series;
-
-      if (lineName === "mfiLine") mfiData = lineData;
-
+    const mfiSeries = addSeries("MFI", LineSeries, {
+      color: style?.mfiLine?.color ?? "#2962FF",
+      lineWidth: style?.mfiLine?.width ?? 2,
+      lineStyle: style?.mfiLine?.lineStyle ?? 0,
+      visible: style?.mfiLine?.visible ?? true,
+      priceLineVisible: false,
+      lastValueVisible: true,
     });
 
+    mfiSeries.setData(mfiData);
+
+    groupedSeries.mfiLine = mfiSeries;
+    groupedSeries.mfiData = mfiData;
+
+    /* ================= LEVEL HELPER ================= */
+
     const makeLevelData = (value) =>
-      mfiData.map((p) => ({ time: p.time, value }));
+      mfiData.map((p) => ({
+        time: p.time,
+        value,
+      }));
 
-
-    /* ================= LEVEL BANDS ================= */
+    /* ================= BANDS ================= */
 
     const upperBand = addSeries("MFI", LineSeries, {
-      color: style?.upperBand?.color,
+      color: style?.upperBand?.color ?? "#ff0000",
       lineWidth: style?.upperBand?.width ?? 1,
       lineStyle: style?.upperBand?.lineStyle ?? 2,
       visible: style?.upperBand?.visible ?? true,
@@ -75,7 +72,7 @@ export default function MFIPlot({
     });
 
     const middleBand = addSeries("MFI", LineSeries, {
-      color: style?.middleBand?.color,
+      color: style?.middleBand?.color ?? "#888888",
       lineWidth: style?.middleBand?.width ?? 1,
       lineStyle: style?.middleBand?.lineStyle ?? 2,
       visible: style?.middleBand?.visible ?? true,
@@ -84,7 +81,7 @@ export default function MFIPlot({
     });
 
     const lowerBand = addSeries("MFI", LineSeries, {
-      color: style?.lowerBand?.color,
+      color: style?.lowerBand?.color ?? "#00ff00",
       lineWidth: style?.lowerBand?.width ?? 1,
       lineStyle: style?.lowerBand?.lineStyle ?? 2,
       visible: style?.lowerBand?.visible ?? true,
@@ -109,13 +106,13 @@ export default function MFIPlot({
 
     const bgSeries = addSeries("MFI", BaselineSeries, {
       baseValue: { type: "price", price: lower },
-      topFillColor1: bgFill?.topFillColor1 ?? "rgba(41,98,255,0.25)",
-      topFillColor2: bgFill?.topFillColor2 ?? "rgba(41,98,255,0.05)",
+      topFillColor1: bgFill.topFillColor1 ?? "rgba(41,98,255,0.25)",
+      topFillColor2: bgFill.topFillColor2 ?? "rgba(41,98,255,0.05)",
       bottomFillColor1: "rgba(0,0,0,0)",
       bottomFillColor2: "rgba(0,0,0,0)",
       topLineColor: "transparent",
       bottomLineColor: "transparent",
-      visible: bgFill?.visible ?? true,
+      visible: bgFill.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: false,
     });
@@ -123,7 +120,6 @@ export default function MFIPlot({
     bgSeries.setData(bandData);
 
     groupedSeries.bgFill = bgSeries;
-    groupedSeries.mfiData = mfiData;
 
     indicatorSeriesRef.current.MFI = groupedSeries;
 
@@ -144,69 +140,76 @@ export default function MFIPlot({
     const middle = style?.middleBand?.value ?? 50;
     const lower = style?.lowerBand?.value ?? 20;
 
-    const makeLevel = (v) =>
-      data.map((p) => ({ time: p.time, value: v }));
+    const makeLevel = (value) =>
+      data.map((p) => ({
+        time: p.time,
+        value,
+      }));
 
+    /* ================= UPDATE BAND DATA ================= */
 
     mfiGroup.upperBand?.setData(makeLevel(upper));
     mfiGroup.middleBand?.setData(makeLevel(middle));
     mfiGroup.lowerBand?.setData(makeLevel(lower));
 
-
-    if (mfiGroup.mfiLine) {
-      mfiGroup.mfiLine.applyOptions({
-        color: style?.mfiLine?.color,
-        lineWidth: style?.mfiLine?.width,
-        lineStyle: style?.mfiLine?.lineStyle,
-        visible: style?.mfiLine?.visible,
-      });
-    }
+    /* ================= UPDATE BAND STYLE ================= */
 
     ["upperBand", "middleBand", "lowerBand"].forEach((key) => {
 
-      if (mfiGroup[key]) {
+      const series = mfiGroup[key];
+      if (!series) return;
 
-        mfiGroup[key].applyOptions({
-          color: style?.[key]?.color,
-          lineWidth: style?.[key]?.width,
-          lineStyle: style?.[key]?.lineStyle,
-          visible: style?.[key]?.visible,
-        });
+      const s = style?.[key] ?? {};
 
-      }
+      series.applyOptions({
+        color: s.color ?? "#888",
+        lineWidth: s.width ?? 1,
+        lineStyle: s.lineStyle ?? 2,
+        visible: s.visible ?? true,
+      });
 
     });
 
+    /* ================= UPDATE MFI LINE ================= */
+
+    if (mfiGroup.mfiLine) {
+
+      const s = style?.mfiLine ?? {};
+
+      mfiGroup.mfiLine.applyOptions({
+        color: s.color ?? "#2962FF",
+        lineWidth: s.width ?? 2,
+        lineStyle: s.lineStyle ?? 0,
+        visible: s.visible ?? true,
+      });
+
+    }
+
+    /* ================= UPDATE BACKGROUND ================= */
 
     if (mfiGroup.bgFill) {
+
+      const s = style?.bgFill ?? {};
 
       const bandData = data.map((p) => ({
         time: p.time,
         value: upper,
       }));
 
+      mfiGroup.bgFill.setData([]);
+
       mfiGroup.bgFill.applyOptions({
         baseValue: { type: "price", price: lower },
-        visible: style?.bgFill?.visible,
-        topFillColor1: style?.bgFill?.topFillColor1,
-        topFillColor2: style?.bgFill?.topFillColor2,
+        visible: s.visible ?? true,
+        topFillColor1: s.topFillColor1 ?? "rgba(41,98,255,0.25)",
+        topFillColor2: s.topFillColor2 ?? "rgba(41,98,255,0.05)",
       });
 
       mfiGroup.bgFill.setData(bandData);
 
     }
 
-  }, [
-    indicatorStyle?.MFI?.upperBand?.value,
-    indicatorStyle?.MFI?.middleBand?.value,
-    indicatorStyle?.MFI?.lowerBand?.value,
-    indicatorStyle?.MFI?.upperBand?.color,
-    indicatorStyle?.MFI?.middleBand?.color,
-    indicatorStyle?.MFI?.lowerBand?.color,
-    indicatorStyle?.MFI?.bgFill?.visible,
-    indicatorStyle?.MFI?.bgFill?.topFillColor1,
-    indicatorStyle?.MFI?.bgFill?.topFillColor2,
-  ]);
+  }, [indicatorStyle]);
 
   return null;
 }

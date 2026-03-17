@@ -401,26 +401,25 @@ export default function Candlestick() {
       },
     },
     SMA: {
-      ma: {
-        visible: true,
-        color: "rgba(41,98,255,1)",
+      sma: {
+        color: "rgba(0,0,0,1)",
         width: 2,
         lineStyle: 0,
-        opacity: 100,
+        visible: true,
       },
+
       smoothingMA: {
         visible: true,
-        color: "rgba(255, 202, 28,1)",
+        color: "rgba(255,202,28,1)",
         width: 1,
         lineStyle: 0,
-        opacity: 100,
       },
+
       bbUpper: {
         visible: true,
         color: "rgba(239,83,80,1)",
         width: 1,
         lineStyle: 0,
-        opacity: 100,
       },
 
       bbLower: {
@@ -428,7 +427,12 @@ export default function Candlestick() {
         color: "rgba(38,166,154,1)",
         width: 1,
         lineStyle: 0,
-        opacity: 100,
+      },
+
+      bbFill: {
+        visible: true,
+        topColor: "rgba(76,175,80,0.2)",
+        bottomColor: "rgba(76,175,80,0.05)",
       },
     },
     IchimokuCloud: {
@@ -514,6 +518,11 @@ export default function Candlestick() {
         width: 1,
         lineStyle: 0,
         opacity: 100,
+      },
+      bbFill: {
+        visible: true,
+        topColor: "rgba(76,175,80,0.2)",
+        bottomColor: "rgba(76,175,80,0.05)",
       },
     },
     WMA: {
@@ -769,45 +778,45 @@ export default function Candlestick() {
         opacity: 100,
       },
     },
-MFI: {
-  mfiLine: {
-    color: "rgba(41, 98, 255, 1)",
-    width: 2,
-    lineStyle: 0,
-    visible: true,
-    opacity: 1,
-  },
+    MFI: {
+      mfiLine: {
+        color: "rgba(41, 98, 255, 1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+        opacity: 1,
+      },
 
-  upperBand: {
-    value: 80,
-    color: "rgba(120, 123, 134, 0.8)",
-    width: 1,
-    lineStyle: 2,
-    visible: true,
-  },
+      upperBand: {
+        value: 80,
+        color: "rgba(120, 123, 134, 0.8)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+      },
 
-  middleBand: {
-    value: 50,
-    color: "rgba(120, 123, 134, 0.6)",
-    width: 1,
-    lineStyle: 2,
-    visible: true,
-  },
+      middleBand: {
+        value: 50,
+        color: "rgba(120, 123, 134, 0.6)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+      },
 
-  lowerBand: {
-    value: 20,
-    color: "rgba(120, 123, 134, 0.8)",
-    width: 1,
-    lineStyle: 2,
-    visible: true,
-  },
+      lowerBand: {
+        value: 20,
+        color: "rgba(120, 123, 134, 0.8)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+      },
 
-  bgFill: {
-    visible: true,
-    topFillColor1: "rgba(41, 98, 255, 0.25)",
-    topFillColor2: "rgba(41, 98, 255, 0.08)",
-  },
-},
+      bgFill: {
+        visible: true,
+        topFillColor1: "rgba(41, 98, 255, 0.25)",
+        topFillColor2: "rgba(41, 98, 255, 0.08)",
+      },
+    },
   };
 
   const [indicatorStyle, setIndicatorStyle] = useState(indicatorStyleDefault);
@@ -874,6 +883,8 @@ MFI: {
         return "CCI";
       case "ROC":
         return "ROC";
+      case "MFI":
+        return "MFI";
       case "WilliamsR":
         return "WilliamsR";
       case "AroonOscillator":
@@ -1059,45 +1070,41 @@ MFI: {
 
     if (typeof value === "number") {
       const style =
-        indicatorStyle?.[indicator]?.sma || indicatorStyle?.[indicator]?.ma;
+        indicatorStyle?.[indicator]?.sma ||
+        indicatorStyle?.[indicator]?.ma ||
+        indicatorStyle?.[indicator]?.[indicator?.toLowerCase()];
 
       if (style?.visible === false) return null;
 
       const color = style?.color || "#333";
 
-      return <span style={{ color }}>{value.toFixed(2)}</span>;
+      return <span style={{ color }}>{Number(value).toFixed(2)}</span>;
     }
 
     if (typeof value === "object") {
-      let keys = [];
-
-      if (indicator === "RSI") {
-        keys = ["rsi", "smoothingMA"];
-      } else if (indicator === "IchimokuCloud") {
-        keys = [
-          "conversionLine",
-          "baseLine",
-          "leadLine1",
-          "leadLine2",
-          "laggingSpan",
-          "kumoCloudUpper",
-          "kumoCloudLower",
-        ];
-      } else {
-        keys = Object.keys(value);
-      }
+      const keys =
+        indicator === "RSI"
+          ? ["rsi", "smoothingMA"]
+          : indicator === "IchimokuCloud"
+            ? [
+                "conversionLine",
+                "baseLine",
+                "leadLine1",
+                "leadLine2",
+                "laggingSpan",
+                "kumoCloudUpper",
+                "kumoCloudLower",
+              ]
+            : Object.keys(value);
 
       return keys
         .filter((key) => {
           const style = indicatorStyle?.[indicator]?.[key];
-
           if (style?.visible === false) return false;
-
           return value[key] != null;
         })
         .map((key) => {
           const val = value[key];
-
           const color = indicatorStyle?.[indicator]?.[key]?.color || "#333";
 
           return (
@@ -1107,55 +1114,50 @@ MFI: {
           );
         });
     }
+
     return "--";
   };
-
   const renderIndicators = () => {
     return selectedIndicator.map((indicator) => {
       const normalizedType = indicator.replace(/[\s/%]+/g, "");
       const Component = indicatorComponents[normalizedType];
       if (!Component) return null;
 
-      const data = indicatorSeriesRef.current[normalizedType];
-      if (!data) return null;
+      const data = indicatorSeriesRef.current?.[normalizedType]; // can be undefined initially
 
       return (
         <Component
           key={normalizedType}
-          result={data.result}
-          rows={data.rows}
+          result={data?.result} // pass undefined if not yet fetched
+          rows={data?.rows}
           indicatorStyle={indicatorStyle}
           indicatorSeriesRef={indicatorSeriesRef}
           addSeries={addSeries}
-          chartRef={chartRef}
+          chart={chartRef.current}
+          containerRef={containerRef}
           indicatorConfigs={indicatorConfigs}
+          timeframeValue={timeframeValue} // pass timeframe so useEffect can trigger update
         />
       );
     });
   };
 
   // SYNC CROSSHAIR
-
   const updateIndicatorValues = (param) => {
     const updates = {};
 
     Object.entries(indicatorSeriesRef.current).forEach(([indicator, group]) => {
       if (!group) return;
+
       const indicatorValues = {};
+
       Object.entries(group).forEach(([lineName, series]) => {
-        if (
-          lineName === "_priceLines" ||
-          lineName === "overboughtArea" ||
-          lineName === "oversoldArea"
-        )
-          return;
+        if (!series || typeof series.setData !== "function") return;
 
         const price = param.seriesData?.get(series);
-
         if (price !== undefined) {
-          const value = typeof price === "object" ? price.value : price;
-
-          indicatorValues[lineName] = value;
+          indicatorValues[lineName] =
+            typeof price === "object" ? price.value : price;
         }
       });
 
@@ -1168,79 +1170,59 @@ MFI: {
 
     if (Object.keys(updates).length > 0) {
       latestIndicatorValuesRef.current = updates;
-      setLiveIndicatorData(updates);
+      setLiveIndicatorData(updates); // <- triggers renderValue
     }
   };
-
   // ATTACH CROSSHAIR
 
-  const attachCrosshair = useCallback((chart, chartKey) => {
+  const attachCrosshair = useCallback((chart) => {
     if (!chart) return () => {};
     const handler = (param) => {
-      if (!param?.point || param.time === undefined) {
-        const charts = [
-          chartRef.current,
-          ...Object.values(panesRef.current).map((p) => p.chart),
-        ];
-
-        charts.forEach((c) => c?.clearCrosshairPosition?.());
-
-        /* restore latest indicator values */
-        if (latestIndicatorValuesRef.current) {
-          setLiveIndicatorData(latestIndicatorValuesRef.current);
-        }
-        return;
-      }
-      /* ================= SYNC ALL CHARTS ================= */
       const charts = [
         chartRef.current,
         ...Object.values(panesRef.current).map((p) => p.chart),
-      ];
+      ].filter(Boolean);
 
+      // clear crosshair if invalid
+      if (!param?.point || param.time === undefined) {
+        charts.forEach((c) => c.clearCrosshairPosition?.());
+        setLiveIndicatorData(latestIndicatorValuesRef.current);
+        return;
+      }
+
+      // sync crosshair
       charts.forEach((c) => {
-        if (!c) return;
-
         c.setCrosshairPosition(
           param.point?.x ?? 0,
           param.point?.y ?? 0,
           param.time,
         );
       });
-      /* ================= UPDATE CANDLE ================= */
-      if (seriesRef.current) {
-        const candle = param.seriesData?.get(seriesRef.current);
 
-        if (candle) {
-          setLiveOhlcv({
-            open: candle.open,
-            high: candle.high,
-            low: candle.low,
-            close: candle.close,
-          });
-        }
-      }
-      /* ================= UPDATE INDICATORS ================= */
+      // update candles
+      const candle = param.seriesData?.get(seriesRef.current);
+      if (candle) setLiveOhlcv({ ...candle });
+
+      // update indicators
       updateIndicatorValues(param);
     };
 
     chart.subscribeCrosshairMove(handler);
-
     return () => chart.unsubscribeCrosshairMove(handler);
   }, []);
 
   // ATTACH MAIN CHART
 
   useEffect(() => {
+    // Reattach crosshair whenever series references change
     const charts = [
       chartRef.current,
       ...Object.values(panesRef.current).map((p) => p.chart),
-    ];
-    const detachers = charts
-      .filter(Boolean)
-      .map((chart) => attachCrosshair(chart));
+    ].filter(Boolean);
+    const detachHandlers = charts.map((c) => attachCrosshair(c));
 
-    return () => detachers.forEach((detach) => detach());
-  }, [attachCrosshair]);
+    return () => detachHandlers.forEach((d) => d());
+  }, [indicatorSeriesRef.current, timeframeValue]);
 
   // Main useEffect for chart type/data changes
   useEffect(() => {
@@ -1490,36 +1472,29 @@ MFI: {
     indicatorConfigs,
   });
 
-  // Zoom In
-  const zoomIn = () => {
-    const chart = chartRef.current;
-    if (!chart) return;
-
-    const range = chart.timeScale().getVisibleLogicalRange();
-    if (!range) return;
-
-    chart.timeScale().setVisibleLogicalRange({
-      from: range.from + 1,
-      to: range.to - 1,
+  const zoomCharts = (delta) => {
+    const charts = [
+      chartRef.current,
+      ...Object.values(panesRef.current).map((p) => p.chart),
+    ].filter(Boolean);
+    charts.forEach((chart) => {
+      const range = chart.timeScale().getVisibleLogicalRange();
+      if (!range) return;
+      chart.timeScale().setVisibleLogicalRange({
+        from: range.from + delta,
+        to: range.to - delta,
+      });
     });
   };
 
-  // 🔎 Zoom Out
-  const zoomOut = () => {
-    const chart = chartRef.current;
-    if (!chart) return;
-
-    const range = chart.timeScale().getVisibleLogicalRange();
-    if (!range) return;
-
-    chart.timeScale().setVisibleLogicalRange({
-      from: range.from - 1,
-      to: range.to + 1,
-    });
-  };
-  // 🔄 Reset Zoom
+  const zoomIn = () => zoomCharts(1);
+  const zoomOut = () => zoomCharts(-1);
   const resetZoom = () => {
-    chartRef.current?.timeScale().fitContent();
+    const charts = [
+      chartRef.current,
+      ...Object.values(panesRef.current).map((p) => p.chart),
+    ].filter(Boolean);
+    charts.forEach((chart) => chart.timeScale().fitContent());
   };
   return (
     <>
@@ -1733,9 +1708,9 @@ MFI: {
               })} */}
             </div>
           </div>
-          <div className="col-md-3">
+          {/* <div className="col-md-3">
             <ChartRightSidebar />
-          </div>
+          </div> */}
         </div>
         {/* </div> */}
 

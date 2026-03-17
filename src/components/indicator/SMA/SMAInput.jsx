@@ -4,58 +4,53 @@ export default function SMAInput(
   latestIndicatorValuesRef,
   maType
 ) {
-  const rows = Array.isArray(response?.data) ? response.data : [];
 
-  /* ================= SMA ================= */
+  const rows = Array.isArray(response?.data) ? response.data : [];
 
   const smaData = rows
     .filter((d) => d.sma != null && d.time != null)
-    .map((d) => ({
-      time: Number(d.time),
-      value: Number(d.sma),
-    }))
-    .sort((a, b) => a.time - b.time);
-
-  /* ================= SMOOTHING MA ================= */
+    .map((d) => ({ time: Number(d.time), value: Number(d.sma) }));
 
   const smoothingData = rows
     .filter((d) => d.smoothingMA != null && d.time != null)
-    .map((d) => ({
-      time: Number(d.time),
-      value: Number(d.smoothingMA),
-    }))
-    .sort((a, b) => a.time - b.time);
+    .map((d) => ({ time: Number(d.time), value: Number(d.smoothingMA) }));
+
+  const bbUpperData = rows
+    .filter((d) => d.bbUpper != null && d.time != null)
+    .map((d) => ({ time: Number(d.time), value: Number(d.bbUpper) }));
+
+  const bbLowerData = rows
+    .filter((d) => d.bbLower != null && d.time != null)
+    .map((d) => ({ time: Number(d.time), value: Number(d.bbLower) }));
 
   const series = indicatorSeriesRef.current?.SMA;
-  if (!series) return;
 
-  /* ================= UPDATE SMA ================= */
+  if (!series) return;
 
   series.sma?.setData(smaData);
 
-  /* ================= UPDATE SMOOTHING ================= */
-
   if (maType !== "none") {
     series.smoothingMA?.setData(smoothingData);
-
-    latestIndicatorValuesRef.current.SMA.smoothingMA =
-      smoothingData[smoothingData.length - 1]?.value;
-  } else {
-    series.smoothingMA?.setData([]);
-    latestIndicatorValuesRef.current.SMA.smoothingMA = null;
   }
 
-  /* ================= HOVER VALUES ================= */
+  if (maType === "SMA + Bollinger Bands") {
+    series.bbUpper?.setData(bbUpperData);
+    series.bbLower?.setData(bbLowerData);
+  }
 
-  latestIndicatorValuesRef.current.SMA.sma =
-    smaData[smaData.length - 1]?.value;
-
-  /* ================= STORE RESULT ================= */
+  latestIndicatorValuesRef.current.SMA = {
+    sma: smaData[smaData.length - 1]?.value,
+    smoothingMA: smoothingData[smoothingData.length - 1]?.value,
+    bbUpper: bbUpperData[bbUpperData.length - 1]?.value,
+    bbLower: bbLowerData[bbLowerData.length - 1]?.value,
+  };
 
   indicatorSeriesRef.current.SMA.result = {
     data: {
       sma: smaData,
-      smoothingMA: maType !== "none" ? smoothingData : [],
+      smoothingMA: smoothingData,
+      bbUpper: bbUpperData,
+      bbLower: bbLowerData,
     },
   };
 }
