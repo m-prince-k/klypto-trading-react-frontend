@@ -1,116 +1,186 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createChart, CandlestickSeries, LineSeries } from "lightweight-charts";
-import axios from "axios";
 
-export default function Testing() {
-  const chartRef = useRef(null);
-  const [chart, setChart] = useState(null);
-  const [candleSeries, setCandleSeries] = useState(null);
+export default function BollingerCloudChart() {
 
-  // Track which indicators are selected
-  const [selectedIndicators, setSelectedIndicators] = useState({});
-  // Cache API data so we don't call again
-  const [indicatorDataCache, setIndicatorDataCache] = useState({});
+    const containerRef = useRef(null);
+    const [cloudColor, setCloudColor] = useState("#3b82f6");
 
-  const indicatorsList = ["EMA", "SMA", "RSI", "MACD"];
-
-  // Initialize chart on mount
-  useEffect(() => {
-    const container = chartRef.current;
-    const newChart = createChart(container, { width: container.clientWidth, height: 500 });
-    const candles = newChart.addSeries(CandlestickSeries);
-    setChart(newChart);
-    setCandleSeries(candles);
-
-    // Dummy candle data
-    const candleData = [];
-    let price = 100;
-    const start = new Date(2024, 2, 1);
-    for (let i = 0; i < 150; i++) {
-      price += (Math.random() - 0.5) * 4;
-      const d = new Date(start);
-      d.setDate(start.getDate() + i);
-      const yyyy = d.getFullYear();
-      const mm = String(d.getMonth() + 1).padStart(2, "0");
-      const dd = String(d.getDate()).padStart(2, "0");
-      candleData.push({
-        time:`${yyyy}-${mm}-${dd}`,
-        open: price - 2,
-        high: price + 3,
-        low: price - 3,
-        close: price,
-      });
+    function hexToRGBA(hex, a) {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `rgba(${r},${g},${b},${a})`;
     }
-    candles.setData(candleData);
 
-    return () => newChart.remove();
-  }, []);
+    useEffect(() => {
 
-  // Handle checkbox changes
-  const handleCheckboxChange = async (e) => {
-    const { name, checked } = e.target;
-    setSelectedIndicators((prev) => ({ ...prev, [name]: checked }));
+        const width = 900;
+        const height = 500;
 
-    if (checked && !indicatorDataCache[name]) {
-      try {
-        // Call API only once per indicator
-        const res = await axios.get(`/api/indicators/${name.toLowerCase()}`);
-        const data = res.data; // Assume array [{time, value}]
-        setIndicatorDataCache((prev) => ({ ...prev, [name]: data }));
+        const chart = createChart(containerRef.current, {
+            width,
+            height
+        });
 
-        // Add series to chart
-        const series = chart.addLineSeries({ color: getIndicatorColor(name), lineWidth: 2 });
-        series.setData(data);
+        const candleSeries = chart.addSeries(CandlestickSeries);
 
-        setIndicatorDataCache((prev) => ({
-          ...prev,
-          [name]: { ...prev[name], series }, // store series reference to remove later
-        }));
-      } catch (err) {
-        console.error(err);
-      }
-    } else if (!checked && indicatorDataCache[name]?.series) {
-      // Remove series if unchecked
-      chart.removeSeries(indicatorDataCache[name].series);
-      setIndicatorDataCache((prev) => ({
-        ...prev,
-        [name]: { ...prev[name], series: null },
-      }));
-    }
-  };
+        // dummy candles
+        const candles = [];
+        let price = 100;
+        const start = new Date(2024, 2, 1);
 
-  const getIndicatorColor = (name) => {
-    switch (name) {
-      case "EMA":
-        return "#2962FF";
-      case "SMA":
-        return "#FF5252";
-      case "RSI":
-        return "#00BCD4";
-      case "MACD":
-        return "#FFA500";
-      default:
-        return "#000";
-    }
-  };
+        for (let i = 0; i < 120; i++) {
 
-  return (
-    <div>
-      <h2>Indicators Chart</h2>
-      <div style={{ display: "flex", gap: "15px", marginBottom: "10px" }}>
-        {indicatorsList.map((indi) => (
-          <label key={indi}>
+            price += (Math.random() - 0.5) * 5;
+
+            const d = new Date(start);
+            d.setDate(start.getDate() + i);
+
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, "0");
+            const dd = String(d.getDate()).padStart(2, "0");
+
+            candles.push({
+                time: `${yyyy}-${mm}-${dd}`,
+                open: price - 2,
+                high: price + 3,
+                low: price - 3,
+                close: price
+            });
+        }
+
+        candleSeries.setData(candles);
+
+        const closeData = candles.map(c => ({ time: c.time, value: c.close }));
+
+        // bollinger calc
+        function Bollinger(data, p = 20) {
+
+            const upper = [];
+            const lower = [];
+
+            for (let i = p; i < data.length; i++) {
+
+                let sum = 0;
+                for (let j = 0; j < p; j++) sum += data[i - j].value;
+
+                const mean = sum / p;
+
+                let v = 0;
+                for (let j = 0; j < p; j++)
+                    v += Math.pow(data[i - j].value - mean, 2);
+
+                const std = Math.sqrt(v / p);
+
+                upper.push({ time: data[i].time, value: mean + std * 2 });
+                lower.push({ time: data[i].time, value: mean - std * 2 });
+
+            }
+
+            return { upper, lower };
+        }
+
+        const { upper, lower } = Bollinger(closeData);
+
+        // lines
+        const upperLine = chart.addSeries(LineSeries, { color: "#22c55e", lineWidth: 2 });
+        const lowerLine = chart.addSeries(LineSeries, { color: "#ef4444", lineWidth: 2 });
+
+        upperLine.setData(upper);
+        lowerLine.setData(lower);
+
+
+        // cloud canvas
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+
+        canvas.style.position = "absolute";
+        canvas.style.left = "0";
+        canvas.style.top = "0";
+        canvas.style.pointerEvents = "none";
+        canvas.style.zIndex = "1";
+
+        containerRef.current.appendChild(canvas); //blocker may be 
+
+        const ctx = canvas.getContext("2d");
+
+
+        function drawCloud() {
+
+            ctx.clearRect(0, 0, width, height);
+
+            ctx.beginPath();
+
+            // upper
+            upper.forEach((p, i) => {
+
+                const x = chart.timeScale().timeToCoordinate(p.time);
+                const y = upperLine.priceToCoordinate(p.value);
+
+                if (x === null || y === null) return;
+
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+
+            });
+
+            // lower reverse
+            for (let i = lower.length - 1; i >= 0; i--) {
+
+                const p = lower[i];
+
+                const x = chart.timeScale().timeToCoordinate(p.time);
+                const y = lowerLine.priceToCoordinate(p.value);
+
+                if (x === null || y === null) continue;
+
+                ctx.lineTo(x, y);
+
+            }
+
+            ctx.closePath();
+
+            ctx.fillStyle = hexToRGBA(cloudColor, 0.35);
+            ctx.fill();
+
+        }
+
+        // redraw on zoom/scroll
+        chart.timeScale().subscribeVisibleLogicalRangeChange(drawCloud);
+        chart.subscribeCrosshairMove(drawCloud);
+
+        setTimeout(drawCloud, 200);
+
+        return () => chart.remove();
+
+    }, [cloudColor]);
+
+
+    return (
+
+        <div>
+
+            <h3>Bollinger Cloud</h3>
+
             <input
-              type="checkbox"
-              name={indi}
-              checked={!!selectedIndicators[indi]}
-              onChange={handleCheckboxChange}
-            />{" "}
-            {indi}
-          </label>
-        ))}
-      </div>
-      <div ref={chartRef} style={{ width: "100%", height: "500px" }}></div>
-    </div>
-  );
+                type="color"
+                value={cloudColor}
+                onChange={(e) => setCloudColor(e.target.value)}
+            />
+
+            <div
+                ref={containerRef}
+                style={{
+                    position: "relative",
+                    width: "900px",
+                    height: "500px"
+                }}
+            ></div>
+
+        </div>
+
+    );
+
 }

@@ -1,16 +1,23 @@
 import { Row, Col, Form } from "react-bootstrap";
-import { getRowsByIndicator } from "../../util/common";
 import { useState, useRef, useEffect } from "react";
 import ColorPalettePanel from "./ColorPalettePanel";
+import { getRowsByIndicator } from "../../util/common";
+
+
+
+
 
 export default function IndicatorStyle({
   indicatorStyle,
   setIndicatorStyle,
   activeBarIndicator,
+  indicatorConfigs,
 }) {
 const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
   const selectedStyle = indicatorStyle?.[normalizedType];
-  const rows = getRowsByIndicator(normalizedType);
+  const config = indicatorConfigs?.[normalizedType] || {};
+  const { maType, maLength } = config;
+  const rows = getRowsByIndicator(normalizedType, maType);
 
   const [activePalette, setActivePalette] = useState(null);
   const paletteRef = useRef(null);

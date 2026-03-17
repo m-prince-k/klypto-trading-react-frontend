@@ -1,42 +1,16 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { LineSeries, AreaSeries } from "lightweight-charts";
-
-/* ================= CLOUD BUILDER ================= */
-
-function buildCloud(spanA, spanB) {
-  const bullish = [];
-  const bearish = [];
-
-  for (let i = 0; i < spanA.length; i++) {
-    const a = spanA[i];
-    const b = spanB[i];
-
-    if (!a || !b) continue;
-
-    if (a.value > b.value) {
-      bullish.push({
-        time: a.time,
-        value: a.value,
-      });
-    }
-
-    if (b.value > a.value) {
-      bearish.push({
-        time: b.time,
-        value: b.value,
-      });
-    }
-  }
-
-  return { bullish, bearish };
-}
 
 export default function IchimokuCloudPlot({
   result,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
+  chart,
+  containerRef,
 }) {
+  const cloudCanvasRef = useRef(null);
+  const cloudCtxRef = useRef(null);
 
   /* ================= CREATE SERIES ================= */
 
@@ -113,33 +87,6 @@ export default function IchimokuCloudPlot({
       visible: style?.kumoCloudLower?.visible ?? true,
     });
 
-    /* ================= CLOUD SERIES ================= */
-
-    const bullishCloudSeries = addSeries("main", AreaSeries, {
-      lineWidth: 0,
-      topColor: style?.cloudFillBullish?.color,
-      bottomColor: style?.cloudFillBullish?.color,
-      visible: style?.cloudFillBullish?.visible ?? true,
-      priceLineVisible: false,
-      lastValueVisible: false,
-    });
-
-    const bearishCloudSeries = addSeries("main", AreaSeries, {
-      lineWidth: 0,
-      topColor: style?.cloudFillBearish?.color,
-      bottomColor: style?.cloudFillBearish?.color,
-      visible: style?.cloudFillBearish?.visible ?? true,
-      priceLineVisible: false,
-      lastValueVisible: false,
-    });
-
-    /* ================= BUILD CLOUD ================= */
-
-    const cloud = buildCloud(spanA, spanB);
-
-    bullishCloudSeries.setData(cloud.bullish);
-    bearishCloudSeries.setData(cloud.bearish);
-
     /* ================= SET LINE DATA ================= */
 
     conversionSeries.setData(conversionLine);
@@ -162,25 +109,114 @@ export default function IchimokuCloudPlot({
     grouped.kumoCloudUpper = kumoUpperSeries;
     grouped.kumoCloudLower = kumoLowerSeries;
 
-    grouped.bullishCloud = bullishCloudSeries;
-    grouped.bearishCloud = bearishCloudSeries;
+    grouped.result = result;
 
     indicatorSeriesRef.current.IchimokuCloud = grouped;
-
   }, [result]);
 
+  /* ================= CREATE CANVAS ================= */
 
+  useEffect(() => {
+    if (!containerRef?.current || !chart) return;
+
+    if (cloudCanvasRef.current) return;
+
+    const rect = containerRef.current.getBoundingClientRect();
+
+    const canvas = document.createElement("canvas");
+
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+
+    canvas.style.position = "absolute";
+    canvas.style.left = "0";
+    canvas.style.top = "0";
+    canvas.style.pointerEvents = "none";
+    canvas.style.zIndex = "1";
+
+    containerRef.current.appendChild(canvas);
+
+    cloudCanvasRef.current = canvas;
+    cloudCtxRef.current = canvas.getContext("2d");
+  }, [chart]);
+
+  /* ================= DRAW KUMO CLOUD ================= */
+
+  useEffect(() => {
+    const group = indicatorSeriesRef.current?.IchimokuCloud;
+
+    const upperSeries = group?.kumoCloudUpper;
+    const lowerSeries = group?.kumoCloudLower;
+
+    const upperData = group?.result?.data?.kumoCloudUpper;
+    const lowerData = group?.result?.data?.kumoCloudLower;
+
+    const ctx = cloudCtxRef.current;
+    const canvas = cloudCanvasRef.current;
+
+    if (!ctx || !canvas || !upperSeries || !lowerSeries) return;
+
+    if (!upperData?.length || !lowerData?.length) return;
+
+    const drawCloud = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = 0; i < upperData.length - 1; i++) {
+        const u1 = upperData[i];
+        const u2 = upperData[i + 1];
+
+        const l1 = lowerData[i];
+        const l2 = lowerData[i + 1];
+
+        const x1 = chart.timeScale().timeToCoordinate(u1.time);
+        const x2 = chart.timeScale().timeToCoordinate(u2.time);
+
+        const uy1 = upperSeries.priceToCoordinate(u1.value);
+        const uy2 = upperSeries.priceToCoordinate(u2.value);
+
+        const ly1 = lowerSeries.priceToCoordinate(l1.value);
+        const ly2 = lowerSeries.priceToCoordinate(l2.value);
+
+        if (
+          x1 === null ||
+          x2 === null ||
+          uy1 === null ||
+          uy2 === null ||
+          ly1 === null ||
+          ly2 === null
+        )
+          continue;
+
+        const bullish = (u1.value + u2.value) / 2 > (l1.value + l2.value) / 2;
+
+        ctx.beginPath();
+
+        ctx.moveTo(x1, uy1);
+        ctx.lineTo(x2, uy2);
+        ctx.lineTo(x2, ly2);
+        ctx.lineTo(x1, ly1);
+        ctx.closePath();
+
+        ctx.fillStyle = bullish ? "rgba(0,200,0,0.25)" : "rgba(255,0,0,0.25)";
+        
+
+        ctx.fill();
+      }
+    };
+
+    drawCloud();
+
+    chart.timeScale().subscribeVisibleLogicalRangeChange(drawCloud);
+    chart.subscribeCrosshairMove(drawCloud);
+  }, [result]);
 
   /* ================= STYLE UPDATE ================= */
 
   useEffect(() => {
-
     const group = indicatorSeriesRef.current?.IchimokuCloud;
     if (!group) return;
 
     const style = indicatorStyle?.IchimokuCloud ?? {};
-
-    /* ===== MAIN LINES ===== */
 
     if (group.conversionLine) {
       group.conversionLine.applyOptions({
@@ -245,8 +281,6 @@ export default function IchimokuCloudPlot({
       });
     }
 
-    /* ===== CLOUD ===== */
-
     group.bullishCloud?.applyOptions({
       visible: style?.cloudFillBullish?.visible,
       topColor: style?.cloudFillBullish?.color,
@@ -258,7 +292,6 @@ export default function IchimokuCloudPlot({
       topColor: style?.cloudFillBearish?.color,
       bottomColor: style?.cloudFillBearish?.color,
     });
-
   }, [indicatorStyle]);
 
   return null;

@@ -401,26 +401,25 @@ export default function Candlestick() {
       },
     },
     SMA: {
-      ma: {
-        visible: true,
-        color: "rgba(41,98,255,1)",
+      sma: {
+        color: "rgba(0,0,0,1)",
         width: 2,
         lineStyle: 0,
-        opacity: 100,
+        visible: true,
       },
+
       smoothingMA: {
         visible: true,
-        color: "rgba(255, 202, 28,1)",
+        color: "rgba(255,202,28,1)",
         width: 1,
         lineStyle: 0,
-        opacity: 100,
       },
+
       bbUpper: {
         visible: true,
         color: "rgba(239,83,80,1)",
         width: 1,
         lineStyle: 0,
-        opacity: 100,
       },
 
       bbLower: {
@@ -428,7 +427,12 @@ export default function Candlestick() {
         color: "rgba(38,166,154,1)",
         width: 1,
         lineStyle: 0,
-        opacity: 100,
+      },
+
+      bbFill: {
+        visible: true,
+        topColor: "rgba(76,175,80,0.2)",
+        bottomColor: "rgba(76,175,80,0.05)",
       },
     },
     IchimokuCloud: {
@@ -514,6 +518,11 @@ export default function Candlestick() {
         width: 1,
         lineStyle: 0,
         opacity: 100,
+      },
+      bbFill: {
+        visible: true,
+        topColor: "rgba(76,175,80,0.2)",
+        bottomColor: "rgba(76,175,80,0.05)",
       },
     },
     WMA: {
@@ -769,6 +778,45 @@ export default function Candlestick() {
         opacity: 100,
       },
     },
+    MFI: {
+      mfiLine: {
+        color: "rgba(41, 98, 255, 1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+        opacity: 1,
+      },
+
+      upperBand: {
+        value: 80,
+        color: "rgba(120, 123, 134, 0.8)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+      },
+
+      middleBand: {
+        value: 50,
+        color: "rgba(120, 123, 134, 0.6)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+      },
+
+      lowerBand: {
+        value: 20,
+        color: "rgba(120, 123, 134, 0.8)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+      },
+
+      bgFill: {
+        visible: true,
+        topFillColor1: "rgba(41, 98, 255, 0.25)",
+        topFillColor2: "rgba(41, 98, 255, 0.08)",
+      },
+    },
   };
 
   const [indicatorStyle, setIndicatorStyle] = useState(indicatorStyleDefault);
@@ -835,6 +883,8 @@ export default function Candlestick() {
         return "CCI";
       case "ROC":
         return "ROC";
+      case "MFI":
+        return "MFI";
       case "WilliamsR":
         return "WilliamsR";
       case "AroonOscillator":
@@ -1066,99 +1116,111 @@ export default function Candlestick() {
     return "--";
   };
   const renderIndicators = () => {
-  return selectedIndicator.map((indicator) => {
-    const normalizedType = indicator.replace(/[\s/%]+/g, "");
-    const Component = indicatorComponents[normalizedType];
-    if (!Component) return null;
+    return selectedIndicator.map((indicator) => {
+      const normalizedType = indicator.replace(/[\s/%]+/g, "");
+      const Component = indicatorComponents[normalizedType];
+      if (!Component) return null;
 
-    const data = indicatorSeriesRef.current?.[normalizedType]; // can be undefined initially
+      const data = indicatorSeriesRef.current?.[normalizedType]; // can be undefined initially
 
-    return (
-      <Component
-        key={normalizedType}
-        result={data?.result} // pass undefined if not yet fetched
-        rows={data?.rows}
-        indicatorStyle={indicatorStyle}
-        indicatorSeriesRef={indicatorSeriesRef}
-        addSeries={addSeries}
-        chartRef={chartRef}
-        indicatorConfigs={indicatorConfigs}
-        timeframeValue={timeframeValue} // pass timeframe so useEffect can trigger update
-      />
-    );
-  });
-};
+      return (
+        <Component
+          key={normalizedType}
+          result={data?.result} // pass undefined if not yet fetched
+          rows={data?.rows}
+          indicatorStyle={indicatorStyle}
+          indicatorSeriesRef={indicatorSeriesRef}
+          addSeries={addSeries}
+          chart={chartRef.current}
+          containerRef={containerRef}
+          indicatorConfigs={indicatorConfigs}
+          timeframeValue={timeframeValue} // pass timeframe so useEffect can trigger update
+        />
+      );
+    });
+  };
 
   // SYNC CROSSHAIR
-const updateIndicatorValues = (param) => {
-  const updates = {};
+  const updateIndicatorValues = (param) => {
+    const updates = {};
 
-  Object.entries(indicatorSeriesRef.current).forEach(([indicator, group]) => {
-    if (!group) return;
+    Object.entries(indicatorSeriesRef.current).forEach(([indicator, group]) => {
+      if (!group) return;
 
-    const indicatorValues = {};
+      const indicatorValues = {};
 
-    Object.entries(group).forEach(([lineName, series]) => {
-      if (!series || typeof series.setData !== "function") return;
+      Object.entries(group).forEach(([lineName, series]) => {
+        if (!series || typeof series.setData !== "function") return;
 
-      const price = param.seriesData?.get(series);
-      if (price !== undefined) {
-        indicatorValues[lineName] = typeof price === "object" ? price.value : price;
+        const price = param.seriesData?.get(series);
+        if (price !== undefined) {
+          indicatorValues[lineName] =
+            typeof price === "object" ? price.value : price;
+        }
+      });
+
+      if (Object.keys(indicatorValues).length === 1) {
+        updates[indicator] = Object.values(indicatorValues)[0];
+      } else if (Object.keys(indicatorValues).length > 0) {
+        updates[indicator] = indicatorValues;
       }
     });
 
-    if (Object.keys(indicatorValues).length === 1) {
-      updates[indicator] = Object.values(indicatorValues)[0];
-    } else if (Object.keys(indicatorValues).length > 0) {
-      updates[indicator] = indicatorValues;
+    if (Object.keys(updates).length > 0) {
+      latestIndicatorValuesRef.current = updates;
+      setLiveIndicatorData(updates); // <- triggers renderValue
     }
-  });
-
-  if (Object.keys(updates).length > 0) {
-    latestIndicatorValuesRef.current = updates;
-    setLiveIndicatorData(updates); // <- triggers renderValue
-  }
-};
+  };
   // ATTACH CROSSHAIR
 
- const attachCrosshair = useCallback((chart) => {
-  if (!chart) return () => {};
-  const handler = (param) => {
-    const charts = [chartRef.current, ...Object.values(panesRef.current).map((p) => p.chart)].filter(Boolean);
+  const attachCrosshair = useCallback((chart) => {
+    if (!chart) return () => {};
+    const handler = (param) => {
+      const charts = [
+        chartRef.current,
+        ...Object.values(panesRef.current).map((p) => p.chart),
+      ].filter(Boolean);
 
-    // clear crosshair if invalid
-    if (!param?.point || param.time === undefined) {
-      charts.forEach((c) => c.clearCrosshairPosition?.());
-      setLiveIndicatorData(latestIndicatorValuesRef.current);
-      return;
-    }
+      // clear crosshair if invalid
+      if (!param?.point || param.time === undefined) {
+        charts.forEach((c) => c.clearCrosshairPosition?.());
+        setLiveIndicatorData(latestIndicatorValuesRef.current);
+        return;
+      }
 
-    // sync crosshair
-    charts.forEach((c) => {
-      c.setCrosshairPosition(param.point?.x ?? 0, param.point?.y ?? 0, param.time);
-    });
+      // sync crosshair
+      charts.forEach((c) => {
+        c.setCrosshairPosition(
+          param.point?.x ?? 0,
+          param.point?.y ?? 0,
+          param.time,
+        );
+      });
 
-    // update candles
-    const candle = param.seriesData?.get(seriesRef.current);
-    if (candle) setLiveOhlcv({ ...candle });
+      // update candles
+      const candle = param.seriesData?.get(seriesRef.current);
+      if (candle) setLiveOhlcv({ ...candle });
 
-    // update indicators
-    updateIndicatorValues(param);
-  };
+      // update indicators
+      updateIndicatorValues(param);
+    };
 
-  chart.subscribeCrosshairMove(handler);
-  return () => chart.unsubscribeCrosshairMove(handler);
-}, []);
+    chart.subscribeCrosshairMove(handler);
+    return () => chart.unsubscribeCrosshairMove(handler);
+  }, []);
 
   // ATTACH MAIN CHART
 
-useEffect(() => {
-  // Reattach crosshair whenever series references change
-  const charts = [chartRef.current, ...Object.values(panesRef.current).map(p => p.chart)].filter(Boolean);
-  const detachHandlers = charts.map(c => attachCrosshair(c));
+  useEffect(() => {
+    // Reattach crosshair whenever series references change
+    const charts = [
+      chartRef.current,
+      ...Object.values(panesRef.current).map((p) => p.chart),
+    ].filter(Boolean);
+    const detachHandlers = charts.map((c) => attachCrosshair(c));
 
-  return () => detachHandlers.forEach(d => d());
-}, [indicatorSeriesRef.current, timeframeValue]);
+    return () => detachHandlers.forEach((d) => d());
+  }, [indicatorSeriesRef.current, timeframeValue]);
 
   // Main useEffect for chart type/data changes
   useEffect(() => {

@@ -35,12 +35,12 @@ export default function useChartFunctions({
   ) {
     if (!selectedIndicator?.length) return;
 
-    console.log(plottedIndicatorsRef, "plottedddddddddd")
+    console.log(plottedIndicatorsRef, "plottedddddddddd");
 
     for (const indicator of selectedIndicator) {
-       if (plottedIndicatorsRef.current.has(indicator)) {
-      continue; // already fetched & plotted, skip API
-    }
+      if (plottedIndicatorsRef.current.has(indicator)) {
+        continue; // already fetched & plotted, skip API
+      }
       try {
         const result = await fetchDataForIndicators(
           selectedCurrency,
@@ -50,19 +50,18 @@ export default function useChartFunctions({
 
         if (!result) continue;
 
-        const rows = getRowsByIndicator(indicator);
         const normalizedType = indicator.replace(/[\s/%]+/g, "");
-        console.log(normalizedType, "typeeeeeee");
         const config = indicatorConfigs?.[normalizedType] || {};
         const { maType, maLength } = config;
-        console.log(maType, "-------------------------------");
+        const rows = getRowsByIndicator(indicator, maType);
+        // console.log(normalizedType, "typeeeeeee");
+
+        // console.log(maType, "-------------------------------");
 
         switch (normalizedType) {
           /* ================= RSI ================= */
 
           case "RSI": {
-            
-
             const rsiData = result?.data?.rsi ?? [];
             const smoothingData = result?.data?.smoothingMA ?? [];
             const bbUpperData = result?.data?.bbUpperBand ?? [];
@@ -90,13 +89,11 @@ export default function useChartFunctions({
 
             break;
           }
-
-          /* ================= SMA ================= */
           case "SMA": {
-            
-
             const smaData = result?.data?.sma ?? [];
             const smoothingData = result?.data?.smoothingMA ?? [];
+            const bbUpper = result?.data?.bbUpper ?? [];
+            const bbLower = result?.data?.bbLower ?? [];
 
             indicatorSeriesRef.current.SMA = {
               result,
@@ -104,17 +101,16 @@ export default function useChartFunctions({
             };
 
             latestIndicatorValuesRef.current.SMA = {
-              sma: smaData?.[smaData.length - 1]?.value ?? null,
-              smoothingMA:
-                smoothingData?.[smoothingData.length - 1]?.value ?? null,
+              sma: smaData[smaData.length - 1]?.value,
+              smoothingMA: smoothingData[smoothingData.length - 1]?.value,
+              bbUpper: bbUpper[bbUpper.length - 1]?.value,
+              bbLower: bbLower[bbLower.length - 1]?.value,
             };
 
             break;
           }
 
           case "IchimokuCloud": {
-            
-
             indicatorSeriesRef.current.IchimokuCloud = {
               result,
               rows,
@@ -138,10 +134,11 @@ export default function useChartFunctions({
           }
 
           case "EMA": {
-            
-
             const emaData = result?.data?.ema ?? [];
             const smoothingData = result?.data?.smoothingMA ?? [];
+            const bbUpperData = result?.data?.bbUpper ?? [];
+            const bbLowerData = result?.data?.bbLower ?? [];
+            console.log(result, "resllllll");
 
             indicatorSeriesRef.current.EMA = {
               result,
@@ -149,15 +146,16 @@ export default function useChartFunctions({
             };
 
             latestIndicatorValuesRef.current.EMA = {
-              ema: emaData[emaData.length - 1]?.value,
-              smoothingMA: smoothingData[smoothingData.length - 1]?.value,
+              ema: emaData[emaData.length - 1]?.value ?? null,
+              smoothingMA:
+                smoothingData[smoothingData.length - 1]?.value ?? null,
+              bbUpper: bbUpperData[bbUpperData.length - 1]?.value ?? null,
+              bbLower: bbLowerData[bbLowerData.length - 1]?.value ?? null,
             };
 
             break;
           }
           case "WMA": {
-            
-
             const wmaData = result?.data?.wma ?? [];
 
             indicatorSeriesRef.current.WMA = {
@@ -172,8 +170,6 @@ export default function useChartFunctions({
             break;
           }
           case "HMA": {
-            
-
             const hmaData = result?.data?.hma ?? [];
 
             indicatorSeriesRef.current.HMA = {
@@ -188,8 +184,6 @@ export default function useChartFunctions({
             break;
           }
           case "DEMA": {
-            
-
             const demaData = result?.data?.dema ?? [];
 
             indicatorSeriesRef.current.DEMA = {
@@ -204,8 +198,6 @@ export default function useChartFunctions({
             break;
           }
           case "TEMA": {
-            
-
             const temaData = result?.data?.tema ?? [];
 
             indicatorSeriesRef.current.TEMA = {
@@ -220,8 +212,6 @@ export default function useChartFunctions({
             break;
           }
           case "KAMA": {
-            
-
             const kamaData = result?.data?.kama ?? [];
 
             indicatorSeriesRef.current.KAMA = {
@@ -236,8 +226,6 @@ export default function useChartFunctions({
             break;
           }
           case "SuperTrend": {
-            
-
             const upTrend = result?.data?.upTrend ?? [];
             const downTrend = result?.data?.downTrend ?? [];
 
@@ -257,8 +245,6 @@ export default function useChartFunctions({
             break;
           }
           case "Aroon": {
-            
-
             const aroonUp = result?.data?.aroonUp ?? [];
             const aroonDown = result?.data?.aroonDown ?? [];
 
@@ -275,8 +261,6 @@ export default function useChartFunctions({
             break;
           }
           case "AroonOscillator": {
-            
-
             const osc = result?.data ?? [];
 
             indicatorSeriesRef.current.AroonOscillator = {
@@ -291,8 +275,6 @@ export default function useChartFunctions({
             break;
           }
           case "ADX": {
-            
-
             indicatorSeriesRef.current.ADX = {
               result,
               rows,
@@ -307,8 +289,6 @@ export default function useChartFunctions({
             break;
           }
           case "CCI": {
-            
-
             const cciLine = result?.data?.cciLine ?? [];
             const cciMa = result?.data?.cciMa ?? [];
 
@@ -326,8 +306,6 @@ export default function useChartFunctions({
           }
 
           case "Momentum": {
-            
-
             const momentum = result?.data?.momentum ?? [];
 
             indicatorSeriesRef.current.Momentum = {
@@ -358,8 +336,6 @@ export default function useChartFunctions({
           }
 
           case "WilliamsR": {
-            
-
             indicatorSeriesRef.current["WilliamsR"] = {
               result,
               rows,
@@ -375,7 +351,6 @@ export default function useChartFunctions({
           }
 
           case "ATR": {
-
             indicatorSeriesRef.current.ATR = {
               result,
               rows,
@@ -389,6 +364,20 @@ export default function useChartFunctions({
 
             break;
           }
+          case "MFI": {
+            const mfiLine = result?.data?.mfiLine ?? [];
+
+            indicatorSeriesRef.current.MFI = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.MFI = {
+              mfiLine: mfiLine[mfiLine.length - 1]?.value,
+            };
+
+            break;
+          }
 
           /* ================= DEFAULT ================= */
 
@@ -396,7 +385,6 @@ export default function useChartFunctions({
             console.warn("Indicator not handled:", indicator);
         }
         // plottedIndicatorsRef.current.add(indicator);
-
       } catch (error) {
         console.log(error, "Indicator loading error");
       }
@@ -440,7 +428,6 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
     case "OBV":
     case "VolumeOscillator":
     case "ChaikinMoneyFlow":
-    case "MFI":
     case "EaseofMovement":
     case "NegativeVolumeIndex":
     case "PositiveVolumeIndex":
@@ -483,9 +470,24 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
                 time: d.time,
                 value: d.smoothingMA,
               })) ?? [],
+
+          bbUpper:
+            response.data
+              ?.filter((d) => d.bbUpper != null && d.time != null)
+              .map((d) => ({
+                time: d.time,
+                value: d.bbUpper,
+              })) ?? [],
+
+          bbLower:
+            response.data
+              ?.filter((d) => d.bbLower != null && d.time != null)
+              .map((d) => ({
+                time: d.time,
+                value: d.bbLower,
+              })) ?? [],
         },
       };
-
     case "EMA":
       return {
         type: "multi",
@@ -504,6 +506,22 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
               .map((d) => ({
                 time: d.time,
                 value: d.smoothingMA,
+              })) ?? [],
+
+          bbUpper:
+            response.data
+              ?.filter((d) => d.bbUpper != null && d.time != null)
+              .map((d) => ({
+                time: d.time,
+                value: d.bbUpper,
+              })) ?? [],
+
+          bbLower:
+            response.data
+              ?.filter((d) => d.bbLower != null && d.time != null)
+              .map((d) => ({
+                time: d.time,
+                value: d.bbLower,
               })) ?? [],
         },
       };
@@ -675,6 +693,20 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
               })) ?? [],
         },
       };
+      case "MFI":
+      return {
+        type: "multi",
+        data: {
+          mfiLine:
+            response.data
+              ?.filter((d) => d.mfi != null && d.time != null)
+              .map((d) => ({
+                time: d.time,
+                value: d.mfi,
+              })) ?? [],
+        },
+      };
+
 
     case "ATR":
       return {

@@ -31,7 +31,6 @@ export default function IndicatorPropertyDialog({
   const currentConfig = indicatorConfigs[normalizedType];
   const [indicatorLoading, setIndicatorLoading] = useState(false);
 
-
   const updateProperty = (key, value) => {
     setIndicatorConfigs((prev) => ({
       ...prev,
@@ -141,189 +140,210 @@ export default function IndicatorPropertyDialog({
     setIndicatorProperty(false);
   };
 
-/* =========================
+  /* =========================
    BASE SETTINGS COMPONENT
 ========================== */
-function BaseSettings({ showLength = true, showSource = true, showOffset = true }) {
-  return (
-    <section className="mt-3 px-3">
-      {/* LENGTH */}
-      {showLength && currentConfig?.length !== undefined && (
-        <div className="mb-3">
-          <label className="form-label">Length</label>
-          <input
-            type="number"
-            className="form-control"
-            min="1"
-            value={currentConfig.length}
-            onChange={(e) => {
-              const value = e.target.value === "" ? "" : Math.max(1, Number(e.target.value));
-              updateProperty("length", value);
-            }}
-          />
-        </div>
-      )}
-
-      {/* SOURCE */}
-      {showSource && currentConfig?.source !== undefined && (
-        <div className="mb-3">
-          <label className="form-label">Source</label>
-          <select
-            className="form-select"
-            value={currentConfig.source}
-            onChange={(e) => updateProperty("source", e.target.value)}
-          >
-            {["Close", "Open", "High", "Low", "HL2", "HLC3", "OHLC4"].map((opt) => (
-              <option key={opt} value={opt.toLowerCase()}>
-                {opt}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {/* OFFSET */}
-      {showOffset && currentConfig?.offset !== undefined && (
-        <div className="mb-3">
-          <label className="form-label">Offset</label>
-          <input
-            type="number"
-            className="form-control"
-            min="0"
-            value={currentConfig.offset}
-            onChange={(e) => {
-              const value = e.target.value === "" ? "" : Math.max(0, Number(e.target.value));
-              updateProperty("offset", value);
-            }}
-          />
-        </div>
-      )}
-    </section>
-  );
-}
-
-/* =========================
-   SMOOTHING SECTION
-========================== */
-function SmoothingSection() {
-  if (!currentConfig) return null;
-
-  const smoothingTypes = [
-    "None",
-    "SMA",
-    "EMA",
-    "WMA",
-    "SMA + Bollinger Bands",
-    "VWMA",
-    "SMMA (RMA)",
-  ];
-
-  return (
-    <>
-      <hr />
-      <section className="px-3">
-        {/* TYPE */}
-        <div className="mb-3">
-          <label className="form-label">Type</label>
-          <select
-            className="form-select"
-            value={currentConfig.maType || "none"}
-            onChange={(e) => updateProperty("maType", e.target.value)}
-          >
-            {smoothingTypes.map((opt) => (
-              <option key={opt} value={opt}>
-                {opt}
-              </option>
-            ))}
-          </select>
-        </div>
-
+  function BaseSettings({
+    showLength = true,
+    showSource = true,
+    showOffset = true,
+  }) {
+    return (
+      <section className="mt-3 px-3">
         {/* LENGTH */}
-        <div className="mb-3">
-          <label className="form-label">Length</label>
-          <input
-            type="number"
-            className="form-control"
-            min="1"
-            value={currentConfig.maLength}
-            onChange={(e) => {
-              const value = e.target.value === "" ? "" : Math.max(1, Number(e.target.value));
-              updateProperty("maLength", value);
-            }}
-          />
-        </div>
-
-        {/* BB STD DEV */}
-        <div className="mb-3">
-          <label className="form-label">BB Std Dev</label>
-          <input
-            type="number"
-            className="form-control"
-            min="0"
-            disabled={currentConfig.maType !== "SMA + Bollinger Bands"}
-            value={currentConfig.bbStdDev}
-            onChange={(e) => {
-              const value = e.target.value === "" ? "" : Math.max(0, Number(e.target.value));
-              updateProperty("bbStdDev", value);
-            }}
-          />
-        </div>
-      </section>
-    </>
-  );
-}
-
-/* =========================
-   RENDER PER INDICATOR
-========================== */
-function renderIndicatorSetting() {
-  switch (normalizedType) {
-    case "SMA":
-    case "EMA":
-      return (
-        <>
-          <BaseSettings />
-          <SmoothingSection />
-        </>
-      );
-
-    case "WMA":
-      return <BaseSettings />;
-
-    case "HMA":
-    case "DEMA":
-      return <BaseSettings showOffset={false} />;
-
-    case "TEMA":
-    case "TRIX":
-    case "Fisher Transform":
-      return <BaseSettings showOffset={false} showSource={false} />;
-
-    case "KAMA":
-      return (
-        <>
-          <BaseSettings showOffset={false} showLength={false} />
-
+        {showLength && currentConfig?.length !== undefined && (
           <div className="mb-3">
-            <label className="form-label">ER Length</label>
+            <label className="form-label">Length</label>
             <input
               type="number"
               className="form-control"
               min="1"
-              value={currentConfig.ERlength}
+              value={currentConfig.length}
               onChange={(e) => {
-                const value = e.target.value === "" ? "" : Math.max(1, Number(e.target.value));
-                updateProperty("ERlength", value);
+                const value =
+                  e.target.value === ""
+                    ? ""
+                    : Math.max(1, Number(e.target.value));
+                updateProperty("length", value);
               }}
             />
           </div>
-        </>
-      );
+        )}
 
-    default:
-      return null;
+        {/* SOURCE */}
+        {showSource && currentConfig?.source !== undefined && (
+          <div className="mb-3">
+            <label className="form-label">Source</label>
+            <select
+              className="form-select"
+              value={currentConfig.source}
+              onChange={(e) => updateProperty("source", e.target.value)}
+            >
+              {["Close", "Open", "High", "Low", "HL2", "HLC3", "OHLC4"].map(
+                (opt) => (
+                  <option key={opt} value={opt.toLowerCase()}>
+                    {opt}
+                  </option>
+                ),
+              )}
+            </select>
+          </div>
+        )}
+
+        {/* OFFSET */}
+        {showOffset && currentConfig?.offset !== undefined && (
+          <div className="mb-3">
+            <label className="form-label">Offset</label>
+            <input
+              type="number"
+              className="form-control"
+              min="0"
+              value={currentConfig.offset}
+              onChange={(e) => {
+                const value =
+                  e.target.value === ""
+                    ? ""
+                    : Math.max(0, Number(e.target.value));
+                updateProperty("offset", value);
+              }}
+            />
+          </div>
+        )}
+      </section>
+    );
   }
-}
+
+  /* =========================
+   SMOOTHING SECTION
+========================== */
+  function SmoothingSection() {
+    if (!currentConfig) return null;
+
+    const smoothingTypes = [
+      "None",
+      "SMA",
+      "EMA",
+      "WMA",
+      "SMA + Bollinger Bands",
+      "VWMA",
+      "SMMA (RMA)",
+    ];
+
+    return (
+      <>
+        <hr />
+        <section className="px-3">
+          {/* TYPE */}
+          <div className="mb-3">
+            <label className="form-label">Type</label>
+            <select
+              className="form-select"
+              value={currentConfig.maType || "none"}
+              onChange={(e) => updateProperty("maType", e.target.value)}
+            >
+              {smoothingTypes.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* LENGTH */}
+          <div className="mb-3">
+            <label className="form-label">Length</label>
+            <input
+              type="number"
+              className="form-control"
+              min="1"
+              value={currentConfig.maLength}
+              onChange={(e) => {
+                const value =
+                  e.target.value === ""
+                    ? ""
+                    : Math.max(1, Number(e.target.value));
+                updateProperty("maLength", value);
+              }}
+            />
+          </div>
+
+          {/* BB STD DEV */}
+          <div className="mb-3">
+            <label className="form-label">BB Std Dev</label>
+            <input
+              type="number"
+              className="form-control"
+              min="0"
+              disabled={currentConfig.maType !== "SMA + Bollinger Bands"}
+              value={currentConfig.bbStdDev}
+              onChange={(e) => {
+                const value =
+                  e.target.value === ""
+                    ? ""
+                    : Math.max(0, Number(e.target.value));
+                updateProperty("bbStdDev", value);
+              }}
+            />
+          </div>
+        </section>
+      </>
+    );
+  }
+
+  /* =========================
+   RENDER PER INDICATOR
+========================== */
+  function renderIndicatorSetting() {
+    switch (normalizedType) {
+      case "SMA":
+      case "EMA":
+        return (
+          <>
+            <BaseSettings />
+            <SmoothingSection />
+          </>
+        );
+
+      case "WMA":
+        return <BaseSettings />;
+
+      case "HMA":
+      case "DEMA":
+        return <BaseSettings showOffset={false} />;
+
+      case "TEMA":
+      case "TRIX":
+      case "Fisher Transform":
+        return <BaseSettings showOffset={false} showSource={false} />;
+
+      case "KAMA":
+        return (
+          <>
+            <BaseSettings showOffset={false} showLength={false} />
+
+            <div className="mb-3">
+              <label className="form-label">ER Length</label>
+              <input
+                type="number"
+                className="form-control"
+                min="1"
+                value={currentConfig.ERlength}
+                onChange={(e) => {
+                  const value =
+                    e.target.value === ""
+                      ? ""
+                      : Math.max(1, Number(e.target.value));
+                  updateProperty("ERlength", value);
+                }}
+              />
+            </div>
+          </>
+        );
+
+      default:
+        return null;
+    }
+  }
   /* =========================
      RENDER PER INDICATOR
   ========================== */
@@ -1461,7 +1481,7 @@ function renderIndicatorSetting() {
                   }
                 />
               </div>
-            </div> 
+            </div>
 
             {/* Pivot Legs */}
             <div className="row mb-3 align-items-center">
@@ -1478,10 +1498,10 @@ function renderIndicatorSetting() {
                   }
                 />
               </div>
-            </div> 
+            </div>
 
             {/* Line Color */}
-             <div className="row mb-3 align-items-center">
+            <div className="row mb-3 align-items-center">
               <div className="col-6">
                 <label className="form-label">Line Color</label>
               </div>
@@ -1493,7 +1513,7 @@ function renderIndicatorSetting() {
                   onChange={(e) => updateProperty("lineColor", e.target.value)}
                 />
               </div>
-            </div> 
+            </div>
 
             {/* Extend to Last Bar */}
             <div className="form-check mb-2">
@@ -1506,7 +1526,7 @@ function renderIndicatorSetting() {
                 }
               />
               <label className="form-check-label">Extend to Last Bar</label>
-            </div> 
+            </div>
 
             {/* Display Reversal Price */}
             <div className="form-check mb-2">
@@ -1519,7 +1539,7 @@ function renderIndicatorSetting() {
                 }
               />
               <label className="form-check-label">Display Reversal Price</label>
-            </div> 
+            </div>
 
             {/* Display Cumulative Volume */}
             <div className="form-check mb-2">
@@ -1534,7 +1554,7 @@ function renderIndicatorSetting() {
               <label className="form-check-label">
                 Display Cumulative Volume
               </label>
-            </div> 
+            </div>
 
             {/* Display Reversal Price Change Mode */}
             <div className="row mb-3 align-items-center">
@@ -1628,6 +1648,7 @@ function renderIndicatorSetting() {
                 indicatorStyle={indicatorStyle}
                 setIndicatorStyle={setIndicatorStyle}
                 activeBarIndicator={activeBarIndicator}
+                indicatorConfigs={indicatorConfigs}
               />
             </div>
           </Tab>

@@ -34,6 +34,8 @@ import WilliamsRInput from "./WilliamsR/WilliamsRInput";
 import WilliamsRPlot from "./WilliamsR/WilliamsRPlot";
 import ATRPlot from "./ATR/ATRPlot";
 import ATRInput from "./ATR/ATRInput";
+import MFIPlot from "./MFI/MFIPlot";
+import MFIInput from "./MFI/MFIInput";
 
 export const indicatorComponents = {
   RSI: RSIPlot,
@@ -54,6 +56,7 @@ export const indicatorComponents = {
   ROC: ROCPlot,
   WilliamsR : WilliamsRPlot,
   ATR: ATRPlot,
+  MFI: MFIPlot,
 };
 
 export const indicatorInputs = {
@@ -75,6 +78,7 @@ export const indicatorInputs = {
   ROC:ROCInput,
   WilliamsR : WilliamsRInput,
   ATR: ATRInput,
+  MFI: MFIInput,
 };
 
 export function updateIndicatorFromInput(
