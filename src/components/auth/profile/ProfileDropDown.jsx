@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import { styles } from "./style";
+import { useNavigate } from "react-router-dom";
 
 export default function ProfileDropDown() {
   const [open, setOpen] = useState(false);
   const [dark, setDark] = useState(false);
   const [drawingsPanel, setDrawingsPanel] = useState(true);
   const [language, setLanguage] = useState("English (India)");
+  const navigate = useNavigate();
 
   return (
     <div>
@@ -41,7 +43,7 @@ export default function ProfileDropDown() {
         <Divider />
 
         {/* MENU ITEMS */}
-        <Item label="🏠 Home" onClick={() => alert("Home")} />
+         <Item label="🏠 Home" onClick={() => navigate("/home")} />
         <Item label="❓ Help Center" onClick={() => alert("Help Center")} />
         <Item label="⚡ What's new" onClick={() => alert("What's new")} />
 

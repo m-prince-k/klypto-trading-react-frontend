@@ -18,9 +18,6 @@ async function fetchOHLC(symbol) {
     close: +c[4],
   }));
 }
-
-
-
 /* ---------------- MINI CHART ---------------- */
 
 export default function MiniChart( {symbol} ) {

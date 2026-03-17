@@ -1,17 +1,16 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import "./App.css";
-import { Form } from "./components/tradingModals/Form";
 import CandleStick from "./pages/CandleStick";
 import TradingViewChart from "./pages/TradingViewChart";
-import IndiatorSlide from "./components/indicator/indicatorSlide";
 import Testing from "./pages/Testing";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import IndicatorBuildingListing from "./components/indicator/IndicatorBuilderListing";
+import IndicatorBuildingListing from "./components/scanner/IndicatorBuilderListing";
 import Login from "./pages/auth/login";
 import { ProtectedRoute } from "./pages/auth/ProtectedRoute";
 import Signup from "./pages/auth/signup";
 import { Navigate } from "react-router-dom";
+import Home from "./pages/Home";
 
 function App() {
   return (
@@ -31,14 +30,17 @@ function App() {
           {/* <Route path="/" element={<Form />} /> */}
           <Route path="/testing" element={<Testing />} />
           <Route path="/tradingview" element={<TradingViewChart />} />
-          <Route path="/indiatorSlide" element={<IndiatorSlide />} />
+          {/* <Route path="/indiatorSlide" element={<IndiatorSlide />} /> */}
 
           <Route
             path="/IndicatorBuildingListing"
             element={<IndicatorBuildingListing />}
           />
+          <Route path="/home" element={<Home />} />
+
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+
 
           <Route path="/" element={<Navigate to="/login" />} />
         </Routes>

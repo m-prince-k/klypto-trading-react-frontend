@@ -1,50 +1,82 @@
-// import React from 'react'
+import { IoEyeOutline, IoEyeOffOutline, IoSettingsOutline, IoCloseSharp } from "react-icons/io5";
+import { FiMoreHorizontal } from "react-icons/fi";
+import { FaCode } from "react-icons/fa";
 
-// export const IndicatorBar = ({ selectedIndicator, timeframeValue, indicatorVisible, setIndicatorVisible }) => {
-//   return (
-//     <div className="absolute top-2 left-2 flex items-center gap-2 bg-white shadow-sm border border-slate-200 rounded-full px-3 h-8 text-xs">
-  
-//   <span className="font-medium text-slate-800">
-//     {selectedIndicator?.toUpperCase()} {timeframeValue}
-//   </span>
+export default function IndicatorBar({
+  indicator,
+  timeframeValue,
+  value,
+  renderValue,
+  indicatorVisibility,
+  toggleIndicatorVisibility,
+  removeIndicator,
+  setActiveBarIndicator,
+  setIndicatorProperty,
+  setActiveSourceIndicator,
+  setShowSourcePanel
+}) {
 
-//   {/* Visibility Toggle */}
-//   <button
-//     onClick={() => {
-//       const next = !indicatorVisible;
-//       setIndicatorVisible(next);
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        background: "#ffffff",
+        border: "1px solid #e2e8f0",
+        borderRadius: 6,
+        padding: "4px 8px",
+        fontSize: 12
+      }}
+    >
 
-//       if (indicatorSeriesRef.current) {
-//         indicatorSeriesRef.current.applyOptions({ visible: next });
-//       }
-//     }}
-//     className="text-slate-400 hover:text-slate-700"
-//   >
-//     {indicatorVisible ? "👁" : "🚫"}
-//   </button>
+      <span className="flex items-center gap-2 text-slate-800">
 
-//   {/* Settings (Optional) */}
-//   <button
-//     onClick={() => openModal("Indicator Settings")}
-//     className="text-slate-400 hover:text-slate-700"
-//   >
-//     ⚙
-//   </button>
+        {indicator} : {timeframeValue} :
 
-//   {/* Remove Indicator */}
-//   <button
-//     onClick={() => {
-//       if (indicatorSeriesRef.current) {
-//         chartRef.current.removeSeries(indicatorSeriesRef.current);
-//         indicatorSeriesRef.current = null;
-//       }
-//       setSelectedIndicator(null);
-//     }}
-//     className="text-slate-400 hover:text-red-500"
-//   >
-//     ✖
-//   </button>
-// </div>
+        <span style={{ display: "flex", gap: 6 }}>
+          {renderValue(indicator, value)}
+        </span>
 
-//   )
-// }
+      </span>
+
+      <div className="flex items-center gap-2">
+
+        <button
+          onClick={() => toggleIndicatorVisibility(indicator)}
+        >
+          {indicatorVisibility[indicator] ?
+            <IoEyeOutline size={16} /> :
+            <IoEyeOffOutline size={16} />
+          }
+        </button>
+
+        <button
+          onClick={() => {
+            setActiveBarIndicator(indicator);
+            setIndicatorProperty((prev) => !prev);
+          }}
+        >
+          <IoSettingsOutline size={16} />
+        </button>
+
+        <button
+          onClick={() => {
+            setActiveSourceIndicator(indicator);
+            setShowSourcePanel(true);
+          }}
+        >
+          <FaCode size={16} />
+        </button>
+
+        <button onClick={() => removeIndicator(indicator)}>
+          <IoCloseSharp size={16} />
+        </button>
+
+        <FiMoreHorizontal size={16} />
+
+      </div>
+
+    </div>
+  );
+}

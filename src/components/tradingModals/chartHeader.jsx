@@ -130,7 +130,7 @@ export default function ChartHeader({
           <DropdownMenu.Portal>
             <DropdownMenu.Content
               sideOffset={8}
-              className="bg-white border rounded shadow p-2"
+              className="bg-white border rounded shadow z-999 p-2"
             >
               {chartOptions.map((item) => (
                 <DropdownMenu.Item

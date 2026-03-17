@@ -16,7 +16,7 @@ const TOOLS = {
 
 const EMOJIS = ["😀", "🔥", "🚀", "📉", "📈", "⭐", "❌", "⭕"];
 
-export default function ChartLeftSidebar() {
+export default function ChartLeftSidebar({chartRef, containerRef}) {
   const svgRef = useRef(null);
 
   const [tool, setTool] = useState(TOOLS.SELECT);
