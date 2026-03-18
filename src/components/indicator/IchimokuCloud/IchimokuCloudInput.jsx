@@ -56,7 +56,7 @@ export default function IchimokuCloudInput(
     }))
     .sort((a, b) => a.time - b.time);
 
-  const series = indicatorSeriesRef.current?.IchimokuCloud;
+  const series = indicatorSeriesRef.current?.ICHIMOKU;
   if (!series) return;
 
   /* ================= UPDATE SERIES ================= */
@@ -69,7 +69,7 @@ export default function IchimokuCloudInput(
 
   /* ================= UPDATE HOVER VALUES ================= */
 
-  latestIndicatorValuesRef.current.IchimokuCloud = {
+  latestIndicatorValuesRef.current.ICHIMOKU = {
     conversionLine: conversionData[conversionData.length - 1]?.value,
     baseLine: baseData[baseData.length - 1]?.value,
     leadLine1: leadLine1Data[leadLine1Data.length - 1]?.value,
@@ -79,7 +79,7 @@ export default function IchimokuCloudInput(
 
   /* ================= STORE RESULT ================= */
 
-  indicatorSeriesRef.current.IchimokuCloud.result = {
+  indicatorSeriesRef.current.ICHIMOKU.result = {
     data: {
       conversionLine: conversionData,
       baseLine: baseData,

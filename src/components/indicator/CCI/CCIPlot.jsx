@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { LineSeries, BaselineSeries } from "lightweight-charts";
 
 export default function CCIPlot({
@@ -7,7 +7,13 @@ export default function CCIPlot({
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
+  chart,
+  containerRef,
+  pane,
 }) {
+
+  const cloudCanvasRef = useRef(null);
+  const cloudCtxRef = useRef(null);
 
   /* ================= CREATE SERIES ================= */
 
@@ -123,10 +129,116 @@ export default function CCIPlot({
     groupedSeries.bgFill = bgSeries;
     groupedSeries.cciData = cciData;
 
-    indicatorSeriesRef.current.CCI = groupedSeries;
+    indicatorSeriesRef.current.CCI = {
+      ...groupedSeries,
+      result,
+    };
 
   }, [result]);
 
+
+  /* ================= CREATE CLOUD CANVAS ================= */
+
+  useEffect(() => {
+
+    if (!indicatorSeriesRef?.current || !chart) return;
+    if (cloudCanvasRef.current) return;
+
+    const rect = indicatorSeriesRef.current.getBoundingClientRect();
+
+    const canvas = document.createElement("canvas");
+
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+
+    canvas.style.position = "absolute";
+    canvas.style.left = "0";
+    canvas.style.top = "0";
+    canvas.style.pointerEvents = "none";
+    canvas.style.zIndex = "1";
+
+    indicatorSeriesRef.current.appendChild(canvas);
+
+    cloudCanvasRef.current = canvas;
+    cloudCtxRef.current = canvas.getContext("2d");
+
+  }, [chart]);
+
+
+  /* ================= DRAW BOLLINGER CLOUD ================= */
+
+  useEffect(() => {
+
+    const cciGroup = indicatorSeriesRef.current?.CCI;
+
+    const upperSeries = cciGroup?.bbUpper;
+    const lowerSeries = cciGroup?.bbLower;
+
+    const upperData = cciGroup?.result?.data?.bbUpper;
+    const lowerData = cciGroup?.result?.data?.bbLower;
+
+    const fillStyle = indicatorStyle?.CCI?.bbFill;
+
+    const ctx = cloudCtxRef.current;
+    const canvas = cloudCanvasRef.current;
+
+    if (!ctx || !canvas) return;
+    if (!upperSeries || !lowerSeries) return;
+    if (!upperData?.length || !lowerData?.length) return;
+    if (!fillStyle?.visible) return;
+
+    const drawCloud = () => {
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.beginPath();
+
+      upperData.forEach((p, i) => {
+
+        const x = chart.timeScale().timeToCoordinate(p.time);
+        const y = upperSeries.priceToCoordinate(p.value);
+
+        if (x === null || y === null) return;
+
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+
+      });
+
+      for (let i = lowerData.length - 1; i >= 0; i--) {
+
+        const p = lowerData[i];
+
+        const x = chart.timeScale().timeToCoordinate(p.time);
+        const y = lowerSeries.priceToCoordinate(p.value);
+
+        if (x === null || y === null) continue;
+
+        ctx.lineTo(x, y);
+      }
+
+      ctx.closePath();
+
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+
+      gradient.addColorStop(0, fillStyle?.topFillColor1 || "rgba(33,150,243,0.2)");
+      gradient.addColorStop(1, fillStyle?.bottomFillColor1 || "rgba(33,150,243,0)");
+
+      ctx.fillStyle = gradient;
+      ctx.fill();
+    };
+
+    drawCloud();
+
+    chart.timeScale().subscribeVisibleLogicalRangeChange(drawCloud);
+    chart.subscribeCrosshairMove(drawCloud);
+
+    return () => {
+      chart.timeScale().unsubscribeVisibleLogicalRangeChange(drawCloud);
+      chart.unsubscribeCrosshairMove(drawCloud);
+    };
+
+  }, [indicatorStyle?.CCI?.bbFill, result]);
 
 
   /* ================= STYLE UPDATE ================= */
@@ -136,84 +248,22 @@ export default function CCIPlot({
     const cciGroup = indicatorSeriesRef.current?.CCI;
     if (!cciGroup) return;
 
-    const style = indicatorStyle?.CCI;
-    const data = cciGroup.cciData ?? [];
+    const styles = indicatorStyle?.CCI;
 
-    const upper = style?.upperBand?.value ?? 100;
-    const middle = style?.middleBand?.value ?? 0;
-    const lower = style?.lowerBand?.value ?? -100;
+    ["cciLine", "cciMa", "bbUpper", "bbLower"].forEach((key) => {
 
-    const makeLevel = (v) =>
-      data.map((p) => ({ time: p.time, value: v }));
+      if (!cciGroup[key]) return;
 
+      const s = styles?.[key];
 
-    /* ================= UPDATE BAND VALUES ================= */
-
-    cciGroup.upperBand?.setData(makeLevel(upper));
-    cciGroup.middleBand?.setData(makeLevel(middle));
-    cciGroup.lowerBand?.setData(makeLevel(lower));
-
-
-    /* ================= UPDATE MAIN LINES ================= */
-
-    if (cciGroup.cciLine) {
-      cciGroup.cciLine.applyOptions({
-        color: style?.cciLine?.color,
-        lineWidth: style?.cciLine?.width,
-        lineStyle: style?.cciLine?.lineStyle,
-        visible: style?.cciLine?.visible,
-        opacity: style?.cciLine?.opacity,
+      cciGroup[key].applyOptions({
+        color: s?.color,
+        lineWidth: s?.width,
+        lineStyle: s?.lineStyle ?? 0,
+        visible: s?.visible,
       });
-    }
-
-    if (cciGroup.cciMa) {
-      cciGroup.cciMa.applyOptions({
-        color: style?.cciMa?.color,
-        lineWidth: style?.cciMa?.width,
-        lineStyle: style?.cciMa?.lineStyle,
-        visible: style?.cciMa?.visible,
-        opacity: style?.cciMa?.opacity,
-      });
-    }
-
-
-    /* ================= UPDATE BAND STYLES ================= */
-
-    ["upperBand", "middleBand", "lowerBand"].forEach((key) => {
-
-      if (cciGroup[key]) {
-
-        cciGroup[key].applyOptions({
-          color: style?.[key]?.color,
-          lineWidth: style?.[key]?.width,
-          lineStyle: style?.[key]?.lineStyle,
-          visible: style?.[key]?.visible,
-        });
-
-      }
 
     });
-
-
-    /* ================= UPDATE FILL ================= */
-
-    if (cciGroup.bgFill) {
-
-      const bandData = data.map((p) => ({
-        time: p.time,
-        value: upper,
-      }));
-
-      cciGroup.bgFill.applyOptions({
-        baseValue: { type: "price", price: lower },
-        visible: style?.bgFill?.visible,
-        topFillColor1: style?.bgFill?.topFillColor1,
-        topFillColor2: style?.bgFill?.topFillColor2,
-      });
-
-      cciGroup.bgFill.setData(bandData);
-
-    }
 
   }, [indicatorStyle]);
 

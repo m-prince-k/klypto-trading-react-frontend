@@ -3,32 +3,72 @@ export default function AroonOscillatorInput(
   indicatorSeriesRef,
   latestIndicatorValuesRef
 ) {
+  console.log("AO INPUT RESPONSE:", response);
+
+  /* ================= GET ROWS ================= */
 
   const rows = Array.isArray(response?.data) ? response.data : [];
 
-  /* ================= OSCILLATOR DATA ================= */
+  console.log("AO RAW ROWS:", rows);
+
+  const series = indicatorSeriesRef.current?.AO;
+
+  if (!series) {
+    console.warn("AO series not initialized yet");
+    return;
+  }
+
+  if (!rows.length) {
+    console.warn("AO rows empty");
+    return;
+  }
+
+  /* ================= CLEAN DATA ================= */
 
   const oscData = rows
-    .filter((d) => d.aroonOsc != null && d.time != null)
-    .map((d) => ({
-      time: Number(d.time),
-      value: Number(d.aroonOsc),
-    }))
-    .sort((a, b) => a.time - b.time);
+  .filter((d) => {
+    const valid =
+      d &&
+      d.time !== undefined &&
+      d.aroonOsc !== undefined &&
+      d.aroonOsc !== null &&
+      !isNaN(Number(d.aroonOsc));
 
-  const series = indicatorSeriesRef.current?.AroonOscillator;
-  if (!series) return;
+    if (!valid) {
+      console.warn("Invalid AO row removed:", d);
+    }
+
+    return valid;
+  })
+  .map((d) => ({
+    time: Number(d.time),
+    value: Number(d.aroonOsc),
+  }))
+  .sort((a, b) => a.time - b.time);
+  
+  console.log("AO CLEAN DATA:", oscData);
+
+  if (!oscData.length) {
+    console.warn("AO clean data empty");
+    return;
+  }
 
   /* ================= UPDATE OSCILLATOR ================= */
 
-  series.oscillator?.setData(oscData);
-  series.oscillatorFill?.setData(oscData);
+  try {
+    series.oscillator?.setData(oscData);
+    console.log("AO oscillator updated");
+  } catch (err) {
+    console.error("AO oscillator update error:", err);
+  }
 
-  /* ================= LEVEL LINES ================= */
+  /* ================= LEVEL VALUES ================= */
 
   const upper = series.upperLevel?.options?.value ?? 90;
   const center = series.center?.options?.value ?? 0;
   const lower = series.lowerLevel?.options?.value ?? -90;
+
+  console.log("AO LEVELS:", { upper, center, lower });
 
   const makeLevelData = (value) =>
     oscData.map((p) => ({
@@ -36,21 +76,38 @@ export default function AroonOscillatorInput(
       value,
     }));
 
-  series.upperLevel?.setData(makeLevelData(upper));
-  series.center?.setData(makeLevelData(center));
-  series.lowerLevel?.setData(makeLevelData(lower));
+  /* ================= UPDATE LEVEL LINES ================= */
 
-  /* ================= HOVER VALUES ================= */
+  try {
+    series.upperLevel?.setData(makeLevelData(upper));
+    series.center?.setData(makeLevelData(center));
+    series.lowerLevel?.setData(makeLevelData(lower));
 
-  latestIndicatorValuesRef.current.AroonOscillator = {
+    console.log("AO level lines updated");
+  } catch (err) {
+    console.error("AO level update error:", err);
+  }
+
+  /* ================= STORE DATA ================= */
+
+  series.oscData = oscData;
+
+  /* ================= HOVER VALUE ================= */
+
+  latestIndicatorValuesRef.current.AO = {
     oscillator: oscData[oscData.length - 1]?.value,
   };
 
+  console.log(
+    "AO latest value:",
+    latestIndicatorValuesRef.current.AO.oscillator
+  );
+
   /* ================= STORE RESULT ================= */
 
-  indicatorSeriesRef.current.AroonOscillator.result = {
-    data: {
-      oscillator: oscData,
-    },
+  series.result = {
+    data: oscData,
   };
+
+  console.log("AO result stored");
 }

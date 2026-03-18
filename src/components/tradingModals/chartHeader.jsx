@@ -22,7 +22,6 @@ export default function ChartHeader({
   toggleIndicator,
   setChartType,
   chartType,
-  // loadIndicator,
 }) {
   const navigate = useNavigate();
 
