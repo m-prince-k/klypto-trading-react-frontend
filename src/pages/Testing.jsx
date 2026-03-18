@@ -1,132 +1,205 @@
-import React, { useEffect, useRef } from "react";
-import {
-  createChart,
-  CandlestickSeries,
-  LineSeries,
-  createSeriesMarkers,
-} from "lightweight-charts";
+import React, { useEffect, useRef, useState } from "react";
+import { CandlestickSeries, createChart } from "lightweight-charts";
+import { Calendar, CandlestickChart } from "lucide-react";
 
-export default function ParabolicSARChart() {
-  const chartRef = useRef(null);
+const ranges = [
+  { label: "1D", days: 1 },
+  { label: "5D", days: 5 },
+  { label: "1M", days: 30 },
+  { label: "3M", days: 90 },
+  { label: "6M", days: 180 },
+  { label: "YTD", type: "ytd" },
+  { label: "1Y", days: 365 },
+  { label: "5Y", days: 365 * 5 },
+  { label: "All", type: "all" }
+];
 
-  useEffect(() => {
-    const chart = createChart(chartRef.current, {
-      width: 900,
-      height: 500,
-    });
+const generateDummyData = (from, to) => {
+  const data = [];
+  let current = from ? new Date(from) : new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
+  const end = to ? new Date(to) : new Date();
 
-    const candleSeries = chart.addSeries(CandlestickSeries);
+  let price = 100;
 
-    const candles = [];
-    let price = 100;
-    const start = new Date(2024, 2, 1);
+  while (current <= end) {
+    const open = price;
+    const close = open + (Math.random() - 0.5) * 5;
+    const high = Math.max(open, close) + Math.random() * 2;
+    const low = Math.min(open, close) - Math.random() * 2;
 
-    for (let i = 0; i < 120; i++) {
-      price += (Math.random() - 0.5) * 5;
+    data.push({
+      time: Math.floor(current.getTime() / 1000),
+      open,
+      high,
+      low,
+      close
+    });
 
-      const d = new Date(start);
-      d.setDate(start.getDate() + i);
+    price = close;
+    current.setDate(current.getDate() + 1);
+  }
 
-      const yyyy = d.getFullYear();
-      const mm = String(d.getMonth() + 1).padStart(2, "0");
-      const dd = String(d.getDate()).padStart(2, "0");
+  return data;
+};
 
-      candles.push({
-        time: `${yyyy}-${mm}-${dd}`,
-        open: price - 2,
-        high: price + 3,
-        low: price - 3,
-        close: price,
-      });
-    }
+export default function AdvancedChart() {
+  const containerRef = useRef();
+  const chartRef = useRef();
 
-    candleSeries.setData(candles);
+  const [data, setData] = useState([]);
+  const [active, setActive] = useState("All");
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [time, setTime] = useState(new Date());
 
-    // PARABOLIC SAR
-    function calculateSAR(data, step = 0.02, max = 0.2) {
-      let sar = data[0].low;
-      let ep = data[0].high;
-      let af = step;
-      let upTrend = true;
+  useEffect(() => {
+    const interval = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(interval);
+  }, []);
 
-      const result = [];
+  const formatTime = (date) =>
+    date.toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false
+    });
 
-      for (let i = 1; i < data.length; i++) {
-        sar = sar + af * (ep - sar);
+  const formatDate = (date) =>
+    date.toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "short",
+      day: "numeric"
+    });
 
-        if (upTrend) {
-          if (data[i].low < sar) {
-            upTrend = false;
-            sar = ep;
-            ep = data[i].low;
-            af = step;
-          } else {
-            if (data[i].high > ep) {
-              ep = data[i].high;
-              af = Math.min(af + step, max);
-            }
-          }
-        } else {
-          if (data[i].high > sar) {
-            upTrend = true;
-            sar = ep;
-            ep = data[i].high;
-            af = step;
-          } else {
-            if (data[i].low < ep) {
-              ep = data[i].low;
-              af = Math.min(af + step, max);
-            }
-          }
-        }
+  useEffect(() => {
+    const chart = createChart(containerRef.current, {
+      height: 400,
+      layout: { background: { color: "#0F172A" }, textColor: "#fff" }
+    });
 
-        result.push({
-          time: data[i].time,
-          value: sar,
-        });
-      }
+    const candleSeries = chart.addSeries(CandlestickSeries);
+    chartRef.current = { chart, candleSeries };
 
-      return result;
-    }
+    setData(generateDummyData());
 
-    const sarData = calculateSAR(candles);
+    return () => chart.remove();
+  }, []);
 
-    // SAR SERIES
-    const sarSeries = chart.addSeries(LineSeries, {
-      color: "#2962FF",
-      lineWidth: 0,
-      crosshairMarkerVisible: false,
-      lastValueVisible: false,
-    });
+  useEffect(() => {
+    if (chartRef.current && data.length) {
+      chartRef.current.candleSeries.setData(data);
+    }
+  }, [data]);
 
-    sarSeries.setData(sarData);
+  const fetchData = async ({ from, to, all }) => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        if (all) resolve(generateDummyData());
+        else resolve(generateDummyData(from, to));
+      }, 300);
+    });
+  };
 
-    // MARKERS (DOTS)
-    const markers = sarData.map((p) => ({
-      time: p.time,
-      position: "inBar",
-      color: "#2962FF",
-      shape: "circle",
-    }));
+  const handleRange = async (item) => {
+    setActive(item.label);
 
-    createSeriesMarkers(sarSeries, markers);
+    let params = {};
+    const now = new Date();
 
-    chart.timeScale().fitContent();
+    if (item.days) {
+      const from = new Date();
+      from.setDate(now.getDate() - item.days);
+      params = { from, to: now };
+    }
 
-    return () => chart.remove();
-  }, []);
+    if (item.type === "ytd") {
+      params = { from: new Date(now.getFullYear(), 0, 1), to: now };
+    }
 
-  return (
-    <div>
-      <h2>Parabolic SAR Indicator</h2>
+    if (item.type === "all") {
+      params = { all: true };
+    }
 
-      <div
-        ref={chartRef}
-        style={{
-          width: "900px",
-          height: "500px",
-        }}
-      ></div>
-    </div>
-  );
+    const res = await fetchData(params);
+    setData(res);
+  };
+
+  const applyCustomRange = async () => {
+    if (!startDate || !endDate) return;
+
+    setActive("custom");
+    setShowCalendar(false);
+
+    const res = await fetchData({ from: new Date(startDate), to: new Date(endDate) });
+    setData(res);
+  };
+
+  return (
+    <div className="w-full relative">
+      <div ref={containerRef} />
+
+      {/* RANGE BAR */}
+      <div className="flex items-center justify-between p-3 bg-gray-900 text-white mt-2 rounded-2xl border border-gray-800 shadow-lg">
+        <div className="flex items-center gap-2 relative">
+          {ranges.map((item) => (
+            <button
+              key={item.label}
+              onClick={() => handleRange(item)}
+              className={`px-3 py-1 rounded-lg text-sm ${active === item.label ? "bg-blue-500" : "bg-gray-700 hover:bg-gray-600"}`}
+            >
+              {item.label}
+            </button>
+          ))}
+
+          <div className="relative">
+            <button
+              onClick={() => setShowCalendar(!showCalendar)}
+              className="p-2 bg-gray-700 rounded-lg hover:bg-gray-600"
+            >
+              <Calendar size={16} />
+            </button>
+
+            {showCalendar && (
+              <div className="absolute bottom-12 left-0 w-64 bg-gray-900 p-4 rounded-xl shadow-xl border border-gray-700 z-50">
+                <div className="text-sm mb-3 text-gray-300 font-medium">Select Range</div>
+
+                <div className="flex flex-col gap-3">
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="p-2 bg-gray-800 rounded border border-gray-600"
+                  />
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="p-2 bg-gray-800 rounded border border-gray-600"
+                  />
+
+                  <button
+                    onClick={applyCustomRange}
+                    className="bg-blue-500 px-3 py-2 rounded mt-2"
+                  >
+                    Apply Range
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* TIMEZONE */}
+        <div className="flex items-center gap-3 bg-gray-800 px-4 py-2 rounded-xl border border-gray-700">
+          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold">{formatTime(time)}</span>
+            <span className="text-xs text-gray-400">{formatDate(time)} (IST)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

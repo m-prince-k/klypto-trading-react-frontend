@@ -430,58 +430,6 @@ export function handleCopy(rows = null) {
 
 export const getRowsByIndicator = (indicator, maType) => {
   switch (indicator) {
-    case "RSI":
-      return [
-        { key: "rsi", label: "RSI", type: "line" },
-        {
-          key: "smoothingMA",
-          label: "Smoothing MA",
-          type: "line",
-        },
-        { key: "upper", label: "RSI Upper Band", value: 70 },
-        {
-          key: "middle",
-          label: "RSI Middle Band",
-          value: 50,
-        },
-
-        { key: "lower", label: "RSI Lower Band", value: 30 },
-
-        {
-          key: "bandFill",
-          label: "RSI Background Fill",
-          type: "fill",
-          topFillColor1: "rgba(140,120,255,0.05)",
-          topFillColor2: "rgba(140,120,255,0.05)",
-        },
-        {
-          key: "obFill",
-          label: "Overbought Gradient Fill",
-          type: "fill",
-        },
-        {
-          key: "osFill",
-          label: "Oversold Gradient Fill",
-          type: "fill",
-        },
-        {
-          key: "bbUpperBand",
-          label: "BB Upper Band",
-          type: "line",
-          width: 1,
-        },
-        {
-          key: "bbLowerBand",
-          label: "BB Lower Band",
-          type: "line",
-          width: 1,
-        },
-        {
-          key: "bbFill",
-          label: "BB Fill Area",
-          type: "fill",
-        },
-      ];
     case "SMA": {
       const rows = [{ key: "sma", label: "SMA", type: "line" }];
 
@@ -509,8 +457,6 @@ export const getRowsByIndicator = (indicator, maType) => {
             key: "bbFill",
             label: "BB Background",
             type: "fill",
-            upperKey: "bbUpper",
-            lowerKey: "bbLower",
           },
         );
       }
@@ -546,6 +492,73 @@ export const getRowsByIndicator = (indicator, maType) => {
             type: "fill",
             upperKey: "bbUpper",
             lowerKey: "bbLower",
+          },
+        );
+      }
+
+      return rows;
+    }
+    case "RSI": {
+      const rows = [
+        { key: "rsi", label: "RSI", type: "line" },
+        {
+          key: "upper",
+          label: "RSI Upper Band",
+          value: 70,
+        },
+        {
+          key: "middle",
+          label: "RSI Middle Band",
+          value: 50,
+        },
+        {
+          key: "lower",
+          label: "RSI Lower Band",
+          value: 30,
+        },
+        {
+          key: "bandFill",
+          label: "RSI Background Fill",
+          type: "fill",
+          topFillColor1: "rgba(140,120,255,0.05)",
+          topFillColor2: "rgba(140,120,255,0.05)",
+        },
+        {
+          key: "obFill",
+          label: "Overbought Gradient Fill",
+          type: "fill",
+        },
+        {
+          key: "osFill",
+          label: "Oversold Gradient Fill",
+          type: "fill",
+        },
+      ];
+      if (maType !== "none") {
+        rows.push({
+          key: "smoothingMA",
+          label: "RSI-Based MA",
+          type: "line",
+        });
+      }
+      if (maType === "SMA + Bollinger Bands") {
+        rows.push(
+          {
+            key: "bbUpperBand",
+            label: "BB Upper Band",
+            type: "line",
+            width: 1,
+          },
+          {
+            key: "bbLowerBand",
+            label: "BB Lower Band",
+            type: "line",
+            width: 1,
+          },
+          {
+            key: "bbFill",
+            label: "BB Fill Area",
+            type: "fill",
           },
         );
       }
@@ -633,21 +646,18 @@ export const getRowsByIndicator = (indicator, maType) => {
           type: "line",
         },
       ];
-    case "AroonOscillator":
+    case "AO":
       return [
         {
           key: "oscillator",
           label: "Oscillator",
           type: "line",
-          color0: "#26a69a",
-          color1: "#ef5350",
         },
 
         {
           key: "center",
           label: "Center Line",
           type: "line",
-          color: "#9e9e9e",
           showValue: true,
           value: 0,
         },
@@ -656,27 +666,21 @@ export const getRowsByIndicator = (indicator, maType) => {
           key: "upperLevel",
           label: "Upper Level",
           type: "line",
-          color: "#ff9800",
           showValue: true,
           value: 90,
         },
-
         {
           key: "lowerLevel",
           label: "Lower Level",
           type: "line",
-          color: "#03a9f4",
           showValue: true,
           value: -90,
         },
-
         /* FILL ABOVE CENTER */
-
         {
           key: "oscillatorFillBull",
           label: "Oscillator Fill (Bullish)",
           type: "area",
-          color0: "rgba(38,166,154,0.25)",
         },
 
         /* FILL BELOW CENTER */
@@ -685,7 +689,6 @@ export const getRowsByIndicator = (indicator, maType) => {
           key: "oscillatorFillBear",
           label: "Oscillator Fill (Bearish)",
           type: "area",
-          color0: "rgba(239,83,80,0.25)",
         },
       ];
     case "ADX":
@@ -820,42 +823,49 @@ export const getRowsByIndicator = (indicator, maType) => {
           color: "#9e9e9e",
         },
       ];
-    case "CCI":
-      return [
-        { key: "cciLine", label: "CCI", type: "line" },
+    case "CCI": {
+      const rows = [{ key: "cciLine", label: "CCI", type: "line" }];
 
-        { key: "cciMa", label: "Smoothing MA", type: "line" },
+      if (maType !== "none") {
+        rows.push({ key: "cciMa", label: "Smoothing MA", type: "line" });
+      }
 
+      rows.push(
         {
           key: "upperBand",
           label: "Upper Level",
           type: "line",
           value: 100,
-          showValue: true,
         },
-
         {
           key: "middleBand",
           label: "Middle Level",
           type: "line",
           value: 0,
-          showValue: true,
         },
-
         {
           key: "lowerBand",
           label: "Lower Level",
           type: "line",
           value: -100,
-          showValue: true,
         },
-
         {
           key: "bgFill",
           label: "Band Fill",
           type: "fill",
         },
-      ];
+      );
+
+      if (maType === "SMA + Bollinger Bands") {
+        rows.push(
+          { key: "bbUpper", label: "BB Upper", type: "line" },
+          { key: "bbLower", label: "BB Lower", type: "line" },
+          { key: "bbFill", label: "BB Fill", type: "fill" },
+        );
+      }
+
+      return rows;
+    }
     case "MOM":
       return [{ key: "momentum", label: "Momentum", type: "line" }];
 
@@ -873,7 +883,7 @@ export const getRowsByIndicator = (indicator, maType) => {
         },
       ];
 
-    case "WilliamsR":
+    case "WPR":
       return [
         // Lines
         { key: "r", label: "%R", type: "line", color: "#26a69a" },
@@ -1321,7 +1331,7 @@ export const getRowsByIndicator = (indicator, maType) => {
     case "MFI":
       return [
         {
-          key: "mf",
+          key: "mfiLine",
           label: "MFI",
           type: "line",
           color: "#2962ff",
@@ -1330,7 +1340,7 @@ export const getRowsByIndicator = (indicator, maType) => {
         },
 
         {
-          key: "upper",
+          key: "upperBand",
           label: "Overbought",
           type: "band",
           value: 80,
@@ -1338,7 +1348,7 @@ export const getRowsByIndicator = (indicator, maType) => {
           color: "#ef5350",
         },
         {
-          key: "middle",
+          key: "middleBand",
           label: "Middle Band",
           type: "band",
           value: 50,
@@ -1346,7 +1356,7 @@ export const getRowsByIndicator = (indicator, maType) => {
           color: "#9e9e9e",
         },
         {
-          key: "lower",
+          key: "lowerBand",
           label: "Oversold",
           type: "band",
           value: 20,
@@ -1354,7 +1364,7 @@ export const getRowsByIndicator = (indicator, maType) => {
           color: "#26a69a",
         },
         {
-          key: "bg",
+          key: "bgFill",
           label: "Background",
           type: "fill",
           visible: true,
@@ -1538,7 +1548,7 @@ export const PANE_INDICATORS = new Set([
   "WPR",
   "UltimateOscillator",
   "AROON",
-  "AroonOscillator",
+  "AO",
   "ChandeMomentumOscillator", // CMO
   "TRIX",
   "FisherTransform",
@@ -1550,5 +1560,17 @@ export const PANE_INDICATORS = new Set([
   "ChoppinessIndex",
   "Volume",
   "ChaikinMoneyFlow",
-  "MFI",
 ]);
+
+
+export const RANGE_INTERVAL_MAPPING = {
+  "1D": "1m",
+  "5D": "5m",
+  "1M": "30m",
+  "3M": "1h",
+  "6M": "4h",
+  "YTD": "1d",
+  "1Y": "1d",
+  "5Y": "1w",
+  "All": "1d"
+};

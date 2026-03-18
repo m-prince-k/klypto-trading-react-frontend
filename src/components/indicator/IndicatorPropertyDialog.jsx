@@ -95,8 +95,6 @@ export default function IndicatorPropertyDialog({
       ...config,
     };
 
-    
-
     console.log(payload, "payloadddddddddd");
     setIndicatorLoading(true);
     try {
@@ -547,7 +545,7 @@ export default function IndicatorPropertyDialog({
       case "AROON":
         return <BaseSettings showOffset={false} showSource={false} />;
 
-      case "AroonOscillator":
+      case "AO":
         return <BaseSettings showOffset={false} showSource={false} />;
 
       case "ADX":

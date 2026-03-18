@@ -14,6 +14,7 @@
     "bootstrap": "^5.3.8",
     "flowbite": "^4.0.1",
     "lightweight-charts": "^5.1.0",
+    "lucide-react": "^0.577.0",
     "moment": "^2.30.1",
     "react": "^19.2.4",
     "react-bootstrap": "^2.10.10",

@@ -1,28 +1,39 @@
 export default function AroonInput(
   response,
   indicatorSeriesRef,
-  latestIndicatorValuesRef
-){
-
+  latestIndicatorValuesRef,
+) {
   const upSeries = response?.data?.aroonUpSeries ?? [];
   const downSeries = response?.data?.aroonDownSeries ?? [];
 
-  const series = indicatorSeriesRef.current?.AROON;
-  if(!series) return;
+  console.log(upSeries, downSeries, "serrrrrrrrrrrr")
+
+  /* ---------- SAFETY CHECK ---------- */
+
+  if (!indicatorSeriesRef.current.AROON) {
+    indicatorSeriesRef.current.AROON = {};
+  }
+
+  const series = indicatorSeriesRef.current.AROON;
+
+  /* ---------- UPDATE SERIES ---------- */
 
   series.aroonUp?.setData(upSeries);
   series.aroonDown?.setData(downSeries);
 
+  /* ---------- UPDATE LATEST VALUE ---------- */
+
   latestIndicatorValuesRef.current.AROON = {
-    aroonUp: upSeries[upSeries.length-1]?.value,
-    aroonDown: downSeries[downSeries.length-1]?.value
+    aroonUp: upSeries[upSeries.length - 1]?.value,
+    aroonDown: downSeries[downSeries.length - 1]?.value,
   };
 
-  indicatorSeriesRef.current.Aroon.result = {
-    data:{
+  /* ---------- STORE RESULT ---------- */
+
+  series.result = {
+    data: {
       aroonUp: upSeries,
-      aroonDown: downSeries
-    }
+      aroonDown: downSeries,
+    },
   };
-
 }

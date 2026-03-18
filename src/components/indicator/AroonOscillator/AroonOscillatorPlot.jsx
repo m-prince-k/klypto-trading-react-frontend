@@ -15,19 +15,19 @@ export default function AroonOscillatorPlot({
 
     if (!result) return;
 
-    if (indicatorSeriesRef.current?.AroonOscillator) {
-      Object.values(indicatorSeriesRef.current.AroonOscillator).forEach((s)=>{
+    if (indicatorSeriesRef.current?.AO) {
+      Object.values(indicatorSeriesRef.current.AO).forEach((s)=>{
         if (s?.setData) {
           try { s.setData([]) } catch {}
         }
       });
-      indicatorSeriesRef.current.AroonOscillator = null;
+      indicatorSeriesRef.current.AO = null;
     }
 
     const groupedSeries = {};
-    const oscData = result.data;
+    const oscData = result.data ?? [];
 
-    const style = indicatorStyle?.AroonOscillator;
+    const style = indicatorStyle?.AO;
 
     const center = style?.center?.value ?? 0;
     const upper = style?.upperLevel?.value ?? 90;
@@ -35,7 +35,7 @@ export default function AroonOscillatorPlot({
 
     /* ================= OSCILLATOR ================= */
 
-    const oscSeries = addSeries("AroonOscillator", BaselineSeries,{
+    const oscSeries = addSeries("AO", BaselineSeries,{
       baseValue: { type: "price", price: center },
 
       topLineColor: style?.oscillator?.color0,
@@ -62,21 +62,21 @@ export default function AroonOscillatorPlot({
     const makeLevelData = (value) =>
       oscData.map((p)=>({time:p.time,value}));
 
-    const upperSeries = addSeries("AroonOscillator",LineSeries,{
+    const upperSeries = addSeries("AO",LineSeries,{
       color: style?.upperLevel?.color,
       lineWidth: style?.upperLevel?.width,
       lineStyle: style?.upperLevel?.lineStyle ?? 0,
       visible: style?.upperLevel?.visible
     });
 
-    const centerSeries = addSeries("AroonOscillator",LineSeries,{
+    const centerSeries = addSeries("AO",LineSeries,{
       color: style?.center?.color,
       lineWidth: style?.center?.width,
       lineStyle: style?.center?.lineStyle ?? 0,
       visible: style?.center?.visible
     });
 
-    const lowerSeries = addSeries("AroonOscillator",LineSeries,{
+    const lowerSeries = addSeries("AO",LineSeries,{
       color: style?.lowerLevel?.color,
       lineWidth: style?.lowerLevel?.width,
       lineStyle: style?.lowerLevel?.lineStyle ?? 0,
@@ -91,7 +91,10 @@ export default function AroonOscillatorPlot({
     groupedSeries.center = centerSeries;
     groupedSeries.lowerLevel = lowerSeries;
 
-    indicatorSeriesRef.current.AroonOscillator = groupedSeries;
+    /* store osc data for style updates */
+    groupedSeries.oscData = oscData;
+
+    indicatorSeriesRef.current.AO = groupedSeries;
 
   }, [result]);
 
@@ -100,17 +103,34 @@ export default function AroonOscillatorPlot({
 
   useEffect(()=>{
 
-    const group = indicatorSeriesRef.current?.AroonOscillator;
+    const group = indicatorSeriesRef.current?.AO;
     if (!group) return;
 
-    const style = indicatorStyle?.AroonOscillator;
+    const style = indicatorStyle?.AO;
+    const oscData = group.oscData ?? [];
+
+    const makeLevelData = (value) =>
+      oscData.map((p)=>({time:p.time,value}));
+
+    /* OSCILLATOR */
 
     group.oscillator?.applyOptions({
+      baseValue: { type: "price", price: style?.center?.value ?? 0 },
+
       topLineColor: style?.oscillator?.color0,
       bottomLineColor: style?.oscillator?.color1,
+
+      topFillColor1: style?.oscillatorFillBull?.color0,
+      topFillColor2: style?.oscillatorFillBull?.color0,
+
+      bottomFillColor1: style?.oscillatorFillBear?.color0,
+      bottomFillColor2: style?.oscillatorFillBear?.color0,
+
       lineWidth: style?.oscillator?.width,
       visible: style?.oscillator?.visible
     });
+
+    /* CENTER */
 
     group.center?.applyOptions({
       color: style?.center?.color,
@@ -118,17 +138,27 @@ export default function AroonOscillatorPlot({
       visible: style?.center?.visible
     });
 
+    group.center?.setData(makeLevelData(style?.center?.value ?? 0));
+
+    /* UPPER */
+
     group.upperLevel?.applyOptions({
       color: style?.upperLevel?.color,
       lineWidth: style?.upperLevel?.width,
       visible: style?.upperLevel?.visible
     });
 
+    group.upperLevel?.setData(makeLevelData(style?.upperLevel?.value ?? 90));
+
+    /* LOWER */
+
     group.lowerLevel?.applyOptions({
       color: style?.lowerLevel?.color,
       lineWidth: style?.lowerLevel?.width,
       visible: style?.lowerLevel?.visible
     });
+
+    group.lowerLevel?.setData(makeLevelData(style?.lowerLevel?.value ?? -90));
 
   }, [indicatorStyle]);
 

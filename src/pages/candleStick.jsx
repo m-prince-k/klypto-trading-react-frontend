@@ -156,11 +156,10 @@ export default function Candlestick() {
       atrLength: 10,
       factor: 3,
     },
-
     AROON: {
       length: 14,
     },
-    AroonOscillator: {
+    AO: {
       length: 14,
     },
     ADX: {
@@ -396,43 +395,39 @@ export default function Candlestick() {
       },
       bbFill: {
         visible: true,
-        topColor: "rgba(76,175,80,0.2)",
-        bottomColor: "rgba(76,175,80,0.05)",
+        topFillColor1: "rgba(76,175,80,0.2)",
+        bottomFillColor1: "rgba(76,175,80,0.05)",
       },
     },
     SMA: {
       sma: {
-        color: "rgba(0,0,0,1)",
+        color: "rgba(0, 140, 255, 1)",
         width: 2,
         lineStyle: 0,
         visible: true,
       },
-
       smoothingMA: {
         visible: true,
         color: "rgba(255,202,28,1)",
         width: 1,
         lineStyle: 0,
       },
-
       bbUpper: {
         visible: true,
         color: "rgba(239,83,80,1)",
         width: 1,
         lineStyle: 0,
       },
-
       bbLower: {
         visible: true,
         color: "rgba(38,166,154,1)",
         width: 1,
         lineStyle: 0,
       },
-
       bbFill: {
         visible: true,
-        topColor: "rgba(76,175,80,0.2)",
-        bottomColor: "rgba(76,175,80,0.05)",
+        topFillColor1: "rgba(76,175,80,0.2)",
+        bottomFillColor1: "rgba(76,175,80,0.05)",
       },
     },
     ICHIMOKU: {
@@ -521,8 +516,8 @@ export default function Candlestick() {
       },
       bbFill: {
         visible: true,
-        topColor: "rgba(76,175,80,0.2)",
-        bottomColor: "rgba(76,175,80,0.05)",
+        topFillColor1: "rgba(76,175,80,0.2)",
+        bottomFillColor1: "rgba(76,175,80,0.05)",
       },
     },
     WMA: {
@@ -538,7 +533,7 @@ export default function Candlestick() {
       hma: {
         visible: true,
         color: "rgba(0,0,0)",
-        width: 2,
+        width: 1,
         lineStyle: 0,
         opacity: 100,
       },
@@ -564,14 +559,14 @@ export default function Candlestick() {
     SUPERTREND: {
       upTrend: {
         color: "rgba(38,166,154,1)",
-        width: 2,
+        width: 1,
         lineStyle: 0,
         visible: true,
         opacity: 100,
       },
       downTrend: {
         color: "rgba(239,83,80,1)",
-        width: 2,
+        width: 1,
         lineStyle: 0,
         visible: true,
         opacity: 100,
@@ -610,12 +605,12 @@ export default function Candlestick() {
         opacity: 100,
       },
     },
-    AroonOscillator: {
+    AO: {
       oscillator: {
         visible: true,
         color0: "rgba(38,166,154,1)",
         color1: "rgba(239,83,80,1)",
-        width: 2,
+        width: 1,
         lineStyle: 0,
         opacity: 100,
       },
@@ -655,7 +650,7 @@ export default function Candlestick() {
     ADX: {
       adx: {
         color: "rgba(250, 35, 6, 1)",
-        width: 2,
+        width: 1,
         lineStyle: 0,
         visible: true,
         opacity: 100,
@@ -669,6 +664,7 @@ export default function Candlestick() {
         visible: true,
         opacity: 100,
       },
+
       cciMa: {
         color: "rgba(255,152,0,1)",
         width: 1,
@@ -676,14 +672,15 @@ export default function Candlestick() {
         visible: true,
         opacity: 100,
       },
+
       upperBand: {
         color: "rgba(38,166,154,1)",
         width: 1,
         lineStyle: 2,
         visible: true,
         value: 100,
-        opacity: 100,
       },
+
       middleBand: {
         color: "rgba(158,158,158,1)",
         width: 1,
@@ -691,17 +688,38 @@ export default function Candlestick() {
         visible: true,
         value: 0,
       },
+
       lowerBand: {
         color: "rgba(38,166,154,1)",
         width: 1,
         lineStyle: 2,
         visible: true,
-        opacity: 100,
         value: -100,
       },
+
       bgFill: {
         topFillColor1: "rgba(38,166,154,0.05)",
         topFillColor2: "rgba(38,166,154,0.05)",
+        visible: true,
+      },
+
+      bbUpper: {
+        color: "rgba(33,150,243,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+
+      bbLower: {
+        color: "rgba(33,150,243,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+
+      bbFill: {
+        topFillColor1: "rgba(33,150,243,0.15)",
+        topFillColor2: "rgba(33,150,243,0.05)",
         visible: true,
       },
     },
@@ -765,8 +783,8 @@ export default function Candlestick() {
 
       bg: {
         visible: true,
-        color0: "rgba(38,166,154,0.08)",
-        color1: "rgba(38,166,154,0.02)",
+        topFillColor1: "rgba(38,166,154,0.08)",
+        topFillColor2: "rgba(38,166,154,0.02)",
       },
     },
     ATR: {
@@ -895,8 +913,8 @@ export default function Candlestick() {
         return "MFI";
       case "WPR":
         return "WPR";
-      case "AroonOscillator":
-        return "AroonOscillator";
+      case "AO":
+        return "AO";
       case "MOM":
         return "MOM";
     }
@@ -1100,6 +1118,9 @@ export default function Candlestick() {
         case "MOM":
           keysToShow = ["mom"];
           break;
+        // case "AO":
+        //   keysToShow = ["oscData"];
+        //   break;
         case "ICHIMOKU":
           keysToShow = [
             "conversionLine",
@@ -1154,7 +1175,9 @@ export default function Candlestick() {
           addSeries={addSeries}
           chart={chartRef.current}
           containerRef={containerRef}
+          panesRef={panesRef}
           indicatorConfigs={indicatorConfigs}
+          pane={indicatorSeriesRef.current}
           timeframeValue={timeframeValue} // pass timeframe so useEffect can trigger update
         />
       );
@@ -1399,6 +1422,7 @@ export default function Candlestick() {
     indicatorStyle,
     latestIndicatorValuesRef,
     indicatorConfigs,
+    setIndicatorLoading,
   });
 
   const zoomCharts = (delta) => {
@@ -1449,7 +1473,7 @@ export default function Candlestick() {
             </div>
           </div>
 
-          <div className="row">
+          <div className="row" style={{ position: "relative" }}>
             {/* <div className="col-md-1 p-0 m-0"> */}
             {/* <ChartLeftSidebar
                 chartRef={chartRef}
@@ -1545,7 +1569,9 @@ export default function Candlestick() {
                           className="flex w-full justify-between items-center gap-3 bg-white shadow-sm border border-slate-200 rounded-3 px-3 h-8 text-xs "
                         >
                           <span className="font-medium w-full text-slate-800 flex items-center gap-2">
-                            {indicator} : {timeframeValue} :
+                            {indicator} :{" "}
+                            {indicatorConfigs?.[normalizedType]?.length ?? ""}{" "}
+                            {indicatorConfigs?.[normalizedType]?.source ?? ""}{" "}
                             <span style={{ display: "flex", gap: 6 }}>
                               {renderValue(normalizedType, value)}
                             </span>

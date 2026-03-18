@@ -27,7 +27,7 @@ export default function WilliamsRPlot({
     const groupedSeries = {};
     const rData = result.data.r;
 
-    const style = indicatorStyle?.WilliamsR || {};
+    const style = indicatorStyle?.WPR || {};
 
     const upper = style?.upperBand?.value ?? -20;
     const middle = style?.middleBand?.value ?? -50;
@@ -37,7 +37,7 @@ export default function WilliamsRPlot({
 
     /* ================= MAIN %R LINE ================= */
 
-    const rSeries = addSeries("WilliamsR", LineSeries, {
+    const rSeries = addSeries("WPR", LineSeries, {
       color: style?.r?.color || "rgba(38,166,154,1)",
       lineWidth: style?.r?.width || 2,
       lineStyle: style?.r?.lineStyle ?? 0,
@@ -100,8 +100,8 @@ export default function WilliamsRPlot({
 
     const bgSeries = addSeries("WPR", BaselineSeries, {
       baseValue: { type: "price", price: lower },
-      topFillColor1: style?.bg?.color0,
-      topFillColor2: style?.bg?.color1,
+      topFillColor1: style?.bg?.topFillColor1,
+      topFillColor2: style?.bg?.topFillColor2,
       bottomFillColor1: "rgba(0,0,0,0)",
       bottomFillColor2: "rgba(0,0,0,0)",
       topLineColor: "transparent",
@@ -176,8 +176,8 @@ export default function WilliamsRPlot({
 
         visible: style?.bg?.visible ?? true,
 
-        topFillColor1: style?.bg?.color0,
-        topFillColor2: style?.bg?.color1,
+        topFillColor1: style?.bg?.topFillColor1,
+        topFillColor2: style?.bg?.topFillColor2,
 
         bottomFillColor1: "rgba(0,0,0,0)",
         bottomFillColor2: "rgba(0,0,0,0)",
