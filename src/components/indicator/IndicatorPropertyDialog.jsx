@@ -1031,7 +1031,7 @@ export default function IndicatorPropertyDialog({
             <BaseSettings showSource={false} />
           </>
         );
-      case "Choppiness Index":
+      case "CHOP":
         return (
           <>
             <BaseSettings showSource={false} />

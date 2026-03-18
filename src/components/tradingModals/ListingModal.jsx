@@ -237,7 +237,7 @@ export const ListingModal = ({
                             onChange={() => toggleIndicator(item.slug)}
                             className="form-check-input cursor-pointer"
                           />
-                          <span>{item.label}  </span>
+                          <span>{item.label} -- {item.slug} </span>
                         </label>
                       </li>
                     ))}

@@ -1,205 +1,218 @@
 import React, { useEffect, useRef, useState } from "react";
-import { CandlestickSeries, createChart } from "lightweight-charts";
-import { Calendar, CandlestickChart } from "lucide-react";
+import {
+  createChart,
+  CandlestickSeries,
+  HistogramSeries,
+  LineSeries,
+  AreaSeries,
+  createSeriesMarkers,
+} from "lightweight-charts";
 
-const ranges = [
-  { label: "1D", days: 1 },
-  { label: "5D", days: 5 },
-  { label: "1M", days: 30 },
-  { label: "3M", days: 90 },
-  { label: "6M", days: 180 },
-  { label: "YTD", type: "ytd" },
-  { label: "1Y", days: 365 },
-  { label: "5Y", days: 365 * 5 },
-  { label: "All", type: "all" }
-];
+export default function VolumeChart() {
+  const containerRef = useRef();
+  const chartRef = useRef();
 
-const generateDummyData = (from, to) => {
-  const data = [];
-  let current = from ? new Date(from) : new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
-  const end = to ? new Date(to) : new Date();
+  const [maLength, setMaLength] = useState(20);
+  const [type, setType] = useState("Columns"); // :art: COLORS
 
-  let price = 100;
+  const [upColor, setUpColor] = useState("#26A69A");
+  const [downColor, setDownColor] = useState("#EF5350");
+  const [maColor, setMaColor] = useState("#FACC15"); // :bar_chart: SAMPLE DATA
 
-  while (current <= end) {
-    const open = price;
-    const close = open + (Math.random() - 0.5) * 5;
-    const high = Math.max(open, close) + Math.random() * 2;
-    const low = Math.min(open, close) - Math.random() * 2;
+  const data = Array.from({ length: 200 }, (_, i) => {
+    const base = 30000 + Math.sin(i / 5) * 1000;
+    const open = base;
+    const close = base + (Math.random() - 0.5) * 500;
 
-    data.push({
-      time: Math.floor(current.getTime() / 1000),
-      open,
-      high,
-      low,
-      close
-    });
+    return {
+      time: 1688947200 + i * 60, // :white_check_mark: UNIQUE TIME
+      open,
+      high: open + 300,
+      low: open - 300,
+      close,
+      volume: 10000 + Math.random() * 50000,
+    };
+  }); // :fire: SMA
 
-    price = close;
-    current.setDate(current.getDate() + 1);
-  }
+  const sma = (arr, len, i) =>
+    i + 1 < len
+      ? null
+      : arr.slice(i - len + 1, i + 1).reduce((a, b) => a + b, 0) / len; // :dart: CREATE CHART
 
-  return data;
-};
+  useEffect(() => {
+    const chart = createChart(containerRef.current, {
+      height: 500,
+      layout: { background: { color: "#020617" }, textColor: "#fff" },
+    });
 
-export default function AdvancedChart() {
-  const containerRef = useRef();
-  const chartRef = useRef();
+    const candleSeries = chart.addSeries(CandlestickSeries);
 
-  const [data, setData] = useState([]);
-  const [active, setActive] = useState("All");
-  const [showCalendar, setShowCalendar] = useState(false);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [time, setTime] = useState(new Date());
+    chartRef.current = {
+      chart,
+      candleSeries,
+      volumeSeries: null,
+      maSeries: null,
+    };
 
-  useEffect(() => {
-    const interval = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(interval);
-  }, []);
+    return () => chart.remove();
+  }, []); // :arrows_counterclockwise: UPDATE
 
-  const formatTime = (date) =>
-    date.toLocaleTimeString("en-IN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false
-    });
+  useEffect(() => {
+    const chart = chartRef.current.chart; // :broom: REMOVE OLD SERIES
 
-  const formatDate = (date) =>
-    date.toLocaleDateString("en-IN", {
-      year: "numeric",
-      month: "short",
-      day: "numeric"
-    });
+    if (chartRef.current.volumeSeries) {
+      chart.removeSeries(chartRef.current.volumeSeries);
+    }
+    if (chartRef.current.maSeries) {
+      chart.removeSeries(chartRef.current.maSeries);
+    }
 
-  useEffect(() => {
-    const chart = createChart(containerRef.current, {
-      height: 400,
-      layout: { background: { color: "#0F172A" }, textColor: "#fff" }
-    });
+    let volumeSeries; // :bar_chart: CREATE SERIES BASED ON TYPE
 
-    const candleSeries = chart.addSeries(CandlestickSeries);
-    chartRef.current = { chart, candleSeries };
+    switch (type) {
+      case "Area":
+      case "Area with breaks":
+        volumeSeries = chart.addSeries(AreaSeries, {
+          priceScaleId: "volume",
+          topColor: upColor,
+          bottomColor: "rgba(0,0,0,0)",
+          lineColor: upColor,
+        });
+        break;
 
-    setData(generateDummyData());
+      case "Line":
+      case "Line with breaks":
+      case "Step line":
+        volumeSeries = chart.addSeries(LineSeries, {
+          priceScaleId: "volume",
+          color: upColor,
+          lineWidth: 2,
+        });
+        break;
 
-    return () => chart.remove();
-  }, []);
+      case "Cross":
+      case "Circles":
+        volumeSeries = chart.addSeries(LineSeries, {
+          priceScaleId: "volume",
+          color: "transparent", // hide line
+          lineWidth: 0,
+        });
+        break;
 
-  useEffect(() => {
-    if (chartRef.current && data.length) {
-      chartRef.current.candleSeries.setData(data);
-    }
-  }, [data]);
+      case "Histogram":
+      case "Columns":
+      default:
+        volumeSeries = chart.addSeries(HistogramSeries, {
+          priceScaleId: "volume",
+          priceFormat: { type: "volume" },
+        });
+    } // :chart_with_downwards_trend: MA SERIES
 
-  const fetchData = async ({ from, to, all }) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        if (all) resolve(generateDummyData());
-        else resolve(generateDummyData(from, to));
-      }, 300);
-    });
-  };
+    const maSeries = chart.addSeries(LineSeries, {
+      priceScaleId: "volume",
+      color: maColor,
+      lineWidth: 2,
+    });
 
-  const handleRange = async (item) => {
-    setActive(item.label);
+    chart.priceScale("volume").applyOptions({
+      scaleMargins: { top: 0.7, bottom: 0 },
+    });
 
-    let params = {};
-    const now = new Date();
+    chartRef.current.volumeSeries = volumeSeries;
+    chartRef.current.maSeries = maSeries; // :bar_chart: DATA FORMAT
 
-    if (item.days) {
-      const from = new Date();
-      from.setDate(now.getDate() - item.days);
-      params = { from, to: now };
-    }
+    const volumeData = data.map((d) => ({
+      time: d.time,
+      value: d.volume,
+      color: d.close >= d.open ? upColor : downColor,
+    })); // :chart_with_downwards_trend: MA DATA
 
-    if (item.type === "ytd") {
-      params = { from: new Date(now.getFullYear(), 0, 1), to: now };
-    }
+    const volumes = data.map((d) => d.volume);
+    const maData = [];
 
-    if (item.type === "all") {
-      params = { all: true };
-    }
+    for (let i = 0; i < data.length; i++) {
+      const val = sma(volumes, maLength, i);
+      if (val) {
+        maData.push({ time: data[i].time, value: val });
+      }
+    } // :fire: APPLY TYPES
 
-    const res = await fetchData(params);
-    setData(res);
-  };
+    if (type === "Cross" || type === "Circles") {
+      const cleanData = volumeData.map((d) => ({
+        time: d.time,
+        value: d.value,
+      }));
 
-  const applyCustomRange = async () => {
-    if (!startDate || !endDate) return;
+      volumeSeries.setData(cleanData); // :white_check_mark: FIXED MARKERS
 
-    setActive("custom");
-    setShowCalendar(false);
+      const markers = volumeData.map((d) => ({
+        time: d.time,
+        position: "inBar",
+        color: d.color,
+        shape: type === "Cross" ? "cross" : "circle",
+      }));
 
-    const res = await fetchData({ from: new Date(startDate), to: new Date(endDate) });
-    setData(res);
-  };
+      createSeriesMarkers(volumeSeries, []); // clear
+      createSeriesMarkers(volumeSeries, markers);
+    } else {
+      volumeSeries.setData(volumeData);
+    }
 
-  return (
-    <div className="w-full relative">
-      <div ref={containerRef} />
+    maSeries.setData(maData);
 
-      {/* RANGE BAR */}
-      <div className="flex items-center justify-between p-3 bg-gray-900 text-white mt-2 rounded-2xl border border-gray-800 shadow-lg">
-        <div className="flex items-center gap-2 relative">
-          {ranges.map((item) => (
-            <button
-              key={item.label}
-              onClick={() => handleRange(item)}
-              className={`px-3 py-1 rounded-lg text-sm ${active === item.label ? "bg-blue-500" : "bg-gray-700 hover:bg-gray-600"}`}
-            >
-              {item.label}
-            </button>
-          ))}
+    chart.timeScale().fitContent();
+  }, [type, maLength, upColor, downColor, maColor]);
 
-          <div className="relative">
-            <button
-              onClick={() => setShowCalendar(!showCalendar)}
-              className="p-2 bg-gray-700 rounded-lg hover:bg-gray-600"
-            >
-              <Calendar size={16} />
-            </button>
-
-            {showCalendar && (
-              <div className="absolute bottom-12 left-0 w-64 bg-gray-900 p-4 rounded-xl shadow-xl border border-gray-700 z-50">
-                <div className="text-sm mb-3 text-gray-300 font-medium">Select Range</div>
-
-                <div className="flex flex-col gap-3">
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="p-2 bg-gray-800 rounded border border-gray-600"
-                  />
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="p-2 bg-gray-800 rounded border border-gray-600"
-                  />
-
-                  <button
-                    onClick={applyCustomRange}
-                    className="bg-blue-500 px-3 py-2 rounded mt-2"
-                  >
-                    Apply Range
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* TIMEZONE */}
-        <div className="flex items-center gap-3 bg-gray-800 px-4 py-2 rounded-xl border border-gray-700">
-          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold">{formatTime(time)}</span>
-            <span className="text-xs text-gray-400">{formatDate(time)} (IST)</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  return (
+    <div style={{ background: "#020617", color: "#fff", padding: 10 }}>
+            <h2>:fire: Volume Indicator PRO (Fixed)</h2>
+            
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                {/* MA LENGTH */}
+                
+        <input
+          type="number"
+          value={maLength}
+          onChange={(e) => setMaLength(+e.target.value)}
+        />
+                {/* TYPE SELECT */}
+                
+        <select value={type} onChange={(e) => setType(e.target.value)}>
+                    <option>Columns</option>
+                    <option>Histogram</option>
+                    <option>Area</option>
+                    <option>Area with breaks</option>
+                    <option>Line</option>
+                    <option>Line with breaks</option>
+                    <option>Step line</option>
+                    <option>Cross</option>
+                    <option>Circles</option>
+                  
+        </select>
+                {/* COLORS */}
+                
+        <input
+          type="color"
+          value={upColor}
+          onChange={(e) => setUpColor(e.target.value)}
+        />
+                
+        <input
+          type="color"
+          value={downColor}
+          onChange={(e) => setDownColor(e.target.value)}
+        />
+                
+        <input
+          type="color"
+          value={maColor}
+          onChange={(e) => setMaColor(e.target.value)}
+        />
+              
+      </div>
+            
+      <div ref={containerRef} style={{ marginTop: 10 }} />
+          
+    </div>
+  );
 }

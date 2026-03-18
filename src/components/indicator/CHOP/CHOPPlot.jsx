@@ -8,29 +8,23 @@ export default function CHOPPlot({
   addSeries,
   indicatorConfigs,
 }) {
-
-  /* ================= CREATE CHOP ================= */
+  /* ================= CREATE / RESET SERIES ================= */
   useEffect(() => {
     if (!result) return;
 
+    // Clear previous series
     if (indicatorSeriesRef.current?.CHOP) {
-      Object.values(indicatorSeriesRef.current.CHOP).forEach(s => {
-        if (s?.setData) try { s.setData([]); } catch {}
+      Object.values(indicatorSeriesRef.current.CHOP).forEach((s) => {
+        if (s?.setData) s.setData([]);
       });
       indicatorSeriesRef.current.CHOP = null;
     }
 
     const groupedSeries = {};
     const chopData = result.data?.chopLine ?? [];
+    const makeLevel = (v) => chopData.map((p) => ({ time: p.time, value: v }));
 
-    const upper = indicatorConfigs?.CHOP?.upper ?? 61.8;
-    const middle = indicatorConfigs?.CHOP?.middle ?? 50;
-    const lower = indicatorConfigs?.CHOP?.lower ?? 38.2;
-    const bgFill = indicatorStyle?.CHOP?.bgFill;
-
-    const makeLevel = (v) => chopData.map(p => ({ time: p.time, value: v }));
-
-    // CHOP line
+    // CHOP main line
     const chopSeries = addSeries("CHOP", LineSeries, {
       color: indicatorStyle?.CHOP?.chopLine?.color,
       lineWidth: indicatorStyle?.CHOP?.chopLine?.width ?? 2,
@@ -43,7 +37,9 @@ export default function CHOPPlot({
     groupedSeries.chopLine = chopSeries;
 
     // Bands
-    ["upper","middle","lower"].forEach(key=>{
+    ["upper", "middle", "lower"].forEach((key) => {
+      const value =
+        indicatorConfigs?.CHOP?.[key] ?? (key === "upper" ? 61.8 : key === "middle" ? 50 : 38.2);
       const s = addSeries("CHOP", LineSeries, {
         color: indicatorStyle?.CHOP?.[key]?.color,
         lineWidth: indicatorStyle?.CHOP?.[key]?.width ?? 1,
@@ -52,30 +48,28 @@ export default function CHOPPlot({
         priceLineVisible: false,
         lastValueVisible: false,
       });
-      const value = key === "upper" ? upper : key === "middle" ? middle : lower;
       s.setData(makeLevel(value));
       groupedSeries[key] = s;
     });
 
-    // Background fill (between lower & upper)
+    // Background fill
     const bandBackground = addSeries("CHOP", BaselineSeries, {
-      baseValue: { type: "price", price: lower },
+      baseValue: { type: "price", price: indicatorConfigs?.CHOP?.lower ?? 38.2 },
       topLineColor: "transparent",
       bottomLineColor: "transparent",
-      topFillColor1: bgFill?.topFillColor1,
-      topFillColor2: bgFill?.topFillColor2,
+      topFillColor1: indicatorStyle?.CHOP?.bgFill?.topFillColor1,
+      topFillColor2: indicatorStyle?.CHOP?.bgFill?.topFillColor2,
       bottomFillColor1: "rgba(0,0,0,0)",
       bottomFillColor2: "rgba(0,0,0,0)",
-      visible: bgFill?.visible ?? true,
+      visible: indicatorStyle?.CHOP?.bgFill?.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: false,
     });
-    bandBackground.setData(makeLevel(upper));
+    bandBackground.setData(makeLevel(indicatorConfigs?.CHOP?.upper ?? 61.8));
     groupedSeries.bandBackground = bandBackground;
 
     groupedSeries.chopData = chopData;
     indicatorSeriesRef.current.CHOP = groupedSeries;
-
   }, [result]);
 
   /* ================= STYLE & BAND UPDATE ================= */
@@ -85,15 +79,14 @@ export default function CHOPPlot({
 
     const chopData = chopGroup.chopData ?? [];
     if (!chopData.length) return;
-
-    const makeLevel = (v) => chopData.map(p => ({ time: p.time, value: v }));
+    const makeLevel = (v) => chopData.map((p) => ({ time: p.time, value: v }));
 
     const upper = indicatorConfigs?.CHOP?.upper ?? 61.8;
     const middle = indicatorConfigs?.CHOP?.middle ?? 50;
     const lower = indicatorConfigs?.CHOP?.lower ?? 38.2;
     const bgFill = indicatorStyle?.CHOP?.bgFill;
 
-    // Update CHOP line style
+    // Update main CHOP line
     chopGroup.chopLine?.applyOptions({
       color: indicatorStyle?.CHOP?.chopLine?.color,
       lineWidth: indicatorStyle?.CHOP?.chopLine?.width,
@@ -102,8 +95,8 @@ export default function CHOPPlot({
       lastValueVisible: indicatorStyle?.CHOP?.chopLine?.visible,
     });
 
-    // Update bands values & style
-    ["upper","middle","lower"].forEach(key=>{
+    // Update bands
+    ["upper", "middle", "lower"].forEach((key) => {
       const value = key === "upper" ? upper : key === "middle" ? middle : lower;
       const s = chopGroup[key];
       const style = indicatorStyle?.CHOP?.[key];
@@ -118,7 +111,7 @@ export default function CHOPPlot({
       });
     });
 
-    // Update background fill dynamically between lower & upper
+    // Update background fill properly
     chopGroup.bandBackground?.applyOptions({
       baseValue: { price: lower },
       topFillColor1: bgFill?.topFillColor1,
@@ -126,7 +119,6 @@ export default function CHOPPlot({
       visible: bgFill?.visible,
     });
     chopGroup.bandBackground?.setData(makeLevel(upper));
-
   }, [indicatorStyle, indicatorConfigs]);
 
   return null;

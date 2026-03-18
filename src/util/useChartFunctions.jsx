@@ -37,7 +37,6 @@ export default function useChartFunctions({
   ) {
     if (!selectedIndicator?.length) return;
 
-
     for (const indicator of selectedIndicator) {
       try {
         const result = await fetchDataForIndicators(
@@ -263,7 +262,7 @@ export default function useChartFunctions({
               rows,
             };
 
-            console.log(result, "ressssssssssss")
+            console.log(result, "ressssssssssss");
             latestIndicatorValuesRef.current.AO = {
               oscillator: osc[osc.length - 1]?.value,
             };
@@ -393,6 +392,27 @@ export default function useChartFunctions({
 
             latestIndicatorValuesRef.current.PSAR = {
               psar: psar?.[psar.length - 1]?.value,
+            };
+
+            break;
+          }
+
+          case "CHOP": {
+            const chopLine = result?.data?.chopLine ?? [];
+            const upper = result?.data?.upper ?? [];
+            const middle = result?.data?.middle ?? [];
+            const lower = result?.data?.lower ?? [];
+
+            indicatorSeriesRef.current.CHOP = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.CHOP = {
+              chopLine: chopLine[chopLine.length - 1]?.value,
+              upper: upper[upper.length - 1]?.value,
+              middle: middle[middle.length - 1]?.value,
+              lower: lower[lower.length - 1]?.value,
             };
 
             break;
@@ -591,6 +611,17 @@ async function fetchDataForIndicators(
           },
         };
       }
+
+      case "CHOP":
+        return {
+          type: "multi",
+          data: {
+            chopLine:
+              response.data
+                ?.filter((d) => d.chop != null && d.time != null)
+                .map((d) => ({ time: d.time, value: d.chop })) ?? [],
+          },
+        };
       case "HMA":
         return {
           type: "multi",

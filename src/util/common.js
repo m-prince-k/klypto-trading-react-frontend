@@ -1144,9 +1144,8 @@ export const getRowsByIndicator = (indicator, maType) => {
         },
       ];
 
-    case "Choppiness Index":
+    case "CHOP":
       return [
-        // Lines
         {
           key: "chopLine",
           label: "Chop",
@@ -1557,7 +1556,7 @@ export const PANE_INDICATORS = new Set([
   "ADX",
   "MFI",
   "MOM",
-  "ChoppinessIndex",
+  "CHOP",
   "Volume",
   "ChaikinMoneyFlow",
 ]);

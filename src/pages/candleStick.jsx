@@ -262,7 +262,7 @@ export default function Candlestick() {
       length: 20,
       offset: 0,
     },
-    ChoppinessIndex: {
+    CHOP: {
       length: 14,
       offset: 0,
     },
@@ -828,7 +828,6 @@ export default function Candlestick() {
         lineStyle: 2,
         visible: true,
       },
-
       bgFill: {
         visible: true,
         topFillColor1: "rgba(41, 98, 255, 0.25)",
@@ -841,6 +840,40 @@ export default function Candlestick() {
         color: "rgba(41, 98, 255, 1)",
         width: 1,
         opacity: 100,
+      },
+    },
+    CHOP: {
+      chopLine: {
+        color: "rgba(239,83,80,1)", // red
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+      upper: {
+        color: "rgba(239,83,80,1)", // red
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: 65.8,
+      },
+      middle: {
+        color: "rgba(38,166,154,1)", // teal
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: 50,
+      },
+      lower: {
+        color: "rgba(38,166,154,1)", // teal
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: 38.2,
+      },
+      bg: {
+        visible: true,
+        topFillColor1: "rgba(41, 98, 255, 0.25)",
+        topFillColor2: "rgba(41, 98, 255, 0.08)",
       },
     },
   };
@@ -915,6 +948,8 @@ export default function Candlestick() {
         return "WPR";
       case "AO":
         return "AO";
+        case "CHOP":
+        return "CHOP";
       case "MOM":
         return "MOM";
     }
