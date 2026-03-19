@@ -397,22 +397,19 @@ export default function useChartFunctions({
             break;
           }
 
-          case "CHOP": {
-            const chopLine = result?.data?.chopLine ?? [];
-            const upper = result?.data?.upper ?? [];
-            const middle = result?.data?.middle ?? [];
-            const lower = result?.data?.lower ?? [];
+          case "EOM": {
+            const eomData = result?.data?.eom ?? [];
 
-            indicatorSeriesRef.current.CHOP = {
+            indicatorSeriesRef.current.EOM = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.CHOP = {
-              chopLine: chopLine[chopLine.length - 1]?.value,
-              upper: upper[upper.length - 1]?.value,
-              middle: middle[middle.length - 1]?.value,
-              lower: lower[lower.length - 1]?.value,
+
+
+            console.log(result, "resssssssss")
+            latestIndicatorValuesRef.current.EOM = {
+              eom: eomData[eomData.length - 1]?.value,
             };
 
             break;
@@ -487,6 +484,7 @@ async function fetchDataForIndicators(
       case "UltimateOscillator":
       case "StochasticRSI":
       case "ChandeMomentumOscillator":
+
         return {
           type: "single",
           data:
@@ -944,6 +942,33 @@ async function fetchDataForIndicators(
         };
       }
 
+      case "EOM":
+        return {
+          type: "single",
+          data: {
+            eom:
+              response?.data
+                ?.filter((d) => d.eom != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.eom),
+                })) ?? [],
+          },
+        };
+
+      case "AD":
+        return {
+          type: "single",
+          data: {
+            ad:
+              response?.data
+                ?.filter((d) => d.value != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.value),
+                })) ?? [],
+          },
+        };
       /* ---------------- MULTI LINE ---------------- */
 
       case "ICHIMOKU":
@@ -983,6 +1008,23 @@ async function fetchDataForIndicators(
                 })) ?? [],
           },
         };
+
+      // case "AD": {
+      //   const adData = result?.data?.ad ?? [];
+
+      //   if (!indicatorSeriesRef.current.AD) {
+      //     indicatorSeriesRef.current.AD = {};
+      //   }
+
+      //   indicatorSeriesRef.current.AD.result = result;
+      //   indicatorSeriesRef.current.AD.rows = rows;
+
+      //   latestIndicatorValuesRef.current.AD = {
+      //     ad: adData[adData.length - 1]?.value,
+      //   };
+
+      //   break;
+      // }
 
       case "Stochastic":
         return {
@@ -1170,6 +1212,8 @@ async function fetchDataForIndicators(
                 })) ?? [],
           },
         };
+
+
 
       default:
         return {

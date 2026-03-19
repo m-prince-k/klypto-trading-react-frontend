@@ -1211,7 +1211,7 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "Ease of Movement":
+      case "EOM":
         return (
           <>
             <BaseSettings showOffset={false} showSource={false} />

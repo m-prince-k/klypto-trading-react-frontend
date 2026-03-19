@@ -295,7 +295,7 @@ export default function Candlestick() {
     MFI: {
       length: 14,
     },
-    "Ease of Movement": {
+    EOM: {
       length: 14,
       divisor: 10000,
     },
@@ -842,40 +842,31 @@ export default function Candlestick() {
         opacity: 100,
       },
     },
-    CHOP: {
-      chopLine: {
-        color: "rgba(239,83,80,1)", // red
+    EOM: {
+      eom: {
+        color: "rgba(38, 166, 154, 1)",
+        width: 3,
+        lineStyle: 0, // 0 solid, 1 dotted, 2 dashed
+        visible: true,
+      },
+
+      /* Histogram colors */
+      histogram: {
+        upColor: "rgba(38, 166, 154, 1)",   // green
+        downColor: "rgba(239, 83, 80, 1)",  // red
+        base: 0,
+        visible: true,
+      },
+
+      /* Zero line */
+      zeroLine: {
+        value: 0,
+        color: "rgba(153, 153, 153, 1)", // grey
         width: 1,
-        lineStyle: 0,
+        lineStyle: 2, // dashed
         visible: true,
       },
-      upper: {
-        color: "rgba(239,83,80,1)", // red
-        width: 1,
-        lineStyle: 2,
-        visible: true,
-        value: 65.8,
-      },
-      middle: {
-        color: "rgba(38,166,154,1)", // teal
-        width: 1,
-        lineStyle: 2,
-        visible: true,
-        value: 50,
-      },
-      lower: {
-        color: "rgba(38,166,154,1)", // teal
-        width: 1,
-        lineStyle: 2,
-        visible: true,
-        value: 38.2,
-      },
-      bg: {
-        visible: true,
-        topFillColor1: "rgba(41, 98, 255, 0.25)",
-        topFillColor2: "rgba(41, 98, 255, 0.08)",
-      },
-    },
+    }
   };
 
   const [indicatorStyle, setIndicatorStyle] = useState(indicatorStyleDefault);
@@ -952,6 +943,8 @@ export default function Candlestick() {
         return "CHOP";
       case "MOM":
         return "MOM";
+      case "EOM":
+        return "EOM";
     }
   }
 
@@ -997,13 +990,13 @@ export default function Candlestick() {
 
         try {
           chart.removeSeries(series);
-        } catch {}
+        } catch { }
       });
     } else {
       /* SINGLE SERIES */
       try {
         chart.removeSeries(entry);
-      } catch {}
+      } catch { }
     }
 
     delete indicatorSeriesRef.current[indicator];
@@ -1106,7 +1099,7 @@ export default function Candlestick() {
 
           try {
             chart.removeSeries(series);
-          } catch (e) {}
+          } catch (e) { }
         });
 
         delete indicatorSeriesRef.current[indicator];
@@ -1253,7 +1246,7 @@ export default function Candlestick() {
   // ATTACH CROSSHAIR
 
   const attachCrosshair = useCallback((chart) => {
-    if (!chart) return () => {};
+    if (!chart) return () => { };
     const handler = (param) => {
       const charts = [
         chartRef.current,
@@ -1321,7 +1314,7 @@ export default function Candlestick() {
         if (seriesRef.current) {
           try {
             chartRef.current.removeSeries(seriesRef.current);
-          } catch (e) {}
+          } catch (e) { }
           seriesRef.current = null;
         }
 
