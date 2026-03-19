@@ -42,6 +42,20 @@ import PSARInput from "./PSAR/PSARInput";
 import CHOPPlot from "./CHOP/CHOPPlot";
 import CHOPInput from "./CHOP/CHOPInput";
 import EOMInput from "./EOM/EOMInput";
+import CMOInput from "./CMO/CMOInput";
+import CMOPlot from "./CMO/CMOPlot";
+import PVOInput from "./PVO/PVOInput";
+import PVOPlot from "./PVO/PVOPlot";
+import OBVInput from "./OBV/OBVInput";
+import OBVPlot from "./OBV/OBVPlot";
+import VOLPlot from "./VOL/VOLPlot";
+import VOLInput from "./VOL/VOLInput";
+import STDDEVInput from "./STDDEV/STDDEVInput";
+import STDDEVPlot from "./STDDEV/STDDEVPlot";
+import TRIXInput from "./TRIX/TRIXInput";
+import TRIXPlot from "./TRIX/TRIXPlot";
+import VPPlot from "./VP/VPPlot";
+import VPInput from "./VP/VPInput";
 
 import DCInput from "./DC/DCInput";
 import DCPlot from "./DC/DCPlot";
@@ -103,6 +117,7 @@ export const indicatorComponents = {
   ATR: ATRPlot,
   MFI: MFIPlot,
   PSAR: PSARPlot,
+<<<<<<< HEAD
   EOM: EMAPlot,
 
   DC: DCPlot,
@@ -110,6 +125,18 @@ export const indicatorComponents = {
   EOM: EOMPlot,
   BB: BBPlot,
 
+=======
+  EOM:EMAPlot,
+  CMO:CMOPlot,
+  PVO:PVOPlot,
+  OBV:OBVPlot,
+  VOL:VOLPlot,
+  STDDEV:STDDEVPlot,
+  AD:ADXPlot,
+  TRIX:TRIXPlot,
+  VP:VPPlot,
+ 
+>>>>>>> 1a0c955933d66f091f01495fa9f09f4d64b065c0
 };
 
 export const indicatorInputs = {
@@ -140,6 +167,7 @@ export const indicatorInputs = {
   ATR: ATRInput,
   MFI: MFIInput,
   PSAR: PSARInput,
+<<<<<<< HEAD
 
   CHOP: CHOPInput,
   EOM: EOMInput,
@@ -150,6 +178,18 @@ export const indicatorInputs = {
   BB: BBInput
   
 
+=======
+  EOM:EOMInput,
+  CMO:CMOInput,
+  PVO:PVOInput,
+ OBV:OBVInput,
+ VOL:VOLInput,
+ STDDEV:STDDEVInput,
+ AD:ADXInput,
+ TRIX:TRIXInput,
+ VP:VPInput,
+  
+>>>>>>> 1a0c955933d66f091f01495fa9f09f4d64b065c0
 };
 
 export function updateIndicatorFromInput(

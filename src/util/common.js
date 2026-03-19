@@ -1204,7 +1204,7 @@ export const getRowsByIndicator = (indicator, maType) => {
         },
       ];
 
-    case "Standard Deviation":
+    case "STDDEV":
       return [
         // Lines
         {
@@ -1215,7 +1215,7 @@ export const getRowsByIndicator = (indicator, maType) => {
         },
       ];
 
-    case "Volume":
+    case "VOL":
       return [
         {
           key: "volumeBars",
@@ -1250,9 +1250,8 @@ export const getRowsByIndicator = (indicator, maType) => {
         },
       ];
 
-    case "OBV":
-      return [
-        // VIX Line
+    case "OBV": {
+      const rows = [
         {
           key: "obv",
           label: "On Balance Volume",
@@ -1261,6 +1260,43 @@ export const getRowsByIndicator = (indicator, maType) => {
           width: 2,
         },
       ];
+      if (maType !== "none") {
+        rows.push({
+          key: "smoothingMA",
+          label: "OBV MA",
+          type: "line",
+          color: "#faad14",
+          width: 2,
+        });
+      }
+
+      /* 🔥 ADD BOLLINGER BANDS */
+      if (maType === "SMA + Bollinger Bands") {
+        rows.push(
+          {
+            key: "bbUpper",
+            label: "BB Upper",
+            type: "line",
+            color: "#52c41a",
+            width: 1,
+          },
+          {
+            key: "bbLower",
+            label: "BB Lower",
+            type: "line",
+            color: "#ff7875",
+            width: 1,
+          },
+          {
+            key: "bbFill",
+            label: "BB Background",
+            type: "fill",
+          }
+        );
+      }
+
+      return rows;
+    }
 
     case "Percentage Volume Oscillator":
       return [
@@ -1313,7 +1349,7 @@ export const getRowsByIndicator = (indicator, maType) => {
         },
       ];
 
-    case "Accumulation / Distribution":
+    case "AD":
       return [
         // PVO Line
         {
@@ -1346,6 +1382,7 @@ export const getRowsByIndicator = (indicator, maType) => {
           visible: true,
         },
       ];
+
 
     case "MFI":
       return [
@@ -1400,6 +1437,7 @@ export const getRowsByIndicator = (indicator, maType) => {
           visible: true,
         },
       ];
+
 
     case "Negative Volume Index":
       return [
@@ -1562,8 +1600,9 @@ export const PANE_INDICATORS = new Set([
   "UltimateOscillator",
   "AROON",
   "AO",
-  "ChandeMomentumOscillator", // CMO
+  "CMO", // CMO
   "TRIX",
+  "VP",
   "FisherTransform",
   "KlingerOscillator",
   "ATR",
@@ -1571,10 +1610,10 @@ export const PANE_INDICATORS = new Set([
   "MFI",
   "EOM",
   "MOM",
-  "EOM",
-  "CHOP",
-  "Volume",
-  "HV",
+  "PVO",
+  "AD",
+  "OBV",
+  "ChoppinessIndex",
   "ChaikinMoneyFlow",
 ]);
 
