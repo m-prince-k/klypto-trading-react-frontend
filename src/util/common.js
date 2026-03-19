@@ -116,11 +116,12 @@ export const ChartProprties = {
     mode: 0, // Normal interaction
   },
 };
-export function getIndicatorChartProperties(height = 140, width = 1280) {
+
+
+export function getIndicatorChartProperties() {
   return {
     ...ChartProprties,
-    height,
-    width,
+    height:140,
     layout: { ...ChartProprties.layout },
 
     timeScale: {
@@ -139,6 +140,8 @@ export function getIndicatorChartProperties(height = 140, width = 1280) {
     crosshair: { ...ChartProprties.crosshair },
   };
 }
+
+
 export const MiniChartProprties = {
   width: 620, // small footprint for hover
   height: 280,
@@ -224,7 +227,6 @@ export const TIMEFRAME_TO_SECONDS = {
   "1d": 86400,
   "1w": 604800,
 };
-
 export const SINGLE_VALUE_CHARTS = ["line", "area", "baseline", "histogram"];
 
 export const chartOptions = [
@@ -710,7 +712,31 @@ export const getRowsByIndicator = (indicator, maType) => {
         },
       ];
 
-    case "STOCH":
+      case "CKS":
+  return [
+    {
+      key: "longStop",
+      label: "Long Stop",
+      type: "line",
+      color: "#26a69a", // green
+    },
+    {
+      key: "shortStop",
+      label: "Short Stop",
+      type: "line",
+      color: "#ef5350", // red
+    },
+
+    {
+      key: "fillArea",
+      label: "CKS Fill Area",
+      type: "fill",
+      color0: "rgba(38,166,154,0.08)", // green light
+      color1: "rgba(239,83,80,0.08)", // red light
+    },
+  ];
+
+    case "Stochastic":
       return [
         { key: "kLine", label: "%K", type: "line", color: "#26a69a" },
         { key: "dLine", label: "%D", type: "line", color: "#ff9800" },
@@ -1088,14 +1114,12 @@ export const getRowsByIndicator = (indicator, maType) => {
         },
       ];
     
-      case "Bollinger Band Width":
+      case "BBW":
       return [
-        // Lines
         {
           key: "bollingerBandWidth",
           label: "Bollinger Band Width",
           type: "line",
-          color: "#ef5350",
         },
         {
           key: "highestExpansion",
@@ -1171,7 +1195,7 @@ export const getRowsByIndicator = (indicator, maType) => {
         },
       ];
 
-    case "Standard Deviation":
+    case "STDDEV":
       return [
         // Lines
         {
@@ -1182,7 +1206,7 @@ export const getRowsByIndicator = (indicator, maType) => {
         },
       ];
 
-    case "Volume":
+    case "VOL":
       return [
         {
           key: "volumeBars",
@@ -1204,7 +1228,7 @@ export const getRowsByIndicator = (indicator, maType) => {
         },
       ];
 
-    case "Historical Volatility":
+    case "HV":
       return [
         // HV Line
         {
@@ -1217,9 +1241,8 @@ export const getRowsByIndicator = (indicator, maType) => {
         },
       ];
 
-    case "OBV":
-      return [
-        // VIX Line
+    case "OBV": {
+      const rows = [
         {
           key: "obv",
           label: "On Balance Volume",
@@ -1228,6 +1251,43 @@ export const getRowsByIndicator = (indicator, maType) => {
           width: 2,
         },
       ];
+      if (maType !== "none") {
+        rows.push({
+          key: "smoothingMA",
+          label: "OBV MA",
+          type: "line",
+          color: "#faad14",
+          width: 2,
+        });
+      }
+
+      /* 🔥 ADD BOLLINGER BANDS */
+      if (maType === "SMA + Bollinger Bands") {
+        rows.push(
+          {
+            key: "bbUpper",
+            label: "BB Upper",
+            type: "line",
+            color: "#52c41a",
+            width: 1,
+          },
+          {
+            key: "bbLower",
+            label: "BB Lower",
+            type: "line",
+            color: "#ff7875",
+            width: 1,
+          },
+          {
+            key: "bbFill",
+            label: "BB Background",
+            type: "fill",
+          }
+        );
+      }
+
+      return rows;
+    }
 
     case "Percentage Volume Oscillator":
       return [
@@ -1280,7 +1340,7 @@ export const getRowsByIndicator = (indicator, maType) => {
         },
       ];
 
-    case "Accumulation / Distribution":
+    case "AD":
       return [
         // PVO Line
         {
@@ -1293,7 +1353,7 @@ export const getRowsByIndicator = (indicator, maType) => {
         },
       ];
 
-    case "Chaikin Money Flow":
+    case "CMF":
       return [
         {
           key: "cmf",
@@ -1313,6 +1373,7 @@ export const getRowsByIndicator = (indicator, maType) => {
           visible: true,
         },
       ];
+
 
     case "MFI":
       return [
@@ -1373,8 +1434,6 @@ export const getRowsByIndicator = (indicator, maType) => {
           key: "nvi",
           label: "NVI",
           type: "line",
-          color: "#2962ff",
-          width: 2,
           visible: true,
         },
         {
@@ -1532,18 +1591,22 @@ export const PANE_INDICATORS = new Set([
   "AO",
   "CMO", // CMO
   "TRIX",
-  "KlingerOscillator",
+  "VP",
+  "KO",
   "ATR",
   "ADX",
   "MFI",
-  "MOM",
   "EOM",
   "PVI",
   "NVI",
   "CHOP",
   "STOCHRSI",
   "Volume",
-  "ChaikinMoneyFlow",
+  "MOM",
+  "PVO",
+  "AD",
+  "OBV",
+  "CMF",
 ]);
 
 

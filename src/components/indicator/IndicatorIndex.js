@@ -38,13 +38,29 @@ import MFIPlot from "./MFI/MFIPlot";
 import MFIInput from "./MFI/MFIInput";
 import PSARPlot from "./PSAR/PSARPlot";
 import PSARInput from "./PSAR/PSARInput";
+
 import CHOPPlot from "./CHOP/CHOPPlot";
 import CHOPInput from "./CHOP/CHOPInput";
+import EOMInput from "./EOM/EOMInput";
+import CMOInput from "./CMO/CMOInput";
+import CMOPlot from "./CMO/CMOPlot";
+import PVOInput from "./PVO/PVOInput";
+import PVOPlot from "./PVO/PVOPlot";
+import OBVInput from "./OBV/OBVInput";
+import OBVPlot from "./OBV/OBVPlot";
+import VOLPlot from "./VOL/VOLPlot";
+import VOLInput from "./VOL/VOLInput";
+import STDDEVInput from "./STDDEV/STDDEVInput";
+import STDDEVPlot from "./STDDEV/STDDEVPlot";
+import TRIXInput from "./TRIX/TRIXInput";
+import TRIXPlot from "./TRIX/TRIXPlot";
+import VPPlot from "./VP/VPPlot";
+import VPInput from "./VP/VPInput";
+
 import DCInput from "./DC/DCInput";
 import DCPlot from "./DC/DCPlot";
 import KCPlot from "./KC/KCPlot";
 import KCInput from "./KC/KCInput";
-import EOMInput from "./EOM/EOMInput";
 import EOMPlot from "./EOM/EOMPlot";
 import BBPlot from "./BB/BBPlot";
 import BBInput from "./BB/BBInput";
@@ -57,16 +73,40 @@ import NVIPlot from "./NVI/NVIPlot";
 import NVIInput from "./NVI/NVIInput";
 import STOCHRSIInput from "./Stochastic RSI/StochRSIInput";
 import STOCHRSIPlot from "./Stochastic RSI/StochRSIPlot";
-import CMOPlot from "./CMO/CMOPlot";
-import CMOInput from "./CMO/CMOInput";
-import TRIXInput from "./TRIX/TRIXInput";
-import TRIXPlot from "./TRIX/TRIXPlot";
 import FTInput from "./FisherTransform/FisherTransformInput";
 import FTPlot from "./FisherTransform/FisherTransformPlot";
 import ZIGZAGPlot from "./ZIgZag/ZigZagPlot";
 import ZIGZAGInput from "./ZIgZag/ZigZagInput";
 
+import BollingerBandWidthInputs from "./bollinder-band-width/bollinder-band-width-inputs";
+import BollingerBandWidthPlot from "./bollinder-band-width/bollinger-band-width-plot";
+
+
+
+import ChandeKrollStopPlot from "./CKS/chande-kroll-stop-plot";
+import ChandeKrollStopInput from "./CKS/chande-kroll-stop-inputs"
+
+import HistoricalVolatilityPlot from "./historical-volatity/historical-volatility-inputs"
+import HistoricalVolatilityInput from "./historical-volatity/historical-volatility-inputs";
+ 
+import ChaikinMoneyFlowInput from "./CMF/Chaikin-money-flow-inputs";
+import ChaikinMoneyFlowPlot from "./CMF/chaikin-money-flow-plot";
+
+import MACDPlot from "./MACD/MACDPlot";
+import MACDInput from "./MACD/macd-inputs";
+
+
+import VWAPPlot from "./vwap/vwap-plot";
+import VWAPInput from "./vwap/vwap-inputs";
+
 export const indicatorComponents = {
+  VWAP:VWAPPlot,
+  MACD:MACDPlot,
+  CKS:ChandeKrollStopPlot,
+  HV:HistoricalVolatilityPlot,
+  CMF:ChaikinMoneyFlowPlot,
+  NVI:NVIPlot,
+  BBW:BollingerBandWidthPlot,
   RSI: RSIPlot,
   SMA: SMAPlot,
   ICHIMOKU: IchimokuCloudPlot,
@@ -83,11 +123,11 @@ export const indicatorComponents = {
   CCI: CCIPlot,
   MOM: MomentumPlot,
   ROC: ROCPlot,
-  WPR : WilliamsRPlot,
+  WPR: WilliamsRPlot,
   ATR: ATRPlot,
   MFI: MFIPlot,
   PSAR: PSARPlot,
-  CHOP: CHOPPlot,
+  EOM: EMAPlot,
   DC: DCPlot,
   KC: KCPlot,
   EOM: EOMPlot,
@@ -99,10 +139,24 @@ export const indicatorComponents = {
   CMO: CMOPlot,
   TRIX: TRIXPlot,
   FT: FTPlot,
-  ZIGZAG: ZIGZAGPlot
+  ZIGZAG: ZIGZAGPlot,
+  PVO:PVOPlot,
+  OBV:OBVPlot,
+  VOL:VOLPlot,
+  STDDEV:STDDEVPlot,
+  AD:ADXPlot,
+  TRIX:TRIXPlot,
+  VP:VPPlot,
 };
 
 export const indicatorInputs = {
+  VWAP:VWAPInput,
+  MACD:MACDInput,
+  CKS:ChandeKrollStopInput,
+  HV:HistoricalVolatilityInput,
+  CMF:ChaikinMoneyFlowInput,
+  NVI:NVIInput,
+  BBW:BollingerBandWidthInputs,
   RSI: RSIInput,
   SMA: SMAInput,
   ICHIMOKU: IchimokuCloudInput,
@@ -117,13 +171,16 @@ export const indicatorInputs = {
   AO: AroonOscillatorInput,
   ADX: ADXInput,
   CCI: CCIInput,
-  MOM:MomentumInput,
-  ROC:ROCInput,
-  WPR : WilliamsRInput,
+  MOM: MomentumInput,
+  ROC: ROCInput,
+  WPR: WilliamsRInput,
   ATR: ATRInput,
   MFI: MFIInput,
   PSAR: PSARInput,
+
   CHOP: CHOPInput,
+  EOM: EOMInput,
+
   DC: DCInput,
   KC: KCInput,
   EOM: EOMInput,
@@ -135,7 +192,15 @@ export const indicatorInputs = {
   CMO: CMOInput,
   TRIX: TRIXInput,
   FT:FTInput,
-  ZIGZAG: ZIGZAGInput
+  ZIGZAG: ZIGZAGInput,  
+
+  PVO:PVOInput,
+ OBV:OBVInput,
+ VOL:VOLInput,
+ STDDEV:STDDEVInput,
+ AD:ADXInput,
+ VP:VPInput,
+  
 };
 
 export function updateIndicatorFromInput(

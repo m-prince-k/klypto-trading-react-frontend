@@ -42,7 +42,7 @@ export default function RSIPlot({
 
     /* ================= MAIN LINES ================= */
 
-    Object.entries(result.data).forEach(([lineName, lineData]) => {
+    Object.entries(result?.data).forEach(([lineName, lineData]) => {
 
       const rowConfig = rows?.find((r) => r.key === lineName);
       const styleConfig = indicatorStyle?.RSI?.[lineName];
@@ -112,7 +112,7 @@ export default function RSIPlot({
 
     /* ================= BAND BACKGROUND ================= */
 
-    const bandData = rsiData.map((p) => ({
+    const bandData = rsiData?.map((p) => ({
       time: p.time,
       value: upper,
     }));

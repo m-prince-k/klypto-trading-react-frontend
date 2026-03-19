@@ -83,6 +83,118 @@ export default function useChartFunctions({
 
             break;
           }
+          //this is bbw proceed
+          case "BBW": {
+            const bbwData = result?.data?.bollingerBandWidth ?? [];
+            const highestExpansionData = result?.data?.highestExpansion ?? [];
+            const lowestContractionData = result?.data?.lowestContraction ?? [];
+
+            indicatorSeriesRef.current.BBW = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.BBW = {
+              bollingerBandWidth:
+                bbwData[bbwData.length - 1]?.value ?? null,
+
+              highestExpansion:
+                highestExpansionData[highestExpansionData.length - 1]?.value ?? null,
+
+              lowestContraction:
+                lowestContractionData[lowestContractionData.length - 1]?.value ?? null,
+            };
+
+            break;
+          }
+          case "MACD": {
+            const macdData = result?.data?.macd ?? [];
+            const signalData = result?.data?.signal ?? [];
+            const histogramData = result?.data?.histogram ?? [];
+
+            indicatorSeriesRef.current.MACD = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.MACD = {
+              macd: macdData[macdData.length - 1]?.value ?? null,
+
+              signal: signalData[signalData.length - 1]?.value ?? null,
+
+              histogram: histogramData[histogramData.length - 1]?.value ?? null,
+            };
+
+            break;
+          }
+          case "VWAP": {
+            const vwapData = result?.data?.vwap ?? [];
+            const upperBandData = result?.data?.upperBand ?? [];
+            const lowerBandData = result?.data?.lowerBand ?? [];
+
+            indicatorSeriesRef.current.VWAP = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.VWAP = {
+              vwap: vwapData[vwapData.length - 1]?.value ?? null,
+
+              upperBand: upperBandData.length
+                ? upperBandData[upperBandData.length - 1]?.value
+                : null,
+
+              lowerBand: lowerBandData.length
+                ? lowerBandData[lowerBandData.length - 1]?.value
+                : null,
+            };
+
+            break;
+          }
+          case "CKS": {
+            const longStopData = result?.data?.longStop ?? [];
+            const shortStopData = result?.data?.shortStop ?? [];
+
+            indicatorSeriesRef.current.CKS = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.CKS = {
+              longStop: longStopData[longStopData.length - 1]?.value ?? null,
+
+              shortStop: shortStopData[shortStopData.length - 1]?.value ?? null,
+            };
+
+            break;
+          }
+          case "HV": {
+            const hvData = result?.data?.hv ?? [];
+
+            indicatorSeriesRef.current.HV = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.HV = {
+              hv: hvData[hvData.length - 1]?.value ?? null,
+            };
+
+            break;
+          }
+          case "CMF": {
+            const cmfData = result?.data?.cmf ?? [];
+
+            indicatorSeriesRef.current.CMF = {
+              result,
+              rows,
+            };
+            latestIndicatorValuesRef.current.CMF = {
+              cmf: cmfData[cmfData.length - 1]?.value ?? null,
+            };
+
+            break;
+          }
           case "SMA": {
             const smaData = result?.data?.sma ?? [];
             const smoothingData = result?.data?.smoothingMA ?? [];
@@ -301,6 +413,25 @@ export default function useChartFunctions({
 
             break;
           }
+          case "CMO": {
+            const cmoData = result?.data?.cmo ?? [];
+
+            if (!indicatorSeriesRef.current.CMO) {
+              indicatorSeriesRef.current.CMO = {};
+            }
+
+            indicatorSeriesRef.current.CMO.result = result;
+            indicatorSeriesRef.current.CMO.rows = rows;
+
+            if (!latestIndicatorValuesRef.current.CMO) {
+              latestIndicatorValuesRef.current.CMO = {};
+            }
+
+            latestIndicatorValuesRef.current.CMO.cmo =
+              cmoData.length ? cmoData[cmoData.length - 1].value : null;
+
+            break;
+          }
 
           case "MOM": {
             const momentum = result?.data?.MOM ?? [];
@@ -396,89 +527,42 @@ export default function useChartFunctions({
             break;
           }
 
-          case "CHOP": {
-            const chopLine = result?.data?.chopLine ?? [];
-            const upper = result?.data?.upper ?? [];
-            const middle = result?.data?.middle ?? [];
-            const lower = result?.data?.lower ?? [];
-
-            indicatorSeriesRef.current.CHOP = {
-              result,
-              rows,
-            };
-
-            latestIndicatorValuesRef.current.CHOP = {
-              chopLine: chopLine[chopLine.length - 1]?.value,
-              upper: upper[upper.length - 1]?.value,
-              middle: middle[middle.length - 1]?.value,
-              lower: lower[lower.length - 1]?.value,
-            };
-
-            break;
-          }
-          case "DC": {
-            const upperData = result?.data?.upper ?? [];
-            const lowerData = result?.data?.lower ?? [];
-            const basisData = result?.data?.basis ?? [];
-
-            indicatorSeriesRef.current.DC = {
-              result,
-              rows,
-            };
-
-            latestIndicatorValuesRef.current.DC = {
-              upper: upperData[upperData.length - 1]?.value,
-              lower: lowerData[lowerData.length - 1]?.value,
-              basis: basisData[basisData.length - 1]?.value,
-            };
-
-            break;
-          }
-          case "KC": {
-            const upperData = result?.data?.upper ?? [];
-            const lowerData = result?.data?.lower ?? [];
-            const basisData = result?.data?.basis ?? [];
-
-            indicatorSeriesRef.current.KC = {
-              result,
-              rows,
-            };
-
-            latestIndicatorValuesRef.current.KC = {
-              upper: upperData[upperData.length - 1]?.value,
-              lower: lowerData[lowerData.length - 1]?.value,
-              basis: basisData[basisData.length - 1]?.value,
-            };
-
-            break;
-          }
           case "EOM": {
-            const eomData = result?.data ?? [];
+            const eomData = result?.data?.eom ?? [];
 
             indicatorSeriesRef.current.EOM = {
               result,
               rows,
             };
 
+
+
+            console.log(result, "resssssssss")
             latestIndicatorValuesRef.current.EOM = {
               eom: eomData[eomData.length - 1]?.value,
             };
             break;
           }
-          case "BB": {
-            const upperData = result?.data?.upper ?? [];
-            const lowerData = result?.data?.lower ?? [];
-            const basisData = result?.data?.basis ?? [];
+          case "PVO": {
+            const pvoData = result?.data?.pvo ?? [];
+            const signalData = result?.data?.signal ?? [];
+            const histData = result?.data?.hist ?? [];
 
-            indicatorSeriesRef.current.BB = {
-              result,
-              rows,
-            };
+            if (!indicatorSeriesRef.current.PVO) {
+              indicatorSeriesRef.current.PVO = {};
+            }
 
-            latestIndicatorValuesRef.current.BB = {
-              upper: upperData[upperData.length - 1]?.value,
-              lower: lowerData[lowerData.length - 1]?.value,
-              basis: basisData[basisData.length - 1]?.value,
+            indicatorSeriesRef.current.PVO.result = result;
+            indicatorSeriesRef.current.PVO.rows = rows;
+
+            if (!latestIndicatorValuesRef.current.PVO) {
+              latestIndicatorValuesRef.current.PVO = {};
+            }
+
+            latestIndicatorValuesRef.current.PVO = {
+              pvo: pvoData[pvoData.length - 1]?.value,
+              signal: signalData[signalData.length - 1]?.value,
+              hist: histData[histData.length - 1]?.value,
             };
 
             break;
@@ -608,6 +692,105 @@ export default function useChartFunctions({
             break;
           }
 
+          case "VP": {
+            const volume = result?.data?.volume ?? [];
+            const volumeMA = result?.data?.volumeMA ?? [];
+
+            indicatorSeriesRef.current.VP = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.VP = {
+              volume: volume.at(-1)?.value,
+              volumeMA: volumeMA.at(-1)?.value,
+            };
+
+            break;
+          }
+          case "OBV": {
+            const obv = result?.data?.obv ?? [];
+            const ma = result?.data?.smoothingMA ?? [];
+            const bbUpper = result?.data?.bbUpper ?? [];
+            const bbLower = result?.data?.bbLower ?? [];
+
+            indicatorSeriesRef.current.OBV = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.OBV = {
+              obv: obv.at(-1)?.value ?? null,
+              smoothingMA: ma.at(-1)?.value ?? null,
+              bbUpper: bbUpper.at(-1)?.value ?? null,
+              bbLower: bbLower.at(-1)?.value ?? null,
+            };
+
+            break;
+          }
+
+          case "VOL": {
+            const volume = result?.data?.volume ?? [];
+            const volumeMA = result?.data?.volumeMA ?? [];
+
+            indicatorSeriesRef.current.VOL = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.VOL = {
+              volume: volume.at(-1)?.value,
+              volumeMA: volumeMA.at(-1)?.value,
+            };
+
+            break;
+          }
+
+          case "TRIX": {
+            const trixData = result?.data ?? [];
+
+            indicatorSeriesRef.current.TRIX = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.TRIX = {
+              value: trixData.at(-1)?.value,
+            };
+
+            break;
+          }
+
+          case "STDDEV": {
+            const stddevData = result?.data ?? [];
+
+            indicatorSeriesRef.current.STDDEV = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.STDDEV = {
+              value: stddevData.at(-1)?.value,
+            };
+
+            break;
+          }
+          case "AD": {
+            const adData = result?.data ?? [];
+
+            indicatorSeriesRef.current.AD = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.AD = {
+              value: adData.at(-1)?.value,
+            };
+
+            break;
+          }
+
+
           /* ================= DEFAULT ================= */
 
           default:
@@ -660,15 +843,12 @@ async function fetchDataForIndicators(
       /* ---------------- SINGLE VALUE ---------------- */
       case "AwesomeOscillator":
       case "MACDHistogram":
-      case "StandardDeviation":
       case "Volume":
-      case "OBV":
       case "VolumeOscillator":
       case "ChaikinMoneyFlow":
       case "NegativeVolumeIndex":
       case "PositiveVolumeIndex":
       case "VWAP":
-      case "BollingerBandWidth":
       case "HistoricalVolatility":
       case "ChoppinessIndex":
       case "AccumulationDistribution":
@@ -1102,6 +1282,141 @@ async function fetchDataForIndicators(
                 })) ?? [],
           },
         };
+      case "VOL":
+        return {
+          type: "multi",
+          data: {
+            volume:
+              response?.data
+                ?.filter((d) => d.volume != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.volume),
+                  color: d.color || "rgba(38,166,154,1)", // 🔥 dynamic color
+                })) ?? [],
+
+            volumeMA:
+              response?.data
+                ?.filter((d) => d.volumeMA != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.volumeMA),
+                })) ?? [],
+          },
+        };
+
+      case "TRIX":
+        return {
+          type: "single",
+          data:
+            response?.data
+              ?.filter((d) => d.value != null && d.time != null)
+              .map((d) => ({
+                time: Number(d.time),
+                value: Number(d.value),
+              })) ?? [],
+        };
+
+      case "PVO":
+        return {
+          type: "multi",
+          data: {
+            pvo:
+              response?.data
+                ?.filter((d) => d.pvo != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.pvo),
+                })) ?? [],
+
+            signal:
+              response?.data
+                ?.filter((d) => d.signal != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.signal),
+                })) ?? [],
+
+            hist:
+              response?.data
+                ?.filter((d) => d.hist != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.hist),
+                })) ?? [],
+          },
+        };
+      case "STDDEV":
+        return {
+          type: "single",
+          data:
+            response?.data
+              ?.filter((d) => d.value != null && d.time != null)
+              .map((d) => ({
+                time: Number(d.time),
+                value: Number(d.value),
+              })) ?? [],
+        };
+
+      case "OBV":
+        return {
+          type: "multi",
+          data: {
+            obv:
+              response?.data
+                ?.filter((d) => d.obv != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.obv),
+                })) ?? [],
+
+            smoothingMA:
+              response?.data
+                ?.filter((d) => d.smoothingMA != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.smoothingMA),
+                })) ?? [],
+
+            bbUpper:
+              response?.data
+                ?.filter((d) => d.bbUpper != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.bbUpper),
+                })) ?? [],
+
+            bbLower:
+              response?.data
+                ?.filter((d) => d.bbLower != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.bbLower),
+                })) ?? [],
+          },
+        };
+
+      case "VP":
+        return {
+          type: "multi",
+          data: {
+            volume:
+              response?.data?.map((d) => ({
+                time: Number(d.time),
+                value: Number(d.volume),
+                color:
+                  d.close >= d.open
+                    ? "rgba(38,166,154,1)"
+                    : "rgba(239,83,80,1)",
+              })) ?? [],
+
+            volumeMA:
+              response?.data?.map((d) => ({
+                time: Number(d.time),
+                value: Number(d.volumeMA),
+              })) ?? [],
+          },
+        };
       case "MFI":
         return {
           type: "multi",
@@ -1279,6 +1594,33 @@ async function fetchDataForIndicators(
         };
       }
 
+      case "EOM":
+        return {
+          type: "single",
+          data: {
+            eom:
+              response?.data
+                ?.filter((d) => d.eom != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.eom),
+                })) ?? [],
+          },
+        };
+
+      case "AD":
+        return {
+          type: "single",
+          data:
+            response?.data
+              ?.filter((d) => d.value != null && d.time != null)
+              .map((d) => ({
+                time: Number(d.time),
+                value: Number(d.value),
+              })) ?? [],
+        };
+
+
       /* ---------------- MULTI LINE ---------------- */
 
       case "ICHIMOKU":
@@ -1367,6 +1709,20 @@ async function fetchDataForIndicators(
                 .map((d) => ({
                   time: d.time,
                   value: d.macdHistogram,
+                })) ?? [],
+          },
+        };
+
+      case "CMO":
+        return {
+          type: "single",
+          data: {
+            cmo:
+              response?.data
+                ?.filter((d) => d.value != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.value),
                 })) ?? [],
           },
         };
@@ -1474,6 +1830,8 @@ async function fetchDataForIndicators(
                 })) ?? [],
           },
         };
+
+
 
       default:
         return {

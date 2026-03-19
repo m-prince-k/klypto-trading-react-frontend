@@ -916,7 +916,7 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "BollingerBandWidth":
+      case "BBW":
         return (
           <>
             <BaseSettings showOffset={false} />
@@ -925,7 +925,7 @@ export default function IndicatorPropertyDialog({
               <input
                 type="number"
                 className="form-control"
-                value={currentConfig.stdDev}
+                value={currentConfig?.stdDev}
                 onChange={(e) =>
                   updateProperty("stdDev", Number(e.target.value))
                 }
@@ -936,7 +936,7 @@ export default function IndicatorPropertyDialog({
               <input
                 type="number"
                 className="form-control"
-                value={currentConfig.highestExpansionLength}
+                value={currentConfig?.highestExpansionLength}
                 onChange={(e) =>
                   updateProperty(
                     "highestExpansionLength",
@@ -960,6 +960,13 @@ export default function IndicatorPropertyDialog({
                 }
               />
             </div>
+          </>
+        );
+
+      case "HV":
+        return (
+          <>
+            <BaseSettings showOffset={false} showSource={false} />
           </>
         );
 
@@ -1031,14 +1038,14 @@ export default function IndicatorPropertyDialog({
             <BaseSettings showSource={false} />
           </>
         );
-      case "Standard Deviation":
+      case "STDDEV":
         return (
           <>
             <BaseSettings showOffset={false} />
           </>
         );
 
-      case "Volume":
+      case "VOL":
         return (
           <>
             <div className="mb-3">
@@ -1067,13 +1074,6 @@ export default function IndicatorPropertyDialog({
                 Color Based on Previous Bar
               </label>
             </div>
-          </>
-        );
-
-      case "HV":
-        return (
-          <>
-            <BaseSettings showOffset={false} showSource={false} />
           </>
         );
 
@@ -1275,6 +1275,152 @@ export default function IndicatorPropertyDialog({
             </Form.Group>
           </>
         );
+
+      case "CKS":
+        return (
+          <>
+            {/* Base Settings */}
+            <BaseSettings />
+
+            <hr />
+            <h6 className="mb-3">Chande Kroll Stop Settings</h6>
+
+            {/* ATR Length */}
+            <Form.Group as={Row} className="mb-3 align-items-center">
+              <Form.Label style={labelStyle} className="mb-0">
+                ATR Length
+              </Form.Label>
+              <Col>
+                <Form.Control
+                  type="number"
+                  value={currentConfig.atrLength}
+                  onChange={(e) =>
+                    updateProperty("atrLength", Number(e.target.value))
+                  }
+                />
+              </Col>
+            </Form.Group>
+
+            {/* ATR Multiplier */}
+            <Form.Group as={Row} className="mb-3 align-items-center">
+              <Form.Label style={labelStyle} className="mb-0">
+                ATR Multiplier
+              </Form.Label>
+              <Col>
+                <Form.Control
+                  type="number"
+                  step="0.1"
+                  value={currentConfig.atrMultiplier}
+                  onChange={(e) =>
+                    updateProperty("atrMultiplier", Number(e.target.value))
+                  }
+                />
+              </Col>
+            </Form.Group>
+
+            {/* Stop Length */}
+            <Form.Group as={Row} className="mb-3 align-items-center">
+              <Form.Label style={labelStyle} className="mb-0">
+                Stop Length
+              </Form.Label>
+              <Col>
+                <Form.Control
+                  type="number"
+                  value={currentConfig.stopLength}
+                  onChange={(e) =>
+                    updateProperty("stopLength", Number(e.target.value))
+                  }
+                />
+              </Col>
+            </Form.Group>
+
+            {/* Source */}
+            <Form.Group as={Row} className="mb-3 align-items-center">
+              <Form.Label style={labelStyle} className="mb-0">
+                Source
+              </Form.Label>
+              <Col>
+                <Form.Select
+                  value={currentConfig.source}
+                  onChange={(e) =>
+                    updateProperty("source", e.target.value)
+                  }
+                >
+                  <option value="close">Close</option>
+                  <option value="high">High</option>
+                  <option value="low">Low</option>
+                  <option value="hl2">HL2</option>
+                  <option value="hlc3">HLC3</option>
+                  <option value="ohlc4">OHLC4</option>
+                </Form.Select>
+              </Col>
+            </Form.Group>
+          </>
+        );
+      case "CMF":
+        return (
+          <>
+            {/* Base Settings */}
+            <BaseSettings />
+
+            <hr />
+            <h6 className="mb-3">Chaikin Money Flow Settings</h6>
+
+            {/* CMF Period */}
+            <Form.Group as={Row} className="mb-3 align-items-center">
+              <Form.Label style={labelStyle} className="mb-0">
+                CMF Period
+              </Form.Label>
+              <Col>
+                <Form.Control
+                  type="number"
+                  value={currentConfig.period}
+                  onChange={(e) =>
+                    updateProperty("period", Number(e.target.value))
+                  }
+                />
+              </Col>
+            </Form.Group>
+
+            {/* Source */}
+            <Form.Group as={Row} className="mb-3 align-items-center">
+              <Form.Label style={labelStyle} className="mb-0">
+                Source
+              </Form.Label>
+              <Col>
+                <Form.Select
+                  value={currentConfig.source}
+                  onChange={(e) =>
+                    updateProperty("source", e.target.value)
+                  }
+                >
+                  <option value="close">Close</option>
+                  <option value="high">High</option>
+                  <option value="low">Low</option>
+                  <option value="hl2">HL2</option>
+                  <option value="hlc3">HLC3</option>
+                  <option value="ohlc4">OHLC4</option>
+                </Form.Select>
+              </Col>
+            </Form.Group>
+          </>
+        );
+      case "NVI":
+        return (
+          <>
+            <Form.Group as={Row} className="mb-3 align-items-center">
+              <Form.Label style={labelStyle} className="mb-0">Signal EMA Length</Form.Label>
+              <Col>
+                <Form.Control
+                  type="number"
+                  value={currentConfig.signal.length || 255} // default 255 agar undefined ho
+                  onChange={(e) => updateProperty("signal.length", Number(e.target.value))}
+                />
+              </Col>
+            </Form.Group>
+          </>
+        )
+
 
       case "VWAP":
         return (
