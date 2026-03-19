@@ -858,7 +858,7 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "Chande Momentum Oscillator": {
+      case "CMO": {
         return <BaseSettings showOffset={false} />;
       }
 
@@ -882,7 +882,7 @@ export default function IndicatorPropertyDialog({
             </div>
           </>
         );
-      case "BollingerBands":
+      case "BB":
         return (
           <>
             <BaseSettings />
@@ -969,7 +969,7 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "KeltnerChannels":
+      case "KC":
         return (
           <>
             <BaseSettings showOffset={false} />
@@ -1025,7 +1025,7 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "DonchianChannels":
+      case "DC":
         return (
           <>
             <BaseSettings showSource={false} />

@@ -3,26 +3,24 @@ export default function EOMInput(
   indicatorSeriesRef,
   latestIndicatorValuesRef
 ) {
-  const eomData = response?.data?.eom ?? [];
 
-  if (!Array.isArray(eomData) || !eomData.length) return;
+  const rows = Array.isArray(response?.data) ? response.data : [];
 
-  const safeData = eomData.map((d) => ({
-    time: Number(d.time),
-    value: Number(d.value || 0) / 10000,
-  }));
+  const eomData = rows
+    .filter((d) => d.eom != null && d.time != null)
+    .map((d) => ({
+      time: Number(d.time),
+      value: Number(d.eom),
+    }));
 
   const series = indicatorSeriesRef.current?.EOM;
+  if (!series) return;
 
-  if (!series?.eom) return;
-
-  series.eom.setData(safeData);
+  series.setData(eomData);
 
   latestIndicatorValuesRef.current.EOM = {
-    eom: safeData[safeData.length - 1]?.value,
+    eom: eomData[eomData.length - 1]?.value ?? 0,
   };
 
-  indicatorSeriesRef.current.EOM.result = {
-    data: { eom: safeData },
-  };
+  indicatorSeriesRef.current.EOM.result = eomData;
 }

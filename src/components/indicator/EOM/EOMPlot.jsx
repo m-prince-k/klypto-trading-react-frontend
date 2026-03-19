@@ -3,63 +3,58 @@ import { LineSeries } from "lightweight-charts";
 
 export default function EOMPlot({
   result,
+  indicatorStyle,
   indicatorSeriesRef,
   addSeries,
-  indicatorStyle,
+  indicatorConfigs,
 }) {
 
   useEffect(() => {
-    if (!result?.data?.eom || !Array.isArray(result.data.eom)) {
-      console.log("❌ No EOM data");
-      return;
+
+    if (!result?.data) return;
+
+    if (indicatorSeriesRef.current?.EOM) {
+      const s = indicatorSeriesRef.current.EOM;
+      if (s?.setData) {
+        try { s.setData([]); } catch {}
+      }
+      indicatorSeriesRef.current.EOM = null;
     }
 
-    /* REMOVE OLD */
-    if (indicatorSeriesRef.current?.EOM?.eom) {
-      try {
-        indicatorSeriesRef.current.EOM.eom.setData([]);
-      } catch {}
-    }
+    const eomData = (result.data || []).map((p) => ({
+      time: Number(p.time),
+      value: Number(p.value),
+    }));
 
-    const eomSeries = addSeries("price", LineSeries, {
-      color: indicatorStyle?.EOM?.eom?.color || "rgba(38,166,154,1)",
-      lineWidth: indicatorStyle?.EOM?.eom?.width || 2,
+    const series = addSeries("EOM", LineSeries, {
+      color: indicatorStyle?.EOM?.eom?.color ?? "rgba(38,166,154,1)",
+      lineWidth: indicatorStyle?.EOM?.eom?.width ?? 1,
       lineStyle: indicatorStyle?.EOM?.eom?.lineStyle ?? 0,
+      visible: indicatorStyle?.EOM?.eom?.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: true,
     });
 
-    if (!eomSeries) return;
+    series.setData(eomData);
 
-    /* 🔥 SAFE SCALE */
-    const safeData = result.data.eom.map((d) => ({
-      time: Number(d.time),
-      value: Number(d.value || 0) / 10000,
-    }));
+    indicatorSeriesRef.current.EOM = series;
 
-    eomSeries.setData(safeData);
+  }, [result, indicatorConfigs, indicatorStyle]);
 
-    indicatorSeriesRef.current.EOM = {
-      eom: eomSeries,
-    };
-
-  }, [result]);
-
-
-
-  /* STYLE UPDATE */
+  /* ================= APPLY STYLE UPDATES ================= */
 
   useEffect(() => {
-    const eomGroup = indicatorSeriesRef.current?.EOM;
-    if (!eomGroup?.eom) return;
 
-    const style = indicatorStyle?.EOM?.eom;
+    const series = indicatorSeriesRef.current?.EOM;
+    if (!series) return;
 
-    eomGroup.eom.applyOptions({
-      color: style?.color,
-      lineWidth: style?.width,
-      lineStyle: style?.lineStyle ?? 0,
-      visible: style?.visible,
+    series.applyOptions({
+      color: indicatorStyle?.EOM?.eom?.color ?? "#26a69a",
+      lineWidth: indicatorStyle?.EOM?.eom?.width ?? 1,
+      lineStyle: indicatorStyle?.EOM?.eom?.lineStyle ?? 0,
+      visible: indicatorStyle?.EOM?.eom?.visible ?? true,
+      priceLineVisible: false,
+      lastValueVisible: true,
     });
 
   }, [indicatorStyle]);

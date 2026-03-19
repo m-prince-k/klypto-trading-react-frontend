@@ -1050,7 +1050,7 @@ export const getRowsByIndicator = (indicator, maType) => {
     case "ATR":
       return [{ key: "atr", label: "ATR", type: "line" }];
 
-    case "Keltner Channels":
+    case "KC":
       return [
         // Lines
         {
@@ -1074,9 +1074,9 @@ export const getRowsByIndicator = (indicator, maType) => {
           color1: "rgba(239,83,80,0.1)", // color under bearish trend
         },
       ];
-    case "Bollinger Bands":
+    
+      case "BB":
       return [
-        // Lines
         {
           key: "upper",
           label: "Upper Channel",
@@ -1098,7 +1098,8 @@ export const getRowsByIndicator = (indicator, maType) => {
           color1: "rgba(239,83,80,0.1)", // color under bearish trend
         },
       ];
-    case "Bollinger Band Width":
+    
+      case "Bollinger Band Width":
       return [
         // Lines
         {
@@ -1121,28 +1122,24 @@ export const getRowsByIndicator = (indicator, maType) => {
         },
       ];
 
-    case "Donchian Channels":
+    case "DC":
       return [
         // Lines
         {
           key: "upper",
           label: "Upper Channel",
           type: "line",
-          color: "#ef5350",
         },
-        { key: "basis", label: "Basis Line", type: "line", color: "#26a69a" },
+        { key: "basis", label: "Basis Line", type: "line"},
         {
           key: "lower",
           label: "Lower Channel",
           type: "line",
-          color: "#26a69a",
         },
         {
           key: "bg",
           label: "Background ",
-          type: "fill",
-          color0: "rgba(38,166,154,0.1)", // color under bullish trend
-          color1: "rgba(239,83,80,0.1)", // color under bearish trend
+          type: "fill"
         },
       ];
 
@@ -1152,7 +1149,6 @@ export const getRowsByIndicator = (indicator, maType) => {
           key: "chopLine",
           label: "Chop",
           type: "line",
-          color: "#ef5350",
         },
         {
           key: "upper",
@@ -1504,7 +1500,6 @@ export const getRowsByIndicator = (indicator, maType) => {
           key: "bandFill3",
           label: "Bands Fill #3",
           type: "fill",
-          color: "rgba(239,83,80,0.08)",
           visible: false,
           upperKey: "upperBand3",
           lowerKey: "lowerBand3",
@@ -1554,6 +1549,7 @@ export const PANE_INDICATORS = new Set([
   "MFI",
   "EOM",
   "MOM",
+  "EOM",
   "CHOP",
   "Volume",
   "ChaikinMoneyFlow",

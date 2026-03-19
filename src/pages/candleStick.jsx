@@ -183,7 +183,7 @@ export default function Candlestick() {
       kSmoothing: 1,
       dSmoothing: 3,
     },
-    StochasticRSI: {
+    STOCHRSI: {
       rsiLength: 14,
       rsiSource: "close",
       stochasticLength: 14,
@@ -217,7 +217,7 @@ export default function Candlestick() {
       length: 14,
       source: "close",
     },
-    UltimateOscillator: {
+    UO: {
       fastLength: 7,
       middleLength: 14,
       slowLength: 28,
@@ -236,7 +236,7 @@ export default function Candlestick() {
       length: 14,
       smoothing: "RMA",
     },
-    BollingerBands: {
+    BB: {
       length: 20,
       maType: "SMA",
       stdDev: 2,
@@ -250,7 +250,7 @@ export default function Candlestick() {
       highestExpansionLength: 125,
       lowestContractionLength: 125,
     },
-    KeltnerChannels: {
+    KC: {
       length: 20,
       source: "close",
       multiplier: 2,
@@ -258,7 +258,7 @@ export default function Candlestick() {
       bandsStyle: "Average True Range",
       useEMA: true,
     },
-    DonchianChannels: {
+    DC: {
       length: 20,
       offset: 0,
     },
@@ -866,7 +866,116 @@ export default function Candlestick() {
         lineStyle: 2, // dashed
         visible: true,
       },
-    }
+      upper: {
+        color: "rgba(239,83,80,1)", // red
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: 65.8,
+      },
+      middle: {
+        color: "rgba(38,166,154,1)", // teal
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: 50,
+      },
+      lower: {
+        color: "rgba(38,166,154,1)", // teal
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: 38.2,
+      },
+      bg: {
+        visible: true,
+        topFillColor1: "rgba(41, 98, 255, 0.25)",
+        topFillColor2: "rgba(41, 98, 255, 0.08)",
+      },
+    },
+    DC: {
+      upper: {
+        visible: true,
+        color: "rgba(239,83,80,1)", // red
+        width: 1,
+        lineStyle: 0, // solid
+      },
+      basis: {
+        visible: true,
+        color: "rgba(38,166,154,1)", // teal
+        width: 1,
+        lineStyle: 0, // solid
+      },
+      lower: {
+        visible: true,
+        color: "rgba(38,166,154,1)", // teal
+        width: 1,
+        lineStyle: 0, // solid
+      },
+      bg: {
+        visible: true,
+        topFillColor1: "rgba(38,166,154,0.1)", // color under bullish trend
+        topFillColor2: "rgba(239,83,80,0.1)", // color under bearish trend
+      },
+    },
+    KC: {
+      upper: {
+        visible: true,
+        color: "rgba(239,83,80,1)",
+        width: 1,
+        lineStyle: 0,
+      },
+      basis: {
+        visible: true,
+        color: "rgba(38,166,154,1)",
+        width: 1,
+        lineStyle: 0,
+      },
+      lower: {
+        visible: true,
+        color: "rgba(38,166,154,1)",
+        width: 1,
+        lineStyle: 0,
+      },
+      bg: {
+        visible: true,
+        topFillColor1: "rgba(38,166,154,0.1)",
+        topFillColor2: "rgba(239,83,80,0.1)",
+      },
+    },
+    EOM: {
+      eom: {
+        color: "rgba(38, 166, 154, 1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+    },
+    BB: {
+      upper: {
+        visible: true,
+        color: "rgba(239,83,80,1)",
+        width: 1,
+        lineStyle: 0,
+      },
+      basis: {
+        visible: true,
+        color: "rgba(38,166,154,1)",
+        width: 1,
+        lineStyle: 0,
+      },
+      lower: {
+        visible: true,
+        color: "rgba(38,166,154,1)",
+        width: 1,
+        lineStyle: 0,
+      },
+      bg: {
+        visible: true,
+        topFillColor1: "rgba(38,166,154,0.1)",
+        topFillColor2: "rgba(239,83,80,0.1)",
+      },
+    },
   };
 
   const [indicatorStyle, setIndicatorStyle] = useState(indicatorStyleDefault);
@@ -939,8 +1048,10 @@ export default function Candlestick() {
         return "WPR";
       case "AO":
         return "AO";
-        case "CHOP":
+      case "CHOP":
         return "CHOP";
+      case "EOM":
+        return "EOM";
       case "MOM":
         return "MOM";
       case "EOM":
