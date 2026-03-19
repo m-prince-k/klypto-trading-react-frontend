@@ -189,8 +189,6 @@ export default function useChartFunctions({
               result,
               rows,
             };
-       
-
             latestIndicatorValuesRef.current.CMF = {
               cmf: cmfData[cmfData.length - 1]?.value ?? null,
             };
