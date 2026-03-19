@@ -15,16 +15,16 @@ export default function WilliamsRInput(
     }))
     .sort((a, b) => a.time - b.time);
 
-  const series = indicatorSeriesRef.current?.["WilliamsR"];
+  const series = indicatorSeriesRef.current?.["WPR"];
   if (!series) return;
 
   series.r?.setData(rData);
 
-  latestIndicatorValuesRef.current["WilliamsR"] = {
+  latestIndicatorValuesRef.current["WPR"] = {
     r: rData[rData.length - 1]?.value,
   };
 
-  indicatorSeriesRef.current["WilliamsR"].result = {
+  indicatorSeriesRef.current["WPR"].result = {
     data: { r: rData },
   };
 }

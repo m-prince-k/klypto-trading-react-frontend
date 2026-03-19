@@ -89,29 +89,30 @@ export default function ColorPalettePanel({
     });
   };
 
-  const updateFill = (hexColor, op = opacity) => {
-    const r = parseInt(hexColor.slice(1, 3), 16);
-    const g = parseInt(hexColor.slice(3, 5), 16);
-    const b = parseInt(hexColor.slice(5, 7), 16);
+ const updateFill = (hexColor, op = opacity) => {
+  const r = parseInt(hexColor.slice(1, 3), 16);
+  const g = parseInt(hexColor.slice(3, 5), 16);
+  const b = parseInt(hexColor.slice(5, 7), 16);
 
-    const main = `rgba(${r},${g},${b},${op / 100})`;
-    const faint = `rgba(${r},${g},${b},0.02)`;
+  const main = `rgba(${r},${g},${b},${op / 100})`;
+  const faint = `rgba(${r},${g},${b},${(op / 100) * 0.25})`;
 
-    // ⭐ STRUCTURAL UPDATES
-    // If the indicator uses a gradient (color2 exists), update both. 
-    // Otherwise, update the primary color field.
-    if (currentStyle.topFillColor2 !== undefined) {
-      onChange({ topFillColor1: faint, topFillColor2: main });
-    } else if (currentStyle.bottomFillColor2 !== undefined) {
-      onChange({ bottomFillColor1: faint, bottomFillColor2: main });
-    } else if (currentStyle.topFillColor1 !== undefined) {
-      onChange({ topFillColor1: main, topFillColor2: main });
-    } else if (currentStyle.bottomFillColor1 !== undefined) {
-      onChange({ bottomFillColor1: main, bottomFillColor2: main });
-    } else {
-      onChange({ color: main });
-    }
-  };
+  if (currentStyle.topFillColor2 !== undefined) {
+    onChange({ topFillColor1: faint, topFillColor2: main });
+  } 
+  else if (currentStyle.bottomFillColor2 !== undefined) {
+    onChange({ bottomFillColor1: faint, bottomFillColor2: main });
+  } 
+  else if (currentStyle.topFillColor1 !== undefined) {
+    onChange({ topFillColor1: main });
+  } 
+  else if (currentStyle.bottomFillColor1 !== undefined) {
+    onChange({ bottomFillColor1: faint });
+  } 
+  else {
+    onChange({ color: main });
+  }
+};
 
   const selectColor = (c) => {
     setColor(c);

@@ -419,7 +419,7 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "IchimokuCloud":
+      case "ICHIMOKU":
         return (
           <>
             <div className="mb-3">
@@ -472,7 +472,7 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "ParabolicSAR":
+      case "PSAR":
         return (
           <>
             <div className="mb-3">
@@ -542,10 +542,10 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "Aroon":
+      case "AROON":
         return <BaseSettings showOffset={false} showSource={false} />;
 
-      case "AroonOscillator":
+      case "AO":
         return <BaseSettings showOffset={false} showSource={false} />;
 
       case "ADX":
@@ -808,13 +808,13 @@ export default function IndicatorPropertyDialog({
           </>
         );
       }
-      case "Momentum": {
+      case "MOM": {
         return <BaseSettings showOffset={false} />;
       }
       case "ROC": {
         return <BaseSettings showOffset={false} />;
       }
-      case "WilliamsR": {
+      case "WPR": {
         return <BaseSettings showOffset={false} />;
       }
       case "UltimateOscillator":
@@ -1031,7 +1031,7 @@ export default function IndicatorPropertyDialog({
             <BaseSettings showSource={false} />
           </>
         );
-      case "Choppiness Index":
+      case "CHOP":
         return (
           <>
             <BaseSettings showSource={false} />

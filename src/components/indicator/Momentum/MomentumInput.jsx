@@ -3,35 +3,38 @@ export default function MomentumInput(
   indicatorSeriesRef,
   latestIndicatorValuesRef
 ) {
-
   const rows = Array.isArray(response?.data) ? response.data : [];
 
   /* ================= MOMENTUM ================= */
-
   const momentumData = rows
-    .filter((d) => d.momentum != null && d.time != null)
+    .filter((d) => d.mom != null && d.time != null)
     .map((d) => ({
       time: Number(d.time),
-      value: Number(d.momentum),
+      value: Number(d.mom),
     }))
     .sort((a, b) => a.time - b.time);
 
-  const series = indicatorSeriesRef.current?.Momentum;
+  if (!indicatorSeriesRef.current.MOM) {
+    // If series not created yet, just store result for plotting later
+    indicatorSeriesRef.current.MOM = {
+      result: null,
+      MOM: null, // placeholder for LineSeries
+    };
+  }
 
-  if (!series) return;
+  const series = indicatorSeriesRef.current.MOM.MOM;
 
-  /* ================= UPDATE MOMENTUM ================= */
-
-  series.momentum?.setData(momentumData);
+  if (series) {
+    series.setData(momentumData); // update existing line
+  }
 
   /* ================= UPDATE HOVER VALUES ================= */
-
-  latestIndicatorValuesRef.current.Momentum.momentum =
-    momentumData[momentumData.length - 1]?.value;
+  latestIndicatorValuesRef.current.MOM = {
+    MOM: momentumData[momentumData.length - 1]?.value,
+  };
 
   /* ================= STORE RESULT ================= */
-
-  indicatorSeriesRef.current.Momentum.result = {
+  indicatorSeriesRef.current.MOM.result = {
     data: {
       momentum: momentumData,
     },

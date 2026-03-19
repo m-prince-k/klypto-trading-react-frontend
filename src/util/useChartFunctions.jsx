@@ -10,7 +10,10 @@ export default function useChartFunctions({
   indicatorStyle,
   latestIndicatorValuesRef,
   indicatorConfigs,
+  setIndicatorLoading,
 }) {
+  /* ================= FETCH INDICATOR API ================= */
+
   async function fetchDataByCurrency(selectedCurrency, timeframeValue) {
     let response;
     if (selectedCurrency && timeframeValue) {
@@ -26,7 +29,6 @@ export default function useChartFunctions({
   }
 
   /* ================= FETCH INDICATORS ================= */
-  const plottedIndicatorsRef = useRef(new Set()); // track indicators already fetched & plotted
 
   async function fetchIndicatorData(
     selectedIndicator,
@@ -35,28 +37,22 @@ export default function useChartFunctions({
   ) {
     if (!selectedIndicator?.length) return;
 
-    console.log(plottedIndicatorsRef, "plottedddddddddd");
-
     for (const indicator of selectedIndicator) {
-      if (plottedIndicatorsRef.current.has(indicator)) {
-        continue; // already fetched & plotted, skip API
-      }
       try {
         const result = await fetchDataForIndicators(
           selectedCurrency,
           indicator,
           timeframeValue,
+          setIndicatorLoading,
+          indicatorSeriesRef,
         );
 
         if (!result) continue;
 
         const normalizedType = indicator.replace(/[\s/%]+/g, "");
         const config = indicatorConfigs?.[normalizedType] || {};
-        const { maType, maLength } = config;
+        const { maType } = config;
         const rows = getRowsByIndicator(indicator, maType);
-        // console.log(normalizedType, "typeeeeeee");
-
-        // console.log(maType, "-------------------------------");
 
         switch (normalizedType) {
           /* ================= RSI ================= */
@@ -71,8 +67,6 @@ export default function useChartFunctions({
               result,
               rows,
             };
-
-            console.log(result, "rehsvdhvkjvsndf");
 
             latestIndicatorValuesRef.current.RSI = {
               rsi: rsiData[rsiData.length - 1]?.value,
@@ -110,8 +104,8 @@ export default function useChartFunctions({
             break;
           }
 
-          case "IchimokuCloud": {
-            indicatorSeriesRef.current.IchimokuCloud = {
+          case "ICHIMOKU": {
+            indicatorSeriesRef.current.ICHIMOKU = {
               result,
               rows,
             };
@@ -121,7 +115,7 @@ export default function useChartFunctions({
             const leadLine2 = result?.data?.leadLine2;
             const laggingSpan = result?.data?.laggingSpan;
 
-            latestIndicatorValuesRef.current.IchimokuCloud = {
+            latestIndicatorValuesRef.current.ICHIMOKU = {
               conversionLine:
                 conversionLine?.[conversionLine.length - 1]?.value,
               baseLine: baseLine?.[baseLine.length - 1]?.value,
@@ -138,7 +132,6 @@ export default function useChartFunctions({
             const smoothingData = result?.data?.smoothingMA ?? [];
             const bbUpperData = result?.data?.bbUpper ?? [];
             const bbLowerData = result?.data?.bbLower ?? [];
-            console.log(result, "resllllll");
 
             indicatorSeriesRef.current.EMA = {
               result,
@@ -225,11 +218,11 @@ export default function useChartFunctions({
 
             break;
           }
-          case "SuperTrend": {
+          case "SUPERTREND": {
             const upTrend = result?.data?.upTrend ?? [];
             const downTrend = result?.data?.downTrend ?? [];
 
-            indicatorSeriesRef.current.SuperTrend = {
+            indicatorSeriesRef.current.SUPERTREND = {
               result,
               rows,
             };
@@ -238,37 +231,39 @@ export default function useChartFunctions({
               upTrend[upTrend.length - 1]?.value ??
               downTrend[downTrend.length - 1]?.value;
 
-            latestIndicatorValuesRef.current.SuperTrend = {
+            latestIndicatorValuesRef.current.SUPERTREND = {
               supertrend: last,
             };
 
             break;
           }
-          case "Aroon": {
+          case "AROON": {
             const aroonUp = result?.data?.aroonUp ?? [];
             const aroonDown = result?.data?.aroonDown ?? [];
 
-            indicatorSeriesRef.current.Aroon = {
+            indicatorSeriesRef.current.AROON = {
               result,
               rows,
             };
+            console.log(result, "ressssssssssss");
 
-            latestIndicatorValuesRef.current.Aroon = {
+            latestIndicatorValuesRef.current.AROON = {
               aroonUp: aroonUp[aroonUp.length - 1]?.value,
               aroonDown: aroonDown[aroonDown.length - 1]?.value,
             };
 
             break;
           }
-          case "AroonOscillator": {
+          case "AO": {
             const osc = result?.data ?? [];
 
-            indicatorSeriesRef.current.AroonOscillator = {
+            indicatorSeriesRef.current.AO = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.AroonOscillator = {
+            console.log(result, "ressssssssssss");
+            latestIndicatorValuesRef.current.AO = {
               oscillator: osc[osc.length - 1]?.value,
             };
 
@@ -291,30 +286,39 @@ export default function useChartFunctions({
           case "CCI": {
             const cciLine = result?.data?.cciLine ?? [];
             const cciMa = result?.data?.cciMa ?? [];
+            const bbUpper = result?.data?.bbUpper ?? [];
+            const bbLower = result?.data?.bbLower ?? [];
 
             indicatorSeriesRef.current.CCI = {
               result,
               rows,
             };
-
             latestIndicatorValuesRef.current.CCI = {
-              cciLine: cciLine[cciLine.length - 1]?.value,
+              cci: cciLine[cciLine.length - 1]?.value,
               cciMa: cciMa[cciMa.length - 1]?.value,
+              bbUpper: bbUpper[bbUpper.length - 1]?.value,
+              bbLower: bbLower[bbLower.length - 1]?.value,
             };
 
             break;
           }
 
-          case "Momentum": {
-            const momentum = result?.data?.momentum ?? [];
+          case "MOM": {
+            const momentum = result?.data?.MOM ?? [];
 
-            indicatorSeriesRef.current.Momentum = {
-              result,
-              rows,
-            };
+            if (!indicatorSeriesRef.current.MOM) {
+              indicatorSeriesRef.current.MOM = {
+                MOM: null,
+                result: null,
+                rows: [],
+              };
+            }
 
-            latestIndicatorValuesRef.current.Momentum = {
-              momentum: momentum[momentum.length - 1]?.value,
+            indicatorSeriesRef.current.MOM.result = result;
+            indicatorSeriesRef.current.MOM.rows = rows;
+
+            latestIndicatorValuesRef.current.MOM = {
+              MOM: momentum[momentum.length - 1]?.value,
             };
 
             break;
@@ -335,15 +339,15 @@ export default function useChartFunctions({
             break;
           }
 
-          case "WilliamsR": {
-            indicatorSeriesRef.current["WilliamsR"] = {
+          case "WPR": {
+            indicatorSeriesRef.current["WPR"] = {
               result,
               rows,
             };
 
             const r = result?.data?.r ?? [];
 
-            latestIndicatorValuesRef.current["WilliamsR"] = {
+            latestIndicatorValuesRef.current["WPR"] = {
               r: r[r.length - 1]?.value,
             };
 
@@ -378,13 +382,47 @@ export default function useChartFunctions({
 
             break;
           }
+          case "PSAR": {
+            const psar = result;
+
+            indicatorSeriesRef.current.PSAR = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.PSAR = {
+              psar: psar?.[psar.length - 1]?.value,
+            };
+
+            break;
+          }
+
+          case "CHOP": {
+            const chopLine = result?.data?.chopLine ?? [];
+            const upper = result?.data?.upper ?? [];
+            const middle = result?.data?.middle ?? [];
+            const lower = result?.data?.lower ?? [];
+
+            indicatorSeriesRef.current.CHOP = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.CHOP = {
+              chopLine: chopLine[chopLine.length - 1]?.value,
+              upper: upper[upper.length - 1]?.value,
+              middle: middle[middle.length - 1]?.value,
+              lower: lower[lower.length - 1]?.value,
+            };
+
+            break;
+          }
 
           /* ================= DEFAULT ================= */
 
           default:
             console.warn("Indicator not handled:", indicator);
         }
-        // plottedIndicatorsRef.current.add(indicator);
       } catch (error) {
         console.log(error, "Indicator loading error");
       }
@@ -395,720 +433,754 @@ export default function useChartFunctions({
     fetchIndicatorData,
   };
 }
+async function fetchDataForIndicators(
+  selectedCurrency,
+  type,
+  timeframeValue,
+  setIndicatorLoading,
+  indicatorSeriesRef,
+) {
+  try {
+    const normalizedType = type?.replace(/[\s/%]+/g, "") || "";
 
-/* ================= FETCH INDICATOR API ================= */
+    /* -------- SKIP IF ALREADY FETCHED -------- */
+    if (indicatorSeriesRef.current?.[normalizedType]) {
+      console.log(`${normalizedType} already loaded, skipping API`);
+      return;
+    }
 
-async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
-  const normalizedType = type.replace(/[\s/%]+/g, "");
+    setIndicatorLoading(true);
 
-  let response;
+    const url = `/api/indicatorDetails?symbol=${selectedCurrency}&interval=${timeframeValue}&type=${normalizedType}`;
 
-  response = await apiService.post(
-    `/api/indicatorDetails?symbol=${selectedCurrency}&interval=${timeframeValue}&type=${normalizedType}`,
-  );
+    const response = await apiService.post(url);
 
-  console.log("Raw indicator data for", type, ":", response);
+    console.log("Raw indicator data for", type, ":", response);
 
-  const mapLine = (arr, field) =>
-    arr
-      ?.map((d) => ({
-        time: Number(d.time),
-        value: d[field] != null ? Number(d[field]) : null,
-      }))
-      .filter((d) => d.value !== null) ?? [];
+    const mapLine = (arr, field) =>
+      arr
+        ?.map((d) => ({
+          time: Number(d.time),
+          value: d[field] != null ? Number(d[field]) : null,
+        }))
+        .filter((d) => d.value !== null) ?? [];
 
-  console.log("mapped conversion", response.data, "conversionLine");
-  switch (normalizedType) {
-    /* ---------------- SINGLE VALUE ---------------- */
-    case "AwesomeOscillator":
-    case "MACDHistogram":
-    case "TRIX":
-    case "StandardDeviation":
-    case "Volume":
-    case "OBV":
-    case "VolumeOscillator":
-    case "ChaikinMoneyFlow":
-    case "EaseofMovement":
-    case "NegativeVolumeIndex":
-    case "PositiveVolumeIndex":
-    case "VWAP":
-    case "BollingerBandWidth":
-    case "HistoricalVolatility":
-    case "ChoppinessIndex":
-    case "AccumulationDistribution":
-    case "UltimateOscillator":
-    case "StochasticRSI":
-    case "ParabolicSAR":
-    case "ChandeMomentumOscillator":
-      return {
-        type: "single",
-        data:
-          (await response.data
-            ?.filter((d) => d.value != null && d.time != null)
+    console.log("mapped conversion", response.data, "conversionLine");
+    switch (normalizedType) {
+      /* ---------------- SINGLE VALUE ---------------- */
+      case "AwesomeOscillator":
+      case "MACDHistogram":
+      case "TRIX":
+      case "StandardDeviation":
+      case "Volume":
+      case "OBV":
+      case "VolumeOscillator":
+      case "ChaikinMoneyFlow":
+      case "EaseofMovement":
+      case "NegativeVolumeIndex":
+      case "PositiveVolumeIndex":
+      case "VWAP":
+      case "BollingerBandWidth":
+      case "HistoricalVolatility":
+      case "ChoppinessIndex":
+      case "AccumulationDistribution":
+      case "UltimateOscillator":
+      case "StochasticRSI":
+      case "ChandeMomentumOscillator":
+        return {
+          type: "single",
+          data:
+            (await response.data
+              ?.filter((d) => d.value != null && d.time != null)
+              .map((d) => ({
+                time: d.time,
+                value: d.value,
+              }))) ?? [],
+        };
+
+      case "PSAR":
+        return {
+          type: "single",
+          data:
+            (await response.data
+              ?.filter((d) => d.sar != null && d.time != null)
+              .map((d) => ({
+                time: d.time,
+                value: d.sar,
+              }))) ?? [],
+        };
+
+      case "SMA":
+        return {
+          type: "multi",
+          data: {
+            sma:
+              response.data
+                ?.filter((d) => d.sma != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.sma,
+                })) ?? [],
+
+            smoothingMA:
+              response.data
+                ?.filter((d) => d.smoothingMA != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.smoothingMA,
+                })) ?? [],
+
+            bbUpper:
+              response.data
+                ?.filter((d) => d.bbUpper != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.bbUpper,
+                })) ?? [],
+
+            bbLower:
+              response.data
+                ?.filter((d) => d.bbLower != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.bbLower,
+                })) ?? [],
+          },
+        };
+      case "EMA":
+        return {
+          type: "multi",
+          data: {
+            ema:
+              response.data
+                ?.filter((d) => d.ema != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.ema,
+                })) ?? [],
+
+            smoothingMA:
+              response.data
+                ?.filter((d) => d.smoothingMA != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.smoothingMA,
+                })) ?? [],
+
+            bbUpper:
+              response.data
+                ?.filter((d) => d.bbUpper != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.bbUpper,
+                })) ?? [],
+
+            bbLower:
+              response.data
+                ?.filter((d) => d.bbLower != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.bbLower,
+                })) ?? [],
+          },
+        };
+
+      case "CCI": {
+        const rows = Array.isArray(response?.data) ? response.data : [];
+
+        const mapLineCCI = (field) =>
+          rows
+            .map((d) => ({
+              time: Number(d.time),
+              value: d[field] != null ? Number(d[field]) : null,
+            }))
+            .filter((d) => d.value !== null);
+
+        const cciLine = mapLineCCI("cci");
+        const cciMa = mapLineCCI("smoothingMA");
+        const bbUpper = mapLineCCI("bbUpper");
+        const bbLower = mapLineCCI("bbLower");
+
+        return {
+          type: "multi",
+          data: {
+            cciLine,
+            cciMa,
+            bbUpper,
+            bbLower,
+          },
+        };
+      }
+
+      case "CHOP":
+        return {
+          type: "multi",
+          data: {
+            chopLine:
+              response.data
+                ?.filter((d) => d.chop != null && d.time != null)
+                .map((d) => ({ time: d.time, value: d.chop })) ?? [],
+          },
+        };
+      case "HMA":
+        return {
+          type: "multi",
+          data: {
+            hma:
+              response.data
+                ?.filter((d) => d.value != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.value,
+                })) ?? [],
+          },
+        };
+      case "DEMA":
+        return {
+          type: "multi",
+          data: {
+            dema:
+              response.data
+                ?.filter((d) => d.value != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.value,
+                })) ?? [],
+          },
+        };
+
+      case "TEMA":
+        return {
+          type: "multi",
+          data: {
+            tema:
+              response.data
+                ?.filter((d) => d.value != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.value,
+                })) ?? [],
+          },
+        };
+      case "KAMA":
+        return {
+          type: "multi",
+          data: {
+            kama:
+              response.data
+                ?.filter((d) => d.value != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.value,
+                })) ?? [],
+          },
+        };
+      case "AO":
+        return {
+          type: "single",
+          data:
+            response.data
+              ?.filter((d) => d.aroonOsc != null && d.time != null)
+              .map((d) => ({
+                time: d.time,
+                value: d.aroonOsc,
+              })) ?? [],
+        };
+
+      case "SUPERTREND":
+        return {
+          type: "multi",
+          data: {
+            upTrend:
+              response.data?.map((d) => ({
+                time: d.time,
+                value: d.upTrend ?? null,
+              })) ?? [],
+
+            downTrend:
+              response.data?.map((d) => ({
+                time: d.time,
+                value: d.downTrend ?? null,
+              })) ?? [],
+
+            bodyMiddle:
+              response.data?.map((d) => ({
+                time: d.time,
+                value: d.bodyMiddle,
+              })) ?? [],
+          },
+        };
+
+      case "MOM":
+        return {
+          type: "multi",
+          data: {
+            momentum:
+              response.data
+                ?.filter((d) => d.mom != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.mom,
+                })) ?? [],
+          },
+        };
+
+      case "ROC":
+        return {
+          type: "multi",
+          data: {
+            roc:
+              response.data
+                ?.filter((d) => d.roc != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.roc,
+                })) ?? [],
+          },
+        };
+
+      case "ZigZag": {
+        const rows = response?.data ?? [];
+
+        console.log("ZigZag:", rows.length);
+
+        return {
+          type: "single",
+          data: rows
+            .filter((d) => d.value != null && d.time != null)
             .map((d) => ({
               time: d.time,
               value: d.value,
-            }))) ?? [],
-      };
-
-    case "SMA":
-      return {
-        type: "multi",
-        data: {
-          sma:
-            response.data
-              ?.filter((d) => d.sma != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.sma,
-              })) ?? [],
-
-          smoothingMA:
-            response.data
-              ?.filter((d) => d.smoothingMA != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.smoothingMA,
-              })) ?? [],
-
-          bbUpper:
-            response.data
-              ?.filter((d) => d.bbUpper != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.bbUpper,
-              })) ?? [],
-
-          bbLower:
-            response.data
-              ?.filter((d) => d.bbLower != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.bbLower,
-              })) ?? [],
-        },
-      };
-    case "EMA":
-      return {
-        type: "multi",
-        data: {
-          ema:
-            response.data
-              ?.filter((d) => d.ema != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.ema,
-              })) ?? [],
-
-          smoothingMA:
-            response.data
-              ?.filter((d) => d.smoothingMA != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.smoothingMA,
-              })) ?? [],
-
-          bbUpper:
-            response.data
-              ?.filter((d) => d.bbUpper != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.bbUpper,
-              })) ?? [],
-
-          bbLower:
-            response.data
-              ?.filter((d) => d.bbLower != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.bbLower,
-              })) ?? [],
-        },
-      };
-
-    case "CCI":
-      return {
-        type: "multi",
-        data: {
-          cciLine:
-            response.data
-              ?.filter((d) => d.cci != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.cci,
-              })) ?? [],
-
-          cciMa:
-            response.data
-              ?.filter((d) => d.smoothingMA != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.smoothingMA,
-              })) ?? [],
-        },
-      };
-
-    case "HMA":
-      return {
-        type: "multi",
-        data: {
-          hma:
-            response.data
-              ?.filter((d) => d.value != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.value,
-              })) ?? [],
-        },
-      };
-    case "DEMA":
-      return {
-        type: "multi",
-        data: {
-          dema:
-            response.data
-              ?.filter((d) => d.value != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.value,
-              })) ?? [],
-        },
-      };
-
-    case "TEMA":
-      return {
-        type: "multi",
-        data: {
-          tema:
-            response.data
-              ?.filter((d) => d.value != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.value,
-              })) ?? [],
-        },
-      };
-    case "KAMA":
-      return {
-        type: "multi",
-        data: {
-          kama:
-            response.data
-              ?.filter((d) => d.value != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.value,
-              })) ?? [],
-        },
-      };
-    case "AroonOscillator":
-      return {
-        type: "single",
-        data:
-          response.data
-            ?.filter((d) => d.aroonOsc != null && d.time != null)
-            .map((d) => ({
-              time: d.time,
-              value: d.aroonOsc,
-            })) ?? [],
-      };
-
-    case "SuperTrend":
-      return {
-        type: "multi",
-        data: {
-          upTrend:
-            response.data?.map((d) => ({
-              time: d.time,
-              value: d.upTrend ?? null,
-            })) ?? [],
-
-          downTrend:
-            response.data?.map((d) => ({
-              time: d.time,
-              value: d.downTrend ?? null,
-            })) ?? [],
-
-          bodyMiddle:
-            response.data?.map((d) => ({
-              time: d.time,
-              value: d.bodyMiddle,
-            })) ?? [],
-        },
-      };
-
-    case "Momentum":
-      return {
-        type: "multi",
-        data: {
-          momentum:
-            response.data
-              ?.filter((d) => d.mom != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.mom,
-              })) ?? [],
-        },
-      };
-
-    case "ROC":
-      return {
-        type: "multi",
-        data: {
-          roc:
-            response.data
-              ?.filter((d) => d.roc != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.roc,
-              })) ?? [],
-        },
-      };
-
-    case "ZigZag": {
-      const rows = response?.data ?? [];
-
-      console.log("ZigZag:", rows.length);
-
-      return {
-        type: "single",
-        data: rows
-          .filter((d) => d.value != null && d.time != null)
-          .map((d) => ({
-            time: d.time,
-            value: d.value,
-          })),
-      };
-    }
-    case "ADX":
-      return {
-        type: "multi",
-        data: {
-          adx:
-            response.data
-              ?.filter((d) => d.adx != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.adx,
-              })) ?? [],
-        },
-      };
+            })),
+        };
+      }
+      case "ADX":
+        return {
+          type: "multi",
+          data: {
+            adx:
+              response.data
+                ?.filter((d) => d.adx != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.adx,
+                })) ?? [],
+          },
+        };
       case "MFI":
-      return {
-        type: "multi",
-        data: {
-          mfiLine:
-            response.data
-              ?.filter((d) => d.mfi != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.mfi,
-              })) ?? [],
-        },
-      };
+        return {
+          type: "multi",
+          data: {
+            mfiLine:
+              response.data
+                ?.filter((d) => d.mfi != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.mfi,
+                })) ?? [],
+          },
+        };
 
+      case "ATR":
+        return {
+          type: "single",
 
-    case "ATR":
-      return {
-        type: "single",
-
-        data: (response?.data ?? [])
-          .filter((d) => d && d.atr != null && d.time != null)
-          .map((d) => ({
-            time: Number(d.time),
-            value: Number(d.atr),
-          })),
-      };
-
-    case "RSI":
-      return {
-        type: "multi",
-        data: {
-          rsi:
-            response.data
-              ?.filter((d) => d.rsi != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.rsi,
-              })) ?? [],
-
-          smoothingMA:
-            response.data
-              ?.filter((d) => d.smoothingMA != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.smoothingMA,
-              })) ?? [],
-
-          bbUpperBand:
-            response.data
-              ?.filter((d) => d.bbUpperBand != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.bbUpperBand,
-              })) ?? [],
-
-          bbLowerBand:
-            response.data
-              ?.filter((d) => d.bbLowerBand != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.bbLowerBand,
-              })) ?? [],
-        },
-      };
-
-    case "Aroon":
-      return {
-        type: "multi",
-        data: {
-          aroonUp: response.data?.aroonUpSeries ?? [],
-          aroonDown: response.data?.aroonDownSeries ?? [],
-        },
-      };
-
-    case "WilliamsR":
-      return {
-        type: "multi",
-        data: {
-          r:
-            response.data?.candles
-              ?.filter((d) => d.percentR != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.percentR,
-              })) ?? [],
-        },
-      };
-    case "WMA":
-      return {
-        type: "multi",
-        data: {
-          wma:
-            response.data
-              ?.filter((d) => d.value != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.value,
-              })) ?? [],
-        },
-      };
-
-    case "PivotPoints(Standard)": {
-      const d = response?.data ?? {};
-
-      console.log("Pivot Standard:", d);
-
-      return {
-        type: "pivot",
-        data: [
-          { label: "P", value: Number(d.P) },
-          { label: "R1", value: Number(d.R1) },
-          { label: "R2", value: Number(d.R2) },
-          { label: "R3", value: Number(d.R3) },
-          { label: "S1", value: Number(d.S1) },
-          { label: "S2", value: Number(d.S2) },
-          { label: "S3", value: Number(d.S3) },
-        ].filter((level) => !Number.isNaN(level.value)),
-      };
-    }
-
-    case "PivotPoints(Fibonacci)": {
-      const d = response?.data ?? {};
-
-      console.log("PivotFibonacci:", d);
-
-      return {
-        type: "pivot",
-        data: [
-          { label: "P", value: Number(d.P) },
-          { label: "R1", value: Number(d.R1) },
-          { label: "R2", value: Number(d.R2) },
-          { label: "R3", value: Number(d.R3) },
-          { label: "S1", value: Number(d.S1) },
-          { label: "S2", value: Number(d.S2) },
-          { label: "S3", value: Number(d.S3) },
-        ].filter((level) => !Number.isNaN(level.value)),
-      };
-    }
-    case "PivotPoints(Camarilla)": {
-      const d = response?.data ?? {};
-
-      console.log("Pivot Camarilla:", d);
-
-      return {
-        type: "pivot",
-        data: [
-          { label: "P", value: Number(d.P) },
-          { label: "R1", value: Number(d.R1) },
-          { label: "R2", value: Number(d.R2) },
-          { label: "R3", value: Number(d.R3) },
-          { label: "R4", value: Number(d.R4) }, // Camarilla often has R4/S4
-          { label: "S1", value: Number(d.S1) },
-          { label: "S2", value: Number(d.S2) },
-          { label: "S3", value: Number(d.S3) },
-          { label: "S4", value: Number(d.S4) },
-        ].filter((level) => !Number.isNaN(level.value)),
-      };
-    }
-
-    case "PivotPoints(Classic)": {
-      const d = response?.data ?? {};
-
-      console.log("Pivot Classic:", d);
-
-      return {
-        type: "pivot",
-        data: [
-          { label: "P", value: Number(d.P) },
-          { label: "R1", value: Number(d.R1) },
-          { label: "R2", value: Number(d.R2) },
-          { label: "R3", value: Number(d.R3) },
-          { label: "S1", value: Number(d.S1) },
-          { label: "S2", value: Number(d.S2) },
-          { label: "S3", value: Number(d.S3) },
-        ].filter((level) => !Number.isNaN(level.value)),
-      };
-    }
-
-    /* ---------------- MULTI LINE ---------------- */
-
-    case "IchimokuCloud":
-      return {
-        type: "multi",
-        data: {
-          conversionLine: mapLine(response.data, "conversionLine"),
-          baseLine: mapLine(response.data, "baseLine"),
-
-          leadLine1: mapLine(response.data, "leadLine1"),
-          leadLine2: mapLine(response.data, "leadLine2"),
-
-          laggingSpan: mapLine(response.data, "laggingSpan"),
-
-          kumoCloudUpper: mapLine(response.data, "kumoCloudUpper"),
-          kumoCloudLower: mapLine(response.data, "kumoCloudLower"),
-        },
-      };
-    case "ChandeKrollStop":
-      return {
-        type: "multi",
-        data: {
-          longStop:
-            response.data
-              ?.filter((d) => d.longStop != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.longStop,
-              })) ?? [],
-
-          shortStop:
-            response.data
-              ?.filter((d) => d.shortStop != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.shortStop,
-              })) ?? [],
-        },
-      };
-
-    case "Stochastic":
-      return {
-        type: "multi",
-        data: {
-          k:
-            response.data
-              ?.filter((d) => d.k != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.k,
-              })) ?? [],
-
-          d:
-            response.data
-              ?.filter((d) => d.d != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.d,
-              })) ?? [],
-        },
-      };
-
-    case "MACD":
-      return {
-        type: "multi",
-        data: {
-          macd:
-            response.data
-              ?.filter((d) => d.macd != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.macd,
-              })) ?? [],
-
-          signal:
-            response.data
-              ?.filter((d) => d.macdSignal != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.macdSignal,
-              })) ?? [],
-
-          histogram:
-            response.data
-              ?.filter((d) => d.macdHistogram != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.macdHistogram,
-              })) ?? [],
-        },
-      };
-
-    case "KlingerOscillator":
-      return {
-        type: "multi",
-        data: {
-          kvo:
-            response.data
-              ?.filter((d) => d.kvo != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.kvo,
-              })) ?? [],
-
-          signal:
-            response.data
-              ?.filter((d) => d.signal != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.signal,
-              })) ?? [],
-        },
-      };
-
-    case "BollingerBands": {
-      const rows = response?.data ?? [];
-
-      return {
-        type: "multi",
-        data: {
-          upper: rows
-            .filter((d) => d.upper != null && d.time != null)
+          data: (response?.data ?? [])
+            .filter((d) => d && d.atr != null && d.time != null)
             .map((d) => ({
-              time: d.time,
-              value: d.upper,
+              time: Number(d.time),
+              value: Number(d.atr),
             })),
+        };
 
-          middle: rows
-            .filter((d) => d.middle != null && d.time != null)
-            .map((d) => ({
-              time: d.time,
-              value: d.middle,
-            })),
+      case "RSI":
+        return {
+          type: "multi",
+          data: {
+            rsi:
+              response.data
+                ?.filter((d) => d.rsi != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.rsi,
+                })) ?? [],
 
-          lower: rows
-            .filter((d) => d.lower != null && d.time != null)
-            .map((d) => ({
-              time: d.time,
-              value: d.lower,
-            })),
-        },
-      };
-    }
+            smoothingMA:
+              response.data
+                ?.filter((d) => d.smoothingMA != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.smoothingMA,
+                })) ?? [],
 
-    case "FisherTransform": {
-      const rows = response?.data ?? [];
+            bbUpperBand:
+              response.data
+                ?.filter((d) => d.bbUpperBand != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.bbUpperBand,
+                })) ?? [],
 
-      return {
-        type: "multi",
-        data: {
-          fisher: rows
-            .filter((d) => d.fisher != null && d.time != null)
-            .map((d) => ({
-              time: d.time,
-              value: d.fisher,
-            })),
+            bbLowerBand:
+              response.data
+                ?.filter((d) => d.bbLowerBand != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.bbLowerBand,
+                })) ?? [],
+          },
+        };
 
-          trigger: rows
-            .filter((d) => d.trigger != null && d.time != null)
-            .map((d) => ({
-              time: d.time,
-              value: d.trigger,
-            })),
-        },
-      };
-    }
+      case "AROON":
+        return {
+          type: "multi",
+          data: {
+            aroonUp: response.data?.aroonUpSeries ?? [],
+            aroonDown: response.data?.aroonDownSeries ?? [],
+          },
+        };
 
-    case "KeltnerChannels":
-      return {
-        type: "multi",
-        data: {
-          upper:
-            response.data
-              ?.filter((d) => d.upper != null && d.time != null)
+      case "WPR":
+        return {
+          type: "multi",
+          data: {
+            r:
+              response.data?.candles
+                ?.filter((d) => d.percentR != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.percentR,
+                })) ?? [],
+          },
+        };
+      case "WMA":
+        return {
+          type: "multi",
+          data: {
+            wma:
+              response.data
+                ?.filter((d) => d.value != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.value,
+                })) ?? [],
+          },
+        };
+
+      case "PivotPoints(Standard)": {
+        const d = response?.data ?? {};
+
+        console.log("Pivot Standard:", d);
+
+        return {
+          type: "pivot",
+          data: [
+            { label: "P", value: Number(d.P) },
+            { label: "R1", value: Number(d.R1) },
+            { label: "R2", value: Number(d.R2) },
+            { label: "R3", value: Number(d.R3) },
+            { label: "S1", value: Number(d.S1) },
+            { label: "S2", value: Number(d.S2) },
+            { label: "S3", value: Number(d.S3) },
+          ].filter((level) => !Number.isNaN(level.value)),
+        };
+      }
+
+      case "PivotPoints(Fibonacci)": {
+        const d = response?.data ?? {};
+
+        console.log("PivotFibonacci:", d);
+
+        return {
+          type: "pivot",
+          data: [
+            { label: "P", value: Number(d.P) },
+            { label: "R1", value: Number(d.R1) },
+            { label: "R2", value: Number(d.R2) },
+            { label: "R3", value: Number(d.R3) },
+            { label: "S1", value: Number(d.S1) },
+            { label: "S2", value: Number(d.S2) },
+            { label: "S3", value: Number(d.S3) },
+          ].filter((level) => !Number.isNaN(level.value)),
+        };
+      }
+      case "PivotPoints(Camarilla)": {
+        const d = response?.data ?? {};
+
+        console.log("Pivot Camarilla:", d);
+
+        return {
+          type: "pivot",
+          data: [
+            { label: "P", value: Number(d.P) },
+            { label: "R1", value: Number(d.R1) },
+            { label: "R2", value: Number(d.R2) },
+            { label: "R3", value: Number(d.R3) },
+            { label: "R4", value: Number(d.R4) }, // Camarilla often has R4/S4
+            { label: "S1", value: Number(d.S1) },
+            { label: "S2", value: Number(d.S2) },
+            { label: "S3", value: Number(d.S3) },
+            { label: "S4", value: Number(d.S4) },
+          ].filter((level) => !Number.isNaN(level.value)),
+        };
+      }
+
+      case "PivotPoints(Classic)": {
+        const d = response?.data ?? {};
+
+        console.log("Pivot Classic:", d);
+
+        return {
+          type: "pivot",
+          data: [
+            { label: "P", value: Number(d.P) },
+            { label: "R1", value: Number(d.R1) },
+            { label: "R2", value: Number(d.R2) },
+            { label: "R3", value: Number(d.R3) },
+            { label: "S1", value: Number(d.S1) },
+            { label: "S2", value: Number(d.S2) },
+            { label: "S3", value: Number(d.S3) },
+          ].filter((level) => !Number.isNaN(level.value)),
+        };
+      }
+
+      /* ---------------- MULTI LINE ---------------- */
+
+      case "ICHIMOKU":
+        return {
+          type: "multi",
+          data: {
+            conversionLine: mapLine(response.data, "conversionLine"),
+            baseLine: mapLine(response.data, "baseLine"),
+
+            leadLine1: mapLine(response.data, "leadLine1"),
+            leadLine2: mapLine(response.data, "leadLine2"),
+
+            laggingSpan: mapLine(response.data, "laggingSpan"),
+
+            kumoCloudUpper: mapLine(response.data, "kumoCloudUpper"),
+            kumoCloudLower: mapLine(response.data, "kumoCloudLower"),
+          },
+        };
+      case "ChandeKrollStop":
+        return {
+          type: "multi",
+          data: {
+            longStop:
+              response.data
+                ?.filter((d) => d.longStop != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.longStop,
+                })) ?? [],
+
+            shortStop:
+              response.data
+                ?.filter((d) => d.shortStop != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.shortStop,
+                })) ?? [],
+          },
+        };
+
+      case "Stochastic":
+        return {
+          type: "multi",
+          data: {
+            k:
+              response.data
+                ?.filter((d) => d.k != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.k,
+                })) ?? [],
+
+            d:
+              response.data
+                ?.filter((d) => d.d != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.d,
+                })) ?? [],
+          },
+        };
+
+      case "MACD":
+        return {
+          type: "multi",
+          data: {
+            macd:
+              response.data
+                ?.filter((d) => d.macd != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.macd,
+                })) ?? [],
+
+            signal:
+              response.data
+                ?.filter((d) => d.macdSignal != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.macdSignal,
+                })) ?? [],
+
+            histogram:
+              response.data
+                ?.filter((d) => d.macdHistogram != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.macdHistogram,
+                })) ?? [],
+          },
+        };
+
+      case "KlingerOscillator":
+        return {
+          type: "multi",
+          data: {
+            kvo:
+              response.data
+                ?.filter((d) => d.kvo != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.kvo,
+                })) ?? [],
+
+            signal:
+              response.data
+                ?.filter((d) => d.signal != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.signal,
+                })) ?? [],
+          },
+        };
+
+      case "BollingerBands": {
+        const rows = response?.data ?? [];
+
+        return {
+          type: "multi",
+          data: {
+            upper: rows
+              .filter((d) => d.upper != null && d.time != null)
               .map((d) => ({
                 time: d.time,
                 value: d.upper,
-              })) ?? [],
+              })),
 
-          middle:
-            response.data
-              ?.filter((d) => d.middle != null && d.time != null)
+            middle: rows
+              .filter((d) => d.middle != null && d.time != null)
               .map((d) => ({
                 time: d.time,
                 value: d.middle,
-              })) ?? [],
+              })),
 
-          lower:
-            response.data
-              ?.filter((d) => d.lower != null && d.time != null)
+            lower: rows
+              .filter((d) => d.lower != null && d.time != null)
               .map((d) => ({
                 time: d.time,
                 value: d.lower,
-              })) ?? [],
-        },
-      };
+              })),
+          },
+        };
+      }
 
-    case "DonchianChannels":
-      return {
-        type: "multi",
-        data: {
-          upper:
-            response.data
-              ?.filter((d) => d.upper != null && d.time != null)
+      case "FisherTransform": {
+        const rows = response?.data ?? [];
+
+        return {
+          type: "multi",
+          data: {
+            fisher: rows
+              .filter((d) => d.fisher != null && d.time != null)
               .map((d) => ({
                 time: d.time,
-                value: d.upper,
-              })) ?? [],
+                value: d.fisher,
+              })),
 
-          middle:
-            response.data
-              ?.filter((d) => d.middle != null && d.time != null)
+            trigger: rows
+              .filter((d) => d.trigger != null && d.time != null)
               .map((d) => ({
                 time: d.time,
-                value: d.middle,
-              })) ?? [],
+                value: d.trigger,
+              })),
+          },
+        };
+      }
 
-          lower:
-            response.data
-              ?.filter((d) => d.lower != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.lower,
-              })) ?? [],
-        },
-      };
+      case "KeltnerChannels":
+        return {
+          type: "multi",
+          data: {
+            upper:
+              response.data
+                ?.filter((d) => d.upper != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.upper,
+                })) ?? [],
 
-    default:
-      return {
-        type: "single",
-        data: [],
-      };
-  }
-}
+            middle:
+              response.data
+                ?.filter((d) => d.middle != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.middle,
+                })) ?? [],
 
-function removeSeries(indicatorSeriesRef, chartRef, key) {
-  if (indicatorSeriesRef.current[key]) {
-    chartRef.current.removeSeries(indicatorSeriesRef.current[key]);
-    delete indicatorSeriesRef.current[key];
+            lower:
+              response.data
+                ?.filter((d) => d.lower != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.lower,
+                })) ?? [],
+          },
+        };
+
+      case "DonchianChannels":
+        return {
+          type: "multi",
+          data: {
+            upper:
+              response.data
+                ?.filter((d) => d.upper != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.upper,
+                })) ?? [],
+
+            middle:
+              response.data
+                ?.filter((d) => d.middle != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.middle,
+                })) ?? [],
+
+            lower:
+              response.data
+                ?.filter((d) => d.lower != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.lower,
+                })) ?? [],
+          },
+        };
+
+      default:
+        return {
+          type: "single",
+          data: [],
+        };
+    }
+  } catch (error) {
+    console.error("Indicator fetch error:", error);
+    return { type: "error", data: [] };
+  } finally {
+    setIndicatorLoading(false);
   }
 }

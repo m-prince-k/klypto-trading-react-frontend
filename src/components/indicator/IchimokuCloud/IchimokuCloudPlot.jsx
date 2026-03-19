@@ -17,8 +17,8 @@ export default function IchimokuCloudPlot({
   useEffect(() => {
     if (!result) return;
 
-    if (indicatorSeriesRef.current?.IchimokuCloud) {
-      Object.values(indicatorSeriesRef.current.IchimokuCloud).forEach((s) => {
+    if (indicatorSeriesRef.current?.ICHIMOKU) {
+      Object.values(indicatorSeriesRef.current.ICHIMOKU).forEach((s) => {
         if (s?.setData) {
           try {
             s.setData([]);
@@ -26,10 +26,10 @@ export default function IchimokuCloudPlot({
         }
       });
 
-      indicatorSeriesRef.current.IchimokuCloud = null;
+      indicatorSeriesRef.current.ICHIMOKU = null;
     }
 
-    const style = indicatorStyle?.IchimokuCloud ?? {};
+    const style = indicatorStyle?.ICHIMOKU ?? {};
     const grouped = {};
 
     /* ================= DATA ================= */
@@ -111,7 +111,7 @@ export default function IchimokuCloudPlot({
 
     grouped.result = result;
 
-    indicatorSeriesRef.current.IchimokuCloud = grouped;
+    indicatorSeriesRef.current.ICHIMOKU = grouped;
   }, [result]);
 
   /* ================= CREATE CANVAS ================= */
@@ -143,7 +143,7 @@ export default function IchimokuCloudPlot({
   /* ================= DRAW KUMO CLOUD ================= */
 
   useEffect(() => {
-    const group = indicatorSeriesRef.current?.IchimokuCloud;
+    const group = indicatorSeriesRef.current?.ICHIMOKU;
 
     const upperSeries = group?.kumoCloudUpper;
     const lowerSeries = group?.kumoCloudLower;
@@ -198,7 +198,7 @@ export default function IchimokuCloudPlot({
         ctx.closePath();
 
         ctx.fillStyle = bullish ? "rgba(0,200,0,0.25)" : "rgba(255,0,0,0.25)";
-        
+
 
         ctx.fill();
       }
@@ -213,10 +213,10 @@ export default function IchimokuCloudPlot({
   /* ================= STYLE UPDATE ================= */
 
   useEffect(() => {
-    const group = indicatorSeriesRef.current?.IchimokuCloud;
+    const group = indicatorSeriesRef.current?.ICHIMOKU;
     if (!group) return;
 
-    const style = indicatorStyle?.IchimokuCloud ?? {};
+    const style = indicatorStyle?.ICHIMOKU ?? {};
 
     if (group.conversionLine) {
       group.conversionLine.applyOptions({
