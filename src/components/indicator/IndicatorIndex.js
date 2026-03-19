@@ -40,6 +40,14 @@ import PSARPlot from "./PSAR/PSARPlot";
 import PSARInput from "./PSAR/PSARInput";
 import CHOPPlot from "./CHOP/CHOPPlot";
 import CHOPInput from "./CHOP/CHOPInput";
+import DCInput from "./DC/DCInput";
+import DCPlot from "./DC/DCPlot";
+import KCPlot from "./KC/KCPlot";
+import KCInput from "./KC/KCInput";
+import EOMInput from "./EOM/EOMInput";
+import EOMPlot from "./EOM/EOMPlot";
+import BBPlot from "./BB/BBPlot";
+import BBInput from "./BB/BBInput";
 
 export const indicatorComponents = {
   RSI: RSIPlot,
@@ -63,6 +71,10 @@ export const indicatorComponents = {
   MFI: MFIPlot,
   PSAR: PSARPlot,
   CHOP: CHOPPlot,
+  DC: DCPlot,
+  KC: KCPlot,
+  EOM: EOMPlot,
+  BB: BBPlot,
 };
 
 export const indicatorInputs = {
@@ -87,6 +99,10 @@ export const indicatorInputs = {
   MFI: MFIInput,
   PSAR: PSARInput,
   CHOP: CHOPInput,
+  DC: DCInput,
+  KC: KCInput,
+  EOM: EOMInput,
+  BB:BBInput
 };
 
 export function updateIndicatorFromInput(

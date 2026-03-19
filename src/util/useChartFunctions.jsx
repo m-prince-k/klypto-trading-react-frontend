@@ -417,6 +417,74 @@ export default function useChartFunctions({
 
             break;
           }
+          case "DC": {
+            const upperData = result?.data?.upper ?? [];
+            const lowerData = result?.data?.lower ?? [];
+            const basisData = result?.data?.basis ?? [];
+
+            indicatorSeriesRef.current.DC = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.DC = {
+              upper: upperData[upperData.length - 1]?.value,
+              lower: lowerData[lowerData.length - 1]?.value,
+              basis: basisData[basisData.length - 1]?.value,
+            };
+
+            break;
+          }
+          case "KC": {
+            const upperData = result?.data?.upper ?? [];
+            const lowerData = result?.data?.lower ?? [];
+            const basisData = result?.data?.basis ?? [];
+
+            indicatorSeriesRef.current.KC = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.KC = {
+              upper: upperData[upperData.length - 1]?.value,
+              lower: lowerData[lowerData.length - 1]?.value,
+              basis: basisData[basisData.length - 1]?.value,
+            };
+
+            break;
+          }
+          case "EOM": {
+            const eomData = result?.data ?? [];
+
+            indicatorSeriesRef.current.EOM = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.EOM = {
+              eom: eomData[eomData.length - 1]?.value,
+            };
+
+            break;
+          }
+          case "BB": {
+            const upperData = result?.data?.upper ?? [];
+            const lowerData = result?.data?.lower ?? [];
+            const basisData = result?.data?.basis ?? [];
+
+            indicatorSeriesRef.current.BB = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.BB = {
+              upper: upperData[upperData.length - 1]?.value,
+              lower: lowerData[lowerData.length - 1]?.value,
+              basis: basisData[basisData.length - 1]?.value,
+            };
+
+            break;
+          }
 
           /* ================= DEFAULT ================= */
 
@@ -476,7 +544,6 @@ async function fetchDataForIndicators(
       case "OBV":
       case "VolumeOscillator":
       case "ChaikinMoneyFlow":
-      case "EaseofMovement":
       case "NegativeVolumeIndex":
       case "PositiveVolumeIndex":
       case "VWAP":
@@ -486,7 +553,7 @@ async function fetchDataForIndicators(
       case "AccumulationDistribution":
       case "UltimateOscillator":
       case "StochasticRSI":
-      case "ChandeMomentumOscillator":
+      case "CMO":
         return {
           type: "single",
           data:
@@ -546,6 +613,17 @@ async function fetchDataForIndicators(
                   value: d.bbLower,
                 })) ?? [],
           },
+        };
+      case "EOM":
+        return {
+          type: "single",
+          data:
+            response.data
+              ?.filter((d) => d.eom != null && d.time != null)
+              .map((d) => ({
+                time: d.time,
+                value: d.eom,
+              })) ?? [],
         };
       case "EMA":
         return {
@@ -721,6 +799,36 @@ async function fetchDataForIndicators(
                 .map((d) => ({
                   time: d.time,
                   value: d.mom,
+                })) ?? [],
+          },
+        };
+
+      case "DC":
+        return {
+          type: "multi",
+          data: {
+            upper:
+              response.data
+                ?.filter((d) => d.upper != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.upper,
+                })) ?? [],
+
+            lower:
+              response.data
+                ?.filter((d) => d.lower != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.lower,
+                })) ?? [],
+
+            basis:
+              response.data
+                ?.filter((d) => d.basis != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.basis,
                 })) ?? [],
           },
         };
@@ -1058,35 +1166,35 @@ async function fetchDataForIndicators(
           },
         };
 
-      case "BollingerBands": {
-        const rows = response?.data ?? [];
-
+      case "BB":
         return {
           type: "multi",
           data: {
-            upper: rows
-              .filter((d) => d.upper != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.upper,
-              })),
+            upper:
+              response.data
+                ?.filter((d) => d.upper != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.upper,
+                })) ?? [],
 
-            middle: rows
-              .filter((d) => d.middle != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.middle,
-              })),
+            lower:
+              response.data
+                ?.filter((d) => d.lower != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.lower,
+                })) ?? [],
 
-            lower: rows
-              .filter((d) => d.lower != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.lower,
-              })),
+            basis:
+              response.data
+                ?.filter((d) => d.basis != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.basis,
+                })) ?? [],
           },
         };
-      }
 
       case "FisherTransform": {
         const rows = response?.data ?? [];
@@ -1111,7 +1219,7 @@ async function fetchDataForIndicators(
         };
       }
 
-      case "KeltnerChannels":
+      case "KC":
         return {
           type: "multi",
           data: {
@@ -1123,14 +1231,6 @@ async function fetchDataForIndicators(
                   value: d.upper,
                 })) ?? [],
 
-            middle:
-              response.data
-                ?.filter((d) => d.middle != null && d.time != null)
-                .map((d) => ({
-                  time: d.time,
-                  value: d.middle,
-                })) ?? [],
-
             lower:
               response.data
                 ?.filter((d) => d.lower != null && d.time != null)
@@ -1138,35 +1238,13 @@ async function fetchDataForIndicators(
                   time: d.time,
                   value: d.lower,
                 })) ?? [],
-          },
-        };
 
-      case "DonchianChannels":
-        return {
-          type: "multi",
-          data: {
-            upper:
-              response.data
-                ?.filter((d) => d.upper != null && d.time != null)
-                .map((d) => ({
-                  time: d.time,
-                  value: d.upper,
-                })) ?? [],
-
-            middle:
+            basis:
               response.data
                 ?.filter((d) => d.middle != null && d.time != null)
                 .map((d) => ({
                   time: d.time,
                   value: d.middle,
-                })) ?? [],
-
-            lower:
-              response.data
-                ?.filter((d) => d.lower != null && d.time != null)
-                .map((d) => ({
-                  time: d.time,
-                  value: d.lower,
                 })) ?? [],
           },
         };

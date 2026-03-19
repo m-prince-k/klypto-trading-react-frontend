@@ -1,217 +1,145 @@
 import React, { useEffect, useRef, useState } from "react";
-import {
-  createChart,
-  CandlestickSeries,
-  HistogramSeries,
-  LineSeries,
-  AreaSeries,
-  createSeriesMarkers,
-} from "lightweight-charts";
+import { createChart, LineSeries } from "lightweight-charts";
 
-export default function VolumeChart() {
-  const containerRef = useRef();
-  const chartRef = useRef();
+// :small_blue_diamond: Sample Data (replace with API)
+const sampleData = [
+  {
+    time: 1701993600,
+    upper: 44700,
+    lower: 35632,
+    basis: 40166,
+  },
+  { time: 1702080000, upper: 45000, lower: 36000, basis: 40500 },
+  { time: 1702166400, upper: 45500, lower: 36500, basis: 41000 },
+  { time: 1702252800, upper: 46000, lower: 37000, basis: 41500 },
+  { time: 1702339200, upper: 46500, lower: 37500, basis: 42000 },
+];
 
-  const [maLength, setMaLength] = useState(20);
-  const [type, setType] = useState("Columns"); // :art: COLORS
+export default function Testing() {
+  const chartContainerRef = useRef(null);
+  const chartRef = useRef(null);
 
-  const [upColor, setUpColor] = useState("#26A69A");
-  const [downColor, setDownColor] = useState("#EF5350");
-  const [maColor, setMaColor] = useState("#FACC15"); // :bar_chart: SAMPLE DATA
-
-  const data = Array.from({ length: 200 }, (_, i) => {
-    const base = 30000 + Math.sin(i / 5) * 1000;
-    const open = base;
-    const close = base + (Math.random() - 0.5) * 500;
-
-    return {
-      time: 1688947200 + i * 60, // :white_check_mark: UNIQUE TIME
-      open,
-      high: open + 300,
-      low: open - 300,
-      close,
-      volume: 10000 + Math.random() * 50000,
-    };
-  }); // :fire: SMA
-
-  const sma = (arr, len, i) =>
-    i + 1 < len
-      ? null
-      : arr.slice(i - len + 1, i + 1).reduce((a, b) => a + b, 0) / len; // :dart: CREATE CHART
+  const [upperColor, setUpperColor] = useState("#22C55E");
+  const [lowerColor, setLowerColor] = useState("#EF4444");
+  const [basisColor, setBasisColor] = useState("#3B82F6");
 
   useEffect(() => {
-    const chart = createChart(containerRef.current, {
-      height: 500,
-      layout: { background: { color: "#020617" }, textColor: "#fff" },
+    if (!chartContainerRef.current) return;
+    if (chartRef.current) return;
+
+    const chart = createChart(chartContainerRef.current, {
+      width: chartContainerRef.current.clientWidth,
+      height: 400,
+      layout: {
+        background: { color: "#020617" },
+        textColor: "#FFFFFF",
+      },
+      grid: {
+        vertLines: { color: "#1E293B" },
+        horzLines: { color: "#1E293B" },
+      },
     });
 
-    const candleSeries = chart.addSeries(CandlestickSeries);
-
-    chartRef.current = {
-      chart,
-      candleSeries,
-      volumeSeries: null,
-      maSeries: null,
-    };
-
-    return () => chart.remove();
-  }, []); // :arrows_counterclockwise: UPDATE
-
-  useEffect(() => {
-    const chart = chartRef.current.chart; // :broom: REMOVE OLD SERIES
-
-    if (chartRef.current.volumeSeries) {
-      chart.removeSeries(chartRef.current.volumeSeries);
-    }
-    if (chartRef.current.maSeries) {
-      chart.removeSeries(chartRef.current.maSeries);
-    }
-
-    let volumeSeries; // :bar_chart: CREATE SERIES BASED ON TYPE
-
-    switch (type) {
-      case "Area":
-      case "Area with breaks":
-        volumeSeries = chart.addSeries(AreaSeries, {
-          priceScaleId: "volume",
-          topColor: upColor,
-          bottomColor: "rgba(0,0,0,0)",
-          lineColor: upColor,
-        });
-        break;
-
-      case "Line":
-      case "Line with breaks":
-      case "Step line":
-        volumeSeries = chart.addSeries(LineSeries, {
-          priceScaleId: "volume",
-          color: upColor,
-          lineWidth: 2,
-        });
-        break;
-
-      case "Cross":
-      case "Circles":
-        volumeSeries = chart.addSeries(LineSeries, {
-          priceScaleId: "volume",
-          color: "transparent", // hide line
-          lineWidth: 0,
-        });
-        break;
-
-      case "Histogram":
-      case "Columns":
-      default:
-        volumeSeries = chart.addSeries(HistogramSeries, {
-          priceScaleId: "volume",
-          priceFormat: { type: "volume" },
-        });
-    } // :chart_with_downwards_trend: MA SERIES
-
-    const maSeries = chart.addSeries(LineSeries, {
-      priceScaleId: "volume",
-      color: maColor,
+    const upperSeries = chart.addSeries(LineSeries, {
+      color: upperColor,
       lineWidth: 2,
     });
 
-    chart.priceScale("volume").applyOptions({
-      scaleMargins: { top: 0.7, bottom: 0 },
+    const lowerSeries = chart.addSeries(LineSeries, {
+      color: lowerColor,
+      lineWidth: 2,
     });
 
-    chartRef.current.volumeSeries = volumeSeries;
-    chartRef.current.maSeries = maSeries; // :bar_chart: DATA FORMAT
+    const basisSeries = chart.addSeries(LineSeries, {
+      color: basisColor,
+      lineWidth: 2,
+    });
 
-    const volumeData = data.map((d) => ({
-      time: d.time,
-      value: d.volume,
-      color: d.close >= d.open ? upColor : downColor,
-    })); // :chart_with_downwards_trend: MA DATA
+    chartRef.current = { chart, upperSeries, lowerSeries, basisSeries };
 
-    const volumes = data.map((d) => d.volume);
-    const maData = [];
+    const handleResize = () => {
+      if (!chartContainerRef.current) return;
+      chart.applyOptions({ width: chartContainerRef.current.clientWidth });
+    };
 
-    for (let i = 0; i < data.length; i++) {
-      const val = sma(volumes, maLength, i);
-      if (val) {
-        maData.push({ time: data[i].time, value: val });
-      }
-    } // :fire: APPLY TYPES
+    window.addEventListener("resize", handleResize);
 
-    if (type === "Cross" || type === "Circles") {
-      const cleanData = volumeData.map((d) => ({
-        time: d.time,
-        value: d.value,
-      }));
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      chart.remove();
+      chartRef.current = null;
+    };
+  }, []);
 
-      volumeSeries.setData(cleanData); // :white_check_mark: FIXED MARKERS
+  useEffect(() => {
+    if (!chartRef.current) return;
 
-      const markers = volumeData.map((d) => ({
-        time: d.time,
-        position: "inBar",
-        color: d.color,
-        shape: type === "Cross" ? "cross" : "circle",
-      }));
+    const { chart, upperSeries, lowerSeries, basisSeries } = chartRef.current; // :repeat: Replace with API
 
-      createSeriesMarkers(volumeSeries, []); // clear
-      createSeriesMarkers(volumeSeries, markers);
-    } else {
-      volumeSeries.setData(volumeData);
-    }
+    const data = sampleData;
 
-    maSeries.setData(maData);
+    const upperData = data.map((d) => ({ time: d.time, value: d.upper }));
+    const lowerData = data.map((d) => ({ time: d.time, value: d.lower }));
+    const basisData = data.map((d) => ({ time: d.time, value: d.basis }));
+
+    upperSeries.applyOptions({ color: upperColor });
+    lowerSeries.applyOptions({ color: lowerColor });
+    basisSeries.applyOptions({ color: basisColor });
+
+    upperSeries.setData(upperData);
+    lowerSeries.setData(lowerData);
+    basisSeries.setData(basisData);
 
     chart.timeScale().fitContent();
-  }, [type, maLength, upColor, downColor, maColor]);
+  }, [upperColor, lowerColor, basisColor]);
 
   return (
-    <div style={{ background: "#020617", color: "#fff", padding: 10 }}>
-            <h2>:fire: Volume Indicator PRO (Fixed)</h2>
+    <div
+      style={{
+        padding: 20,
+        background: "linear-gradient(to bottom, #020617, #111827)",
+        color: "white",
+      }}
+    >
+            <h2>Donchian Channels</h2>
             
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                {/* MA LENGTH */}
-                
-        <input
-          type="number"
-          value={maLength}
-          onChange={(e) => setMaLength(+e.target.value)}
-        />
-                {/* TYPE SELECT */}
-                
-        <select value={type} onChange={(e) => setType(e.target.value)}>
-                    <option>Columns</option>
-                    <option>Histogram</option>
-                    <option>Area</option>
-                    <option>Area with breaks</option>
-                    <option>Line</option>
-                    <option>Line with breaks</option>
-                    <option>Step line</option>
-                    <option>Cross</option>
-                    <option>Circles</option>
-                  
-        </select>
-                {/* COLORS */}
+      <div style={{ marginBottom: 10 }}>
+                <label>Upper Color: </label>
                 
         <input
           type="color"
-          value={upColor}
-          onChange={(e) => setUpColor(e.target.value)}
-        />
-                
-        <input
-          type="color"
-          value={downColor}
-          onChange={(e) => setDownColor(e.target.value)}
-        />
-                
-        <input
-          type="color"
-          value={maColor}
-          onChange={(e) => setMaColor(e.target.value)}
+          value={upperColor}
+          onChange={(e) => setUpperColor(e.target.value)}
         />
               
       </div>
             
-      <div ref={containerRef} style={{ marginTop: 10 }} />
+      <div style={{ marginBottom: 10 }}>
+                <label>Lower Color: </label>
+                
+        <input
+          type="color"
+          value={lowerColor}
+          onChange={(e) => setLowerColor(e.target.value)}
+        />
+              
+      </div>
+            
+      <div style={{ marginBottom: 10 }}>
+                <label>Basis Color: </label>
+                
+        <input
+          type="color"
+          value={basisColor}
+          onChange={(e) => setBasisColor(e.target.value)}
+        />
+              
+      </div>
+            
+      <div
+        ref={chartContainerRef}
+        style={{ width: "100%", height: "400px", borderRadius: "12px" }}
+      />
           
     </div>
   );
