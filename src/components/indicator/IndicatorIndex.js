@@ -39,6 +39,20 @@ import MFIInput from "./MFI/MFIInput";
 import PSARPlot from "./PSAR/PSARPlot";
 import PSARInput from "./PSAR/PSARInput";
 import EOMInput from "./EOM/EOMInput";
+import CMOInput from "./CMO/CMOInput";
+import CMOPlot from "./CMO/CMOPlot";
+import PVOInput from "./PVO/PVOInput";
+import PVOPlot from "./PVO/PVOPlot";
+import OBVInput from "./OBV/OBVInput";
+import OBVPlot from "./OBV/OBVPlot";
+import VOLPlot from "./VOL/VOLPlot";
+import VOLInput from "./VOL/VOLInput";
+import STDDEVInput from "./STDDEV/STDDEVInput";
+import STDDEVPlot from "./STDDEV/STDDEVPlot";
+import TRIXInput from "./TRIX/TRIXInput";
+import TRIXPlot from "./TRIX/TRIXPlot";
+import VPPlot from "./VP/VPPlot";
+import VPInput from "./VP/VPInput";
 
 export const indicatorComponents = {
   RSI: RSIPlot,
@@ -62,6 +76,15 @@ export const indicatorComponents = {
   MFI: MFIPlot,
   PSAR: PSARPlot,
   EOM:EMAPlot,
+  CMO:CMOPlot,
+  PVO:PVOPlot,
+  OBV:OBVPlot,
+  VOL:VOLPlot,
+  STDDEV:STDDEVPlot,
+  AD:ADXPlot,
+  TRIX:TRIXPlot,
+  VP:VPPlot,
+ 
 };
 
 export const indicatorInputs = {
@@ -86,6 +109,15 @@ export const indicatorInputs = {
   MFI: MFIInput,
   PSAR: PSARInput,
   EOM:EOMInput,
+  CMO:CMOInput,
+  PVO:PVOInput,
+ OBV:OBVInput,
+ VOL:VOLInput,
+ STDDEV:STDDEVInput,
+ AD:ADXInput,
+ TRIX:TRIXInput,
+ VP:VPInput,
+  
 };
 
 export function updateIndicatorFromInput(

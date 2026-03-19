@@ -1037,14 +1037,14 @@ export default function IndicatorPropertyDialog({
             <BaseSettings showSource={false} />
           </>
         );
-      case "Standard Deviation":
+      case "STDDEV":
         return (
           <>
             <BaseSettings showOffset={false} />
           </>
         );
 
-      case "Volume":
+      case "VOL":
         return (
           <>
             <div className="mb-3">
@@ -1090,7 +1090,7 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "Percentage Volume Oscillator":
+      case "PVO":
         return (
           <>
             {/* Fast Length */}

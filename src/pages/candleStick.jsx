@@ -134,6 +134,9 @@ export default function Candlestick() {
     TEMA: {
       length: 9,
     },
+    AD: {
+      length: 14,
+    },
     KAMA: {
       ERlength: 10,
       fastLength: 2,
@@ -236,6 +239,13 @@ export default function Candlestick() {
       length: 14,
       smoothing: "RMA",
     },
+
+    VP: {
+      maType: "SMA", // or "none"
+      maLength: 14,
+    },
+
+
     BollingerBands: {
       length: 20,
       maType: "SMA",
@@ -266,11 +276,11 @@ export default function Candlestick() {
       length: 14,
       offset: 0,
     },
-    StandardDeviation: {
+    STDDEV: {
       length: 20,
       source: "close",
     },
-    Volume: {
+    VOL: {
       maLength: 20,
       colorByPrevious: false,
     },
@@ -282,7 +292,7 @@ export default function Candlestick() {
       maLlength: 14,
       bbStdDev: 2,
     },
-    "Percentage Volume Oscillator": {
+    PVO: {
       fastLength: 12,
       slowLength: 26,
       signalLength: 9,
@@ -430,6 +440,34 @@ export default function Candlestick() {
         bottomFillColor1: "rgba(76,175,80,0.05)",
       },
     },
+    STDDEV: {
+      stddev: {
+        color: "rgba(33,150,243,1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+    },
+
+    TRIX: {
+      trix: {
+        color: "rgba(0,188,212,1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+    },
+
+    OBV: {
+      obv: {
+        color: "rgba(156,39,176,1)",
+        width: 2, lineStyle: 0, visible: true
+      },
+      smoothingMA: { color: "rgba(255,193,7,1)", width: 2, lineStyle: 0, visible: true },
+      bbUpper: { color: "rgba(0,200,83,1)", width: 1, lineStyle: 2, visible: true },
+      bbLower: { color: "rgba(255,82,82,1)", width: 1, lineStyle: 2, visible: true },
+    },
+
     ICHIMOKU: {
       conversionLine: {
         color: "rgba(41,98,255,1)",
@@ -835,6 +873,28 @@ export default function Candlestick() {
         topFillColor2: "rgba(41, 98, 255, 0.08)",
       },
     },
+    VOL: {
+      volume: {
+        color: "rgba(38,166,154,1)", // fallback
+        visible: true,
+      },
+      volumeMA: {
+        color: "rgba(255,193,7,1)",
+        width: 2,
+        visible: true,
+      },
+    },
+    VP: {
+      volume: {
+        color: "rgba(38,166,154,1)",
+        visible: true,
+      },
+      volumeMA: {
+        color: "rgba(255,193,7,1)",
+        width: 2,
+        visible: true,
+      },
+    },
     PSAR: {
       psar: {
         visible: true,
@@ -847,27 +907,33 @@ export default function Candlestick() {
       eom: {
         color: "rgba(38, 166, 154, 1)",
         width: 3,
-        lineStyle: 0, // 0 solid, 1 dotted, 2 dashed
+        lineStyle: 0,
         visible: true,
       },
+    },
 
-      /* Histogram colors */
-      histogram: {
-        upColor: "rgba(38, 166, 154, 1)",   // green
-        downColor: "rgba(239, 83, 80, 1)",  // red
-        base: 0,
+    PVO: {
+      pvo: {
+        color: "rgba(33, 150, 243, 1)",
+        lineStyle: 0,
         visible: true,
       },
+      signal: {
+        color: "rgba(255, 193, 7, 1)",
+        lineStyle: 0,
+        visible: true,
+      },
+    },
 
-      /* Zero line */
-      zeroLine: {
-        value: 0,
-        color: "rgba(153, 153, 153, 1)", // grey
-        width: 1,
-        lineStyle: 2, // dashed
+    AD: {
+      ad: {
+        color: "rgba(156,39,176,1)",
+        width: 2,
+        lineStyle: 0,
         visible: true,
       },
     }
+
   };
 
   const [indicatorStyle, setIndicatorStyle] = useState(indicatorStyleDefault);
@@ -922,8 +988,6 @@ export default function Candlestick() {
         return "RSI";
       case "MACD":
         return "MACD";
-      case "Volume":
-        return "volume";
       case "ATR":
         return "ATR";
       case "AROON":
@@ -944,6 +1008,20 @@ export default function Candlestick() {
         return "MOM";
       case "EOM":
         return "EOM";
+      case "PVO":
+        return "PVO";
+      case "OBV":
+        return "OBV";
+      case "CMO":
+        return "CMO";
+      case "STDDEV":
+        return "STDDEV";
+      case "AD":
+        return "AD";
+      case "TRIX":
+        return "TRIX";
+      case "VP":
+        return "VP";
     }
   }
 
