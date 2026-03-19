@@ -189,6 +189,7 @@ export default function useChartFunctions({
               result,
               rows,
             };
+       
 
             latestIndicatorValuesRef.current.CMF = {
               cmf: cmfData[cmfData.length - 1]?.value ?? null,
@@ -700,10 +701,16 @@ async function fetchDataForIndicators(
         };
 
       case "CMF":
+        console.log(await response?.data
+              ?.filter((d) => d?.time && d?.cmf !== undefined && d?.cmf !== null)
+              .map((d) => ({
+                time: d.time,
+                value: Number(d.cmf),
+              })),"------------------***********************$$##@!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         return {
           type: "single",
           data:
-            (await response.data
+            (await response?.data
               ?.filter((d) => d?.time && d?.cmf !== undefined && d?.cmf !== null)
               .map((d) => ({
                 time: d.time,

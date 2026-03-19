@@ -13,7 +13,7 @@ export default function ChaikinMoneyFlowInput(
     .map((d) => ({
       time: Number(d.time),
       value: Number(d.value),
-      cmf:Number(d.cmf)
+      // cmf:Number(d.cmf)
     }))
     .sort((a, b) => a.time - b.time);
 
