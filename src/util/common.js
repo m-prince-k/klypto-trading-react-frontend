@@ -1372,15 +1372,12 @@ export const getRowsByIndicator = (indicator, maType) => {
           bottomColor: "rgba(38,166,154,0.08)", // oversold zone
         },
       ];
-    case "Ease of Movement":
+    case "EOM":
       return [
-        // EOM Line
         {
           key: "eom",
           label: "EOM",
           type: "line",
-          color: "#2962ff",
-          width: 2,
           visible: true,
         },
       ];
@@ -1392,8 +1389,6 @@ export const getRowsByIndicator = (indicator, maType) => {
           key: "nvi",
           label: "NVI",
           type: "line",
-          color: "#2962ff",
-          width: 2,
           visible: true,
         },
       ];
@@ -1556,6 +1551,7 @@ export const PANE_INDICATORS = new Set([
   "ATR",
   "ADX",
   "MFI",
+  "EOM",
   "MOM",
   "ChoppinessIndex",
   "Volume",

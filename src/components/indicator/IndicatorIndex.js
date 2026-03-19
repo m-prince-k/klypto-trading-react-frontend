@@ -38,6 +38,7 @@ import MFIPlot from "./MFI/MFIPlot";
 import MFIInput from "./MFI/MFIInput";
 import PSARPlot from "./PSAR/PSARPlot";
 import PSARInput from "./PSAR/PSARInput";
+import EOMInput from "./EOM/EOMInput";
 
 export const indicatorComponents = {
   RSI: RSIPlot,
@@ -60,6 +61,7 @@ export const indicatorComponents = {
   ATR: ATRPlot,
   MFI: MFIPlot,
   PSAR: PSARPlot,
+  EOM:EMAPlot,
 };
 
 export const indicatorInputs = {
@@ -83,6 +85,7 @@ export const indicatorInputs = {
   ATR: ATRInput,
   MFI: MFIInput,
   PSAR: PSARInput,
+  EOM:EOMInput,
 };
 
 export function updateIndicatorFromInput(

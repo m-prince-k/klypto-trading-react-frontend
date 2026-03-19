@@ -7,12 +7,12 @@ export default function EOMPlot({
   addSeries,
   indicatorStyle,
 }) {
-  /* ================= CREATE ================= */
 
   useEffect(() => {
-    console.log("EOM RESULT:", result);
-
-    if (!result?.data?.eom?.length) return;
+    if (!result?.data?.eom || !Array.isArray(result.data.eom)) {
+      console.log("❌ No EOM data");
+      return;
+    }
 
     /* REMOVE OLD */
     if (indicatorSeriesRef.current?.EOM?.eom) {
@@ -21,7 +21,6 @@ export default function EOMPlot({
       } catch {}
     }
 
-    /* 🔥 MAIN CHART */
     const eomSeries = addSeries("price", LineSeries, {
       color: indicatorStyle?.EOM?.eom?.color || "rgba(38,166,154,1)",
       lineWidth: indicatorStyle?.EOM?.eom?.width || 2,
@@ -30,21 +29,25 @@ export default function EOMPlot({
       lastValueVisible: true,
     });
 
-    if (!eomSeries) {
-      console.log("❌ EOM series not created");
-      return;
-    }
+    if (!eomSeries) return;
 
-    eomSeries.setData(result.data.eom);
+    /* 🔥 SAFE SCALE */
+    const safeData = result.data.eom.map((d) => ({
+      time: Number(d.time),
+      value: Number(d.value || 0) / 10000,
+    }));
 
-    console.log("✅ EOM plotted");
+    eomSeries.setData(safeData);
 
     indicatorSeriesRef.current.EOM = {
       eom: eomSeries,
     };
+
   }, [result]);
 
-  /* ================= STYLE UPDATE ================= */
+
+
+  /* STYLE UPDATE */
 
   useEffect(() => {
     const eomGroup = indicatorSeriesRef.current?.EOM;

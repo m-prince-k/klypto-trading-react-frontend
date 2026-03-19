@@ -295,7 +295,7 @@ export default function Candlestick() {
     MFI: {
       length: 14,
     },
-    "Ease of Movement": {
+    EOM: {
       length: 14,
       divisor: 10000,
     },
@@ -843,6 +843,31 @@ export default function Candlestick() {
         opacity: 100,
       },
     },
+    EOM: {
+      eom: {
+        color: "rgba(38, 166, 154, 1)",
+        width: 3,
+        lineStyle: 0, // 0 solid, 1 dotted, 2 dashed
+        visible: true,
+      },
+
+      /* Histogram colors */
+      histogram: {
+        upColor: "rgba(38, 166, 154, 1)",   // green
+        downColor: "rgba(239, 83, 80, 1)",  // red
+        base: 0,
+        visible: true,
+      },
+
+      /* Zero line */
+      zeroLine: {
+        value: 0,
+        color: "rgba(153, 153, 153, 1)", // grey
+        width: 1,
+        lineStyle: 2, // dashed
+        visible: true,
+      },
+    }
   };
 
   const [indicatorStyle, setIndicatorStyle] = useState(indicatorStyleDefault);
@@ -917,6 +942,8 @@ export default function Candlestick() {
         return "AO";
       case "MOM":
         return "MOM";
+      case "EOM":
+        return "EOM";
     }
   }
 
@@ -962,13 +989,13 @@ export default function Candlestick() {
 
         try {
           chart.removeSeries(series);
-        } catch {}
+        } catch { }
       });
     } else {
       /* SINGLE SERIES */
       try {
         chart.removeSeries(entry);
-      } catch {}
+      } catch { }
     }
 
     delete indicatorSeriesRef.current[indicator];
@@ -1071,7 +1098,7 @@ export default function Candlestick() {
 
           try {
             chart.removeSeries(series);
-          } catch (e) {}
+          } catch (e) { }
         });
 
         delete indicatorSeriesRef.current[indicator];
@@ -1218,7 +1245,7 @@ export default function Candlestick() {
   // ATTACH CROSSHAIR
 
   const attachCrosshair = useCallback((chart) => {
-    if (!chart) return () => {};
+    if (!chart) return () => { };
     const handler = (param) => {
       const charts = [
         chartRef.current,
@@ -1286,7 +1313,7 @@ export default function Candlestick() {
         if (seriesRef.current) {
           try {
             chartRef.current.removeSeries(seriesRef.current);
-          } catch (e) {}
+          } catch (e) { }
           seriesRef.current = null;
         }
 

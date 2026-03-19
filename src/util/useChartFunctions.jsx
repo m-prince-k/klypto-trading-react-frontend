@@ -398,6 +398,24 @@ export default function useChartFunctions({
             break;
           }
 
+          case "EOM": {
+            const eomData = result?.data?.eom ?? [];
+
+            indicatorSeriesRef.current.EOM = {
+              result,
+              rows,
+            };
+
+
+
+            console.log(result, "resssssssss")
+            latestIndicatorValuesRef.current.EOM = {
+              eom: eomData[eomData.length - 1]?.value,
+            };
+
+            break;
+          }
+
           /* ================= DEFAULT ================= */
 
           default:
@@ -467,6 +485,7 @@ async function fetchDataForIndicators(
       case "UltimateOscillator":
       case "StochasticRSI":
       case "ChandeMomentumOscillator":
+
         return {
           type: "single",
           data:
@@ -913,6 +932,33 @@ async function fetchDataForIndicators(
         };
       }
 
+      case "EOM":
+        return {
+          type: "single",
+          data: {
+            eom:
+              response?.data
+                ?.filter((d) => d.eom != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.eom),
+                })) ?? [],
+          },
+        };
+
+      case "AD":
+        return {
+          type: "single",
+          data: {
+            ad:
+              response?.data
+                ?.filter((d) => d.value != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.value),
+                })) ?? [],
+          },
+        };
       /* ---------------- MULTI LINE ---------------- */
 
       case "ICHIMOKU":
@@ -952,6 +998,23 @@ async function fetchDataForIndicators(
                 })) ?? [],
           },
         };
+
+      // case "AD": {
+      //   const adData = result?.data?.ad ?? [];
+
+      //   if (!indicatorSeriesRef.current.AD) {
+      //     indicatorSeriesRef.current.AD = {};
+      //   }
+
+      //   indicatorSeriesRef.current.AD.result = result;
+      //   indicatorSeriesRef.current.AD.rows = rows;
+
+      //   latestIndicatorValuesRef.current.AD = {
+      //     ad: adData[adData.length - 1]?.value,
+      //   };
+
+      //   break;
+      // }
 
       case "Stochastic":
         return {
@@ -1139,6 +1202,8 @@ async function fetchDataForIndicators(
                 })) ?? [],
           },
         };
+
+
 
       default:
         return {
