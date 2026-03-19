@@ -83,6 +83,119 @@ export default function useChartFunctions({
 
             break;
           }
+          //this is bbw proceed
+          case "BBW": {
+            const bbwData = result?.data?.bollingerBandWidth ?? [];
+            const highestExpansionData = result?.data?.highestExpansion ?? [];
+            const lowestContractionData = result?.data?.lowestContraction ?? [];
+
+            indicatorSeriesRef.current.BBW = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.BBW = {
+              bollingerBandWidth:
+                bbwData[bbwData.length - 1]?.value ?? null,
+
+              highestExpansion:
+                highestExpansionData[highestExpansionData.length - 1]?.value ?? null,
+
+              lowestContraction:
+                lowestContractionData[lowestContractionData.length - 1]?.value ?? null,
+            };
+
+            break;
+          }
+          case "MACD": {
+            const macdData = result?.data?.macd ?? [];
+            const signalData = result?.data?.signal ?? [];
+            const histogramData = result?.data?.histogram ?? [];
+
+            indicatorSeriesRef.current.MACD = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.MACD = {
+              macd: macdData[macdData.length - 1]?.value ?? null,
+
+              signal: signalData[signalData.length - 1]?.value ?? null,
+
+              histogram: histogramData[histogramData.length - 1]?.value ?? null,
+            };
+
+            break;
+          }
+          case "VWAP": {
+            const vwapData = result?.data?.vwap ?? [];
+            const upperBandData = result?.data?.upperBand ?? [];
+            const lowerBandData = result?.data?.lowerBand ?? [];
+
+            indicatorSeriesRef.current.VWAP = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.VWAP = {
+              vwap: vwapData[vwapData.length - 1]?.value ?? null,
+
+              upperBand: upperBandData.length
+                ? upperBandData[upperBandData.length - 1]?.value
+                : null,
+
+              lowerBand: lowerBandData.length
+                ? lowerBandData[lowerBandData.length - 1]?.value
+                : null,
+            };
+
+            break;
+          }
+          case "CKS": {
+            const longStopData = result?.data?.longStop ?? [];
+            const shortStopData = result?.data?.shortStop ?? [];
+
+            indicatorSeriesRef.current.CKS = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.CKS = {
+              longStop: longStopData[longStopData.length - 1]?.value ?? null,
+
+              shortStop: shortStopData[shortStopData.length - 1]?.value ?? null,
+            };
+
+            break;
+          }
+          case "HV": {
+            const hvData = result?.data?.hv ?? [];
+
+            indicatorSeriesRef.current.HV = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.HV = {
+              hv: hvData[hvData.length - 1]?.value ?? null,
+            };
+
+            break;
+          }
+          case "CMF": {
+            const cmfData = result?.data?.cmf ?? [];
+
+            indicatorSeriesRef.current.CMF = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.CMF = {
+              cmf: cmfData[cmfData.length - 1]?.value ?? null,
+            };
+
+            break;
+          }
           case "SMA": {
             const smaData = result?.data?.sma ?? [];
             const smoothingData = result?.data?.smoothingMA ?? [];
@@ -544,13 +657,13 @@ async function fetchDataForIndicators(
       case "NegativeVolumeIndex":
       case "PositiveVolumeIndex":
       case "VWAP":
-      case "BollingerBandWidth":
       case "HistoricalVolatility":
       case "ChoppinessIndex":
       case "AccumulationDistribution":
       case "UltimateOscillator":
       case "StochasticRSI":
       case "CMO":
+
         return {
           type: "single",
           data:
@@ -574,6 +687,145 @@ async function fetchDataForIndicators(
               }))) ?? [],
         };
 
+      case "NVI":
+        return {
+          type: "single", // ✅ bilkul sahi
+          data:
+            (await response.data
+              ?.filter((d) => d?.time && d?.nvi !== undefined && d?.nvi !== null)
+              .map((d) => ({
+                time: d.time,
+                value: Number(d.nvi),
+              }))) ?? [],
+        };
+
+      case "CMF":
+        return {
+          type: "single",
+          data:
+            (await response.data
+              ?.filter((d) => d?.time && d?.cmf !== undefined && d?.cmf !== null)
+              .map((d) => ({
+                time: d.time,
+                value: Number(d.cmf),
+              }))) ?? [],
+        };
+
+      case "HV":
+        return {
+          type: "single",
+          data:
+            (await response.data
+              ?.filter((d) => d?.time && d?.hv !== undefined && d?.hv !== null)
+              .map((d) => ({
+                time: d.time,
+                value: Number(d.hv),
+              }))) ?? [],
+        };
+
+      case "CKS":
+        return {
+          type: "multi",
+          data: {
+            longStop:
+              (await response.data
+                ?.filter((d) => d?.time && d?.longStop != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: Number(d.longStop),
+                }))) ?? [],
+
+            shortStop:
+              (await response.data
+                ?.filter((d) => d?.time && d?.shortStop != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: Number(d.shortStop),
+                }))) ?? [],
+          },
+        };
+
+      case "CKS":
+        return {
+          type: "multi",
+          data: {
+            longStop:
+              (await response.data
+                ?.filter((d) => d?.time && d?.longStop != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: Number(d.longStop),
+                }))) ?? [],
+
+            shortStop:
+              (await response.data
+                ?.filter((d) => d?.time && d?.shortStop != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: Number(d.shortStop),
+                }))) ?? [],
+          },
+        };
+
+      case "MACD":
+        return {
+          type: "multi",
+          data: {
+            macd:
+              (await response.data
+                ?.filter((d) => d?.time && d?.macd != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: Number(d.macd),
+                }))) ?? [],
+
+            signal:
+              (await response.data
+                ?.filter((d) => d?.time && d?.signal != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: Number(d.signal),
+                }))) ?? [],
+
+            histogram:
+              (await response.data
+                ?.filter((d) => d?.time && d?.histogram != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: Number(d.histogram),
+                }))) ?? [],
+          },
+        };
+
+      case "BBW":
+        return {
+          type: "multi",
+          data: {
+            bollingerBandWidth:
+              response.data
+                ?.filter((d) => d.bollingerBandWidth != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.bollingerBandWidth,
+                })) ?? [],
+
+            highestExpansion:
+              response.data
+                ?.filter((d) => d.highestExpansion != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.highestExpansion,
+                })) ?? [],
+
+            lowestContraction:
+              response.data
+                ?.filter((d) => d.lowestContraction != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.lowestContraction,
+                })) ?? [],
+          },
+        };
       case "SMA":
         return {
           type: "multi",

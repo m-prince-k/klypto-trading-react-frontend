@@ -51,8 +51,38 @@ import EOMPlot from "./EOM/EOMPlot";
 import BBPlot from "./BB/BBPlot";
 import BBInput from "./BB/BBInput";
 
+import BollingerBandWidthInputs from "./bollinder-band-width/bollinder-band-width-inputs";
+import BollingerBandWidthPlot from "./bollinder-band-width/bollinger-band-width-plot";
+
+
+
+import ChandeKrollStopPlot from "./CKS/chande-kroll-stop-plot";
+import ChandeKrollStopInput from "./CKS/chande-kroll-stop-inputs"
+
+import HistoricalVolatilityPlot from "./historical-volatity/historical-volatility-inputs"
+import HistoricalVolatilityInput from "./historical-volatity/historical-volatility-inputs";
+ 
+import ChaikinMoneyFlowInput from "./CMF/Chaikin-money-flow-inputs";
+import ChaikinMoneyFlowPlot from "./CMF/chaikin-money-flow-plot";
+
+import NVIInput from "./NVI/Negative-volume-index-inputs";
+import NVIPlot from "./NVI/negative-volume-plot"
+
+import MACDPlot from "./MACD/MACDPlot";
+import MACDInput from "./MACD/macd-inputs";
+
+
+import VWAPPlot from "./vwap/vwap-plot";
+import VWAPInput from "./vwap/vwap-inputs";
 
 export const indicatorComponents = {
+  VWAP:VWAPPlot,
+  MACD:MACDPlot,
+  CKS:ChandeKrollStopPlot,
+  HV:HistoricalVolatilityPlot,
+  CMF:ChaikinMoneyFlowPlot,
+  NVI:NVIPlot,
+  BBW:BollingerBandWidthPlot,
   RSI: RSIPlot,
   SMA: SMAPlot,
   ICHIMOKU: IchimokuCloudPlot,
@@ -69,11 +99,11 @@ export const indicatorComponents = {
   CCI: CCIPlot,
   MOM: MomentumPlot,
   ROC: ROCPlot,
-  WPR : WilliamsRPlot,
+  WPR: WilliamsRPlot,
   ATR: ATRPlot,
   MFI: MFIPlot,
   PSAR: PSARPlot,
-  EOM:EMAPlot,
+  EOM: EMAPlot,
 
   DC: DCPlot,
   KC: KCPlot,
@@ -83,6 +113,13 @@ export const indicatorComponents = {
 };
 
 export const indicatorInputs = {
+  VWAP:VWAPInput,
+  MACD:MACDInput,
+  CKS:ChandeKrollStopInput,
+  HV:HistoricalVolatilityInput,
+  CMF:ChaikinMoneyFlowInput,
+  NVI:NVIInput,
+  BBW:BollingerBandWidthInputs,
   RSI: RSIInput,
   SMA: SMAInput,
   ICHIMOKU: IchimokuCloudInput,
@@ -97,20 +134,21 @@ export const indicatorInputs = {
   AO: AroonOscillatorInput,
   ADX: ADXInput,
   CCI: CCIInput,
-  MOM:MomentumInput,
-  ROC:ROCInput,
-  WPR : WilliamsRInput,
+  MOM: MomentumInput,
+  ROC: ROCInput,
+  WPR: WilliamsRInput,
   ATR: ATRInput,
   MFI: MFIInput,
   PSAR: PSARInput,
 
   CHOP: CHOPInput,
-  EOM:EOMInput,
+  EOM: EOMInput,
 
   DC: DCInput,
   KC: KCInput,
   EOM: EOMInput,
-  BB:BBInput
+  BB: BBInput
+  
 
 };
 

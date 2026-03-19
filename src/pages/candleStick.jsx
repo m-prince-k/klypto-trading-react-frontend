@@ -166,7 +166,7 @@ export default function Candlestick() {
       smoothing: 14,
       diLength: 14,
     },
-    "Chande Kroll Stop": {
+    CKS: {
       atrLength: 10,
       atrCoefficient: 1,
       stopLength: 9,
@@ -243,7 +243,7 @@ export default function Candlestick() {
       source: "close",
       offset: 0,
     },
-    BollingerBandWidth: {
+    BBW: {
       length: 20,
       stdDev: 2,
       source: "close",
@@ -274,7 +274,7 @@ export default function Candlestick() {
       maLength: 20,
       colorByPrevious: false,
     },
-    HistoricalVolatility: {
+    HV: {
       length: 10,
     },
     OBV: {
@@ -428,6 +428,26 @@ export default function Candlestick() {
         visible: true,
         topFillColor1: "rgba(76,175,80,0.2)",
         bottomFillColor1: "rgba(76,175,80,0.05)",
+      },
+    },
+    BBW: {
+      bollingerBandWidth: {
+        visible: true,
+        color: "rgba(41, 98, 255, 1)", // default blue
+        width: 2,
+        lineStyle: 0,
+      },
+      highestExpansion: {
+        visible: true,
+        color: "rgba(38,166,154,1)", // teal
+        width: 2,
+        lineStyle: 0,
+      },
+      lowestContraction: {
+        visible: true,
+        color: "rgba(38,166,154,1)", // same as above
+        width: 2,
+        lineStyle: 0,
       },
     },
     ICHIMOKU: {
@@ -976,6 +996,141 @@ export default function Candlestick() {
         topFillColor2: "rgba(239,83,80,0.1)",
       },
     },
+    MACD: {
+      macd: {
+        visible: true,
+        color: "rgba(33,150,243,1)", // blue
+        width: 2,
+        lineStyle: 0,
+      },
+      signal: {
+        visible: true,
+        color: "rgba(255,193,7,1)", // yellow
+        width: 2,
+        lineStyle: 0,
+      },
+      histogram: {
+        visible: true,
+        upColor: "rgba(38,166,154,1)",   // green
+        downColor: "rgba(239,83,80,1)",  // red
+        base: 0,
+      },
+    },
+    VWAP: {
+      vwap: {
+        visible: true,
+        color: "rgba(156,39,176,1)", // purple
+        width: 2,
+        lineStyle: 0,
+      },
+      upper: {
+        visible: false, // optional bands (std dev)
+        color: "rgba(239,83,80,1)",
+        width: 1,
+        lineStyle: 2,
+      },
+      lower: {
+        visible: false,
+        color: "rgba(38,166,154,1)",
+        width: 1,
+        lineStyle: 2,
+      },
+      bg: {
+        visible: false,
+        topFillColor1: "rgba(156,39,176,0.1)",
+        topFillColor2: "rgba(156,39,176,0.02)",
+      },
+    },
+    CKS: {
+      longStop: {
+        visible: true,
+        color: "rgba(38,166,154,1)", // green
+        width: 2,
+        lineStyle: 0,
+      },
+      shortStop: {
+        visible: true,
+        color: "rgba(239,83,80,1)", // red
+        width: 2,
+        lineStyle: 0,
+      },
+      bg: {
+        visible: false,
+        topFillColor1: "rgba(38,166,154,0.1)",
+        topFillColor2: "rgba(239,83,80,0.1)",
+      },
+    },
+    HV: {
+      hv: {
+        visible: true,
+        color: "rgba(255,152,0,1)", // orange
+        width: 2,
+        lineStyle: 0,
+      },
+      signal: {
+        visible: false, // optional smoothing (SMA/EMA of HV)
+        color: "rgba(33,150,243,1)",
+        width: 1,
+        lineStyle: 2,
+      },
+      levels: {
+        high: {
+          visible: false,
+          value: 40,
+          color: "rgba(239,83,80,0.8)",
+          width: 1,
+          lineStyle: 1,
+        },
+        low: {
+          visible: false,
+          value: 10,
+          color: "rgba(38,166,154,0.8)",
+          width: 1,
+          lineStyle: 1,
+        },
+      },
+    },
+    CMF: {
+      cmf: {
+        visible: true,
+        color: "rgba(0,188,212,1)", // cyan
+        width: 2,
+        lineStyle: 0,
+      },
+      zeroLine: {
+        visible: true,
+        value: 0,
+        color: "rgba(158,158,158,0.8)",
+        width: 1,
+        lineStyle: 1,
+      },
+      bg: {
+        visible: true,
+        topFillColor1: "rgba(38,166,154,0.15)", // above 0
+        topFillColor2: "rgba(239,83,80,0.15)", // below 0
+      },
+    },
+    NVI: {
+      nvi: {
+        visible: true,
+        color: "rgba(121,85,72,1)", // brown
+        width: 2,
+        lineStyle: 0,
+      },
+      signal: {
+        visible: true, // usually EMA of NVI (like 255 EMA)
+        color: "rgba(33,150,243,1)", // blue
+        width: 1,
+        lineStyle: 2,
+      },
+      baseLine: {
+        visible: false,
+        value: 1000,
+        color: "rgba(158,158,158,0.6)",
+        width: 1,
+        lineStyle: 1,
+      },
+    }
   };
 
   const [indicatorStyle, setIndicatorStyle] = useState(indicatorStyleDefault);
@@ -1056,6 +1211,8 @@ export default function Candlestick() {
         return "MOM";
       case "EOM":
         return "EOM";
+        case "HV":
+        return "HV";
     }
   }
 
