@@ -14,13 +14,7 @@ import { RiResetRightLine } from "react-icons/ri";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { FaCode } from "react-icons/fa6";
 import ChartHeader from "../components/tradingModals/ChartHeader";
-<<<<<<< HEAD
-import IndicatorBuildingListing from "../components/indicator/IndicatorBuilderListing";
-import { toggleHideShow } from '../util/ChartFunctions'
-
-=======
 import IndicatorBuildingListing from "../components/scanner/IndicatorBuilderListing";
->>>>>>> 6d3db073100cc8693931171b0e743476eaad86ba
 import {
   ChartProprties,
   TIMEFRAME_TO_SECONDS,
@@ -71,19 +65,6 @@ export default function Candlestick() {
   const [activeSourceIndicator, setActiveSourceIndicator] = useState(null);
   const [indicatorVisibility, setIndicatorVisibility] = useState({});
   const [activeBarIndicator, setActiveBarIndicator] = useState("");
-<<<<<<< HEAD
-  const [tempIndicatorConfig, setTempIndicatorConfig] = useState({});
-
-
-  // useEffect(() => {
-
-  //   if (!chartData.current) return;
-
-  //   toggleIndicator(chartData.current.rsiSeries, isVisible);
-  //   // toggleIndicator(chartData.current.smaSeries, showSMA);
-
-  // }, [isVisible]);
-=======
 
   const toggleIndicatorVisibility = (indicator) => {
     const currentVisible = indicatorVisibility[indicator] ?? true;
@@ -118,7 +99,6 @@ export default function Candlestick() {
     paneIndexRef.current[indicator] = nextPane;
     return nextPane;
   };
->>>>>>> 6d3db073100cc8693931171b0e743476eaad86ba
 
   const [indicatorConfigs, setIndicatorConfigs] = useState({
     SMA: {
@@ -161,13 +141,13 @@ export default function Candlestick() {
       source: "close",
     },
 
-    IchimokuCloud: {
+    ICHIMOKU: {
       conversionLength: 9,
       baseLength: 26,
       spanBLength: 52,
       laggingSpan: 26,
     },
-    ParabolicSAR: {
+    PSAR: {
       start: 0.02,
       increment: 0.02,
       maxValue: 0.02,
@@ -310,7 +290,7 @@ export default function Candlestick() {
       oscMaType: "EMA",
       signalMaType: "EMA",
     },
-    "Chaikin Money Flow": {
+    CMF: {
       length: 20,
     },
     MFI: {
@@ -396,12 +376,12 @@ export default function Candlestick() {
       },
       obFill: {
         visible: true,
-        topFillColor1: "rgba(38,166,154,0.012)",
-        topFillColor2: "rgba(38,166,154,0.2)",
+        topFillColor1: "rgba(38, 166, 106, 0.1)",
+        topFillColor2: "rgba(38, 166, 106, 0.2)",
       },
       osFill: {
         visible: true,
-        bottomFillColor1: "rgba(239,83,80,0.012)",
+        bottomFillColor1: "rgba(239, 83, 80, 0.1)",
         bottomFillColor2: "rgba(239,83,80,0.4)",
       },
       bbUpperBand: {
@@ -455,7 +435,7 @@ export default function Candlestick() {
         bottomColor: "rgba(76,175,80,0.05)",
       },
     },
-    IchimokuCloud: {
+    ICHIMOKU: {
       conversionLine: {
         color: "rgba(41,98,255,1)",
         width: 1,
@@ -837,6 +817,14 @@ export default function Candlestick() {
         topFillColor2: "rgba(41, 98, 255, 0.08)",
       },
     },
+    PSAR: {
+      psar: {
+        visible: true,
+        color: "rgba(41, 98, 255, 1)",
+        width: 1,
+        opacity: 100,
+      },
+    },
   };
 
   const [indicatorStyle, setIndicatorStyle] = useState(indicatorStyleDefault);
@@ -920,141 +908,14 @@ export default function Candlestick() {
     const pane = panesRef.current[paneKey];
     if (!pane) return;
 
-<<<<<<< HEAD
-    let startY = 0;
-    let startPaneHeight = 0;
-    let startMainHeight = 0;
-
-    const onMouseMove = (e) => {
-      const dy = startY - e.clientY;
-
-      const newPaneHeight = Math.max(60, startPaneHeight + dy);
-      const delta = newPaneHeight - pane.height;
-
-      const newMainHeight = mainChartHeightRef.current - delta;
-
-      /* ✅ Prevent collapsing */
-      if (newMainHeight < 150) return;
-
-      pane.height = newPaneHeight;
-      mainChartHeightRef.current = newMainHeight;
-
-      /* ✅ Apply sizes */
-      pane.div.style.height = `${newPaneHeight}px`;
-
-      pane.chart.applyOptions({ height: newPaneHeight });
-      chartRef.current.applyOptions({ height: newMainHeight });
-
-      repositionPanes();
-    };
-
-    const onMouseUp = () => {
-      document.body.style.cursor = "default";
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
-    };
-
-    pane.splitter.onmousedown = (e) => {
-      startY = e.clientY;
-      startPaneHeight = pane.height;
-      startMainHeight = mainChartHeightRef.current;
-
-      document.body.style.cursor = "row-resize";
-
-      window.addEventListener("mousemove", onMouseMove);
-      window.addEventListener("mouseup", onMouseUp);
-    };
-  }
-  function repositionPanes() {
-    let offset = TIME_AXIS_HEIGHT;
-
-    Object.values(panesRef.current).forEach((pane) => {
-      pane.div.style.bottom = `${offset}px`;
-      pane.splitter.style.bottom = `${offset + pane.height}px`;
-
-      offset += pane.height;
-    });
-  }
-
-  function ensurePane(paneKey) {
-    // If pane already exists, return its chart
-    if (panesRef.current[paneKey]) return panesRef.current[paneKey].chart;
-
-    const paneCount = Object.keys(panesRef.current).length;
-
-    // Create pane container
-    const paneDiv = document.createElement("div");
-    paneDiv.style.position = "absolute";
-    paneDiv.style.left = "0";
-    paneDiv.style.width = "100%";
-    paneDiv.style.height = `${PANE_HEIGHT}px`;
-    paneDiv.style.bottom = `${TIME_AXIS_HEIGHT + paneCount * PANE_HEIGHT}px`;
-
-    // Create splitter
-    const splitter = document.createElement("div");
-    splitter.style.position = "absolute";
-    splitter.style.left = "0";
-    splitter.style.width = "100%";
-    splitter.style.cursor = "row-resize";
-    splitter.style.bottom = `${TIME_AXIS_HEIGHT + paneCount * PANE_HEIGHT + PANE_HEIGHT}px`;
-    splitter.style.borderTop = "1px solid rgba(255,255,255,0.08)";
-    splitter.style.borderBottom = "1px solid rgba(0,0,0,0.4)";
-    splitter.onmouseenter = () =>
-      (splitter.style.background = "rgba(255,255,255,0.05)");
-    splitter.onmouseleave = () => (splitter.style.background = "transparent");
-    splitter.style.background = "rgba(255, 255, 255, 0.8)";
-    splitter.style.height = "8px";
-    splitter.style.zIndex = "10";
-
-    containerRef.current.appendChild(splitter);
-    containerRef.current.appendChild(paneDiv);
-
-    // Create chart inside pane 
-    const paneChart = createChart(paneDiv, getIndicatorChartProperties(activeBarIndicator,));
-
-    // Store pane references
-    panesRef.current[paneKey] = {
-      chart: paneChart,
-      div: paneDiv,
-      splitter,
-      height: PANE_HEIGHT,
-    };
-
-    // Enable resizing
-    attachSplitterDrag(paneKey);
-
-    // Attach time-scale sync
-    attachSync(paneChart);
-
-    // Attach crosshair sync with main chart and other panes
-    attachCrosshair(paneChart, paneKey);
-
-    return paneChart;
-  }
-
-  function cleanupPane(paneKey) {
-    const paneChart = panesRef.current[paneKey];
-    if (!paneChart) return;
-
-    const stillUsed = Object.keys(indicatorSeriesRef.current).some(
-      (key) => resolvePaneKey(key) === paneKey,
-    );
-
-=======
     const stillUsed = Object.entries(indicatorSeriesRef.current).some(
       ([indicatorKey, series]) => {
         if (!series || indicatorKey.startsWith("_")) return false;
         return resolvePaneKey(indicatorKey) === paneKey;
       },
     );
->>>>>>> 6d3db073100cc8693931171b0e743476eaad86ba
     if (stillUsed) return;
     try {
-<<<<<<< HEAD
-      paneChart.remove();
-    } catch (e) { }
-
-=======
       /* REMOVE DOM ELEMENT */
       if (pane.div && pane.div.parentNode) {
         pane.div.parentNode.removeChild(pane.div);
@@ -1066,7 +927,6 @@ export default function Candlestick() {
     } catch (e) {
       console.error("Pane cleanup error:", e);
     }
->>>>>>> 6d3db073100cc8693931171b0e743476eaad86ba
     delete panesRef.current[paneKey];
   }
 
@@ -1086,21 +946,13 @@ export default function Candlestick() {
 
         try {
           chart.removeSeries(series);
-<<<<<<< HEAD
-        } catch (e) { }
-=======
         } catch {}
->>>>>>> 6d3db073100cc8693931171b0e743476eaad86ba
       });
     } else {
       /* SINGLE SERIES */
       try {
         chart.removeSeries(entry);
-<<<<<<< HEAD
-      } catch (e) { }
-=======
       } catch {}
->>>>>>> 6d3db073100cc8693931171b0e743476eaad86ba
     }
 
     delete indicatorSeriesRef.current[indicator];
@@ -1239,7 +1091,7 @@ export default function Candlestick() {
       const keys =
         indicator === "RSI"
           ? ["rsi", "smoothingMA"]
-          : indicator === "IchimokuCloud"
+          : indicator === "ICHIMOKU"
             ? [
                 "conversionLine",
                 "baseLine",
@@ -1365,70 +1217,7 @@ export default function Candlestick() {
     return () => chart.unsubscribeCrosshairMove(handler);
   }, []);
 
-<<<<<<< HEAD
-  const attachCrosshair = useCallback(
-    (chart, chartKey) => {
-      if (!chart) return () => { };
-
-      const handler = (param) => {
-        if (!param.point || param.time === undefined) {
-          const allCharts = [
-            chartRef.current,
-            ...Object.values(panesRef.current).map((p) => p.chart),
-          ];
-          allCharts.forEach((c) => c?.clearCrosshairPosition?.());
-          setLiveIndicatorData({});
-          return;
-        }
-
-        // ----------------- SYNC CROSSHAIR -----------------
-        syncCrosshair(chart, param);
-
-        // ----------------- MAIN CHART OHLC -----------------
-        if (chartKey === "main" && seriesRef.current) {
-          const candle = param.seriesData.get(seriesRef.current);
-          if (candle?.open !== undefined) {
-            setLiveOhlcv({
-              open: candle.open,
-              high: candle.high,
-              low: candle.low,
-              close: candle.close,
-            });
-          }
-        }
-
-        // ----------------- INDICATOR VALUES -----------------
-        if (!param.seriesData) return;
-
-        const updates = {};
-        Object.entries(indicatorSeriesRef.current).forEach(
-          ([indicator, entry]) => {
-            if (!entry) return;
-
-            if (typeof entry === "object" && !entry.setData) {
-              updates[indicator] = {};
-              Object.entries(entry).forEach(([lineName, series]) => {
-                const val = param.seriesData.get(series);
-                updates[indicator][lineName] = val != null ? val : null;
-              });
-            } else {
-              const val = param.seriesData.get(entry);
-              updates[indicator] = val != null ? val : null;
-            }
-          },
-        );
-
-        setLiveIndicatorData(updates);
-      };
-
-      chart.subscribeCrosshairMove(handler);
-      return () => chart.unsubscribeCrosshairMove(handler);
-    },
-    [syncCrosshair],
-  );
-=======
   // ATTACH MAIN CHART
->>>>>>> 6d3db073100cc8693931171b0e743476eaad86ba
 
   useEffect(() => {
     // Reattach crosshair whenever series references change
@@ -1442,255 +1231,153 @@ export default function Candlestick() {
   }, [indicatorSeriesRef.current, timeframeValue]);
 
   // Main useEffect for chart type/data changes
-
-  useEffect(() => {
-   if (!chartRef.current) return;
-
-    toggleIndicator(chartRef.current.rsiSeries, isVisible);
-    // toggleIndicator(chartData.current.smaSeries, showSMA);
-
-  }, [isVisible]);
-  
-
   useEffect(() => {
     if (!chartRef.current) return;
 
-    if (seriesRef.current) {
+    const loadChart = async () => {
       try {
-        chartRef.current.removeSeries(seriesRef.current);
-      } catch (e) {
-        console.warn("Series already removed");
-      }
-      seriesRef.current = null;
-    }
+        const response = await fetchDataByCurrency(
+          selectedCurrency,
+          timeframeValue,
+          chartType,
+        );
 
-    switch (chartType) {
-      case "line":
-        async function LineData() {
-          const data = await fetchDataByCurrency(
-            selectedCurrency,
-            timeframeValue,
-            chartType,
-          );
+        const data = response?.data || [];
 
-        
-          seriesRef.current = chartRef.current.addSeries(
-            LineSeries,
-            chartSeriesStyles.line,
-          );
-          seriesRef.current.setData(
-            data?.map((d) => ({
-              time: d.time,
-              value: d?.close != null ? Number(d.close) : null,
-            })),
-          );
-          chartRef.current.timeScale().fitContent();
-          await fetchIndicatorData(
-            selectedIndicator,
-            selectedCurrency,
-            timeframeValue,
-          );
-        }
-        LineData();
-        break;
+        if (!Array.isArray(data) || !data.length) return;
 
-      case "bar":
-        async function BarData() {
-          const data = await fetchDataByCurrency(
-            selectedCurrency,
-            timeframeValue,
-            chartType,
-          );
-          seriesRef.current = chartRef.current.addSeries(
-            BarSeries,
-            chartSeriesStyles.bar,
-          );
-          seriesRef.current.setData(
-            data?.map((d) => ({
-              time: d.time,
-              open: d.open,
-              high: d.high,
-              low: d.low,
-              close: d.close,
-            })),
-          );
-          chartRef.current.timeScale().fitContent();
-          await fetchIndicatorData(
-            selectedIndicator,
-            selectedCurrency,
-            timeframeValue,
-          );
-        }
-        BarData();
-        break;
-
-      case "area":
-        async function AreaData() {
-          const data = await fetchDataByCurrency(
-            selectedCurrency,
-            timeframeValue,
-            chartType,
-          );
-          seriesRef.current = chartRef.current.addSeries(
-            AreaSeries,
-            chartSeriesStyles.area,
-          );
-          seriesRef.current.setData(
-            data?.map((d) => ({
-              time: d?.time,
-              value: Number(d?.close),
-            })),
-          );
-          chartRef.current.timeScale().fitContent();
-          await fetchIndicatorData(
-            selectedIndicator,
-            selectedCurrency,
-            timeframeValue,
-          );
-        }
-        AreaData();
-        break;
-
-      case "baseline":
-        async function BaseLineData() {
-          const data = await fetchDataByCurrency(
-            selectedCurrency,
-            timeframeValue,
-            chartType,
-          );
-          seriesRef.current = chartRef.current.addSeries(BaselineSeries, {
-            ...chartSeriesStyles.baseline,
-            baseValue: {
-              type: "price",
-              price: Number(data?.[0]?.close ?? 0),
-            },
-          });
-          seriesRef.current.setData(
-            data?.map((d) => ({ time: d.time, value: d.close })),
-          );
-          chartRef.current.timeScale().fitContent();
-          await fetchIndicatorData(
-            selectedIndicator,
-            selectedCurrency,
-            timeframeValue,
-          );
-        }
-        BaseLineData();
-        break;
-
-      case "histogram":
-        async function HistogramData() {
-          const data = await fetchDataByCurrency(
-            selectedCurrency,
-            timeframeValue,
-            chartType,
-          );
-          seriesRef.current = chartRef.current.addSeries(
-            HistogramSeries,
-            chartSeriesStyles.histogram,
-          );
-          seriesRef.current.setData(
-            data?.map((d, index, arr) => {
-              const prev = arr[index - 1];
-              const isUp = prev ? d.close >= prev.close : true;
-              return {
-                time: d.time,
-                value: d.volume,
-                color: isUp ? "#22c55e" : "#ef4444",
-              };
-            }),
-          );
-          chartRef.current.timeScale().fitContent();
-          await fetchIndicatorData(
-            selectedIndicator,
-            selectedCurrency,
-            timeframeValue,
-          );
-        }
-        HistogramData();
-        break;
-
-      case "heikinashi":
-        async function HeikinAshiData() {
-          const data = await fetchDataByCurrency(
-            selectedCurrency,
-            timeframeValue,
-            chartType,
-          );
-          seriesRef.current = chartRef.current.addSeries(CandlestickSeries);
-          seriesRef.current.setData(convertToHeikinAshi(data));
-          chartRef.current.timeScale().fitContent();
-
-          await fetchIndicatorData(
-            selectedIndicator,
-            selectedCurrency,
-            timeframeValue,
-          );
-        }
-        HeikinAshiData();
-        break;
-
-      case "hollowcandles":
-        async function HollowCandlesData() {
-          const data = await fetchDataByCurrency(
-            selectedCurrency,
-            timeframeValue,
-            chartType,
-          );
-          seriesRef.current = chartRef.current.addSeries(
-            CandlestickSeries,
-            chartSeriesStyles.hollowcandles,
-          );
-          seriesRef.current.setData(data);
-          chartRef.current.timeScale().fitContent();
-          await fetchIndicatorData(
-            selectedIndicator,
-            selectedCurrency,
-            timeframeValue,
-          );
-        }
-        HollowCandlesData();
-        break;
-
-      default:
-        async function fetchCandleStickData() {
-          setIndicatorLoading(true);
+        // remove previous series
+        if (seriesRef.current) {
           try {
-            const response = await fetchDataByCurrency(
-              selectedCurrency,
-              timeframeValue,
-              chartType,
+            chartRef.current.removeSeries(seriesRef.current);
+          } catch (e) {}
+          seriesRef.current = null;
+        }
+
+        switch (chartType) {
+          case "line":
+            seriesRef.current = chartRef.current.addSeries(
+              LineSeries,
+              chartSeriesStyles.line,
             );
+
+            seriesRef.current.setData(
+              data.map((d) => ({
+                time: d.time,
+                value: Number(d.close),
+              })),
+            );
+            break;
+
+          case "bar":
+            seriesRef.current = chartRef.current.addSeries(
+              BarSeries,
+              chartSeriesStyles.bar,
+            );
+
+            seriesRef.current.setData(
+              data.map((d) => ({
+                time: d.time,
+                open: d.open,
+                high: d.high,
+                low: d.low,
+                close: d.close,
+              })),
+            );
+            break;
+
+          case "area":
+            seriesRef.current = chartRef.current.addSeries(
+              AreaSeries,
+              chartSeriesStyles.area,
+            );
+
+            seriesRef.current.setData(
+              data.map((d) => ({
+                time: d.time,
+                value: Number(d.close),
+              })),
+            );
+            break;
+
+          case "baseline":
+            seriesRef.current = chartRef.current.addSeries(BaselineSeries, {
+              ...chartSeriesStyles.baseline,
+              baseValue: {
+                type: "price",
+                price: Number(data[0]?.close ?? 0),
+              },
+            });
+
+            seriesRef.current.setData(
+              data.map((d) => ({
+                time: d.time,
+                value: Number(d.close),
+              })),
+            );
+            break;
+
+          case "histogram":
+            seriesRef.current = chartRef.current.addSeries(
+              HistogramSeries,
+              chartSeriesStyles.histogram,
+            );
+
+            seriesRef.current.setData(
+              data.map((d, index, arr) => {
+                const prev = arr[index - 1];
+                const isUp = prev ? d.close >= prev.close : true;
+
+                return {
+                  time: d.time,
+                  value: d.volume,
+                  color: isUp ? "#22c55e" : "#ef4444",
+                };
+              }),
+            );
+            break;
+
+          case "heikinashi":
             seriesRef.current = chartRef.current.addSeries(
               CandlestickSeries,
               chartSeriesStyles.candlestick,
             );
-            if (response) {
-              console.log(response, "response");
-              seriesRef?.current?.setData(response.data);
-            }
-            chartRef.current.timeScale().fitContent();
 
-            await fetchIndicatorData(
-              selectedIndicator,
-              selectedCurrency,
-              timeframeValue,
+            seriesRef.current.setData(convertToHeikinAshi(data));
+            break;
+
+          case "hollowcandles":
+            seriesRef.current = chartRef.current.addSeries(
+              CandlestickSeries,
+              chartSeriesStyles.hollowcandles,
             );
-          } catch (err) {
-            console.error("Chart load error", err);
-          } finally {
-            setIndicatorLoading(false);
-          }
+
+            seriesRef.current.setData(data);
+            break;
+
+          default:
+            seriesRef.current = chartRef.current.addSeries(
+              CandlestickSeries,
+              chartSeriesStyles.candlestick,
+            );
+
+            seriesRef.current.setData(data);
         }
-        fetchCandleStickData();
-    }
-  }, [
-    chartType,
-    rangeValue,
-    timeframeValue,
-    selectedCurrency,
-    selectedIndicator,
-  ]);
+
+        chartRef.current.timeScale().fitContent();
+
+        await fetchIndicatorData(
+          selectedIndicator,
+          selectedCurrency,
+          timeframeValue,
+        );
+      } catch (err) {
+        console.error("Chart load error", err);
+      }
+    };
+
+    loadChart();
+  }, [chartType, timeframeValue, selectedCurrency, selectedIndicator]);
 
   const { fetchDataByCurrency, fetchIndicatorData } = useChartFunctions({
     chartRef,
@@ -1725,95 +1412,6 @@ export default function Candlestick() {
     ].filter(Boolean);
     charts.forEach((chart) => chart.timeScale().fitContent());
   };
-<<<<<<< HEAD
-
-
-  // const getRowsByIndicator = (indicator) => {
-  //   switch (indicator) {
-  //     /* ================= RSI ================= */
-  //     case "RSI":
-  //       return [
-  //         { key: "rsi", label: "RSI", type: "line", color: "#26a69a" },
-  //         {
-  //           key: "rsiMa",
-  //           label: "RSI-based MA",
-  //           type: "line",
-  //           color: "#ff9800",
-  //         },
-
-  //         {
-  //           key: "upper",
-  //           label: "RSI Upper Band",
-  //           type: "band",
-  //           showValue: true,
-  //           value: 70, // default
-  //           color: "#ef5350",
-  //         },
-  //         {
-  //           key: "middle",
-  //           label: "RSI Middle Band",
-  //           type: "band",
-  //           showValue: true,
-  //           value: 50, // default
-  //           color: "#9e9e9e",
-  //         },
-  //         {
-  //           key: "lower",
-  //           label: "RSI Lower Band",
-  //           type: "band",
-  //           showValue: true,
-  //           value: 30, // default
-  //           color: "#26a69a",
-  //         },
-
-  //         {
-  //           key: "bgFill",
-  //           label: "RSI Background Fill",
-  //           type: "fill",
-  //           color0: "rgba(38,166,154,0.1)",
-  //           color1: "rgba(38,166,154,0.1)",
-  //         },
-  //         {
-  //           key: "obFill",
-  //           label: "Overbought Gradient Fill",
-  //           type: "fill",
-  //           color0: "rgba(239,83,80,0.2)",
-  //           color1: "rgba(239,83,80,0.4)",
-  //         },
-  //         {
-  //           key: "osFill",
-  //           label: "Oversold Gradient Fill",
-  //           type: "fill",
-  //           color0: "rgba(38,166,154,0.2)",
-  //           color1: "rgba(38,166,154,0.4)",
-  //         },
-  //       ];
-  //     default:
-  //       return [];
-  //   }
-  // };
-
-  // const updateIndicator = (indicator, style) => {
-  //   const series = indicatorSeries[indicator];
-
-  //   if (!series) return;
-
-  //   Object.keys(style).forEach((key) => {
-  //     const config = style[key];
-
-  //     if (series[key]) {
-  //       series[key].applyOptions({
-  //         color: config.color,
-  //         lineWidth: config.width,
-  //         visible: config.visible,
-  //       });
-  //     }
-  //   });
-  // };
-
-
-=======
->>>>>>> 6d3db073100cc8693931171b0e743476eaad86ba
   return (
     <>
       <section className="trading-view-wrapper">
@@ -2114,13 +1712,7 @@ export default function Candlestick() {
                 onClick={() => setOpenForm(false)}
               />
             )}
-<<<<<<< HEAD
-
-            {/* ------------------------------------------indicator sub part property show in modal------------------------------- */}
-
-=======
             {/* --------------indicator sub part property show in modal-------------- */}
->>>>>>> 6d3db073100cc8693931171b0e743476eaad86ba
             <IndicatorPropertyDialog
               setIndicatorProperty={setIndicatorProperty}
               indicatorProperty={indicatorProperty}
@@ -2136,22 +1728,6 @@ export default function Candlestick() {
               addSeries={addSeries}
               latestIndicatorValuesRef={latestIndicatorValuesRef}
             />
-<<<<<<< HEAD
-
-            {/* <TradingViewChart
-            setIndicatorProperty={setIndicatorProperty}
-              indicatorProperty={indicatorProperty}
-              // selectedIndicator={selectedIndicator}
-              activeBarIndicator={activeBarIndicator}
-              setIndicatorConfigs={setIndicatorConfigs}
-              indicatorStyle={indicatorStyle}
-              setIndicatorStyle={setIndicatorStyle}
-              indicatorSeriesRef={indicatorSeriesRef}
-          /> */}
-
-
-=======
->>>>>>> 6d3db073100cc8693931171b0e743476eaad86ba
           </div>
         </div>
       </section>

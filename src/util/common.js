@@ -116,13 +116,9 @@ export const ChartProprties = {
     mode: 0, // Normal interaction
   },
 };
-<<<<<<< HEAD
 
 
 export function getIndicatorChartProperties() {
-=======
-export function getIndicatorChartProperties(height = 140, width = 1280) {
->>>>>>> 6d3db073100cc8693931171b0e743476eaad86ba
   return {
     ...ChartProprties,
     height:140,
