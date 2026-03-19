@@ -96,6 +96,7 @@ export default function IndicatorPropertyDialog({
     };
 
     console.log(payload, "payloadddddddddd");
+
     setIndicatorLoading(true);
     try {
       setIndicatorLoading(true); // START LOADER
@@ -367,7 +368,7 @@ export default function IndicatorPropertyDialog({
 
       case "TEMA":
       case "TRIX":
-      case "Fisher Transform":
+      case "FT":
         return <BaseSettings showOffset={false} showSource={false} />;
 
       case "KAMA":
@@ -667,7 +668,7 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "Stochastic RSI":
+      case "STOCHRSI":
         return (
           <>
             <div className="mb-3">
@@ -817,7 +818,7 @@ export default function IndicatorPropertyDialog({
       case "WPR": {
         return <BaseSettings showOffset={false} />;
       }
-      case "UltimateOscillator":
+      case "UO":
         return (
           <>
             <div className="mb-3">
@@ -962,13 +963,6 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "Historical Volatility":
-        return (
-          <>
-            <BaseSettings showOffset={false} showSource={false} />
-          </>
-        );
-
       case "KC":
         return (
           <>
@@ -1076,7 +1070,7 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "Historical Volatility":
+      case "HV":
         return (
           <>
             <BaseSettings showOffset={false} showSource={false} />
@@ -1090,10 +1084,9 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "Percentage Volume Oscillator":
+      case "PVO":
         return (
           <>
-            {/* Fast Length */}
             <Form.Group
               as={Row}
               className="mb-3 align-items-center"
@@ -1215,8 +1208,6 @@ export default function IndicatorPropertyDialog({
         return (
           <>
             <BaseSettings showOffset={false} showSource={false} />
-
-            {/* Divisor */}
             <Form.Group
               as={Row}
               className="mb-3 align-items-center"
@@ -1238,14 +1229,13 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "Negative Volume Index":
+      case "NVI":
         return (
           <>
             <Form.Group
               as={Row}
               className="mb-3 align-items-center"
-              controlId="nviEmaLength"
-            >
+              controlId="nviEmaLength" >
               <Form.Label style={labelStyle} className="mb-0">
                 EMA Length
               </Form.Label>
@@ -1262,7 +1252,7 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "Positive Volume Index":
+      case "PVI":
         return (
           <>
             <Form.Group
@@ -1461,7 +1451,7 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "ZigZag":
+      case "ZIGZAG":
         return (
           <>
             {/* Price Deviation */}

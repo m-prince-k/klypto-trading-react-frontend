@@ -1,26 +1,30 @@
 export default function EOMInput(
-  response,
-  indicatorSeriesRef,
-  latestIndicatorValuesRef
+response,
+indicatorSeriesRef,
+latestIndicatorValuesRef
 ) {
+    console.log(rows, "rowsssssss")
 
-  const rows = Array.isArray(response?.data) ? response.data : [];
+const rows = Array.isArray(response?.data) ? response.data : [];
 
-  const eomData = rows
-    .filter((d) => d.eom != null && d.time != null)
-    .map((d) => ({
-      time: Number(d.time),
-      value: Number(d.eom),
-    }));
+console.log(rows, "rowsssssss")
 
-  const series = indicatorSeriesRef.current?.EOM;
-  if (!series) return;
+if (!indicatorSeriesRef.current?.EOM?.eom) return;
 
-  series.setData(eomData);
+const series = indicatorSeriesRef.current.EOM.eom;
 
-  latestIndicatorValuesRef.current.EOM = {
-    eom: eomData[eomData.length - 1]?.value ?? 0,
-  };
+const eomData = rows
+.filter((d) => d.eom != null && d.time != null)
+.map((d) => ({
+time: Number(d.time),
+value: Number(d.eom),
+}));
 
-  indicatorSeriesRef.current.EOM.result = eomData;
+// update chart
+series.setData(eomData);
+
+// update latest value for crosshair
+latestIndicatorValuesRef.current.EOM = {
+eom: eomData[eomData.length - 1]?.value,
+};
 }

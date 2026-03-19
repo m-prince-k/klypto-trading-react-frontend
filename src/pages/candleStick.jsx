@@ -117,7 +117,6 @@ export default function Candlestick() {
       maLength: 14,
       bbStdDev: 2,
     },
-
     WMA: {
       length: 9,
       source: "close",
@@ -140,7 +139,6 @@ export default function Candlestick() {
       slowLength: 30,
       source: "close",
     },
-
     ICHIMOKU: {
       conversionLength: 9,
       baseLength: 26,
@@ -166,7 +164,7 @@ export default function Candlestick() {
       smoothing: 14,
       diLength: 14,
     },
-    "Chande Kroll Stop": {
+    CKS: {
       atrLength: 10,
       atrCoefficient: 1,
       stopLength: 9,
@@ -178,7 +176,7 @@ export default function Candlestick() {
       maLength: 14,
       bbStdDev: 2,
     },
-    Stochastic: {
+    STOCH: {
       kLength: 14,
       kSmoothing: 1,
       dSmoothing: 3,
@@ -222,14 +220,14 @@ export default function Candlestick() {
       middleLength: 14,
       slowLength: 28,
     },
-    ChandeMomentumOscillator: {
+    CMO: {
       length: 9,
       source: "close",
     },
     TRIX: {
       length: 18,
     },
-    FisherTransform: {
+    FT: {
       length: 9,
     },
     ATR: {
@@ -243,7 +241,7 @@ export default function Candlestick() {
       source: "close",
       offset: 0,
     },
-    BollingerBandWidth: {
+    BBW: {
       length: 20,
       stdDev: 2,
       source: "close",
@@ -274,7 +272,7 @@ export default function Candlestick() {
       maLength: 20,
       colorByPrevious: false,
     },
-    HistoricalVolatility: {
+    HV: {
       length: 10,
     },
     OBV: {
@@ -299,10 +297,10 @@ export default function Candlestick() {
       length: 14,
       divisor: 10000,
     },
-    "Negative Volume Index": {
+    NVI: {
       emaLength: 255,
     },
-    "Positive Volume Index": {
+    PVI: {
       emaLength: 255,
     },
     VWAP: {
@@ -317,7 +315,7 @@ export default function Candlestick() {
         band3: { enabled: false, multiplier: 3 },
       },
     },
-    "Zig Zag": {
+    ZIGZAG: {
       priceDeviation: 5,
       pivotLegs: 10,
       lineColor: "#2962ff",
@@ -764,7 +762,6 @@ export default function Candlestick() {
         lineStyle: 2,
         value: -20,
       },
-
       middleBand: {
         visible: true,
         color: "rgba(158,158,158,1)",
@@ -772,7 +769,6 @@ export default function Candlestick() {
         lineStyle: 2,
         value: -50,
       },
-
       lowerBand: {
         visible: true,
         color: "rgba(38,166,154,1)",
@@ -780,7 +776,6 @@ export default function Candlestick() {
         lineStyle: 2,
         value: -80,
       },
-
       bg: {
         visible: true,
         topFillColor1: "rgba(38,166,154,0.08)",
@@ -959,6 +954,170 @@ export default function Candlestick() {
         topFillColor2: "rgba(239,83,80,0.1)",
       },
     },
+    UO: {
+      ultimateoscillator: {
+        color: "rgba(38,166,154,1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+    },
+    PVI: {
+      pvi: {
+        color: "rgba(41,98,255,1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+      pviEma: {
+        color: "rgb(153, 166, 38)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+    },
+    NVI: {
+      nvi: {
+        color: "rgba(41,98,255,1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+      nviEma: {
+        color: "rgba(38,166,154,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+    },
+    STOCHRSI: {
+      kLine: {
+        visible: true,
+        color: "#2962FF",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+      },
+
+      dLine: {
+        visible: true,
+        color: "#FF6D00",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+      },
+
+      upperBand: {
+        value: 80,
+        visible: true,
+        color: "rgba(120,123,134,0.6)",
+        width: 1,
+        lineStyle: 2,
+      },
+
+      middleBand: {
+        value: 50,
+        visible: true,
+        color: "rgba(120,123,134,0.5)",
+        width: 1,
+        lineStyle: 2,
+      },
+
+      lowerBand: {
+        value: 20,
+        visible: true,
+        color: "rgba(120,123,134,0.6)",
+        width: 1,
+        lineStyle: 2,
+      },
+
+      bgFill: {
+        visible: true,
+        topFillColor1: "rgba(41,98,255,0.12)",
+        topFillColor2: "rgba(41,98,255,0.05)",
+      },
+    },
+    CMO: {
+      cmoLine: {
+        color: "rgba(38,166,154,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+      zeroLine: {
+        color: "rgba(158,158,158,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: 0,
+      },
+    },
+    TRIX: {
+      trixLine: {
+        color: "rgba(38,166,154,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+      zeroLine: {
+        color: "rgba(158,158,158,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: 0,
+      },
+    },
+    FT: {
+      fisherLine: {
+        color: "rgba(38,166,154,1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+      triggerLine: {
+        color: "rgba(255,152,0,1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+      level1_5: {
+        color: "rgba(239,83,80,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: 1.5,
+      },
+      level0_75: {
+        color: "rgba(255,183,77,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: 0.75,
+      },
+      level0: {
+        color: "rgba(158,158,158,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: 0,
+      },
+
+      level_minus0_75: {
+        color: "rgba(129,199,132,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: -0.75,
+      },
+
+      level_minus1_5: {
+        color: "rgba(38,166,154,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: -1.5,
+      },
+    },
   };
 
   const [indicatorStyle, setIndicatorStyle] = useState(indicatorStyleDefault);
@@ -1033,10 +1192,24 @@ export default function Candlestick() {
         return "AO";
       case "CHOP":
         return "CHOP";
+      case "FT":
+        return "FT";
       case "EOM":
         return "EOM";
       case "MOM":
         return "MOM";
+      case "UO":
+        return "UO";
+      case "PVI":
+        return "PVI";
+      case "NVI":
+        return "NVI";
+      case "STOCHRSI":
+        return "STOCHRSI";
+      case "CMO":
+        return "CMO";
+      case "TRIX":
+        return "TRIX";
     }
   }
 
@@ -1210,6 +1383,8 @@ export default function Candlestick() {
   const renderValue = (indicator, value) => {
     if (value == null) return "--";
 
+    /* ================= NUMBER VALUES ================= */
+
     if (typeof value === "number") {
       const style =
         indicatorStyle?.[indicator]?.sma ||
@@ -1219,8 +1394,11 @@ export default function Candlestick() {
       if (style?.visible === false) return null;
 
       const color = style?.color || "#333";
+
       return <span style={{ color }}>{Number(value).toFixed(2)}</span>;
     }
+
+    /* ================= OBJECT VALUES ================= */
 
     if (typeof value === "object") {
       let keysToShow;
@@ -1229,18 +1407,27 @@ export default function Candlestick() {
         case "RSI":
           keysToShow = ["rsi", "smoothingMA"];
           break;
+
         case "CCI":
           keysToShow = ["cciLine", "cciMa"];
           break;
+
+        case "EOM":
+          keysToShow = ["eom"]; // important for crosshair
+          break;
+
         case "ROC":
           keysToShow = ["roc"];
           break;
+
         case "MOM":
           keysToShow = ["mom"];
           break;
-        // case "AO":
-        //   keysToShow = ["oscData"];
-        //   break;
+
+        case "UO":
+          keysToShow = ["ultimateoscillator"];
+          break;
+
         case "ICHIMOKU":
           keysToShow = [
             "conversionLine",
@@ -1252,8 +1439,9 @@ export default function Candlestick() {
             "kumoCloudLower",
           ];
           break;
+
         default:
-          keysToShow = Object.keys(value); // fallback for other indicators
+          keysToShow = Object.keys(value);
       }
 
       return keysToShow
@@ -1268,7 +1456,7 @@ export default function Candlestick() {
 
           return (
             <span key={key} style={{ marginRight: 8, color }}>
-              {Number.isFinite(val) ? val.toFixed(2) : "--"}
+              {Number.isFinite(val) ? Number(val).toFixed(2) : "--"}
             </span>
           );
         });

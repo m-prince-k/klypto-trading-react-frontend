@@ -48,6 +48,23 @@ import EOMInput from "./EOM/EOMInput";
 import EOMPlot from "./EOM/EOMPlot";
 import BBPlot from "./BB/BBPlot";
 import BBInput from "./BB/BBInput";
+import { UndoIcon } from "lucide-react";
+import UOInput from "./UO/UOInput";
+import UOPlot from "./UO/UOPlot";
+import PVIPlot from "./PVI/PVIPlot";
+import PVIInput from "./PVI/PVIInput";
+import NVIPlot from "./NVI/NVIPlot";
+import NVIInput from "./NVI/NVIInput";
+import STOCHRSIInput from "./Stochastic RSI/StochRSIInput";
+import STOCHRSIPlot from "./Stochastic RSI/StochRSIPlot";
+import CMOPlot from "./CMO/CMOPlot";
+import CMOInput from "./CMO/CMOInput";
+import TRIXInput from "./TRIX/TRIXInput";
+import TRIXPlot from "./TRIX/TRIXPlot";
+import FTInput from "./FisherTransform/FisherTransformInput";
+import FTPlot from "./FisherTransform/FisherTransformPlot";
+import ZIGZAGPlot from "./ZIgZag/ZigZagPlot";
+import ZIGZAGInput from "./ZIgZag/ZigZagInput";
 
 export const indicatorComponents = {
   RSI: RSIPlot,
@@ -75,6 +92,14 @@ export const indicatorComponents = {
   KC: KCPlot,
   EOM: EOMPlot,
   BB: BBPlot,
+  UO: UOPlot,
+  PVI: PVIPlot,
+  NVI: NVIPlot,
+  STOCHRSI: STOCHRSIPlot,
+  CMO: CMOPlot,
+  TRIX: TRIXPlot,
+  FT: FTPlot,
+  ZIGZAG: ZIGZAGPlot
 };
 
 export const indicatorInputs = {
@@ -102,7 +127,15 @@ export const indicatorInputs = {
   DC: DCInput,
   KC: KCInput,
   EOM: EOMInput,
-  BB:BBInput
+  BB:BBInput,
+  UO: UOInput,
+  PVI: PVIInput,
+  NVI: NVIInput,
+  STOCHRSI: STOCHRSIInput,
+  CMO: CMOInput,
+  TRIX: TRIXInput,
+  FT:FTInput,
+  ZIGZAG: ZIGZAGInput
 };
 
 export function updateIndicatorFromInput(

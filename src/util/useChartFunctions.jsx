@@ -126,7 +126,6 @@ export default function useChartFunctions({
 
             break;
           }
-
           case "EMA": {
             const emaData = result?.data?.ema ?? [];
             const smoothingData = result?.data?.smoothingMA ?? [];
@@ -464,7 +463,6 @@ export default function useChartFunctions({
             latestIndicatorValuesRef.current.EOM = {
               eom: eomData[eomData.length - 1]?.value,
             };
-
             break;
           }
           case "BB": {
@@ -481,6 +479,130 @@ export default function useChartFunctions({
               upper: upperData[upperData.length - 1]?.value,
               lower: lowerData[lowerData.length - 1]?.value,
               basis: basisData[basisData.length - 1]?.value,
+            };
+
+            break;
+          }
+          case "UO": {
+            const uoData = result?.data ?? [];
+
+            indicatorSeriesRef.current.UO = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.UO = {
+              ultimateoscillator: uoData[uoData.length - 1]?.value,
+            };
+
+            break;
+          }
+          case "PVI": {
+            const pviData = result?.data?.pvi ?? [];
+            const pviEmaData = result?.data?.pviEma ?? [];
+
+            indicatorSeriesRef.current.PVI = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.PVI = {
+              pvi: pviData[pviData.length - 1]?.value ?? null,
+              pviEma: pviEmaData[pviEmaData.length - 1]?.value ?? null,
+            };
+
+            break;
+          }
+          case "NVI": {
+            const nviData = result?.data?.nvi ?? [];
+            const nviEmaData = result?.data?.pviEma ?? [];
+
+            indicatorSeriesRef.current.NVI = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.NVI = {
+              nvi: nviData[nviData.length - 1]?.value ?? null,
+              nviEma: nviEmaData[nviEmaData.length - 1]?.value ?? null,
+            };
+
+            break;
+          }
+
+          case "STOCHRSI": {
+            const kData = result?.data?.kLine ?? [];
+            const dData = result?.data?.dLine ?? [];
+
+            indicatorSeriesRef.current.STOCHRSI = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.STOCHRSI = {
+              kLine: kData[kData.length - 1]?.value ?? null,
+              dLine: dData[dData.length - 1]?.value ?? null,
+            };
+
+            break;
+          }
+          case "CMO": {
+            const cmoData = result?.data?.cmoLine ?? [];
+
+            indicatorSeriesRef.current.CMO = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.CMO = {
+              cmoLine: cmoData[cmoData.length - 1]?.value ?? null,
+            };
+
+            break;
+          }
+          case "TRIX": {
+            const trixData = result?.data?.trix ?? [];
+
+            indicatorSeriesRef.current.TRIX = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.TRIX = {
+              trixLine: trixData[trixData.length - 1]?.value ?? null,
+            };
+
+            break;
+          }
+          case "FT": {
+            const rows = result?.data?.candles ?? [];
+
+            indicatorSeriesRef.current.FT = {
+              result,
+              rows,
+            };
+
+            console.log("result", result)
+
+            latestIndicatorValuesRef.current.FT = {
+              fisherLine: rows[rows.length - 1]?.fish ?? null,
+              triggerLine: rows[rows.length - 1]?.trigger ?? null,
+            };
+
+            break;
+          }
+          case "ZIGZAG": {
+            const lineData = result?.data?.zigzagLine ?? [];
+            const pivots = result?.data?.paneLabels ?? [];
+
+            indicatorSeriesRef.current.ZIGZAG = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.ZIGZAG = {
+              zigzagLine: lineData[lineData.length - 1]?.value ?? null,
+              lastPivotType: pivots[pivots.length - 1]?.type ?? null,
             };
 
             break;
@@ -538,7 +660,6 @@ async function fetchDataForIndicators(
       /* ---------------- SINGLE VALUE ---------------- */
       case "AwesomeOscillator":
       case "MACDHistogram":
-      case "TRIX":
       case "StandardDeviation":
       case "Volume":
       case "OBV":
@@ -552,8 +673,6 @@ async function fetchDataForIndicators(
       case "ChoppinessIndex":
       case "AccumulationDistribution":
       case "UltimateOscillator":
-      case "StochasticRSI":
-      case "CMO":
         return {
           type: "single",
           data:
@@ -577,6 +696,19 @@ async function fetchDataForIndicators(
               }))) ?? [],
         };
 
+      case "CMO":
+        return {
+          type: "single",
+          data: {
+            cmo:
+              response?.data
+                ?.filter((d) => d.value != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.value),
+                })) ?? [],
+          },
+        };
       case "SMA":
         return {
           type: "multi",
@@ -611,6 +743,49 @@ async function fetchDataForIndicators(
                 .map((d) => ({
                   time: d.time,
                   value: d.bbLower,
+                })) ?? [],
+          },
+        };
+
+      case "PVI":
+        return {
+          type: "multi",
+          data: {
+            pvi:
+              response.data
+                ?.filter((d) => d.pvi != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.pvi,
+                })) ?? [],
+
+            pviEma:
+              response.data
+                ?.filter((d) => d.pviEma != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.pviEma,
+                })) ?? [],
+          },
+        };
+      case "NVI":
+        return {
+          type: "single",
+          data: {
+            nvi:
+              response.data
+                ?.filter((d) => d.nvi != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.nvi,
+                })) ?? [],
+
+            nviEma:
+              response.data
+                ?.filter((d) => d.nviEma != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.nviEma,
                 })) ?? [],
           },
         };
@@ -689,6 +864,17 @@ async function fetchDataForIndicators(
           },
         };
       }
+      case "UO":
+        return {
+          type: "single",
+          data:
+            response.data?.candles
+              ?.filter((d) => d.uo != null && d.time != null)
+              .map((d) => ({
+                time: d.time,
+                value: d.uo,
+              })) ?? [],
+        };
 
       case "CHOP":
         return {
@@ -723,6 +909,28 @@ async function fetchDataForIndicators(
                 .map((d) => ({
                   time: d.time,
                   value: d.value,
+                })) ?? [],
+          },
+        };
+
+      case "STOCHRSI":
+        return {
+          type: "multi",
+          data: {
+            kLine:
+              response.data.candles
+                ?.filter((d) => d.k != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.k,
+                })) ?? [],
+
+            dLine:
+              response.data.candles
+                ?.filter((d) => d.d != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.d,
                 })) ?? [],
           },
         };
@@ -832,6 +1040,17 @@ async function fetchDataForIndicators(
                 })) ?? [],
           },
         };
+      case "TRIX":
+        return {
+          type: "single",
+          data:
+            response?.data
+              ?.filter((d) => d.value != null && d.time != null)
+              .map((d) => ({
+                time: Number(d.time),
+                value: Number(d.value),
+              })) ?? [],
+        };
 
       case "ROC":
         return {
@@ -847,21 +1066,29 @@ async function fetchDataForIndicators(
           },
         };
 
-      case "ZigZag": {
-        const rows = response?.data ?? [];
-
-        console.log("ZigZag:", rows.length);
-
+      case "ZIGZAG":
         return {
-          type: "single",
-          data: rows
-            .filter((d) => d.value != null && d.time != null)
-            .map((d) => ({
-              time: d.time,
-              value: d.value,
-            })),
+          type: "multi",
+          data: {
+            zigzagLine:
+              response.data?.series
+                ?.filter((d) => d.value != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.value,
+                })) ?? [],
+
+            paneLabels:
+              response.data?.pivots
+                ?.filter((d) => d.price != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.price,
+                  type: d.type,
+                })) ?? [],
+          },
         };
-      }
+
       case "ADX":
         return {
           type: "multi",
@@ -1092,7 +1319,7 @@ async function fetchDataForIndicators(
           },
         };
 
-      case "Stochastic":
+      case "STOCH":
         return {
           type: "multi",
           data: {
@@ -1196,28 +1423,27 @@ async function fetchDataForIndicators(
           },
         };
 
-      case "FisherTransform": {
-        const rows = response?.data ?? [];
-
+      case "FT":
         return {
           type: "multi",
           data: {
-            fisher: rows
-              .filter((d) => d.fisher != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.fisher,
-              })),
+            fisherLine:
+              response.data
+                ?.filter((d) => d.fish != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.fish,
+                })) ?? [],
 
-            trigger: rows
-              .filter((d) => d.trigger != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.trigger,
-              })),
+            triggerLine:
+              response.data
+                ?.filter((d) => d.trigger != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.trigger,
+                })) ?? [],
           },
         };
-      }
 
       case "KC":
         return {
