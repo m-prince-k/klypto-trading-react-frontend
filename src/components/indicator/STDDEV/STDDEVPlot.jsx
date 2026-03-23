@@ -1,58 +1,120 @@
 import { useEffect } from "react";
 import { LineSeries } from "lightweight-charts";
 
-export default function STDDEVlot({
+export default function STDDEVPlot({
   result,
+  rows,
+  indicatorStyle,
   indicatorSeriesRef,
   addSeries,
-  indicatorStyle,
 }) {
 
-  useEffect(() => {
-    if (!result?.data?.length) return;
+  /* ================= CREATE STDDEV ================= */
 
-    /* CLEAR OLD */
-    if (indicatorSeriesRef.current?.AD?.ad) {
-      try {
-        indicatorSeriesRef.current.AD.ad.setData([]);
-      } catch {}
+  useEffect(() => {
+
+    console.log("STDDEV RESULT →", result);
+
+    if (!result) {
+      console.warn("STDDEV: result missing");
+      return;
     }
 
-    /* 🔥 CREATE LINE */
-    const adSeries = addSeries("price", LineSeries, {
-      color:
-        indicatorStyle?.AD?.ad?.color ||
-        "rgba(156,39,176,1)",
-      lineWidth:
-        indicatorStyle?.AD?.ad?.width || 2,
-      lineStyle:
-        indicatorStyle?.AD?.ad?.lineStyle ?? 0,
+    /* REMOVE OLD SERIES */
+
+    if (indicatorSeriesRef.current?.STDDEV) {
+
+      console.log("STDDEV: removing old series");
+
+      Object.values(indicatorSeriesRef.current.STDDEV).forEach((s) => {
+        if (s?.setData) {
+          try { s.setData([]); } catch {}
+        }
+      });
+
+      indicatorSeriesRef.current.STDDEV = null;
+    }
+
+    const groupedSeries = {};
+
+    /* 🔥 HANDLE BOTH STRUCTURES */
+
+    let stddevData = [];
+
+    if (Array.isArray(result.data)) {
+
+      stddevData = result.data;
+
+    } else if (result?.data?.stddev) {
+
+      stddevData = result.data.stddev;
+
+    }
+
+    console.log("STDDEV DATA →", stddevData);
+
+    if (!Array.isArray(stddevData) || !stddevData.length) {
+      console.warn("STDDEV: empty data");
+      return;
+    }
+
+    const style = indicatorStyle?.STDDEV?.stddev;
+
+    const rowConfig = rows?.find((r) => r.key === "stddev");
+
+    console.log("STDDEV STYLE →", style);
+
+    const series = addSeries("STDDEV", LineSeries, {
+      color: style?.color || rowConfig?.color || "rgba(33,150,243,1)",
+      lineWidth: style?.width || 2,
+      lineStyle: style?.lineStyle ?? 0,
+      visible: style?.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: true,
     });
 
-    adSeries.setData(result.data);
+    if (!series) {
+      console.error("STDDEV: series not created");
+      return;
+    }
 
-    indicatorSeriesRef.current.AD = {
-      ad: adSeries,
+    console.log("STDDEV: series created");
+
+    series.setData(stddevData);
+
+    groupedSeries.stddev = series;
+
+    indicatorSeriesRef.current.STDDEV = {
+      ...groupedSeries,
+      result,
     };
 
   }, [result]);
 
 
-
   /* ================= STYLE UPDATE ================= */
 
   useEffect(() => {
-    const g = indicatorSeriesRef.current?.AD;
-    if (!g?.ad) return;
 
-    g.ad.applyOptions({
-      color: indicatorStyle?.AD?.ad?.color,
-      lineWidth: indicatorStyle?.AD?.ad?.width,
-      lineStyle: indicatorStyle?.AD?.ad?.lineStyle ?? 0,
-      visible: indicatorStyle?.AD?.ad?.visible,
-    });
+    const stdGroup = indicatorSeriesRef.current?.STDDEV;
+
+    if (!stdGroup) return;
+
+    const style = indicatorStyle?.STDDEV?.stddev;
+
+    console.log("STDDEV STYLE UPDATE →", style);
+
+    if (stdGroup.stddev) {
+
+      stdGroup.stddev.applyOptions({
+        color: style?.color,
+        lineWidth: style?.width,
+        lineStyle: style?.lineStyle ?? 0,
+        visible: style?.visible,
+        lastValueVisible: style?.visible,
+      });
+
+    }
 
   }, [indicatorStyle]);
 

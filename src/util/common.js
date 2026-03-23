@@ -1171,7 +1171,7 @@ case "KVO":
       return [
         // Lines
         {
-          key: "plotLine",
+          key: "stddev",
           label: "Plot",
           type: "line",
           color: "#ef5350",
