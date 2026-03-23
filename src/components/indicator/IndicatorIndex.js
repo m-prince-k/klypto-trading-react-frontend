@@ -78,35 +78,25 @@ import FTPlot from "./FisherTransform/FisherTransformPlot";
 import ZIGZAGPlot from "./ZIgZag/ZigZagPlot";
 import ZIGZAGInput from "./ZIgZag/ZigZagInput";
 
-import BollingerBandWidthInputs from "./bollinder-band-width/bollinder-band-width-inputs";
-import BollingerBandWidthPlot from "./bollinder-band-width/bollinger-band-width-plot";
-
-
-
-import ChandeKrollStopPlot from "./CKS/chande-kroll-stop-plot";
-import ChandeKrollStopInput from "./CKS/chande-kroll-stop-inputs"
-
-import HistoricalVolatilityPlot from "./historical-volatity/historical-volatility-inputs"
-import HistoricalVolatilityInput from "./historical-volatity/historical-volatility-inputs";
- 
-import ChaikinMoneyFlowInput from "./CMF/Chaikin-money-flow-inputs";
-import ChaikinMoneyFlowPlot from "./CMF/chaikin-money-flow-plot";
-
 import MACDPlot from "./MACD/MACDPlot";
 import MACDInput from "./MACD/macd-inputs";
 
 
 import VWAPPlot from "./vwap/vwap-plot";
 import VWAPInput from "./vwap/vwap-inputs";
+import CMFPlot from "./CMF/CMFPlot";
+import CMFInput from "./CMF/CMFInput";
+import HVPlot from "./HV/HVPlot";
+import HVInput from "./HV/HVInput";
+import CKSInput from "./CKS/CKSInput";
+import CKSPlot from "./CKS/CKSPlot";
+import BBWInput from "./BBW/BBWInput";
+import BBWPlot from "./BBW/BBWPlot";
 
 export const indicatorComponents = {
   VWAP:VWAPPlot,
   MACD:MACDPlot,
-  CKS:ChandeKrollStopPlot,
-  HV:HistoricalVolatilityPlot,
-  CMF:ChaikinMoneyFlowPlot,
   NVI:NVIPlot,
-  BBW:BollingerBandWidthPlot,
   RSI: RSIPlot,
   SMA: SMAPlot,
   ICHIMOKU: IchimokuCloudPlot,
@@ -137,7 +127,6 @@ export const indicatorComponents = {
   NVI: NVIPlot,
   STOCHRSI: STOCHRSIPlot,
   CMO: CMOPlot,
-  TRIX: TRIXPlot,
   FT: FTPlot,
   ZIGZAG: ZIGZAGPlot,
   PVO:PVOPlot,
@@ -147,16 +136,16 @@ export const indicatorComponents = {
   AD:ADXPlot,
   TRIX:TRIXPlot,
   VP:VPPlot,
+  CMF:CMFPlot,
+  HV:HVPlot,
+  CKS:CKSPlot,
+  BBW:BBWPlot,
 };
 
 export const indicatorInputs = {
   VWAP:VWAPInput,
   MACD:MACDInput,
-  CKS:ChandeKrollStopInput,
-  HV:HistoricalVolatilityInput,
-  CMF:ChaikinMoneyFlowInput,
   NVI:NVIInput,
-  BBW:BollingerBandWidthInputs,
   RSI: RSIInput,
   SMA: SMAInput,
   ICHIMOKU: IchimokuCloudInput,
@@ -177,10 +166,8 @@ export const indicatorInputs = {
   ATR: ATRInput,
   MFI: MFIInput,
   PSAR: PSARInput,
-
   CHOP: CHOPInput,
   EOM: EOMInput,
-
   DC: DCInput,
   KC: KCInput,
   EOM: EOMInput,
@@ -193,13 +180,16 @@ export const indicatorInputs = {
   TRIX: TRIXInput,
   FT:FTInput,
   ZIGZAG: ZIGZAGInput,  
-
   PVO:PVOInput,
  OBV:OBVInput,
  VOL:VOLInput,
  STDDEV:STDDEVInput,
  AD:ADXInput,
  VP:VPInput,
+ CMF:CMFInput,
+ HV:HVInput,
+ CKS:CKSInput,
+ BBW:BBWInput,
   
 };
 

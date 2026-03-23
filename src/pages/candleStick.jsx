@@ -451,26 +451,29 @@ export default function Candlestick() {
         bottomFillColor1: "rgba(76,175,80,0.05)",
       },
     },
+
     BBW: {
-      bollingerBandWidth: {
-        visible: true,
-        color: "rgba(41, 98, 255, 1)", // default blue
+      bbwLine: {
+        color: "rgba(33,150,243,1)",
         width: 2,
         lineStyle: 0,
+        visible: true,
       },
-      highestExpansion: {
+      highest: {
+        color: "rgba(244,67,54,1)",
+        width: 1,
+        lineStyle: 2,
         visible: true,
-        color: "rgba(38,166,154,1)", // teal
-        width: 2,
-        lineStyle: 0,
       },
-      lowestContraction: {
+
+      lowest: {
+        color: "rgba(0,200,83,1)",
+        width: 1,
+        lineStyle: 2,
         visible: true,
-        color: "rgba(38,166,154,1)", // same as above
-        width: 2,
-        lineStyle: 0,
       },
     },
+
     STDDEV: {
       stddev: {
         color: "rgba(33,150,243,1)",
@@ -480,14 +483,7 @@ export default function Candlestick() {
       },
     },
 
-    TRIX: {
-      trix: {
-        color: "rgba(0,188,212,1)",
-        width: 2,
-        lineStyle: 0,
-        visible: true,
-      },
-    },
+
 
     OBV: {
       obv: {
@@ -940,43 +936,37 @@ export default function Candlestick() {
     },
 
     PVO: {
-  histogram: {
-    visible: true,
+      histogram: {
+        visible: true,
+        color0: "rgba(0, 150, 136, 1)",   // dark green
+        color1: "rgba(178, 223, 219, 1)", // light green
+        color2: "rgba(255, 205, 210, 1)", // light red
+        color3: "rgba(244, 67, 54, 1)",   // dark red
+      },
 
-    // 4 color logic (up/down + rising/falling)
-    color0: "rgba(0, 150, 136, 1)",   // dark green
-    color1: "rgba(178, 223, 219, 1)", // light green
-    color2: "rgba(255, 205, 210, 1)", // light red
-    color3: "rgba(244, 67, 54, 1)",   // dark red
-  },
+      pvo: {
+        visible: true,
+        color: "rgba(33, 150, 243, 1)", // blue
+        lineStyle: 0,
+        lineWidth: 2,
+      },
 
-  pvo: {
-    visible: true,
-    color: "rgba(33, 150, 243, 1)", // blue
-    lineStyle: 0,
-    lineWidth: 2,
-  },
+      signal: {
+        visible: true,
+        color: "rgba(255, 152, 0, 1)", // orange
+        lineStyle: 0,
+        lineWidth: 2,
+      },
 
-  signal: {
-    visible: true,
-    color: "rgba(255, 152, 0, 1)", // orange
-    lineStyle: 0,
-    lineWidth: 2,
-  },
+      zero: {
+        visible: true,
+        value: 0,
+        color: "rgba(120, 120, 120, 0.6)",
+        lineStyle: 2,
+        lineWidth: 1,
+      },
+    },
 
-  zero: {
-    visible: true,
-    value: 0,
-    color: "rgba(120, 120, 120, 0.6)",
-    lineStyle: 2, // dashed
-    lineWidth: 1,
-  },
-
-  // optional (UI related)
-  precision: "default",
-  showLabelsOnPriceScale: true,
-  showValuesInLegend: true,
-},
     AD: {
       ad: {
         color: "rgba(156,39,176,1)",
@@ -1038,29 +1028,26 @@ export default function Candlestick() {
     },
     KC: {
       upper: {
-        visible: true,
-        color: "rgba(239,83,80,1)",
+        color: "rgba(33,150,243,1)",
         width: 1,
         lineStyle: 0,
+        visible: true,
       },
-      basis: {
-        visible: true,
-        color: "rgba(38,166,154,1)",
+      middle: {
+        color: "rgba(33,150,243,1)",
         width: 1,
         lineStyle: 0,
+        visible: true,
       },
       lower: {
-        visible: true,
-        color: "rgba(38,166,154,1)",
+        color: "rgba(33,150,243,1)",
         width: 1,
         lineStyle: 0,
-      },
-      bg: {
         visible: true,
-        topFillColor1: "rgba(38,166,154,0.1)",
-        topFillColor2: "rgba(239,83,80,0.1)",
       },
+
     },
+
     EOM: {
       eom: {
         color: "rgba(38, 166, 154, 1)",
@@ -1071,27 +1058,24 @@ export default function Candlestick() {
     },
     BB: {
       upper: {
-        visible: true,
-        color: "rgba(239,83,80,1)",
-        width: 1,
+        color: "rgba(244,67,54,1)", // red
+        width: 2,
         lineStyle: 0,
-      },
-      basis: {
         visible: true,
-        color: "rgba(38,166,154,1)",
-        width: 1,
-        lineStyle: 0,
       },
+
       lower: {
-        visible: true,
-        color: "rgba(38,166,154,1)",
-        width: 1,
+        color: "rgba(33,150,243,1)", // blue
+        width: 2,
         lineStyle: 0,
-      },
-      bg: {
         visible: true,
-        topFillColor1: "rgba(38,166,154,0.1)",
-        topFillColor2: "rgba(239,83,80,0.1)",
+      },
+
+      basis: {
+        color: "rgba(255,193,7,1)", // yellow
+        width: 2,
+        lineStyle: 2, // dashed
+        visible: true,
       },
     },
     UO: {
@@ -1119,20 +1103,20 @@ export default function Candlestick() {
     MACD: {
       macd: {
         visible: true,
-        color: "rgba(33,150,243,1)", // blue
+        color: "rgba(33,150,243,1)",
         width: 2,
         lineStyle: 0,
       },
       signal: {
         visible: true,
-        color: "rgba(255,193,7,1)", // yellow
+        color: "rgba(255,193,7,1)",
         width: 2,
         lineStyle: 0,
       },
       histogram: {
         visible: true,
-        upColor: "rgba(38,166,154,1)",   // green
-        downColor: "rgba(239,83,80,1)",  // red
+        upColor: "rgba(38,166,154,1)",
+        downColor: "rgba(239,83,80,1)",
         base: 0,
       },
     },
@@ -1162,72 +1146,40 @@ export default function Candlestick() {
       },
     },
     CKS: {
-      longStop: {
-        visible: true,
-        color: "rgba(38,166,154,1)", // green
+      long: {
+        color: "rgba(33,150,243,1)",
         width: 2,
         lineStyle: 0,
-      },
-      shortStop: {
         visible: true,
-        color: "rgba(239,83,80,1)", // red
+      },
+      short: {
+        color: "rgba(244,67,54,1)",
         width: 2,
         lineStyle: 0,
-      },
-      bg: {
-        visible: false,
-        topFillColor1: "rgba(38,166,154,0.1)",
-        topFillColor2: "rgba(239,83,80,0.1)",
+        visible: true,
       },
     },
     HV: {
       hv: {
         visible: true,
-        color: "rgba(255,152,0,1)", // orange
+        color: "rgba(255,152,0,1)",
         width: 2,
         lineStyle: 0,
-      },
-      signal: {
-        visible: false, // optional smoothing (SMA/EMA of HV)
-        color: "rgba(33,150,243,1)",
-        width: 1,
-        lineStyle: 2,
-      },
-      levels: {
-        high: {
-          visible: false,
-          value: 40,
-          color: "rgba(239,83,80,0.8)",
-          width: 1,
-          lineStyle: 1,
-        },
-        low: {
-          visible: false,
-          value: 10,
-          color: "rgba(38,166,154,0.8)",
-          width: 1,
-          lineStyle: 1,
-        },
-      },
+      }
     },
     CMF: {
-      cmf: {
-        visible: true,
-        color: "rgba(0,188,212,1)", // cyan
+      cmfLine: {
+        color: "rgba(255,193,7,1)",
         width: 2,
         lineStyle: 0,
+        visible: true,
       },
       zeroLine: {
+        color: "rgba(158,158,158,1)",
+        width: 1,
+        lineStyle: 2,
         visible: true,
         value: 0,
-        color: "rgba(158,158,158,0.8)",
-        width: 1,
-        lineStyle: 1,
-      },
-      bg: {
-        visible: true,
-        topFillColor1: "rgba(38,166,154,0.15)", // above 0
-        topFillColor2: "rgba(239,83,80,0.15)", // below 0
       },
     },
     NVI: {
@@ -1308,8 +1260,8 @@ export default function Candlestick() {
     },
     TRIX: {
       trixLine: {
-        color: "rgba(38,166,154,1)",
-        width: 1,
+        color: "rgba(33,150,243,1)",
+        width: 2,
         lineStyle: 0,
         visible: true,
       },
@@ -1321,6 +1273,7 @@ export default function Candlestick() {
         value: 0,
       },
     },
+
     FT: {
       fisherLine: {
         color: "rgba(38,166,154,1)",
@@ -1463,8 +1416,6 @@ export default function Candlestick() {
         return "STOCHRSI";
       case "CMO":
         return "CMO";
-      case "TRIX":
-        return "TRIX";
       case "EOM":
         return "EOM";
       case "HV":
@@ -1483,6 +1434,12 @@ export default function Candlestick() {
         return "TRIX";
       case "VP":
         return "VP";
+      case "BBW":
+        return "BBW";
+      case "KC":
+        return "KC";
+
+
     }
   }
 

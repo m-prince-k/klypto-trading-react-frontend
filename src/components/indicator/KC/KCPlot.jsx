@@ -8,126 +8,125 @@ export default function KCPlot({
   addSeries,
   chart,
   containerRef,
-  indicatorConfigs,
 }) {
-  const cloudCanvasRef = useRef(null);
-  const cloudCtxRef = useRef(null);
 
-  /* ================= CREATE KC LINES ================= */
+  const canvasRef = useRef(null);
+  const ctxRef = useRef(null);
+
+  /* ================= CREATE SERIES ================= */
 
   useEffect(() => {
-    if (!result?.data) return;
 
+    const upper = result?.data?.upper;
+    const middle = result?.data?.middle;
+    const lower = result?.data?.lower;
+
+    if (!Array.isArray(upper) || upper.length === 0) {
+      console.log("❌ KC invalid data", result);
+      return;
+    }
+
+    // 🔥 REMOVE OLD
     if (indicatorSeriesRef.current?.KC) {
       Object.values(indicatorSeriesRef.current.KC).forEach((s) => {
-        if (s?.setData) {
-          try {
-            s.setData([]);
-          } catch {}
-        }
+        try { s.setData([]); } catch {}
       });
       indicatorSeriesRef.current.KC = null;
     }
 
-    const groupedSeries = {};
-    const kcData = Array.isArray(result.data) ? result.data[0] : result.data;
-
-    const mapSeries = (arr) =>
+    const map = (arr) =>
       (arr || []).map((p) => ({
         time: Number(p.time),
         value: Number(p.value),
       }));
 
-    const upperData = mapSeries(kcData.upper);
-    const basisData = mapSeries(kcData.basis);
-    const lowerData = mapSeries(kcData.lower);
+    const upperData = map(upper);
+    const middleData = map(middle);
+    const lowerData = map(lower);
 
-    groupedSeries.upper = addSeries("KC", LineSeries, {
-      color: indicatorStyle?.KC?.upper?.color ?? "rgba(239,83,80,1)",
-      lineWidth: indicatorStyle?.KC?.upper?.width ?? 1,
+    /* 🔴 UPPER */
+    const upperSeries = addSeries("KC", LineSeries, {
+      color: indicatorStyle?.KC?.upper?.color ?? "#EF5350",
+      lineWidth: indicatorStyle?.KC?.upper?.width ?? 2,
       lineStyle: indicatorStyle?.KC?.upper?.lineStyle ?? 0,
       visible: indicatorStyle?.KC?.upper?.visible ?? true,
       priceLineVisible: false,
-      lastValueVisible: true,
     });
 
-    groupedSeries.basis = addSeries("KC", LineSeries, {
-      color: indicatorStyle?.KC?.basis?.color ?? "rgba(38,166,154,1)",
-      lineWidth: indicatorStyle?.KC?.basis?.width ?? 1,
-      lineStyle: indicatorStyle?.KC?.basis?.lineStyle ?? 0,
-      visible: indicatorStyle?.KC?.basis?.visible ?? true,
+    /* 🟡 MIDDLE (BASIS) */
+    const middleSeries = addSeries("KC", LineSeries, {
+      color: indicatorStyle?.KC?.middle?.color ?? "#FFD54F",
+      lineWidth: indicatorStyle?.KC?.middle?.width ?? 2,
+      lineStyle: indicatorStyle?.KC?.middle?.lineStyle ?? 0,
+      visible: indicatorStyle?.KC?.middle?.visible ?? true,
       priceLineVisible: false,
-      lastValueVisible: true,
     });
 
-    groupedSeries.lower = addSeries("KC", LineSeries, {
-      color: indicatorStyle?.KC?.lower?.color ?? "rgba(38,166,154,1)",
-      lineWidth: indicatorStyle?.KC?.lower?.width ?? 1,
-      lineStyle: indicatorStyle?.KC?.lower?.lineStyle ?? 0,
-      visible: indicatorStyle?.KC?.lower?.visible ?? true,
-      priceLineVisible: false,
-      lastValueVisible: true,
-    });
-
-    groupedSeries.upper.setData(upperData);
-    groupedSeries.basis.setData(basisData);
-    groupedSeries.lower.setData(lowerData);
-
-    // store data for canvas drawing
-    groupedSeries._data = {
-      upper: upperData,
-      lower: lowerData,
-    };
-
-    indicatorSeriesRef.current.KC = groupedSeries;
-  }, [result, indicatorConfigs, indicatorStyle]);
-
-  /* ================= APPLY STYLE UPDATES ================= */
-
-  useEffect(() => {
-    const kcGroup = indicatorSeriesRef.current?.KC;
-    if (!kcGroup) return;
-
-    kcGroup.upper.applyOptions({
-      color: indicatorStyle?.KC?.upper?.color ?? "#ef5350",
-      lineWidth: indicatorStyle?.KC?.upper?.width ?? 1,
-      lineStyle: indicatorStyle?.KC?.upper?.lineStyle ?? 0,
-      visible: indicatorStyle?.KC?.upper?.visible ?? true,
-      priceLineVisible: false,
-      lastValueVisible: true,
-    });
-
-    kcGroup.basis.applyOptions({
-      color: indicatorStyle?.KC?.basis?.color ?? "#26a69a",
-      lineWidth: indicatorStyle?.KC?.basis?.width ?? 1,
-      lineStyle: indicatorStyle?.KC?.basis?.lineStyle ?? 0,
-      visible: indicatorStyle?.KC?.basis?.visible ?? true,
-      priceLineVisible: false,
-      lastValueVisible: true,
-    });
-
-    kcGroup.lower.applyOptions({
-      color: indicatorStyle?.KC?.lower?.color ?? "#26a69a",
+    /* 🔵 LOWER */
+    const lowerSeries = addSeries("KC", LineSeries, {
+      color: indicatorStyle?.KC?.lower?.color ?? "#26A69A",
       lineWidth: indicatorStyle?.KC?.lower?.width ?? 2,
       lineStyle: indicatorStyle?.KC?.lower?.lineStyle ?? 0,
       visible: indicatorStyle?.KC?.lower?.visible ?? true,
       priceLineVisible: false,
-      lastValueVisible: true,
     });
-  }, [indicatorStyle]);
 
-  /* ================= CREATE CLOUD CANVAS ================= */
+    upperSeries.setData(upperData);
+    middleSeries.setData(middleData);
+    lowerSeries.setData(lowerData);
+
+    indicatorSeriesRef.current.KC = {
+      upper: upperSeries,
+      middle: middleSeries,
+      lower: lowerSeries,
+      _data: { upper: upperData, lower: lowerData },
+    };
+
+    console.log("✅ KC plotted");
+
+  }, [result]);
+
+
+
+  /* ================= STYLE UPDATE ================= */
 
   useEffect(() => {
-    if (!containerRef?.current || !chart) return;
-    if (cloudCanvasRef.current) return;
 
-    const rect = containerRef.current.getBoundingClientRect();
+    const g = indicatorSeriesRef.current?.KC;
+    if (!g) return;
+
+    g.upper?.applyOptions({
+      color: indicatorStyle?.KC?.upper?.color,
+      lineWidth: indicatorStyle?.KC?.upper?.width,
+      lineStyle: indicatorStyle?.KC?.upper?.lineStyle,
+      visible: indicatorStyle?.KC?.upper?.visible,
+    });
+
+    g.middle?.applyOptions({
+      color: indicatorStyle?.KC?.middle?.color,
+      lineWidth: indicatorStyle?.KC?.middle?.width,
+      lineStyle: indicatorStyle?.KC?.middle?.lineStyle,
+      visible: indicatorStyle?.KC?.middle?.visible,
+    });
+
+    g.lower?.applyOptions({
+      color: indicatorStyle?.KC?.lower?.color,
+      lineWidth: indicatorStyle?.KC?.lower?.width,
+      lineStyle: indicatorStyle?.KC?.lower?.lineStyle,
+      visible: indicatorStyle?.KC?.lower?.visible,
+    });
+
+  }, [indicatorStyle?.KC]);
+
+
+
+  /* ================= CANVAS INIT ================= */
+
+  useEffect(() => {
+
+    if (!containerRef?.current || !chart) return;
 
     const canvas = document.createElement("canvas");
-    canvas.width = rect.width;
-    canvas.height = rect.height;
-
     canvas.style.position = "absolute";
     canvas.style.left = "0";
     canvas.style.top = "0";
@@ -136,52 +135,69 @@ export default function KCPlot({
 
     containerRef.current.appendChild(canvas);
 
-    cloudCanvasRef.current = canvas;
-    cloudCtxRef.current = canvas.getContext("2d");
+    canvasRef.current = canvas;
+    ctxRef.current = canvas.getContext("2d");
+
+    const resize = () => {
+      const rect = containerRef.current.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+    };
+
+    resize();
+    window.addEventListener("resize", resize);
+
+    return () => {
+      window.removeEventListener("resize", resize);
+      canvas.remove();
+    };
+
   }, [chart]);
 
-  /* ================= DRAW KC BACKGROUND ================= */
+
+
+  /* ================= DRAW CLOUD ================= */
 
   useEffect(() => {
-    const ctx = cloudCtxRef.current;
-    const canvas = cloudCanvasRef.current;
 
-    if (!ctx || !canvas) return;
+    const ctx = ctxRef.current;
+    const canvas = canvasRef.current;
 
-    const drawBg = () => {
-      const kcGroup = indicatorSeriesRef.current?.KC;
-      if (!kcGroup?._data) return;
+    if (!ctx || !canvas || !chart) return;
+
+    const draw = () => {
+
+      const kc = indicatorSeriesRef.current?.KC;
+      if (!kc?._data) return;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       if (!indicatorStyle?.KC?.bg?.visible) return;
 
-      const upperData = kcGroup._data.upper;
-      const lowerData = kcGroup._data.lower;
+      const upper = kc._data.upper;
+      const lower = kc._data.lower;
 
-      if (!upperData.length || !lowerData.length) return;
+      if (!upper.length || !lower.length) return;
 
       const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
 
       gradient.addColorStop(
         0,
-        indicatorStyle?.KC?.bg?.topFillColor1 ?? "rgba(38,166,154,0.1)",
+        indicatorStyle?.KC?.bg?.topFillColor1 ?? "rgba(38,166,154,0.2)"
       );
 
       gradient.addColorStop(
         1,
-        indicatorStyle?.KC?.bg?.topFillColor2 ?? "rgba(239,83,80,0.1)",
+        indicatorStyle?.KC?.bg?.topFillColor2 ?? "rgba(239,83,80,0.2)"
       );
 
       ctx.fillStyle = gradient;
-
       ctx.beginPath();
 
-      /* -------- UPPER LINE -------- */
-
-      upperData.forEach((p, i) => {
+      /* 🔴 UPPER */
+      upper.forEach((p, i) => {
         const x = chart.timeScale().timeToCoordinate(p.time);
-        const y = kcGroup.upper.priceToCoordinate(p.value);
+        const y = kc.upper.priceToCoordinate(p.value);
 
         if (x == null || y == null) return;
 
@@ -189,11 +205,10 @@ export default function KCPlot({
         else ctx.lineTo(x, y);
       });
 
-      /* -------- LOWER LINE -------- */
-
-      [...lowerData].reverse().forEach((p) => {
+      /* 🔵 LOWER */
+      [...lower].reverse().forEach((p) => {
         const x = chart.timeScale().timeToCoordinate(p.time);
-        const y = kcGroup.lower.priceToCoordinate(p.value);
+        const y = kc.lower.priceToCoordinate(p.value);
 
         if (x == null || y == null) return;
 
@@ -204,16 +219,19 @@ export default function KCPlot({
       ctx.fill();
     };
 
-    drawBg();
+    draw();
 
-    chart.timeScale().subscribeVisibleLogicalRangeChange(drawBg);
-    chart.subscribeCrosshairMove(drawBg);
+    chart.timeScale().subscribeVisibleTimeRangeChange(draw);
+    chart.subscribeCrosshairMove(draw);
 
     return () => {
-      chart.timeScale().unsubscribeVisibleLogicalRangeChange(drawBg);
-      chart.unsubscribeCrosshairMove(drawBg);
+      chart.timeScale().unsubscribeVisibleTimeRangeChange(draw);
+      chart.unsubscribeCrosshairMove(draw);
     };
-  }, [indicatorStyle, result]);
+
+  }, [indicatorStyle?.KC?.bg, result]);
+
+
 
   return null;
 }

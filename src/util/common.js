@@ -699,42 +699,17 @@ export const getRowsByIndicator = (indicator, maType) => {
     case "CKS":
       return [
         {
-          key: "stopLong",
+          key: "long",
           label: "Stop Long",
           type: "line",
-          color: "#26a69a",
         },
         {
-          key: "stopShort",
+          key: "short",
           label: "Stop Short",
           type: "line",
-          color: "#ef5350",
         },
       ];
 
-      case "CKS":
-  return [
-    {
-      key: "longStop",
-      label: "Long Stop",
-      type: "line",
-      color: "#26a69a", // green
-    },
-    {
-      key: "shortStop",
-      label: "Short Stop",
-      type: "line",
-      color: "#ef5350", // red
-    },
-
-    {
-      key: "fillArea",
-      label: "CKS Fill Area",
-      type: "fill",
-      color0: "rgba(38,166,154,0.08)", // green light
-      color1: "rgba(239,83,80,0.08)", // red light
-    },
-  ];
 
     case "Stochastic":
       return [
@@ -1072,14 +1047,12 @@ export const getRowsByIndicator = (indicator, maType) => {
           key: "upper",
           label: "Upper Channel",
           type: "line",
-          color: "#ef5350",
         },
-        { key: "basis", label: "Basis Line", type: "line", color: "#26a69a" },
+        { key: "middle", label: "Basis Line", type: "line"},
         {
           key: "lower",
           label: "Lower Channel",
           type: "line",
-          color: "#26a69a",
         },
         {
           key: "bg",
@@ -1117,21 +1090,19 @@ export const getRowsByIndicator = (indicator, maType) => {
       case "BBW":
       return [
         {
-          key: "bollingerBandWidth",
+          key: "bbwLine",
           label: "Bollinger Band Width",
           type: "line",
         },
         {
-          key: "highestExpansion",
+          key: "highest",
           label: "Highest Expansion",
           type: "line",
-          color: "#26a69a",
         },
         {
-          key: "lowestContraction",
+          key: "lowest",
           label: "Lowest Contraction",
           type: "line",
-          color: "#26a69a",
         },
       ];
 
@@ -1230,14 +1201,11 @@ export const getRowsByIndicator = (indicator, maType) => {
 
     case "HV":
       return [
-        // HV Line
         {
           key: "hv",
           label: "HV",
           type: "line",
-          color: "#1890ff",
-          width: 2,
-          visible: false, // default unchecked
+          visible: false,
         },
       ];
 
@@ -1289,7 +1257,7 @@ export const getRowsByIndicator = (indicator, maType) => {
       return rows;
     }
 
-    case "Percentage Volume Oscillator":
+    case "PVO":
       return [
         // Histogram (multi-state coloring)
         {
@@ -1329,25 +1297,20 @@ export const getRowsByIndicator = (indicator, maType) => {
 
         // Zero Line
         {
-          key: "zeroLine",
+          key: "zero",
           label: "Zero Line",
           type: "line",
           value: 0, // fixed level
-          color: "#9e9e9e",
-          width: 1,
-          lineStyle: 2, // optional: dashed
           visible: true,
         },
       ];
 
     case "AD":
       return [
-        // PVO Line
         {
           key: "accumulationDistribution",
           label: "Accumulation / Distribution",
           type: "line",
-          color: "#2962ff",
           width: 2,
           visible: true,
         },
@@ -1356,20 +1319,16 @@ export const getRowsByIndicator = (indicator, maType) => {
     case "CMF":
       return [
         {
-          key: "cmf",
+          key: "cmfLine",
           label: "CMF",
           type: "line",
-          color: "#2962ff",
-          width: 2,
           visible: true,
         },
         {
           key: "zeroLine",
           label: "Zero Line",
           type: "line",
-          value: 0, // fixed level
-          color: "#9e9e9e",
-          width: 1,
+          value: 0,
           visible: true,
         },
       ];
@@ -1588,6 +1547,7 @@ export const PANE_INDICATORS = new Set([
   "WPR",
   "UO",
   "AROON",
+  "HV",
   "AO",
   "CMO", // CMO
   "TRIX",
@@ -1606,7 +1566,9 @@ export const PANE_INDICATORS = new Set([
   "PVO",
   "AD",
   "OBV",
+  "BBW",
   "CMF",
+  "KC",
 ]);
 
 

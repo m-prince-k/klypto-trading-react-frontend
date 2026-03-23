@@ -83,11 +83,10 @@ export default function useChartFunctions({
 
             break;
           }
-          //this is bbw proceed
           case "BBW": {
-            const bbwData = result?.data?.bollingerBandWidth ?? [];
-            const highestExpansionData = result?.data?.highestExpansion ?? [];
-            const lowestContractionData = result?.data?.lowestContraction ?? [];
+            const bbwData = result?.data?.bbw ?? [];
+            const highestData = result?.data?.highest ?? [];
+            const lowestData = result?.data?.lowest ?? [];
 
             indicatorSeriesRef.current.BBW = {
               result,
@@ -95,14 +94,17 @@ export default function useChartFunctions({
             };
 
             latestIndicatorValuesRef.current.BBW = {
-              bollingerBandWidth:
-                bbwData[bbwData.length - 1]?.value ?? null,
+              bbw: bbwData[bbwData.length - 1]?.value ?? null,
 
-              highestExpansion:
-                highestExpansionData[highestExpansionData.length - 1]?.value ?? null,
+              highest:
+                highestData.length > 0
+                  ? highestData[highestData.length - 1]?.value
+                  : null,
 
-              lowestContraction:
-                lowestContractionData[lowestContractionData.length - 1]?.value ?? null,
+              lowest:
+                lowestData.length > 0
+                  ? lowestData[lowestData.length - 1]?.value
+                  : null,
             };
 
             break;
@@ -152,18 +154,20 @@ export default function useChartFunctions({
             break;
           }
           case "CKS": {
-            const longStopData = result?.data?.longStop ?? [];
-            const shortStopData = result?.data?.shortStop ?? [];
+            const longData = result?.data?.long ?? [];
+            const shortData = result?.data?.short ?? [];
+            console.log(longData, "longgggggg")
 
             indicatorSeriesRef.current.CKS = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.CKS = {
-              longStop: longStopData[longStopData.length - 1]?.value ?? null,
+            console.log(result, "resssssssss")
 
-              shortStop: shortStopData[shortStopData.length - 1]?.value ?? null,
+            latestIndicatorValuesRef.current.CKS = {
+              long: longData[longData.length - 1]?.value ?? null,
+              short: shortData[shortData.length - 1]?.value ?? null,
             };
 
             break;
@@ -177,11 +181,12 @@ export default function useChartFunctions({
             };
 
             latestIndicatorValuesRef.current.HV = {
-              hv: hvData[hvData.length - 1]?.value ?? null,
+              hvLine: hvData[hvData.length - 1]?.value ?? null,
             };
 
             break;
           }
+
           case "CMF": {
             const cmfData = result?.data?.cmf ?? [];
 
@@ -189,8 +194,9 @@ export default function useChartFunctions({
               result,
               rows,
             };
+
             latestIndicatorValuesRef.current.CMF = {
-              cmf: cmfData[cmfData.length - 1]?.value ?? null,
+              cmfLine: cmfData[cmfData.length - 1]?.value ?? null,
             };
 
             break;
@@ -543,6 +549,26 @@ export default function useChartFunctions({
             };
             break;
           }
+
+          case "KC": {
+            const upperData = result?.data?.upper ?? [];
+            const lowerData = result?.data?.lower ?? [];
+            const middleData = result?.data?.middle ?? [];
+
+            indicatorSeriesRef.current.KC = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.KC = {
+              upper: upperData[upperData.length - 1]?.value ?? null,
+              lower: lowerData[lowerData.length - 1]?.value ?? null,
+              middle: middleData[middleData.length - 1]?.value ?? null,
+            };
+
+            break;
+          }
+
           case "PVO": {
             const pvoData = result?.data?.pvo ?? [];
             const signalData = result?.data?.signal ?? [];
@@ -730,36 +756,16 @@ export default function useChartFunctions({
           }
 
           case "VOL": {
-            const volume = result?.data?.volume ?? [];
-            const volumeMA = result?.data?.volumeMA ?? [];
-
-            indicatorSeriesRef.current.VOL = {
-              result,
-              rows,
-            };
+            const volData = result?.data?.volume ?? [];
 
             latestIndicatorValuesRef.current.VOL = {
-              volume: volume.at(-1)?.value,
-              volumeMA: volumeMA.at(-1)?.value,
+              volume: volData[volData.length - 1]?.value ?? null,
             };
 
             break;
           }
 
-          case "TRIX": {
-            const trixData = result?.data ?? [];
 
-            indicatorSeriesRef.current.TRIX = {
-              result,
-              rows,
-            };
-
-            latestIndicatorValuesRef.current.TRIX = {
-              value: trixData.at(-1)?.value,
-            };
-
-            break;
-          }
 
           case "STDDEV": {
             const stddevData = result?.data ?? [];
@@ -771,6 +777,25 @@ export default function useChartFunctions({
 
             latestIndicatorValuesRef.current.STDDEV = {
               value: stddevData.at(-1)?.value,
+            };
+
+            break;
+          }
+
+          case "BB": {
+            const upperData = result?.data?.upper ?? [];
+            const lowerData = result?.data?.lower ?? [];
+            const basisData = result?.data?.basis ?? [];
+
+            indicatorSeriesRef.current.BB = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.BB = {
+              upper: upperData[upperData.length - 1]?.value ?? null,
+              lower: lowerData[lowerData.length - 1]?.value ?? null,
+              basis: basisData[basisData.length - 1]?.value ?? null,
             };
 
             break;
@@ -889,6 +914,36 @@ async function fetchDataForIndicators(
                 })) ?? [],
           },
         };
+      case "BBW":
+        return {
+          type: "multi",
+          data: {
+            bbw:
+              response?.data
+                ?.filter((d) => d.bbw != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.bbw),
+                })) ?? [],
+
+            highest:
+              response?.data
+                ?.filter((d) => d.highestExpansion != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.highestExpansion),
+                })) ?? [],
+
+            lowest:
+              response?.data
+                ?.filter((d) => d.lowestContraction != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.lowestContraction),
+                })) ?? [],
+          },
+        };
+
       case "SMA":
         return {
           type: "multi",
@@ -945,6 +1000,20 @@ async function fetchDataForIndicators(
                 .map((d) => ({
                   time: d.time,
                   value: d.pviEma,
+                })) ?? [],
+          },
+        };
+
+      case "HV":
+        return {
+          type: "single",
+          data: {
+            hv:
+              response?.data
+                ?.filter((d) => d.historical_Vol != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.historical_Vol),
                 })) ?? [],
           },
         };
@@ -1018,6 +1087,20 @@ async function fetchDataForIndicators(
           },
         };
 
+      case "CMF":
+        return {
+          type: "single",
+          data: {
+            cmf:
+              response?.data
+                ?.filter((d) => d.value != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.value),
+                })) ?? [],
+          },
+        };
+
       case "CCI": {
         const rows = Array.isArray(response?.data) ? response.data : [];
 
@@ -1064,6 +1147,28 @@ async function fetchDataForIndicators(
               response.data
                 ?.filter((d) => d.chop != null && d.time != null)
                 .map((d) => ({ time: d.time, value: d.chop })) ?? [],
+          },
+        };
+
+      case "CKS":
+        return {
+          type: "multi",
+          data: {
+            long:
+              response?.data
+                ?.filter((d) => d.stopLong != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.stopLong),
+                })) ?? [],
+
+            short:
+              response?.data
+                ?.filter((d) => d.stopShort != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.stopShort),
+                })) ?? [],
           },
         };
       case "HMA":
@@ -1223,13 +1328,15 @@ async function fetchDataForIndicators(
       case "TRIX":
         return {
           type: "single",
-          data:
-            response?.data
-              ?.filter((d) => d.value != null && d.time != null)
-              .map((d) => ({
-                time: Number(d.time),
-                value: Number(d.value),
-              })) ?? [],
+          data: {
+            trix:
+              response?.data
+                ?.filter((d) => d.value != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.value),
+                })) ?? [],
+          },
         };
 
       case "ROC":
@@ -1284,7 +1391,7 @@ async function fetchDataForIndicators(
         };
       case "VOL":
         return {
-          type: "multi",
+          type: "double",
           data: {
             volume:
               response?.data
@@ -1292,7 +1399,9 @@ async function fetchDataForIndicators(
                 .map((d) => ({
                   time: Number(d.time),
                   value: Number(d.volume),
-                  color: d.color || "rgba(38,166,154,1)", // 🔥 dynamic color
+                  color: d.color || "#26A69A",
+                  rising: d.rising,
+                  falling: d.falling,
                 })) ?? [],
 
             volumeMA:
@@ -1303,18 +1412,6 @@ async function fetchDataForIndicators(
                   value: Number(d.volumeMA),
                 })) ?? [],
           },
-        };
-
-      case "TRIX":
-        return {
-          type: "single",
-          data:
-            response?.data
-              ?.filter((d) => d.value != null && d.time != null)
-              .map((d) => ({
-                time: Number(d.time),
-                value: Number(d.value),
-              })) ?? [],
         };
 
       case "PVO":
@@ -1751,30 +1848,30 @@ async function fetchDataForIndicators(
 
       case "BB":
         return {
-          type: "multi",
+          type: "triple",
           data: {
             upper:
-              response.data
+              response?.data
                 ?.filter((d) => d.upper != null && d.time != null)
                 .map((d) => ({
-                  time: d.time,
-                  value: d.upper,
+                  time: Number(d.time),
+                  value: Number(d.upper),
                 })) ?? [],
 
             lower:
-              response.data
+              response?.data
                 ?.filter((d) => d.lower != null && d.time != null)
                 .map((d) => ({
-                  time: d.time,
-                  value: d.lower,
+                  time: Number(d.time),
+                  value: Number(d.lower),
                 })) ?? [],
 
             basis:
-              response.data
+              response?.data
                 ?.filter((d) => d.basis != null && d.time != null)
                 .map((d) => ({
-                  time: d.time,
-                  value: d.basis,
+                  time: Number(d.time),
+                  value: Number(d.basis),
                 })) ?? [],
           },
         };
@@ -1803,34 +1900,33 @@ async function fetchDataForIndicators(
 
       case "KC":
         return {
-          type: "multi",
+          type: "triple",
           data: {
             upper:
-              response.data
+              response?.data
                 ?.filter((d) => d.upper != null && d.time != null)
                 .map((d) => ({
-                  time: d.time,
-                  value: d.upper,
+                  time: Number(d.time),
+                  value: Number(d.upper),
                 })) ?? [],
 
             lower:
-              response.data
+              response?.data
                 ?.filter((d) => d.lower != null && d.time != null)
                 .map((d) => ({
-                  time: d.time,
-                  value: d.lower,
+                  time: Number(d.time),
+                  value: Number(d.lower),
                 })) ?? [],
 
-            basis:
-              response.data
+            middle:
+              response?.data
                 ?.filter((d) => d.middle != null && d.time != null)
                 .map((d) => ({
-                  time: d.time,
-                  value: d.middle,
+                  time: Number(d.time),
+                  value: Number(d.middle),
                 })) ?? [],
           },
         };
-
 
 
       default:

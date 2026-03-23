@@ -37,7 +37,7 @@ export default function TRIXPlot({
     /* ================= TRIX LINE ================= */
 
     const trixSeries = addSeries("TRIX", LineSeries, {
-      color: indicatorStyle?.TRIX?.trixLine?.color ?? "rgba(38,166,154,1)",
+      color: indicatorStyle?.TRIX?.trixLine?.color ?? "rgba(33,150,243,1)",
       lineWidth: indicatorStyle?.TRIX?.trixLine?.width ?? 2,
       lineStyle: indicatorStyle?.TRIX?.trixLine?.lineStyle ?? 0,
       visible: indicatorStyle?.TRIX?.trixLine?.visible ?? true,
@@ -82,27 +82,32 @@ export default function TRIXPlot({
     const group = indicatorSeriesRef.current?.TRIX;
     if (!group) return;
 
-    const zeroValue = indicatorStyle?.TRIX?.zeroLine?.value ?? 0;
+    const trixStyle = indicatorStyle?.TRIX;
+    if (!trixStyle) return;
 
-    const zeroData = group.trixData.map((p) => ({
-      time: p.time,
-      value: zeroValue,
-    }));
+    const zeroValue = trixStyle.zeroLine?.value ?? 0;
 
-    group.zeroLine?.setData(zeroData);
+    if (group.trixData) {
+      const zeroData = group.trixData.map((p) => ({
+        time: p.time,
+        value: zeroValue,
+      }));
+
+      group.zeroLine?.setData(zeroData);
+    }
 
     group.trixLine?.applyOptions({
-      color: indicatorStyle?.TRIX?.trixLine?.color,
-      lineWidth: indicatorStyle?.TRIX?.trixLine?.width,
-      lineStyle: indicatorStyle?.TRIX?.trixLine?.lineStyle ?? 0,
-      visible: indicatorStyle?.TRIX?.trixLine?.visible,
+      color: trixStyle.trixLine?.color,
+      lineWidth: Number(trixStyle.trixLine?.width ?? 2),
+      lineStyle: trixStyle.trixLine?.lineStyle ?? 0,
+      visible: trixStyle.trixLine?.visible,
     });
 
     group.zeroLine?.applyOptions({
-      color: indicatorStyle?.TRIX?.zeroLine?.color,
-      lineWidth: indicatorStyle?.TRIX?.zeroLine?.width,
-      lineStyle: indicatorStyle?.TRIX?.zeroLine?.lineStyle ?? 2,
-      visible: indicatorStyle?.TRIX?.zeroLine?.visible,
+      color: trixStyle.zeroLine?.color,
+      lineWidth: Number(trixStyle.zeroLine?.width ?? 1),
+      lineStyle: trixStyle.zeroLine?.lineStyle ?? 2,
+      visible: trixStyle.zeroLine?.visible,
     });
 
   }, [indicatorStyle]);
