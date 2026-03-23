@@ -43,40 +43,53 @@ export default function OBVPlot({
     }
 
     /* ================= BB ================= */
-    if (result.data.bbUpper?.length && result.data.bbLower?.length) {
+  /* ================= BB ================= */
+if (result.data.bbUpper?.length && result.data.bbLower?.length) {
 
-      const upperSeries = addSeries("price", LineSeries, {
-        color: "rgba(82,196,26,1)",
-        lineWidth: 1,
-      });
+  const upperData = result.data.bbUpper;
+  const lowerData = result.data.bbLower;
 
-      const lowerSeries = addSeries("price", LineSeries, {
-        color: "rgba(255,120,117,1)",
-        lineWidth: 1,
-      });
+  // ✅ Upper Line
+  const upperSeries = addSeries("price", LineSeries, {
+    color: "rgba(82,196,26,1)",
+    lineWidth: 1,
+  });
 
-      upperSeries.setData(result.data.bbUpper);
-      lowerSeries.setData(result.data.bbLower);
+  // ✅ Lower Line
+  const lowerSeries = addSeries("price", LineSeries, {
+    color: "rgba(255,120,117,1)",
+    lineWidth: 1,
+  });
 
-      grouped.bbUpper = upperSeries;
-      grouped.bbLower = lowerSeries;
+  upperSeries.setData(upperData);
+  lowerSeries.setData(lowerData);
 
-      /* 🔥 REAL BB FILL (AREA BETWEEN) */
-      const areaSeries = addSeries("price", AreaSeries, {
-        topColor: "rgba(82,196,26,0.2)",
-        bottomColor: "rgba(255,120,117,0.2)",
-        lineColor: "transparent",
-      });
+  grouped.bbUpper = upperSeries;
+  grouped.bbLower = lowerSeries;
 
-      const fillData = result.data.bbUpper.map((u, i) => ({
-        time: u.time,
-        value: u.value,
-      }));
+  /* ✅ CORRECT AREA FILL (NO OVERFLOW) */
+  const areaSeries = addSeries("price", AreaSeries, {
+    topColor: "rgba(82,196,26,0.2)",
+    bottomColor: "rgba(82,196,26,0.2)",
+    lineColor: "transparent",
+    baseLineVisible: false,
+  });
 
-      areaSeries.setData(fillData);
+  // 🔥 KEY FIX: midpoint use karo (center line)
+  const fillData = upperData.map((u, i) => {
+    const l = lowerData[i];
+    const mid = (u.value + l.value) / 2;
 
-      grouped.bbFill = areaSeries;
-    }
+    return {
+      time: u.time,
+      value: mid,
+    };
+  });
+
+  areaSeries.setData(fillData);
+
+  grouped.bbFill = areaSeries;
+}
 
     indicatorSeriesRef.current.OBV = grouped;
 

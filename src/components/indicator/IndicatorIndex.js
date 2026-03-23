@@ -73,31 +73,25 @@ import FTInput from "./FisherTransform/FisherTransformInput";
 import FTPlot from "./FisherTransform/FisherTransformPlot";
 import ZIGZAGPlot from "./ZIgZag/ZigZagPlot";
 import ZIGZAGInput from "./ZIgZag/ZigZagInput";
-
-import ChandeKrollStopPlot from "./CKS/chande-kroll-stop-plot";
-import ChandeKrollStopInput from "./CKS/chande-kroll-stop-inputs";
-
-import HistoricalVolatilityPlot from "./historical-volatity/historical-volatility-inputs";
-import HistoricalVolatilityInput from "./historical-volatity/historical-volatility-inputs";
-
-import ChaikinMoneyFlowInput from "./CMF/Chaikin-money-flow-inputs";
-import ChaikinMoneyFlowPlot from "./CMF/chaikin-money-flow-plot";
-
 import MACDPlot from "./MACD/MACDPlot";
 import MACDInput from "./MACD/macd-inputs";
-
 import VWAPPlot from "./vwap/vwap-plot";
 import VWAPInput from "./vwap/vwap-inputs";
 import KVOPlot from "./KlingerOscillator/KVOPlot";
 import KVOInput from "./KlingerOscillator/KVOInput";
+import CMFPlot from "./CMF/CMFPlot";
+import CMFInput from "./CMF/CMFInput";
+import HVPlot from "./HV/HVPlot";
+import HVInput from "./HV/HVInput";
+import CKSInput from "./CKS/CKSInput";
+import CKSPlot from "./CKS/CKSPlot";
+import BBWInput from "./BBW/BBWInput";
+import BBWPlot from "./BBW/BBWPlot";
 
 export const indicatorComponents = {
-  VWAP: VWAPPlot,
-  MACD: MACDPlot,
-  CKS: ChandeKrollStopPlot,
-  HV: HistoricalVolatilityPlot,
-  CMF: ChaikinMoneyFlowPlot,
-  NVI: NVIPlot,
+  VWAP:VWAPPlot,
+  MACD:MACDPlot,
+  NVI:NVIPlot,
   RSI: RSIPlot,
   SMA: SMAPlot,
   ICHIMOKU: IchimokuCloudPlot,
@@ -128,27 +122,28 @@ export const indicatorComponents = {
   NVI: NVIPlot,
   STOCHRSI: STOCHRSIPlot,
   CMO: CMOPlot,
-  TRIX: TRIXPlot,
   FT: FTPlot,
   ZIGZAG: ZIGZAGPlot,
-  PVO: PVOPlot,
-  OBV: OBVPlot,
-  VOL: VOLPlot,
-  AD: ADXPlot,
-  TRIX: TRIXPlot,
-  VP: VPPlot,
+  PVO:PVOPlot,
+  OBV:OBVPlot,
+  VOL:VOLPlot,
+  STDDEV:STDDEVPlot,
+  AD:ADXPlot,
+  TRIX:TRIXPlot,
+  VP:VPPlot,
+  CMF:CMFPlot,
+  HV:HVPlot,
+  CKS:CKSPlot,
+  BBW:BBWPlot,
   STOCH: STOCHRSIPlot,
   STDDEV: STDDEVPlot,
   KVO: KVOPlot
 };
 
 export const indicatorInputs = {
-  VWAP: VWAPInput,
-  MACD: MACDInput,
-  CKS: ChandeKrollStopInput,
-  HV: HistoricalVolatilityInput,
-  CMF: ChaikinMoneyFlowInput,
-  NVI: NVIInput,
+  VWAP:VWAPInput,
+  MACD:MACDInput,
+  NVI:NVIInput,
   RSI: RSIInput,
   SMA: SMAInput,
   ICHIMOKU: IchimokuCloudInput,
@@ -182,15 +177,20 @@ export const indicatorInputs = {
   STOCHRSI: STOCHRSIInput,
   CMO: CMOInput,
   TRIX: TRIXInput,
-  FT: FTInput,
-  ZIGZAG: ZIGZAGInput,
-  PVO: PVOInput,
-  OBV: OBVInput,
-  VOL: VOLInput,
-  STDDEV: STDDEVInput,
-  AD: ADXInput,
-  VP: VPInput,
-  KVO: KVOInput
+  FT:FTInput,
+  ZIGZAG: ZIGZAGInput,  
+  PVO:PVOInput,
+ OBV:OBVInput,
+ VOL:VOLInput,
+ STDDEV:STDDEVInput,
+ AD:ADXInput,
+ VP:VPInput,
+ CMF:CMFInput,
+ HV:HVInput,
+ CKS:CKSInput,
+ BBW:BBWInput,
+ KVO: KVOInput
+  
 };
 
 export function updateIndicatorFromInput(

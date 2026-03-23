@@ -4,8 +4,8 @@ export default function TRIXInput(
   latestIndicatorValuesRef
 ) {
 
-  const rows = Array.isArray(response?.data?.candles)
-    ? response.data.candles
+  const rows = Array.isArray(response?.data)
+    ? response.data
     : [];
 
   const trixSeries = indicatorSeriesRef.current?.TRIX?.trixLine;
@@ -14,10 +14,10 @@ export default function TRIXInput(
   if (!trixSeries) return;
 
   const trixData = rows
-    .filter((d) => d.trix != null && d.time != null)
+    .filter((d) => d.value != null && d.time != null)
     .map((d) => ({
       time: Number(d.time),
-      value: Number(d.trix),
+      value: Number(d.value),
     }));
 
   const zeroValue =

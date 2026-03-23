@@ -3,68 +3,106 @@ import { HistogramSeries, LineSeries } from "lightweight-charts";
 
 export default function VOLPlot({
   result,
+  indicatorStyle,
   indicatorSeriesRef,
   addSeries,
-  indicatorStyle,
+  indicatorConfigs,
 }) {
 
-  console.log(result, "ressssssssssssss")
-  
-  useEffect(() => {
-    if (!result?.data?.length) return;
+  /* ================= CREATE ================= */
 
-    /* CLEAR OLD */
+  useEffect(() => {
+
+    const volumeData = result?.data?.volume;
+    const maData = result?.data?.volumeMA;
+
+    if (!Array.isArray(volumeData) || !volumeData.length) {
+      console.log("❌ VOL no data");
+      return;
+    }
+
+    // 🔥 REMOVE OLD
     if (indicatorSeriesRef.current?.VOL) {
       Object.values(indicatorSeriesRef.current.VOL).forEach((s) => {
-        try { s?.setData([]); } catch {}
+        try { s.setData([]); } catch {}
       });
       indicatorSeriesRef.current.VOL = null;
     }
 
-    const grouped = {};
-
     /* 🔥 HISTOGRAM */
-    const volumeSeries = addSeries("volume", HistogramSeries, {
-      priceFormat: { type: "volume" },
-      color: "rgba(38,166,154,1)",
+    const volSeries = addSeries("VOL", HistogramSeries, {
+      priceLineVisible: false,
+      lastValueVisible: true,
+      color: indicatorStyle?.VOL?.volume?.color,
+      visible: indicatorStyle?.VOL?.volume?.visible,
     });
 
-    volumeSeries.setData(result.data.volume);
-    grouped.volume = volumeSeries;
+    /* 🔥 COLOR LOGIC */
+    const formattedVolume = volumeData.map((d, i, arr) => {
+
+      let color = indicatorStyle?.VOL?.volume?.color;
+
+      if (indicatorConfigs?.VOL?.colorByPrevious && i > 0) {
+        color =
+          d.value >= arr[i - 1].value
+            ? "rgba(0,200,83,1)"
+            : "rgba(244,67,54,1)";
+      } else if (d.rising) {
+        color = "rgba(0,200,83,1)";
+      } else if (d.falling) {
+        color = "rgba(244,67,54,1)";
+      }
+
+      return {
+        time: d.time,
+        value: d.value,
+        color,
+      };
+    });
+
+    volSeries.setData(formattedVolume);
 
     /* 🔥 MA LINE */
-    if (result.data.volumeMA?.length) {
-      const maSeries = addSeries("volume", LineSeries, {
-        color: indicatorStyle?.VOL?.volumeMA?.color || "rgba(255,193,7,1)",
-        lineWidth: 2,
+    let maSeries = null;
+
+    if (Array.isArray(maData) && maData.length) {
+      maSeries = addSeries("VOL", LineSeries, {
+        color: indicatorStyle?.VOL?.volumeMA?.color,
+        lineWidth: indicatorStyle?.VOL?.volumeMA?.width ?? 2,
+        visible: indicatorStyle?.VOL?.volumeMA?.visible,
+        priceLineVisible: false,
       });
 
-      maSeries.setData(result.data.volumeMA);
-      grouped.volumeMA = maSeries;
+      maSeries.setData(maData);
     }
 
-    indicatorSeriesRef.current.VOL = grouped;
+    indicatorSeriesRef.current.VOL = {
+      volume: volSeries,
+      volumeMA: maSeries,
+    };
 
   }, [result]);
-
 
 
   /* ================= STYLE UPDATE ================= */
 
   useEffect(() => {
-    const g = indicatorSeriesRef.current?.VOL;
-    if (!g) return;
 
-    g.volume?.applyOptions({
+    const group = indicatorSeriesRef.current?.VOL;
+    if (!group) return;
+
+    group.volume?.applyOptions({
       color: indicatorStyle?.VOL?.volume?.color,
+      visible: indicatorStyle?.VOL?.volume?.visible,
     });
 
-    g.volumeMA?.applyOptions({
+    group.volumeMA?.applyOptions({
       color: indicatorStyle?.VOL?.volumeMA?.color,
       lineWidth: indicatorStyle?.VOL?.volumeMA?.width,
+      visible: indicatorStyle?.VOL?.volumeMA?.visible,
     });
 
-  }, [indicatorStyle]);
+  }, [indicatorStyle?.VOL]);
 
   return null;
 }

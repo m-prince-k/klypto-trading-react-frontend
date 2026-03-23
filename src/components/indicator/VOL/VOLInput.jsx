@@ -1,52 +1,33 @@
 export default function VOLInput(
   response,
   indicatorSeriesRef,
-  latestIndicatorValuesRef,
-  maType
+  latestIndicatorValuesRef
 ) {
-  const rows = Array.isArray(response?.data) ? response.data : [];
 
-  const volumeData = rows
-    .filter((d) => d.volume != null && d.time != null)
-    .map((d) => ({
-      time: Number(d.time),
-      value: Number(d.volume),
-      color: d.color || "rgba(38,166,154,1)",
-    }))
-    .sort((a, b) => a.time - b.time);
+  const group = indicatorSeriesRef.current?.VOL;
+  if (!group) return;
 
-  const maData = rows
-    .filter((d) => d.volumeMA != null && d.time != null)
-    .map((d) => ({
-      time: Number(d.time),
-      value: Number(d.volumeMA),
-    }))
-    .sort((a, b) => a.time - b.time);
+  const volume =
+    response?.data
+      ?.filter((d) => d.volume != null && d.time != null)
+      .map((d) => ({
+        time: Number(d.time),
+        value: Number(d.volume),
+        color: d.color || "#26A69A",
+      })) ?? [];
 
-  const series = indicatorSeriesRef.current?.VOL;
-  if (!series) return;
+  const volumeMA =
+    response?.data
+      ?.filter((d) => d.volumeMA != null && d.time != null)
+      .map((d) => ({
+        time: Number(d.time),
+        value: Number(d.volumeMA),
+      })) ?? [];
 
-  /* 🔥 HISTOGRAM */
-  series.volume?.setData(volumeData);
+  group.volume?.setData(volume);
+  group.volumeMA?.setData(volumeMA);
 
-  /* 🔥 MA */
-  if (maType !== "none") {
-    series.volumeMA?.setData(maData);
-  } else {
-    series.volumeMA?.setData([]);
-  }
-
-  /* 🔥 VALUES */
   latestIndicatorValuesRef.current.VOL = {
-    volume: volumeData.at(-1)?.value,
-    volumeMA: maType !== "none" ? maData.at(-1)?.value : null,
-  };
-
-  /* 🔥 STORE */
-  indicatorSeriesRef.current.VOL.result = {
-    data: {
-      volume: volumeData,
-      volumeMA: maType !== "none" ? maData : [],
-    },
+    volume: volume[volume.length - 1]?.value ?? null,
   };
 }
