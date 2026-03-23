@@ -8,8 +8,10 @@ export default function VOLPlot({
   indicatorStyle,
 }) {
 
+  console.log(result, "ressssssssssssss")
+  
   useEffect(() => {
-    if (!result?.data?.volume?.length) return;
+    if (!result?.data?.length) return;
 
     /* CLEAR OLD */
     if (indicatorSeriesRef.current?.VOL) {

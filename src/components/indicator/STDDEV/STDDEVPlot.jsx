@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { LineSeries } from "lightweight-charts";
 
-export default function ADPlot({
+export default function STDDEVlot({
   result,
   indicatorSeriesRef,
   addSeries,

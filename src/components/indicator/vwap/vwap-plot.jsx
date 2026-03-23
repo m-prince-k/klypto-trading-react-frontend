@@ -3,120 +3,164 @@ import { LineSeries, AreaSeries } from "lightweight-charts";
 
 export default function VWAPPlot({
   result,
-  rows,
   indicatorStyle,
+  indicatorConfigs,
   indicatorSeriesRef,
   addSeries,
 }) {
 
+  /* ---------------- SAFE DATA CLEANER ---------------- */
+
+  const cleanSeries = (data) => {
+    if (!Array.isArray(data)) return [];
+
+    return data
+      .filter(
+        (d) =>
+          d &&
+          d.time != null &&
+          d.value != null &&
+          !isNaN(d.time) &&
+          !isNaN(d.value)
+      )
+      .map((d) => ({
+        time: Number(d.time),
+        value: Number(d.value),
+      }));
+  };
+
+
+
+  /* ---------------- CREATE SERIES ---------------- */
+
   useEffect(() => {
 
-    if (!result) return;
+    if (!result?.data) return;
 
-    /* 🔥 REMOVE OLD */
+    /* REMOVE OLD SERIES */
+
     if (indicatorSeriesRef.current?.VWAP) {
       Object.values(indicatorSeriesRef.current.VWAP).forEach((s) => {
         if (s?.setData) {
-          try { s.setData([]); } catch {}
+          try {
+            s.setData([]);
+          } catch {}
         }
       });
+
       indicatorSeriesRef.current.VWAP = null;
     }
 
-    const groupedSeries = {};
-    let vwapData = [];
+    const grouped = {};
 
-    /* ================= MAIN LINES ================= */
+    const vwapData = cleanSeries(result.data.vwap);
+    const upper1 = cleanSeries(result.data.upper1);
+    const lower1 = cleanSeries(result.data.lower1);
+    const upper2 = cleanSeries(result.data.upper2);
+    const lower2 = cleanSeries(result.data.lower2);
+    const upper3 = cleanSeries(result.data.upper3);
+    const lower3 = cleanSeries(result.data.lower3);
 
-    Object.entries(result?.data || {}).forEach(([lineName, lineData]) => {
+    /* ---------------- VWAP MAIN LINE ---------------- */
 
-      // ✅ FIX: ensure array
-      if (!Array.isArray(lineData)) return;
-
-      const style = indicatorStyle?.VWAP?.[lineName];
-
-      const series = addSeries("VWAP", LineSeries, {
-        color:
-          style?.color ||
-          (lineName === "vwap"
-            ? "rgba(0,140,255,1)"
-            : lineName === "upperBand"
-            ? "rgba(38,166,154,1)"
-            : "rgba(239,83,80,1)"),
-        lineWidth: style?.width || 2,
-        visible: style?.visible ?? true,
-        priceLineVisible: false,
-        lastValueVisible: true,
-      });
-
-      if (!series) return;
-
-      // ✅ FIX: clean + sort
-      const cleanData = lineData
-        .filter(d => d && d.time != null && d.value != null && !isNaN(d.value))
-        .sort((a, b) => a.time - b.time);
-
-      series.setData(cleanData);
-
-      groupedSeries[lineName] = series;
-
-      if (lineName === "vwap") vwapData = cleanData;
-
+    const vwapSeries = addSeries("VWAP", LineSeries, {
+      color: indicatorStyle?.VWAP?.vwap?.color,
+      lineWidth: indicatorStyle?.VWAP?.vwap?.width ?? 2,
+      lineStyle: indicatorStyle?.VWAP?.vwap?.lineStyle ?? 0,
+      visible: indicatorStyle?.VWAP?.vwap?.visible ?? true,
+      priceLineVisible: false,
     });
 
-    /* ================= BAND FILL ================= */
+    if (vwapData.length) vwapSeries.setData(vwapData);
 
-    if (
-      groupedSeries.upperBand &&
-      groupedSeries.lowerBand &&
-      indicatorStyle?.VWAP?.bandFill?.visible
-    ) {
+    grouped.vwap = vwapSeries;
 
-      const fillSeries = addSeries("VWAP", AreaSeries, {
-        topColor: indicatorStyle?.VWAP?.bandFill?.topColor,
-        bottomColor: indicatorStyle?.VWAP?.bandFill?.bottomColor,
-        lineColor: "transparent",
+    /* ---------------- BAND SERIES ---------------- */
+
+    const createBand = (name, data, style) => {
+      if (!data.length) return;
+
+      const series = addSeries("VWAP", LineSeries, {
+        color: style?.color,
+        lineWidth: style?.width ?? 1,
+        lineStyle: style?.lineStyle ?? 2,
+        visible: style?.visible ?? false,
         priceLineVisible: false,
-        lastValueVisible: false,
       });
 
-      if (vwapData.length) {
-        fillSeries.setData(vwapData);
-      }
+      series.setData(data);
+      grouped[name] = series;
+    };
 
-      groupedSeries.bandFill = fillSeries;
+    createBand("upper1", upper1, indicatorStyle?.VWAP?.upper);
+    createBand("lower1", lower1, indicatorStyle?.VWAP?.lower);
+    createBand("upper2", upper2, indicatorStyle?.VWAP?.upper);
+    createBand("lower2", lower2, indicatorStyle?.VWAP?.lower);
+    createBand("upper3", upper3, indicatorStyle?.VWAP?.upper);
+    createBand("lower3", lower3, indicatorStyle?.VWAP?.lower);
+
+    /* ---------------- BACKGROUND FILL ---------------- */
+
+    if (
+      indicatorStyle?.VWAP?.bg?.visible &&
+      upper1.length &&
+      lower1.length
+    ) {
+      const bgSeries = addSeries("VWAP", AreaSeries, {
+        topColor: indicatorStyle?.VWAP?.bg?.topFillColor1,
+        bottomColor: indicatorStyle?.VWAP?.bg?.topFillColor2,
+        lineColor: "rgba(0,0,0,0)",
+        lineWidth: 0,
+        priceLineVisible: false,
+      });
+
+      const bgData = upper1.map((p, i) => ({
+        time: p.time,
+        value: p.value,
+      }));
+
+      bgSeries.setData(bgData);
+      grouped.bg = bgSeries;
     }
 
-    groupedSeries.vwapData = vwapData;
-
-    indicatorSeriesRef.current.VWAP = groupedSeries;
+    indicatorSeriesRef.current.VWAP = grouped;
 
   }, [result]);
 
 
+
+  /* ---------------- STYLE UPDATE ---------------- */
+
   useEffect(() => {
 
-    const vwapGroup = indicatorSeriesRef.current?.VWAP;
-    if (!vwapGroup) return;
+    const group = indicatorSeriesRef.current?.VWAP;
+    if (!group) return;
 
-    Object.keys(vwapGroup).forEach((key) => {
+    Object.entries(group).forEach(([key, series]) => {
 
-      const series = vwapGroup[key];
-      const style = indicatorStyle?.VWAP?.[key];
+      if (!series) return;
 
-      if (!series || !style) return;
-      if (key === "vwapData") return;
+      let style;
 
-      series.applyOptions({
-        color: style?.color,
-        lineWidth: style?.width,
-        lineStyle: style?.lineStyle ?? 0,
-        visible: style?.visible,
-      });
+      if (key === "vwap") style = indicatorStyle?.VWAP?.vwap;
+      else if (key.startsWith("upper")) style = indicatorStyle?.VWAP?.upper;
+      else if (key.startsWith("lower")) style = indicatorStyle?.VWAP?.lower;
+
+      if (!style) return;
+
+      try {
+        series.applyOptions({
+          color: style.color,
+          lineWidth: style.width,
+          lineStyle: style.lineStyle,
+          visible: style.visible,
+        });
+      } catch {}
 
     });
 
   }, [indicatorStyle]);
+
 
   return null;
 }

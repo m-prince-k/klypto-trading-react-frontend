@@ -6,35 +6,80 @@ export default function VWAPInput(
 
   const rows = Array.isArray(response?.data) ? response.data : [];
 
-  /* ================= VWAP ================= */
+  const vwap = [];
+  const upper1 = [];
+  const lower1 = [];
+  const upper2 = [];
+  const lower2 = [];
+  const upper3 = [];
+  const lower3 = [];
 
-  const vwapData = rows
-    .filter((d) => d.vwap != null && d.time != null)
-    .map((d) => ({
-      time: Number(d.time),
-      value: Number(d.vwap),
-    }))
-    .sort((a, b) => a.time - b.time);
+  rows.forEach((d) => {
 
-  const series = indicatorSeriesRef.current?.VWAP;
+    if (d?.vwap != null && d?.time != null) {
+      vwap.push({
+        time: d.time,
+        value: Number(d.vwap),
+      });
+    }
 
-  if (!series) return;
+    if (d?.bands?.[0]) {
+      upper1.push({
+        time: d.time,
+        value: Number(d.bands[0].upper),
+      });
 
-  /* ================= UPDATE VWAP ================= */
+      lower1.push({
+        time: d.time,
+        value: Number(d.bands[0].lower),
+      });
+    }
 
-  series.vwap?.setData(vwapData);
+    if (d?.bands?.[1]) {
+      upper2.push({
+        time: d.time,
+        value: Number(d.bands[1].upper),
+      });
 
-  /* ================= HOVER VALUE ================= */
+      lower2.push({
+        time: d.time,
+        value: Number(d.bands[1].lower),
+      });
+    }
 
-  latestIndicatorValuesRef.current.VWAP = {
-    vwap: vwapData[vwapData.length - 1]?.value ?? null,
-  };
+    if (d?.bands?.[2]) {
+      upper3.push({
+        time: d.time,
+        value: Number(d.bands[2].upper),
+      });
 
-  /* ================= STORE RESULT ================= */
+      lower3.push({
+        time: d.time,
+        value: Number(d.bands[2].lower),
+      });
+    }
 
-  indicatorSeriesRef.current.VWAP.result = {
+  });
+
+  const result = {
     data: {
-      vwap: vwapData,
+      vwap,
+      upper1,
+      lower1,
+      upper2,
+      lower2,
+      upper3,
+      lower3,
     },
   };
+
+  latestIndicatorValuesRef.current.VWAP = {
+    vwap: vwap[vwap.length - 1]?.value ?? null,
+  };
+
+  indicatorSeriesRef.current.VWAP = {
+    result,
+  };
+
+  return result;
 }

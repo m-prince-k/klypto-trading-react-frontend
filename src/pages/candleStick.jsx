@@ -99,20 +99,20 @@ export default function Candlestick() {
     paneIndexRef.current[indicator] = nextPane;
     return nextPane;
   };
-// signal: {
-//         visible: true, // usually EMA of NVI (like 255 EMA)
-//         color: "rgba(33,150,243,1)", // blue
-//         width: 1,
-//         lineStyle: 2,
-//       },
-//       baseLine: {
-//         visible: false,
-//         value: 1000,
-//         color: "rgba(158,158,158,0.6)",
-//         width: 1,
-//         lineStyle: 1,
-//       },
-//     }
+  // signal: {
+  //         visible: true, // usually EMA of NVI (like 255 EMA)
+  //         color: "rgba(33,150,243,1)", // blue
+  //         width: 1,
+  //         lineStyle: 2,
+  //       },
+  //       baseLine: {
+  //         visible: false,
+  //         value: 1000,
+  //         color: "rgba(158,158,158,0.6)",
+  //         width: 1,
+  //         lineStyle: 1,
+  //       },
+  //     }
   const [indicatorConfigs, setIndicatorConfigs] = useState({
     SMA: {
       length: 9,
@@ -345,9 +345,7 @@ export default function Candlestick() {
       displayCumulativeVolume: false,
       reversalPriceChangeMode: "absolute",
     },
-  }
-);
-
+  });
 
   let indicatorStyleDefault = {
     RSI: {
@@ -492,11 +490,28 @@ export default function Candlestick() {
     OBV: {
       obv: {
         color: "rgba(156,39,176,1)",
-        width: 2, lineStyle: 0, visible: true
+        width: 2,
+        lineStyle: 0,
+        visible: true,
       },
-      smoothingMA: { color: "rgba(255,193,7,1)", width: 2, lineStyle: 0, visible: true },
-      bbUpper: { color: "rgba(0,200,83,1)", width: 1, lineStyle: 2, visible: true },
-      bbLower: { color: "rgba(255,82,82,1)", width: 1, lineStyle: 2, visible: true },
+      smoothingMA: {
+        color: "rgba(255,193,7,1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+      bbUpper: {
+        color: "rgba(0,200,83,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+      },
+      bbLower: {
+        color: "rgba(255,82,82,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+      },
     },
 
     ICHIMOKU: {
@@ -862,6 +877,48 @@ export default function Candlestick() {
         opacity: 100,
       },
     },
+    STOCH: {
+      k: {
+        visible: true,
+        color: "rgba(38,166,154,1)",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+      },
+      d: {
+        visible: true,
+        color: "rgba(255,152,0,1)",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+      },
+      upperBand: {
+        value: 80,
+        visible: true,
+        color: "rgba(120,123,134,0.6)",
+        width: 1,
+        lineStyle: 2,
+      },
+      middleBand: {
+        value: 50,
+        visible: true,
+        color: "rgba(120,123,134,0.5)",
+        width: 1,
+        lineStyle: 2,
+      },
+      lowerBand: {
+        value: 20,
+        visible: true,
+        color: "rgba(120,123,134,0.6)",
+        width: 1,
+        lineStyle: 2,
+      },
+      bgFill: {
+        visible: true,
+        topFillColor1: "rgba(41,98,255,0.12)",
+        topFillColor2: "rgba(41,98,255,0.05)",
+      },
+    },
     MFI: {
       mfiLine: {
         color: "rgba(41, 98, 255, 1)",
@@ -1089,26 +1146,45 @@ export default function Candlestick() {
         width: 1,
         lineStyle: 0,
         visible: true,
-      }
+      },
     },
     MACD: {
       macd: {
         visible: true,
-        color: "rgba(33,150,243,1)", // blue
+        color: "rgba(33,150,243,1)",
         width: 2,
         lineStyle: 0,
       },
+
       signal: {
         visible: true,
-        color: "rgba(255,193,7,1)", // yellow
+        color: "rgba(255,193,7,1)",
         width: 2,
         lineStyle: 0,
       },
+
       histogram: {
         visible: true,
-        upColor: "rgba(38,166,154,1)",   // green
-        downColor: "rgba(239,83,80,1)",  // red
+
+        palette: {
+          0: "rgba(38,166,154,1)", // strong up
+          1: "rgba(129,199,132,1)", // weak up
+          2: "rgba(239,83,80,1)", // strong down
+          3: "rgba(255,138,128,1)", // weak down
+        },
+
+        upColor: "rgba(38,166,154,1)",
+        downColor: "rgba(239,83,80,1)",
+
         base: 0,
+      },
+
+      zeroLine: {
+        visible: true,
+        color: "rgba(150,150,150,0.5)",
+        width: 1,
+        value: 0,
+        lineStyle: 2,
       },
     },
     VWAP: {
@@ -1199,11 +1275,7 @@ export default function Candlestick() {
         width: 1,
         lineStyle: 1,
       },
-      bg: {
-        visible: true,
-        topFillColor1: "rgba(38,166,154,0.15)", // above 0
-        topFillColor2: "rgba(239,83,80,0.15)", // below 0
-      },
+
     },
     NVI: {
       nvi: {
@@ -1227,7 +1299,6 @@ export default function Candlestick() {
         lineStyle: 0,
         opacity: 100,
       },
-
       dLine: {
         visible: true,
         color: "#FF6D00",
@@ -1296,6 +1367,23 @@ export default function Candlestick() {
         value: 0,
       },
     },
+    KVO: {
+  ko: {
+    visible: true,
+    color: "rgba(41,98,255,1)",
+    width: 1,
+    lineStyle: 0,
+    opacity: 100,
+  },
+
+  signal: {
+    visible: true,
+    color: "rgba(255,109,0,1)",
+    width: 1,
+    lineStyle: 0,
+    opacity: 100,
+  },
+},
     FT: {
       fisherLine: {
         color: "rgba(38,166,154,1)",
@@ -1347,10 +1435,7 @@ export default function Candlestick() {
         value: -1.5,
       },
     },
-    
-
   };
-
 
   const [indicatorStyle, setIndicatorStyle] = useState(indicatorStyleDefault);
 
@@ -1436,13 +1521,15 @@ export default function Candlestick() {
         return "NVI";
       case "STOCHRSI":
         return "STOCHRSI";
+      case "STOCH":
+        return "STOCH";
       case "CMO":
         return "CMO";
       case "TRIX":
         return "TRIX";
       case "EOM":
         return "EOM";
-        case "HV":
+      case "HV":
         return "HV";
       case "PVO":
         return "PVO";
@@ -1503,13 +1590,13 @@ export default function Candlestick() {
 
         try {
           chart.removeSeries(series);
-        } catch { }
+        } catch {}
       });
     } else {
       /* SINGLE SERIES */
       try {
         chart.removeSeries(entry);
-      } catch { }
+      } catch {}
     }
 
     delete indicatorSeriesRef.current[indicator];
@@ -1612,7 +1699,7 @@ export default function Candlestick() {
 
           try {
             chart.removeSeries(series);
-          } catch (e) { }
+          } catch (e) {}
         });
 
         delete indicatorSeriesRef.current[indicator];
@@ -1661,7 +1748,7 @@ export default function Candlestick() {
           break;
 
         case "EOM":
-          keysToShow = ["eom"]; // important for crosshair
+          keysToShow = ["eom"];
           break;
 
         case "ROC":
@@ -1724,17 +1811,18 @@ export default function Candlestick() {
       return (
         <Component
           key={normalizedType}
-          result={data?.result} // pass undefined if not yet fetched
+          result={data?.result}
           rows={data?.rows}
           indicatorStyle={indicatorStyle}
           indicatorSeriesRef={indicatorSeriesRef}
           addSeries={addSeries}
           chart={chartRef.current}
-          containerRef={containerRef}
+          containerRef={containerRef.current}
           panesRef={panesRef}
           indicatorConfigs={indicatorConfigs}
           pane={indicatorSeriesRef.current}
           timeframeValue={timeframeValue} // pass timeframe so useEffect can trigger update
+          selectedCurrency={selectedCurrency}
         />
       );
     });
@@ -1774,7 +1862,7 @@ export default function Candlestick() {
   // ATTACH CROSSHAIR
 
   const attachCrosshair = useCallback((chart) => {
-    if (!chart) return () => { };
+    if (!chart) return () => {};
     const handler = (param) => {
       const charts = [
         chartRef.current,
@@ -1842,7 +1930,7 @@ export default function Candlestick() {
         if (seriesRef.current) {
           try {
             chartRef.current.removeSeries(seriesRef.current);
-          } catch (e) { }
+          } catch (e) {}
           seriesRef.current = null;
         }
 

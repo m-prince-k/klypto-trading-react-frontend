@@ -14,10 +14,10 @@ export default function CMOInput(
   if (!cmoSeries) return;
 
   const cmoData = rows
-    .filter((d) => d.value != null && d.time != null)
+    .filter((d) => d.cmo != null && d.time != null)
     .map((d) => ({
       time: Number(d.time),
-      value: Number(d.value),
+      value: Number(d.cmo),
     }));
 
   const zeroValue =

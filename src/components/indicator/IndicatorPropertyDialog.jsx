@@ -627,7 +627,7 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "Stochastic":
+      case "STOCH":
         return (
           <>
             <div className="mb-3">

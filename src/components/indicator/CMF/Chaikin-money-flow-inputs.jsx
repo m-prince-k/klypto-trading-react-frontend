@@ -12,7 +12,7 @@ export default function ChaikinMoneyFlowInput(
     .filter((d) => d.cmf != null && d.time != null)
     .map((d) => ({
       time: Number(d.time),
-      value: Number(d.value),
+      value: Number(d.cmf),
     }))
     .sort((a, b) => a.time - b.time);
 

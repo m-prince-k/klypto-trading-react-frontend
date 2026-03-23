@@ -36,15 +36,15 @@ export default function ZIGZAGPlot({
 
     zigzagSeries.setData(zigzagData);
 
-    // const markers = pivotData.map((p) => ({
-    //   time: p.time,
-    //   position: p.type === "high" ? "aboveBar" : "belowBar",
-    //   color: indicatorStyle?.ZIGZAG?.paneLabels?.backgroundColor ?? "#2962ff",
-    //   shape: "circle",
-    //   text: p.type === "high" ? "H" : "L",
-    // }));
+    const markers = pivotData.map((p) => ({
+      time: p.time,
+      position: p.type === "high" ? "aboveBar" : "belowBar",
+      color: indicatorStyle?.ZIGZAG?.paneLabels?.backgroundColor ?? "#2962ff",
+      shape: "circle",
+      text: p.type === "high" ? "H" : "L",
+    }));
 
-    // zigzagSeries.setMarkers(markers);
+    zigzagSeries.setMarkers(markers);
 
     indicatorSeriesRef.current.ZIGZAG = {
       zigzagLine: zigzagSeries,
