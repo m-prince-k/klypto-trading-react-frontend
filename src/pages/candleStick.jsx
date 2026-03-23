@@ -99,20 +99,20 @@ export default function Candlestick() {
     paneIndexRef.current[indicator] = nextPane;
     return nextPane;
   };
-// signal: {
-//         visible: true, // usually EMA of NVI (like 255 EMA)
-//         color: "rgba(33,150,243,1)", // blue
-//         width: 1,
-//         lineStyle: 2,
-//       },
-//       baseLine: {
-//         visible: false,
-//         value: 1000,
-//         color: "rgba(158,158,158,0.6)",
-//         width: 1,
-//         lineStyle: 1,
-//       },
-//     }
+  // signal: {
+  //         visible: true, // usually EMA of NVI (like 255 EMA)
+  //         color: "rgba(33,150,243,1)", // blue
+  //         width: 1,
+  //         lineStyle: 2,
+  //       },
+  //       baseLine: {
+  //         visible: false,
+  //         value: 1000,
+  //         color: "rgba(158,158,158,0.6)",
+  //         width: 1,
+  //         lineStyle: 1,
+  //       },
+  //     }
   const [indicatorConfigs, setIndicatorConfigs] = useState({
     SMA: {
       length: 9,
@@ -346,7 +346,7 @@ export default function Candlestick() {
       reversalPriceChangeMode: "absolute",
     },
   }
-);
+  );
 
 
   let indicatorStyleDefault = {
@@ -940,18 +940,43 @@ export default function Candlestick() {
     },
 
     PVO: {
-      pvo: {
-        color: "rgba(33, 150, 243, 1)",
-        lineStyle: 0,
-        visible: true,
-      },
-      signal: {
-        color: "rgba(255, 193, 7, 1)",
-        lineStyle: 0,
-        visible: true,
-      },
-    },
+  histogram: {
+    visible: true,
 
+    // 4 color logic (up/down + rising/falling)
+    color0: "rgba(0, 150, 136, 1)",   // dark green
+    color1: "rgba(178, 223, 219, 1)", // light green
+    color2: "rgba(255, 205, 210, 1)", // light red
+    color3: "rgba(244, 67, 54, 1)",   // dark red
+  },
+
+  pvo: {
+    visible: true,
+    color: "rgba(33, 150, 243, 1)", // blue
+    lineStyle: 0,
+    lineWidth: 2,
+  },
+
+  signal: {
+    visible: true,
+    color: "rgba(255, 152, 0, 1)", // orange
+    lineStyle: 0,
+    lineWidth: 2,
+  },
+
+  zero: {
+    visible: true,
+    value: 0,
+    color: "rgba(120, 120, 120, 0.6)",
+    lineStyle: 2, // dashed
+    lineWidth: 1,
+  },
+
+  // optional (UI related)
+  precision: "default",
+  showLabelsOnPriceScale: true,
+  showValuesInLegend: true,
+},
     AD: {
       ad: {
         color: "rgba(156,39,176,1)",
@@ -1347,7 +1372,7 @@ export default function Candlestick() {
         value: -1.5,
       },
     },
-    
+
 
   };
 
@@ -1442,7 +1467,7 @@ export default function Candlestick() {
         return "TRIX";
       case "EOM":
         return "EOM";
-        case "HV":
+      case "HV":
         return "HV";
       case "PVO":
         return "PVO";
