@@ -1574,6 +1574,7 @@ export const PANE_INDICATORS = new Set([
   "EOM",
   "CHOP",
   "Volume",
+  "VWAP",
   "HV",
   "ChaikinMoneyFlow",
 ]);

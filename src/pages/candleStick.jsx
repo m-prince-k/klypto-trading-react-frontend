@@ -1060,36 +1060,14 @@ export default function Candlestick() {
         topFillColor2: "rgba(239,83,80,0.1)",
       },
     },
-    HV: {
-      hv: {
-        visible: true,
-        color: "rgba(255,152,0,1)", // orange
-        width: 2,
-        lineStyle: 0,
-      },
-      signal: {
-        visible: false, // optional smoothing (SMA/EMA of HV)
-        color: "rgba(33,150,243,1)",
-        width: 1,
-        lineStyle: 2,
-      },
-      levels: {
-        high: {
-          visible: false,
-          value: 40,
-          color: "rgba(239,83,80,0.8)",
-          width: 1,
-          lineStyle: 1,
-        },
-        low: {
-          visible: false,
-          value: 10,
-          color: "rgba(38,166,154,0.8)",
-          width: 1,
-          lineStyle: 1,
-        },
-      },
-    },
+   HV: {
+  hv: {
+    visible: true,
+    color: "#ff9800",
+    width: 2,
+    lineStyle: 0,
+  },
+},
     CMF: {
       cmf: {
         visible: true,
@@ -1213,6 +1191,8 @@ export default function Candlestick() {
         return "EOM";
         case "HV":
         return "HV";
+        //  case "VWAP":
+        // return "VWAP";
     }
   }
 

@@ -1,16 +1,13 @@
-export default function HistoricalVolatilityInput(
+export default function HVInput(
   response,
   indicatorSeriesRef,
   latestIndicatorValuesRef
 ) {
-
-  if (!indicatorSeriesRef?.current || !latestIndicatorValuesRef?.current) {
-    return;
-  }
+  if (!indicatorSeriesRef?.current || !latestIndicatorValuesRef?.current) return;
 
   const rows = Array.isArray(response?.data) ? response.data : [];
 
-  const hvData = rows
+  const hv = rows
     .filter(
       (d) =>
         (d.hv != null || d.historicalVolatility != null) &&
@@ -22,19 +19,16 @@ export default function HistoricalVolatilityInput(
     }))
     .sort((a, b) => a.time - b.time);
 
-  const series = indicatorSeriesRef.current?.HV;
+  const hvSeries = indicatorSeriesRef.current?.HV;
+  if (!hvSeries) return;
 
-  if (!series) return;
-
-  series.hv?.setData(hvData);
+  hvSeries.hv?.setData(hv);
 
   latestIndicatorValuesRef.current.HV = {
-    hv: hvData[hvData.length - 1]?.value ?? null,
+    hv: hv[hv.length - 1]?.value ?? null,
   };
 
   indicatorSeriesRef.current.HV.result = {
-    data: {
-      hv: hvData,
-    },
+    data: { hv },
   };
 }

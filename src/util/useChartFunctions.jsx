@@ -686,6 +686,24 @@ async function fetchDataForIndicators(
               }))) ?? [],
         };
 
+      case "VWAP":
+        return {
+          type: "multi", // VWAP + upper + lower
+          data: {
+            vwap: response.data
+              ?.filter(d => d.vwap != null && d.time != null)
+              .map(d => ({ time: Number(d.time), value: Number(d.vwap) })) ?? [],
+
+            upperBand: response.data
+              ?.filter(d => d.bands?.[0]?.upper != null && d.time != null)
+              .map(d => ({ time: Number(d.time), value: Number(d.bands[0].upper) })) ?? [],
+
+            lowerBand: response.data
+              ?.filter(d => d.bands?.[0]?.lower != null && d.time != null)
+              .map(d => ({ time: Number(d.time), value: Number(d.bands[0].lower) })) ?? [],
+          },
+        };
+
       case "NVI":
         return {
           type: "single", // ✅ bilkul sahi
@@ -700,11 +718,11 @@ async function fetchDataForIndicators(
 
       case "CMF":
         console.log(await response?.data
-              ?.filter((d) => d?.time && d?.cmf !== undefined && d?.cmf !== null)
-              .map((d) => ({
-                time: d.time,
-                value: Number(d.cmf),
-              })),"------------------***********************$$##@!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+          ?.filter((d) => d?.time && d?.cmf !== undefined && d?.cmf !== null)
+          .map((d) => ({
+            time: d.time,
+            value: Number(d.cmf),
+          })), "------------------***********************$$##@!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         return {
           type: "single",
           data:
@@ -719,13 +737,19 @@ async function fetchDataForIndicators(
       case "HV":
         return {
           type: "single",
-          data:
-            (await response.data
-              ?.filter((d) => d?.time && d?.hv !== undefined && d?.hv !== null)
-              .map((d) => ({
-                time: d.time,
-                value: Number(d.hv),
-              }))) ?? [],
+          data: {
+            hv:
+              response.data
+                ?.filter(
+                  (d) =>
+                    (d.hv != null || d.historicalVolatility != null) &&
+                    d.time != null
+                )
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.hv ?? d.historicalVolatility),
+                })) ?? [],
+          },
         };
 
       case "CKS":

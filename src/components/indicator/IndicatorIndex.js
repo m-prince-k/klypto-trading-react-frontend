@@ -59,8 +59,8 @@ import BollingerBandWidthPlot from "./bollinder-band-width/bollinger-band-width-
 import ChandeKrollStopPlot from "./CKS/chande-kroll-stop-plot";
 import ChandeKrollStopInput from "./CKS/chande-kroll-stop-inputs"
 
-import HistoricalVolatilityPlot from "./historical-volatity/historical-volatility-inputs"
-import HistoricalVolatilityInput from "./historical-volatity/historical-volatility-inputs";
+// import HistoricalVolatilityPlot from "./HV/HVInput"
+// import HistoricalVolatilityInput from "./HV/HVInput";
  
 import ChaikinMoneyFlowInput from "./CMF/Chaikin-money-flow-inputs";
 import ChaikinMoneyFlowPlot from "./CMF/chaikin-money-flow-plot";
@@ -72,14 +72,14 @@ import MACDPlot from "./MACD/MACDPlot";
 import MACDInput from "./MACD/macd-inputs";
 
 
-import VWAPPlot from "./vwap/vwap-plot";
-import VWAPInput from "./vwap/vwap-inputs";
+import VWAPPlot from "./VWAP/VWAPPlot";
+import VWAPInput from "./VWAP/VWAPInput";
+import HVInput from "./HV/HVInput";
 
 export const indicatorComponents = {
-  VWAP:VWAPPlot,
   MACD:MACDPlot,
   CKS:ChandeKrollStopPlot,
-  HV:HistoricalVolatilityPlot,
+  HV:HMAPlot,
   CMF:ChaikinMoneyFlowPlot,
   NVI:NVIPlot,
   BBW:BollingerBandWidthPlot,
@@ -109,14 +109,14 @@ export const indicatorComponents = {
   KC: KCPlot,
   EOM: EOMPlot,
   BB: BBPlot,
+  VWAP: VWAPPlot,
 
 };
 
 export const indicatorInputs = {
-  VWAP:VWAPInput,
   MACD:MACDInput,
   CKS:ChandeKrollStopInput,
-  HV:HistoricalVolatilityInput,
+  HV:HVInput,
   CMF:ChaikinMoneyFlowInput,
   NVI:NVIInput,
   BBW:BollingerBandWidthInputs,
@@ -147,8 +147,8 @@ export const indicatorInputs = {
   DC: DCInput,
   KC: KCInput,
   EOM: EOMInput,
-  BB: BBInput
-  
+  BB: BBInput,
+  VWAP:VWAPInput,
 
 };
 
