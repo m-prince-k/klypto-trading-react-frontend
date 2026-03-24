@@ -9,134 +9,74 @@ export default function KCPlot({
   chart,
   containerRef,
 }) {
-
+  const seriesRef = useRef({});
   const canvasRef = useRef(null);
-  const ctxRef = useRef(null);
+  const bandDataRef = useRef({ upper: [], lower: [] });
 
-  /* ================= CREATE SERIES ================= */
+  const clean = (d) =>
+    Array.isArray(d) ? d.filter((x) => x?.time && x?.value != null) : [];
 
+  /* ---------------- CREATE SERIES ---------------- */
   useEffect(() => {
+    if (!chart || seriesRef.current.upper) return;
 
-    const upper = result?.data?.upper;
-    const middle = result?.data?.middle;
-    const lower = result?.data?.lower;
-
-    if (!Array.isArray(upper) || upper.length === 0) {
-      console.log("❌ KC invalid data", result);
-      return;
-    }
-
-    // 🔥 REMOVE OLD
-    if (indicatorSeriesRef.current?.KC) {
-      Object.values(indicatorSeriesRef.current.KC).forEach((s) => {
-        try { s.setData([]); } catch {}
-      });
-      indicatorSeriesRef.current.KC = null;
-    }
-
-    const map = (arr) =>
-      (arr || []).map((p) => ({
-        time: Number(p.time),
-        value: Number(p.value),
-      }));
-
-    const upperData = map(upper);
-    const middleData = map(middle);
-    const lowerData = map(lower);
-
-    /* 🔴 UPPER */
-    const upperSeries = addSeries("KC", LineSeries, {
-      color: indicatorStyle?.KC?.upper?.color ?? "#EF5350",
-      lineWidth: indicatorStyle?.KC?.upper?.width ?? 2,
-      lineStyle: indicatorStyle?.KC?.upper?.lineStyle ?? 0,
-      visible: indicatorStyle?.KC?.upper?.visible ?? true,
-      priceLineVisible: false,
+    const s = {};
+    Object.entries(indicatorStyle?.KC || {}).forEach(([key]) => {
+      if (key === "bbFill") return; // skip fill
+      s[key] = addSeries("KC", LineSeries, indicatorStyle.KC[key]);
     });
 
-    /* 🟡 MIDDLE (BASIS) */
-    const middleSeries = addSeries("KC", LineSeries, {
-      color: indicatorStyle?.KC?.middle?.color ?? "#FFD54F",
-      lineWidth: indicatorStyle?.KC?.middle?.width ?? 2,
-      lineStyle: indicatorStyle?.KC?.middle?.lineStyle ?? 0,
-      visible: indicatorStyle?.KC?.middle?.visible ?? true,
-      priceLineVisible: false,
-    });
+    seriesRef.current = s;
+    indicatorSeriesRef.current.KC = s;
+  }, [chart]);
 
-    /* 🔵 LOWER */
-    const lowerSeries = addSeries("KC", LineSeries, {
-      color: indicatorStyle?.KC?.lower?.color ?? "#26A69A",
-      lineWidth: indicatorStyle?.KC?.lower?.width ?? 2,
-      lineStyle: indicatorStyle?.KC?.lower?.lineStyle ?? 0,
-      visible: indicatorStyle?.KC?.lower?.visible ?? true,
-      priceLineVisible: false,
-    });
+  /* ---------------- UPDATE DATA ---------------- */
+  useEffect(() => {
+    if (!result?.data) return;
 
-    upperSeries.setData(upperData);
-    middleSeries.setData(middleData);
-    lowerSeries.setData(lowerData);
+    const upper = clean(result.data.upper);
+    const middle = clean(result.data.middle);
+    const lower = clean(result.data.lower);
 
-    indicatorSeriesRef.current.KC = {
-      upper: upperSeries,
-      middle: middleSeries,
-      lower: lowerSeries,
-      _data: { upper: upperData, lower: lowerData },
-    };
+    bandDataRef.current = { upper, lower };
 
-    console.log("✅ KC plotted");
+    seriesRef.current.upper?.setData(upper);
+    seriesRef.current.middle?.setData(middle);
+    seriesRef.current.lower?.setData(lower);
 
+    drawCloud();
   }, [result]);
 
-
-
-  /* ================= STYLE UPDATE ================= */
-
+  /* ---------------- STYLE UPDATE ---------------- */
   useEffect(() => {
-
-    const g = indicatorSeriesRef.current?.KC;
-    if (!g) return;
-
-    g.upper?.applyOptions({
-      color: indicatorStyle?.KC?.upper?.color,
-      lineWidth: indicatorStyle?.KC?.upper?.width,
-      lineStyle: indicatorStyle?.KC?.upper?.lineStyle,
-      visible: indicatorStyle?.KC?.upper?.visible,
+    const group = seriesRef.current;
+    Object.entries(group).forEach(([key, s]) => {
+      const style = indicatorStyle?.KC?.[key];
+      if (!style) return;
+      s.applyOptions({
+        color: style.color,
+        lineWidth: style.width,
+        lineStyle: style.lineStyle,
+        visible: style.visible,
+      });
     });
 
-    g.middle?.applyOptions({
-      color: indicatorStyle?.KC?.middle?.color,
-      lineWidth: indicatorStyle?.KC?.middle?.width,
-      lineStyle: indicatorStyle?.KC?.middle?.lineStyle,
-      visible: indicatorStyle?.KC?.middle?.visible,
-    });
+    drawCloud();
+  }, [indicatorStyle]);
 
-    g.lower?.applyOptions({
-      color: indicatorStyle?.KC?.lower?.color,
-      lineWidth: indicatorStyle?.KC?.lower?.width,
-      lineStyle: indicatorStyle?.KC?.lower?.lineStyle,
-      visible: indicatorStyle?.KC?.lower?.visible,
-    });
-
-  }, [indicatorStyle?.KC]);
-
-
-
-  /* ================= CANVAS INIT ================= */
-
+  /* ---------------- CANVAS INIT ---------------- */
   useEffect(() => {
-
-    if (!containerRef?.current || !chart) return;
+    if (!containerRef?.current || !chart || canvasRef.current) return;
 
     const canvas = document.createElement("canvas");
     canvas.style.position = "absolute";
     canvas.style.left = "0";
     canvas.style.top = "0";
     canvas.style.pointerEvents = "none";
-    canvas.style.zIndex = "1";
+    canvas.style.zIndex = 1;
 
     containerRef.current.appendChild(canvas);
-
     canvasRef.current = canvas;
-    ctxRef.current = canvas.getContext("2d");
 
     const resize = () => {
       const rect = containerRef.current.getBoundingClientRect();
@@ -151,87 +91,84 @@ export default function KCPlot({
       window.removeEventListener("resize", resize);
       canvas.remove();
     };
-
   }, [chart]);
 
+  /* ---------------- DRAW BAND ---------------- */
+  const drawBand = (ctx, upper, lower, upperSeries, lowerSeries, color) => {
+    if (!upper.length || !lower.length) return;
+    const len = Math.min(upper.length, lower.length);
 
+    ctx.beginPath();
+    ctx.fillStyle = color;
 
-  /* ================= DRAW CLOUD ================= */
+    // upper line
+    for (let i = 0; i < len; i++) {
+      const p = upper[i];
+      const x = chart.timeScale().timeToCoordinate(p.time);
+      const y = upperSeries.priceToCoordinate(p.value);
+      if (x == null || y == null) continue;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
 
-  useEffect(() => {
+    // lower line (reverse)
+    for (let i = len - 1; i >= 0; i--) {
+      const p = lower[i];
+      const x = chart.timeScale().timeToCoordinate(p.time);
+      const y = lowerSeries.priceToCoordinate(p.value);
+      if (x == null || y == null) continue;
+      ctx.lineTo(x, y);
+    }
 
-    const ctx = ctxRef.current;
+    ctx.closePath();
+    ctx.fill();
+  };
+
+  /* ---------------- DRAW CLOUD ---------------- */
+  const drawCloud = () => {
+    if (!canvasRef.current || !chart || !containerRef) return;
+
     const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    const rect = containerRef.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
 
-    if (!ctx || !canvas || !chart) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const draw = () => {
+    const fill = indicatorStyle?.KC?.bbFill;
+    if (!fill?.visible) return;
 
-      const kc = indicatorSeriesRef.current?.KC;
-      if (!kc?._data) return;
+    const kc = seriesRef.current;
+    const { upper, lower } = bandDataRef.current;
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!upper.length || !lower.length) return;
 
-      if (!indicatorStyle?.KC?.bg?.visible) return;
+    drawBand(
+      ctx,
+      upper,
+      lower,
+      kc.upper,
+      kc.lower,
+      fill.topFillColor1 || "rgba(76,175,80,0.2)"
+    );
+  };
 
-      const upper = kc._data.upper;
-      const lower = kc._data.lower;
+  /* ---------------- REDRAW EVENTS ---------------- */
+  useEffect(() => {
+    if (!chart) return;
 
-      if (!upper.length || !lower.length) return;
+    const redraw = () => drawCloud();
+    chart.timeScale().subscribeVisibleTimeRangeChange(redraw);
+    chart.subscribeCrosshairMove(redraw);
 
-      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-
-      gradient.addColorStop(
-        0,
-        indicatorStyle?.KC?.bg?.topFillColor1 ?? "rgba(38,166,154,0.2)"
-      );
-
-      gradient.addColorStop(
-        1,
-        indicatorStyle?.KC?.bg?.topFillColor2 ?? "rgba(239,83,80,0.2)"
-      );
-
-      ctx.fillStyle = gradient;
-      ctx.beginPath();
-
-      /* 🔴 UPPER */
-      upper.forEach((p, i) => {
-        const x = chart.timeScale().timeToCoordinate(p.time);
-        const y = kc.upper.priceToCoordinate(p.value);
-
-        if (x == null || y == null) return;
-
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      });
-
-      /* 🔵 LOWER */
-      [...lower].reverse().forEach((p) => {
-        const x = chart.timeScale().timeToCoordinate(p.time);
-        const y = kc.lower.priceToCoordinate(p.value);
-
-        if (x == null || y == null) return;
-
-        ctx.lineTo(x, y);
-      });
-
-      ctx.closePath();
-      ctx.fill();
-    };
-
-    draw();
-
-    chart.timeScale().subscribeVisibleTimeRangeChange(draw);
-    chart.subscribeCrosshairMove(draw);
+    drawCloud();
 
     return () => {
-      chart.timeScale().unsubscribeVisibleTimeRangeChange(draw);
-      chart.unsubscribeCrosshairMove(draw);
+      chart.timeScale().unsubscribeVisibleTimeRangeChange(redraw);
+      chart.unsubscribeCrosshairMove(redraw);
     };
-
-  }, [indicatorStyle?.KC?.bg, result]);
-
-
+  }, [chart, indicatorStyle, result]);
 
   return null;
 }

@@ -6,102 +6,92 @@ export default function VOLPlot({
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
-  indicatorConfigs,
 }) {
-
   /* ================= CREATE ================= */
 
   useEffect(() => {
+    const volume = result?.data?.volume;
+    const volumeMA = result?.data?.volumeMA;
 
-    const volumeData = result?.data?.volume;
-    const maData = result?.data?.volumeMA;
-
-    if (!Array.isArray(volumeData) || !volumeData.length) {
-      console.log("❌ VOL no data");
+    if (!Array.isArray(volume) || volume.length === 0) {
+      console.log(":x: VOL data missing", result);
       return;
-    }
+    } // :fire: REMOVE OLD
 
-    // 🔥 REMOVE OLD
     if (indicatorSeriesRef.current?.VOL) {
       Object.values(indicatorSeriesRef.current.VOL).forEach((s) => {
-        try { s.setData([]); } catch {}
+        try {
+          s.setData([]);
+        } catch {}
       });
       indicatorSeriesRef.current.VOL = null;
-    }
+    } /* :fire: HISTOGRAM SERIES */
 
-    /* 🔥 HISTOGRAM */
-    const volSeries = addSeries("VOL", HistogramSeries, {
+    const volumeSeries = addSeries("VOL", HistogramSeries, {
       priceLineVisible: false,
-      lastValueVisible: true,
-      color: indicatorStyle?.VOL?.volume?.color,
-      visible: indicatorStyle?.VOL?.volume?.visible,
-    });
+    }); /* :fire: APPLY COLOR LOGIC (TradingView Style) */
 
-    /* 🔥 COLOR LOGIC */
-    const formattedVolume = volumeData.map((d, i, arr) => {
+    const coloredData = volume.map((d, i) => {
+      const prev = volume[i - 1];
 
-      let color = indicatorStyle?.VOL?.volume?.color;
-
-      if (indicatorConfigs?.VOL?.colorByPrevious && i > 0) {
-        color =
-          d.value >= arr[i - 1].value
-            ? "rgba(0,200,83,1)"
-            : "rgba(244,67,54,1)";
-      } else if (d.rising) {
-        color = "rgba(0,200,83,1)";
-      } else if (d.falling) {
-        color = "rgba(244,67,54,1)";
-      }
+      const isGrowing = prev ? d.value >= prev.value : true;
 
       return {
         time: d.time,
         value: d.value,
-        color,
+        color: isGrowing
+          ? indicatorStyle?.VOL?.volumeBars?.upColor || "rgba(38,166,154,0.6)"
+          : indicatorStyle?.VOL?.volumeBars?.downColor || "rgba(239,83,80,0.6)",
       };
     });
 
-    volSeries.setData(formattedVolume);
+    volumeSeries.setData(coloredData); /* :fire: MA LINE */
 
-    /* 🔥 MA LINE */
-    let maSeries = null;
+    const maSeries = addSeries("VOL", LineSeries, {
+      color: indicatorStyle?.VOL?.volumeMA?.color ?? "rgba(255,193,7,1)",
+      lineWidth: indicatorStyle?.VOL?.volumeMA?.width ?? 2,
+      lineStyle: indicatorStyle?.VOL?.volumeMA?.lineStyle ?? 0,
+      visible: indicatorStyle?.VOL?.volumeMA?.visible ?? true,
+      priceLineVisible: false,
+    });
 
-    if (Array.isArray(maData) && maData.length) {
-      maSeries = addSeries("VOL", LineSeries, {
-        color: indicatorStyle?.VOL?.volumeMA?.color,
-        lineWidth: indicatorStyle?.VOL?.volumeMA?.width ?? 2,
-        visible: indicatorStyle?.VOL?.volumeMA?.visible,
-        priceLineVisible: false,
-      });
-
-      maSeries.setData(maData);
-    }
+    maSeries.setData(volumeMA ?? []);
 
     indicatorSeriesRef.current.VOL = {
-      volume: volSeries,
+      volume: volumeSeries,
       volumeMA: maSeries,
+      rawData: volume,
     };
-
-  }, [result]);
-
-
-  /* ================= STYLE UPDATE ================= */
+  }, [result]); /* ================= STYLE UPDATE ================= */
 
   useEffect(() => {
+    const g = indicatorSeriesRef.current?.VOL;
+    if (!g) return;
 
-    const group = indicatorSeriesRef.current?.VOL;
-    if (!group) return;
+    const volume = g.rawData;
+    if (!volume) return; /* :fire: RE-COLOR ON STYLE CHANGE */
 
-    group.volume?.applyOptions({
-      color: indicatorStyle?.VOL?.volume?.color,
-      visible: indicatorStyle?.VOL?.volume?.visible,
+    const recolored = volume.map((d, i) => {
+      const prev = volume[i - 1];
+      const isGrowing = prev ? d.value >= prev.value : true;
+
+      return {
+        time: d.time,
+        value: d.value,
+        color: isGrowing
+          ? indicatorStyle?.VOL?.volumeBars?.upColor
+          : indicatorStyle?.VOL?.volumeBars?.downColor,
+      };
     });
 
-    group.volumeMA?.applyOptions({
+    g.volume?.setData(recolored); /* :fire: MA STYLE UPDATE */
+
+    g.volumeMA?.applyOptions({
       color: indicatorStyle?.VOL?.volumeMA?.color,
       lineWidth: indicatorStyle?.VOL?.volumeMA?.width,
+      lineStyle: indicatorStyle?.VOL?.volumeMA?.lineStyle,
       visible: indicatorStyle?.VOL?.volumeMA?.visible,
     });
-
   }, [indicatorStyle?.VOL]);
 
   return null;

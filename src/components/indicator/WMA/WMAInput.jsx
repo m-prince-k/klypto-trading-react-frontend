@@ -9,10 +9,10 @@ export default function WMAInput(
   /* ================= WMA ================= */
 
   const wmaData = rows
-    .filter((d) => d.value != null && d.time != null)
+    .filter((d) => d.wma != null && d.time != null)
     .map((d) => ({
       time: Number(d.time),
-      value: Number(d.value),
+      value: Number(d.wma),
     }))
     .sort((a, b) => a.time - b.time);
 

@@ -1,38 +1,36 @@
 export default function TRIXInput(
   response,
   indicatorSeriesRef,
-  latestIndicatorValuesRef
+  latestIndicatorValuesRef,
 ) {
+  const rows = response?.data ?? [];
 
-  const rows = Array.isArray(response?.data)
-    ? response.data
-    : [];
-
-  const trixSeries = indicatorSeriesRef.current?.TRIX?.trixLine;
-  const zeroSeries = indicatorSeriesRef.current?.TRIX?.zeroLine;
-
-  if (!trixSeries) return;
+  const group = indicatorSeriesRef.current?.TRIX;
+  if (!group) return;
 
   const trixData = rows
-    .filter((d) => d.value != null && d.time != null)
+    .filter((d) => d.trix != null && d.time != null)
     .map((d) => ({
       time: Number(d.time),
-      value: Number(d.value),
+      value: Number(d.trix),
     }));
 
-  const zeroValue =
-    indicatorSeriesRef.current?.TRIX?.zeroValue ?? 0;
+  if (!trixData.length) return; /* :fire: FORCE UPDATE SERIES */
+
+  group.trixLine?.setData(trixData); /* :fire: UPDATE ZERO LINE ALSO */
+
+  const zeroValue = group?.zeroValue ?? 0;
 
   const zeroData = trixData.map((p) => ({
     time: p.time,
     value: zeroValue,
   }));
 
-  trixSeries.setData(trixData);
-
-  if (zeroSeries) zeroSeries.setData(zeroData);
+  group.zeroLine?.setData(zeroData); /* :fire: UPDATE LATEST VALUE */
 
   latestIndicatorValuesRef.current.TRIX = {
-    trixLine: trixData[trixData.length - 1]?.value ?? null,
+    trix: trixData[trixData.length - 1]?.value ?? null,
   };
+
+  console.log(":white_check_mark: TRIX updated after input change");
 }

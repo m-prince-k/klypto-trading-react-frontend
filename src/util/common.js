@@ -938,12 +938,11 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
     case "UO":
       return [
         {
-          key: "ultimateoscillator",
+          key: "uoLine",
           label: "Ultimate Oscillator",
           type: "line",
         },
       ];
-
     case "Awesome Oscillator":
       return [
         {
@@ -957,7 +956,7 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
 
     case "CMO":
       return [
-        { key: "cmoLine", label: "CMO", type: "line", color: "#26a69a" },
+        { key: "cmoLine", label: "CMO", type: "line", color: "#26A69A" },
         {
           key: "zeroLine",
           label: "Zero Line",
@@ -1032,15 +1031,29 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
 
     case "KVO":
       return [
-        { key: "ko", label: "KO", type: "line" },
-        { key: "signal", label: "Signal", type: "line" },
+        {
+          key: "kvoLine",
+          label: "Klinger Oscillator",
+          type: "line",
+          width: 1,
+          lineStyle: 0,
+          visible: true,
+        },
+
+        {
+          key: "signalLine",
+          label: "Signal Line",
+          type: "line",
+          width: 1,
+          lineStyle: 0,
+          visible: true,
+        },
       ];
     case "ATR":
       return [{ key: "atr", label: "ATR", type: "line" }];
 
     case "KC":
       return [
-        // Lines
         {
           key: "upper",
           label: "Upper Channel",
@@ -1053,11 +1066,9 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           type: "line",
         },
         {
-          key: "bg",
+          key: "bbFill",
           label: "Background ",
           type: "fill",
-          color0: "rgba(38,166,154,0.1)", // color under bullish trend
-          color1: "rgba(239,83,80,0.1)", // color under bearish trend
         },
       ];
 
@@ -1080,7 +1091,6 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           key: "bbFill",
           label: "Background ",
           type: "fill",
-
         },
       ];
 
@@ -1177,24 +1187,37 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
       return [
         {
           key: "volumeBars",
-          label: "Volume Bars",
-          type: "bars",
-          colorUp: "#26a69a", // growing volume
-          colorDown: "#ef5350", // falling volume
-          colorByPrevious: true, // toggle for coloring based on previous bar
+          label: "Growing Volume",
+          type: "color",
+          field: "upColor",
+          visible: true,
         },
 
-        // Volume MA line
+        {
+          key: "volumeBars",
+          label: "Falling Volume",
+          type: "color",
+          field: "downColor",
+          visible: true,
+        },
+
+        {
+          key: "volumeBars",
+          label: "Show Volume Bars",
+          type: "checkbox",
+          field: "visible",
+          value: true,
+        },
+
         {
           key: "volumeMA",
           label: "Volume MA",
           type: "line",
-          color: "#2962ff",
           width: 2,
-          visible: false, // by default unchecked
+          lineStyle: 0,
+          visible: true,
         },
       ];
-
     case "HV":
       return [
         {
@@ -1335,7 +1358,7 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           key: "mfiLine",
           label: "MFI",
           type: "line",
-          color: "#2962ff",
+          color: "#2962FF",
           width: 2,
           visible: true,
         },
@@ -1346,7 +1369,7 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           type: "band",
           value: 80,
           showValue: true,
-          color: "#ef5350",
+          color: "#EF5350",
         },
         {
           key: "middleBand",
@@ -1354,7 +1377,7 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           type: "band",
           value: 50,
           showValue: true,
-          color: "#9e9e9e",
+          color: "#9E9E9E",
         },
         {
           key: "lowerBand",
@@ -1362,7 +1385,7 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           type: "band",
           value: 20,
           showValue: true,
-          color: "#26a69a",
+          color: "#26A69A",
         },
         {
           key: "bgFill",
@@ -1574,7 +1597,7 @@ export const PANE_INDICATORS = new Set([
   "OBV",
   "BBW",
   "CMF",
-  "KC",
+  "KVO",
 ]);
 
 export const RANGE_INTERVAL_MAPPING = {

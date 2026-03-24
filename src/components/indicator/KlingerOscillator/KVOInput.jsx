@@ -1,42 +1,43 @@
 export default function KVOInput(
   response,
   indicatorSeriesRef,
-  latestIndicatorValuesRef
+  latestIndicatorValuesRef,
 ) {
-
   const rows = Array.isArray(response?.data) ? response.data : [];
 
-  const koData = rows
-    .filter((d) => d.ko != null && d.time != null)
+  const kvoSeries = indicatorSeriesRef.current?.KVO?.kvoLine;
+  const signalSeries = indicatorSeriesRef.current?.KVO?.signalLine;
+  const zeroSeries = indicatorSeriesRef.current?.KVO?.zeroLine;
+
+  if (!kvoSeries || !signalSeries) return;
+
+  const kvoData = rows
+    .filter((d) => d.kvo != null && d.time != null)
     .map((d) => ({
-      time: d.time,
-      value: d.ko,
-    }))
-    .sort((a, b) => a.time - b.time);
+      time: Number(d.time),
+      value: Number(d.kvo),
+    }));
 
   const signalData = rows
     .filter((d) => d.signal != null && d.time != null)
     .map((d) => ({
-      time: d.time,
-      value: d.signal,
-    }))
-    .sort((a, b) => a.time - b.time);
+      time: Number(d.time),
+      value: Number(d.signal),
+    }));
 
+  const zeroValue = indicatorSeriesRef.current?.KVO?.zeroValue ?? 0;
 
-  const result = {
-    type: "multi",
-    data: {
-      ko: koData,
-      signal: signalData,
-    },
+  const zeroData = kvoData.map((p) => ({
+    time: p.time,
+    value: zeroValue,
+  }));
+
+  kvoSeries.setData(kvoData);
+  signalSeries.setData(signalData);
+  if (zeroSeries) zeroSeries.setData(zeroData);
+
+  latestIndicatorValuesRef.current.KVO = {
+    kvo: kvoData[kvoData.length - 1]?.value ?? null,
+    signal: signalData[signalData.length - 1]?.value ?? null,
   };
-
-  /* UPDATE CROSSHAIR VALUES */
-
-  latestIndicatorValuesRef.current.KO = {
-    ko: koData.length ? koData[koData.length - 1]?.value : null,
-    signal: signalData.length ? signalData[signalData.length - 1]?.value : null,
-  };
-
-  return result;
 }

@@ -301,6 +301,11 @@ export default function Candlestick() {
       maLlength: 14,
       bbStdDev: 2,
     },
+    KVO: {
+      fastLength: 34,
+      slowLength: 55,
+      signalLength: 13,
+    },
     PVO: {
       fastLength: 12,
       slowLength: 26,
@@ -414,6 +419,20 @@ export default function Candlestick() {
         visible: true,
         topFillColor1: "rgba(76,175,80,0.2)",
         bottomFillColor1: "rgba(76,175,80,0.05)",
+      },
+    },
+    KVO: {
+      kvoLine: {
+        color: "rgba(33,150,243,1)", // blue
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+      signalLine: {
+        color: "rgba(255,152,0,1)", // orange
+        width: 2,
+        lineStyle: 0,
+        visible: true,
       },
     },
     SMA: {
@@ -950,13 +969,16 @@ export default function Candlestick() {
       },
     },
     VOL: {
-      volume: {
-        color: "rgba(38,166,154,1)", // fallback
+      volumeBars: {
+        upColor: "rgba(38,166,154,0.6)",
+        downColor: "rgba(239,83,80,0.6)",
         visible: true,
       },
+
       volumeMA: {
         color: "rgba(255,193,7,1)",
         width: 2,
+        lineStyle: 0,
         visible: true,
       },
     },
@@ -1019,39 +1041,12 @@ export default function Candlestick() {
         lineWidth: 1,
       },
     },
-
     AD: {
       ad: {
         color: "rgba(156,39,176,1)",
         width: 2,
         lineStyle: 0,
         visible: true,
-      },
-      upper: {
-        color: "rgba(239,83,80,1)", // red
-        width: 1,
-        lineStyle: 2,
-        visible: true,
-        value: 65.8,
-      },
-      middle: {
-        color: "rgba(38,166,154,1)", // teal
-        width: 1,
-        lineStyle: 2,
-        visible: true,
-        value: 50,
-      },
-      lower: {
-        color: "rgba(38,166,154,1)", // teal
-        width: 1,
-        lineStyle: 2,
-        visible: true,
-        value: 38.2,
-      },
-      bg: {
-        visible: true,
-        topFillColor1: "rgba(41, 98, 255, 0.25)",
-        topFillColor2: "rgba(41, 98, 255, 0.08)",
       },
     },
     DC: {
@@ -1098,6 +1093,11 @@ export default function Candlestick() {
         lineStyle: 0,
         visible: true,
       },
+      bbFill: {
+        visible: true,
+        topFillColor1: "rgba(76,175,80,0.2)",
+        bottomFillColor1: "rgba(76,175,80,0.05)",
+      },
     },
 
     EOM: {
@@ -1134,8 +1134,8 @@ export default function Candlestick() {
       },
     },
     UO: {
-      ultimateoscillator: {
-        color: "rgba(38,166,154,1)",
+      uoLine: {
+        color: "rgba(33,150,243,1)", // blue
         width: 2,
         lineStyle: 0,
         visible: true,
@@ -1359,16 +1359,16 @@ export default function Candlestick() {
     CMO: {
       cmoLine: {
         color: "rgba(38,166,154,1)",
-        width: 1,
+        width: 2,
         lineStyle: 0,
         visible: true,
       },
       zeroLine: {
+        value: 0,
         color: "rgba(158,158,158,1)",
         width: 1,
         lineStyle: 2,
         visible: true,
-        value: 0,
       },
     },
     TRIX: {
@@ -1378,12 +1378,13 @@ export default function Candlestick() {
         lineStyle: 0,
         visible: true,
       },
+
       zeroLine: {
+        value: 0,
         color: "rgba(158,158,158,1)",
         width: 1,
         lineStyle: 2,
         visible: true,
-        value: 0,
       },
     },
     FT: {
@@ -1547,8 +1548,8 @@ export default function Candlestick() {
         return "VP";
       case "BBW":
         return "BBW";
-      case "KC":
-        return "KC";
+      case "KVO":
+        return "KVO";
     }
   }
 
@@ -1764,7 +1765,7 @@ export default function Candlestick() {
           break;
 
         case "UO":
-          keysToShow = ["ultimateoscillator"];
+          keysToShow = ["uo"];
           break;
 
         case "ICHIMOKU":
@@ -2391,7 +2392,6 @@ export default function Candlestick() {
                 onOpen={() => setOpenForm(true)}
                 onClose={() => setOpenForm(false)}
               />
-              
             </div>
             {openForm && (
               <div
