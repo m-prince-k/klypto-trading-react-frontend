@@ -6,14 +6,6 @@ export default function HVPlot({
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
-<<<<<<< HEAD
-}) {
-
-  useEffect(() => {
-    if (!result?.data?.hv) return;
-
-    // REMOVE OLD
-=======
   indicatorConfigs,
 }) {
 
@@ -24,7 +16,6 @@ export default function HVPlot({
     if (!result?.data?.hv) return;
 
     // 🔥 REMOVE OLD
->>>>>>> 74d4aff7095b3a6b6130baf32d081d88ad4573a8
     if (indicatorSeriesRef.current?.HV) {
       Object.values(indicatorSeriesRef.current.HV).forEach((s) => {
         if (s?.setData) {
@@ -34,17 +25,6 @@ export default function HVPlot({
       indicatorSeriesRef.current.HV = null;
     }
 
-<<<<<<< HEAD
-    const hvData = result.data.hv;
-
-    if (!hvData.length) return;
-
-    // CREATE SERIES
-    const hvSeries = addSeries("HV-hv", LineSeries, {
-      color: indicatorStyle?.HV?.hv?.color || "#ff9800",
-      lineWidth: indicatorStyle?.HV?.hv?.width || 2,
-      lineStyle: indicatorStyle?.HV?.hv?.lineStyle || 0,
-=======
     const hvData = (result.data.hv || [])
       .map((p) => ({
         time: Number(p.time),
@@ -58,7 +38,6 @@ export default function HVPlot({
       color: indicatorStyle?.HV?.hv?.color ?? "rgba(255,152,0,1)",
       lineWidth: Number(indicatorStyle?.HV?.hv?.width ?? 2),
       lineStyle: indicatorStyle?.HV?.hv?.lineStyle ?? 0,
->>>>>>> 74d4aff7095b3a6b6130baf32d081d88ad4573a8
       visible: indicatorStyle?.HV?.hv?.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: true,
@@ -66,32 +45,6 @@ export default function HVPlot({
 
     hvSeries.setData(hvData);
 
-<<<<<<< HEAD
-    indicatorSeriesRef.current.HV = {
-      hv: hvSeries,
-    };
-
-  }, [result, addSeries, indicatorStyle]);
-
-  // 🔥 STYLE UPDATE (live change)
-  useEffect(() => {
-    const hvGroup = indicatorSeriesRef.current?.HV;
-    if (!hvGroup) return;
-
-    const series = hvGroup.hv;
-    const style = indicatorStyle?.HV?.hv;
-
-    if (!series || !style) return;
-
-    series.applyOptions({
-      color: style.color,
-      lineWidth: style.width,
-      lineStyle: style.lineStyle ?? 0,
-      visible: style.visible,
-    });
-
-  }, [indicatorStyle]);
-=======
     // 🔥 IMPORTANT: STORE AS "hv" (NOT hvLine)
     indicatorSeriesRef.current.HV = {
       hv: hvSeries,
@@ -120,7 +73,6 @@ export default function HVPlot({
     });
 
   }, [indicatorStyle?.HV]);
->>>>>>> 74d4aff7095b3a6b6130baf32d081d88ad4573a8
 
   return null;
 }

@@ -28,88 +28,21 @@ export default function MACDPlot({
     const groupedSeries = {};
     let macdData = [];
 
-<<<<<<< HEAD
-    /* ================= MAIN SERIES ================= */
-
-    Object.entries(result?.data || {}).forEach(([lineName, lineData]) => {
-
-      if (!Array.isArray(lineData)) {
-        console.warn(`❌ ${lineName} is not array`, lineData);
-        return;
-      }
-=======
     Object.entries(result.data).forEach(([lineName, lineData]) => {
       if (!Array.isArray(lineData)) return;
->>>>>>> 74d4aff7095b3a6b6130baf32d081d88ad4573a8
 
       const style = indicatorStyle?.MACD?.[lineName];
       let series;
 
-<<<<<<< HEAD
-      /* ================= HISTOGRAM FIX ================= */
-=======
       /* ================= HISTOGRAM ================= */
 
->>>>>>> 74d4aff7095b3a6b6130baf32d081d88ad4573a8
       if (lineName === "histogram") {
         series = addSeries("MACD", HistogramSeries, {
-<<<<<<< HEAD
-          priceLineVisible: false,
-          lastValueVisible: true,
-        });
-
-        const formattedData = lineData
-          .filter(d =>
-            d &&
-            d.time != null &&
-            d.value != null &&
-            !isNaN(d.value)
-          )
-          .map((d) => ({
-            time: d.time,
-            value: Number(d.value),
-            color:
-              Number(d.value) >= 0
-                ? (style?.upColor || "rgba(38,166,154,1)")
-                : (style?.downColor || "rgba(239,83,80,1)"),
-          }));
-
-        console.log("✅ Histogram Final:", formattedData);
-
-        if (formattedData.length === 0) {
-          console.warn("❌ Histogram EMPTY");
-        }
-
-        series.setData(formattedData);
-      }
-
-      /* ================= LINE SERIES ================= */
-      else {
-
-        series = addSeries("MACD", LineSeries, {
-          color: style?.color || "blue",
-          lineWidth: style?.width || 2,
-=======
->>>>>>> 74d4aff7095b3a6b6130baf32d081d88ad4573a8
           visible: style?.visible ?? true,
           priceLineVisible: false,
           lastValueVisible: true,
         });
 
-<<<<<<< HEAD
-        const cleanData = lineData
-          .filter(d => d && d.time != null && d.value != null)
-          .map(d => ({
-            time: d.time,
-            value: Number(d.value),
-          }));
-
-        series.setData(cleanData);
-
-        if (lineName === "macd") {
-          macdData = cleanData;
-        }
-=======
         const formatted = lineData
           .filter((d) => d?.time != null && d?.value != null)
           .map((d) => {
@@ -152,7 +85,6 @@ export default function MACDPlot({
         series.setData(cleanData);
 
         if (lineName === "macd") macdData = cleanData;
->>>>>>> 74d4aff7095b3a6b6130baf32d081d88ad4573a8
       }
 
       if (series) groupedSeries[lineName] = series;

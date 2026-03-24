@@ -61,33 +61,6 @@ import KCInput from "./KC/KCInput";
 import EOMPlot from "./EOM/EOMPlot";
 import BBPlot from "./BB/BBPlot";
 import BBInput from "./BB/BBInput";
-<<<<<<< HEAD
-
-import BollingerBandWidthInputs from "./bollinder-band-width/bollinder-band-width-inputs";
-import BollingerBandWidthPlot from "./bollinder-band-width/bollinger-band-width-plot";
-
-
-
-import ChandeKrollStopPlot from "./CKS/chande-kroll-stop-plot";
-import ChandeKrollStopInput from "./CKS/chande-kroll-stop-inputs"
-
-// import HistoricalVolatilityPlot from "./HV/HVInput"
-// import HistoricalVolatilityInput from "./HV/HVInput";
- 
-import ChaikinMoneyFlowInput from "./CMF/Chaikin-money-flow-inputs";
-import ChaikinMoneyFlowPlot from "./CMF/chaikin-money-flow-plot";
-
-import NVIInput from "./NVI/Negative-volume-index-inputs";
-import NVIPlot from "./NVI/negative-volume-plot"
-
-import MACDPlot from "./MACD/MACDPlot";
-import MACDInput from "./MACD/macd-inputs";
-
-
-import VWAPPlot from "./VWAP/VWAPPlot";
-import VWAPInput from "./VWAP/VWAPInput";
-import HVInput from "./HV/HVInput";
-=======
 import UOInput from "./UO/UOInput";
 import UOPlot from "./UO/UOPlot";
 import PVIPlot from "./PVI/PVIPlot";
@@ -102,8 +75,8 @@ import ZIGZAGPlot from "./ZIgZag/ZigZagPlot";
 import ZIGZAGInput from "./ZIgZag/ZigZagInput";
 import MACDPlot from "./MACD/MACDPlot";
 import MACDInput from "./MACD/macd-inputs";
-import VWAPPlot from "./vwap/vwap-plot";
-import VWAPInput from "./vwap/vwap-inputs";
+import VWAPPlot from "./VWAP/VWAPPlot";
+import VWAPInput from "./VWAP/VWAPInput";
 import KVOPlot from "./KlingerOscillator/KVOPlot";
 import KVOInput from "./KlingerOscillator/KVOInput";
 import CMFPlot from "./CMF/CMFPlot";
@@ -114,16 +87,9 @@ import CKSInput from "./CKS/CKSInput";
 import CKSPlot from "./CKS/CKSPlot";
 import BBWInput from "./BBW/BBWInput";
 import BBWPlot from "./BBW/BBWPlot";
->>>>>>> 74d4aff7095b3a6b6130baf32d081d88ad4573a8
 
 export const indicatorComponents = {
   MACD:MACDPlot,
-<<<<<<< HEAD
-  CKS:ChandeKrollStopPlot,
-  HV:HMAPlot,
-  CMF:ChaikinMoneyFlowPlot,
-=======
->>>>>>> 74d4aff7095b3a6b6130baf32d081d88ad4573a8
   NVI:NVIPlot,
   RSI: RSIPlot,
   SMA: SMAPlot,
@@ -150,10 +116,6 @@ export const indicatorComponents = {
   KC: KCPlot,
   EOM: EOMPlot,
   BB: BBPlot,
-<<<<<<< HEAD
-  VWAP: VWAPPlot,
-
-=======
   UO: UOPlot,
   PVI: PVIPlot,
   NVI: NVIPlot,
@@ -175,17 +137,10 @@ export const indicatorComponents = {
   STOCH: STOCHRSIPlot,
   STDDEV: STDDEVPlot,
   KVO: KVOPlot
->>>>>>> 74d4aff7095b3a6b6130baf32d081d88ad4573a8
 };
 
 export const indicatorInputs = {
   MACD:MACDInput,
-<<<<<<< HEAD
-  CKS:ChandeKrollStopInput,
-  HV:HVInput,
-  CMF:ChaikinMoneyFlowInput,
-=======
->>>>>>> 74d4aff7095b3a6b6130baf32d081d88ad4573a8
   NVI:NVIInput,
   RSI: RSIInput,
   SMA: SMAInput,
@@ -214,10 +169,6 @@ export const indicatorInputs = {
   KC: KCInput,
   EOM: EOMInput,
   BB: BBInput,
-<<<<<<< HEAD
-  VWAP:VWAPInput,
-
-=======
   UO: UOInput,
   PVI: PVIInput,
   NVI: NVIInput,
@@ -238,7 +189,6 @@ export const indicatorInputs = {
  BBW:BBWInput,
  KVO: KVOInput
   
->>>>>>> 74d4aff7095b3a6b6130baf32d081d88ad4573a8
 };
 
 export function updateIndicatorFromInput(
