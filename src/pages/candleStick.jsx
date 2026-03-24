@@ -326,15 +326,13 @@ export default function Candlestick() {
     },
     VWAP: {
       hideOnDailyOrAbove: true,
-      anchorPeriod: "Daily",
+      anchorPeriod: "daily",
       source: "hlc3",
       offset: 0,
-      bandSettings: {
-        calculationMode: "Standard Deviation",
-        band1: { enabled: true, multiplier: 1 },
-        band2: { enabled: false, multiplier: 2 },
-        band3: { enabled: false, multiplier: 3 },
-      },
+      bandMode: "STD",
+      band1: { enabled: true, multiplier: 1 },
+      band2: { enabled: false, multiplier: 2 },
+      band3: { enabled: false, multiplier: 3 },
     },
     ZIGZAG: {
       priceDeviation: 5,
@@ -480,8 +478,6 @@ export default function Candlestick() {
         visible: true,
       },
     },
-
-
 
     OBV: {
       obv: {
@@ -995,10 +991,10 @@ export default function Candlestick() {
     PVO: {
       histogram: {
         visible: true,
-        color0: "rgba(0, 150, 136, 1)",   // dark green
+        color0: "rgba(0, 150, 136, 1)", // dark green
         color1: "rgba(178, 223, 219, 1)", // light green
         color2: "rgba(255, 205, 210, 1)", // light red
-        color3: "rgba(244, 67, 54, 1)",   // dark red
+        color3: "rgba(244, 67, 54, 1)", // dark red
       },
 
       pvo: {
@@ -1102,7 +1098,6 @@ export default function Candlestick() {
         lineStyle: 0,
         visible: true,
       },
-
     },
 
     EOM: {
@@ -1115,24 +1110,27 @@ export default function Candlestick() {
     },
     BB: {
       upper: {
-        color: "rgba(244,67,54,1)", // red
-        width: 2,
+        color: "rgba(33,150,243,1)",
+        width: 1,
         lineStyle: 0,
         visible: true,
       },
-
       lower: {
-        color: "rgba(33,150,243,1)", // blue
-        width: 2,
+        color: "rgba(244,67,54,1)",
+        width: 1,
         lineStyle: 0,
         visible: true,
       },
-
       basis: {
-        color: "rgba(255,193,7,1)", // yellow
-        width: 2,
-        lineStyle: 2, // dashed
+        color: "rgba(6, 150, 14, 1)",
+        width: 1,
+        lineStyle: 0,
         visible: true,
+      },
+      bbFill: {
+        visible: true,
+        topFillColor1: "rgba(76,175,80,0.2)",
+        bottomFillColor1: "rgba(76,175,80,0.05)",
       },
     },
     UO: {
@@ -1198,27 +1196,67 @@ export default function Candlestick() {
     },
     VWAP: {
       vwap: {
-        visible: true,
-        color: "rgba(156,39,176,1)", // purple
+        color: "rgba(255, 193, 7, 1)",
         width: 2,
         lineStyle: 0,
+        visible: true,
       },
-      upper: {
-        visible: false, // optional bands (std dev)
-        color: "rgba(239,83,80,1)",
+
+      upperBand1: {
+        color: "rgba(33,150,243,1)",
         width: 1,
-        lineStyle: 2,
+        lineStyle: 0,
+        visible: true,
       },
-      lower: {
-        visible: false,
-        color: "rgba(38,166,154,1)",
+
+      lowerBand1: {
+        color: "rgba(33,150,243,1)",
         width: 1,
-        lineStyle: 2,
+        lineStyle: 0,
+        visible: true,
       },
-      bg: {
-        visible: false,
-        topFillColor1: "rgba(156,39,176,0.1)",
-        topFillColor2: "rgba(156,39,176,0.02)",
+
+      bandFill1: {
+        color: "rgba(33,150,243,0.15)",
+        visible: true,
+      },
+
+      upperBand2: {
+        color: "rgba(156,39,176,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+
+      lowerBand2: {
+        color: "rgba(156,39,176,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+
+      bandFill2: {
+        color: "rgba(156,39,176,0.12)",
+        visible: true,
+      },
+
+      upperBand3: {
+        color: "rgba(244,67,54,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+
+      lowerBand3: {
+        color: "rgba(244,67,54,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+
+      bandFill3: {
+        color: "rgba(244,67,54,0.10)",
+        visible: true,
       },
     },
     CKS: {
@@ -1241,7 +1279,7 @@ export default function Candlestick() {
         color: "rgba(255,152,0,1)",
         width: 2,
         lineStyle: 0,
-      }
+      },
     },
     CMF: {
       cmfLine: {
@@ -1399,8 +1437,6 @@ export default function Candlestick() {
         value: -1.5,
       },
     },
-
-
   };
 
   const [indicatorStyle, setIndicatorStyle] = useState(indicatorStyleDefault);
@@ -1513,8 +1549,6 @@ export default function Candlestick() {
         return "BBW";
       case "KC":
         return "KC";
-
-
     }
   }
 
@@ -2357,6 +2391,7 @@ export default function Candlestick() {
                 onOpen={() => setOpenForm(true)}
                 onClose={() => setOpenForm(false)}
               />
+              
             </div>
             {openForm && (
               <div

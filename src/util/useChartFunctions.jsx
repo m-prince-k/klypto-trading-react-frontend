@@ -53,7 +53,7 @@ export default function useChartFunctions({
         const normalizedType = indicator.replace(/[\s/%]+/g, "");
         const config = indicatorConfigs?.[normalizedType] || {};
         const { maType } = config;
-        const rows = getRowsByIndicator(indicator, maType);
+        const rows = getRowsByIndicator(indicator, maType, indicatorConfigs);
 
         switch (normalizedType) {
           /* ================= RSI ================= */
@@ -132,8 +132,12 @@ export default function useChartFunctions({
           }
           case "VWAP": {
             const vwapData = result?.data?.vwap ?? [];
-            const upper1 = result?.data?.upper1 ?? [];
-            const lower1 = result?.data?.lower1 ?? [];
+            const upper1Data = result?.data?.upper1 ?? [];
+            const lower1Data = result?.data?.lower1 ?? [];
+            const upper2Data = result?.data?.upper2 ?? [];
+            const lower2Data = result?.data?.lower2 ?? [];
+            const upper3Data = result?.data?.upper3 ?? [];
+            const lower3Data = result?.data?.lower3 ?? [];
 
             indicatorSeriesRef.current.VWAP = {
               result,
@@ -142,25 +146,26 @@ export default function useChartFunctions({
 
             latestIndicatorValuesRef.current.VWAP = {
               vwap: vwapData[vwapData.length - 1]?.value ?? null,
-
-              upper1: upper1.length ? upper1[upper1.length - 1]?.value : null,
-
-              lower1: lower1.length ? lower1[lower1.length - 1]?.value : null,
+              upper1: upper1Data[upper1Data.length - 1]?.value ?? null,
+              lower1: lower1Data[lower1Data.length - 1]?.value ?? null,
+              upper2: upper2Data[upper2Data.length - 1]?.value ?? null,
+              lower2: lower2Data[lower2Data.length - 1]?.value ?? null,
+              upper3: upper3Data[upper3Data.length - 1]?.value ?? null,
+              lower3: lower3Data[lower3Data.length - 1]?.value ?? null,
             };
+
+            console.log("VWAP RESULT", result);
 
             break;
           }
           case "CKS": {
             const longData = result?.data?.long ?? [];
             const shortData = result?.data?.short ?? [];
-            console.log(longData, "longgggggg")
 
             indicatorSeriesRef.current.CKS = {
               result,
               rows,
             };
-
-            console.log(result, "resssssssss")
 
             latestIndicatorValuesRef.current.CKS = {
               long: longData[longData.length - 1]?.value ?? null,
@@ -765,8 +770,6 @@ export default function useChartFunctions({
             break;
           }
 
-
-
           case "STDDEV": {
             const stddevData = result?.data ?? [];
 
@@ -869,14 +872,14 @@ async function fetchDataForIndicators(
 
     setIndicatorLoading(true);
 
-    const url = `/api/indicatorDetails?symbol=${selectedCurrency}&interval=${timeframeValue}&type=${normalizedType}`;
-
-    const response = await apiService.post(url);
+    const response = await apiService.post(
+      `/api/indicatorDetails?symbol=${selectedCurrency}&interval=${timeframeValue}&type=${normalizedType}`,
+    );
 
     console.log("Raw indicator data for", normalizedType, ":", response);
 
     // store last request key
-    indicatorMetaRef.current[normalizedType] = key;
+    // indicatorMetaRef.current[normalizedType] = key;
 
     const mapLine = (arr, field) =>
       arr
@@ -905,45 +908,45 @@ async function fetchDataForIndicators(
               })),
 
             upper1: rows
-              .filter((d) => d?.bands?.[0]?.upper != null)
+              .filter((d) => d?.bands?.band1?.upper != null)
               .map((d) => ({
                 time: d.time,
-                value: Number(d.bands[0].upper),
+                value: Number(d.bands.band1.upper),
               })),
 
             lower1: rows
-              .filter((d) => d?.bands?.[0]?.lower != null)
+              .filter((d) => d?.bands?.band1?.lower != null)
               .map((d) => ({
                 time: d.time,
-                value: Number(d.bands[0].lower),
+                value: Number(d.bands.band1.lower),
               })),
 
             upper2: rows
-              .filter((d) => d?.bands?.[1]?.upper != null)
+              .filter((d) => d?.bands?.band2?.upper != null)
               .map((d) => ({
                 time: d.time,
-                value: Number(d.bands[1].upper),
+                value: Number(d.bands.band2.upper),
               })),
 
             lower2: rows
-              .filter((d) => d?.bands?.[1]?.lower != null)
+              .filter((d) => d?.bands?.band2?.lower != null)
               .map((d) => ({
                 time: d.time,
-                value: Number(d.bands[1].lower),
+                value: Number(d.bands.band2.lower),
               })),
 
             upper3: rows
-              .filter((d) => d?.bands?.[2]?.upper != null)
+              .filter((d) => d?.bands?.band3?.upper != null)
               .map((d) => ({
                 time: d.time,
-                value: Number(d.bands[2].upper),
+                value: Number(d.bands.band3.upper),
               })),
 
             lower3: rows
-              .filter((d) => d?.bands?.[2]?.lower != null)
+              .filter((d) => d?.bands?.band3?.lower != null)
               .map((d) => ({
                 time: d.time,
-                value: Number(d.bands[2].lower),
+                value: Number(d.bands.band3.lower),
               })),
           },
         };
@@ -1003,7 +1006,7 @@ async function fetchDataForIndicators(
                 })) ?? [],
           },
         };
-        
+
       case "SMA":
         return {
           type: "multi",

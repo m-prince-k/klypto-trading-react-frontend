@@ -2,7 +2,13 @@ import React, { useState, useMemo, useEffect } from "react";
 import apiService from "../../services/apiServices";
 import { Spinner } from "../tradingModals/Spinner";
 import MiniChart from "./MiniChart";
-import { handleCopy, handleCSVDownload, handleExcelDownload } from "../../util/common";
+import {
+  handleCopy,
+  handleCSVDownload,
+  handleExcelDownload,
+} from "../../util/common";
+import { IoLink } from "react-icons/io5";
+import IndicatorRuleBuilder from "./IndicatorRuleBuilder";
 
 const PAGE_SIZE = 5;
 
@@ -15,6 +21,7 @@ export default function IndicatorBuildingListing({
   const [page, setPage] = useState(1);
   // const [openNewCharts, setOpenNewCharts] = useState(true);
   const [showPreview, setShowPreview] = useState(true);
+    const [openForm, setOpenForm] = useState(false);
   const [coins, setCoins] = useState([]);
   const [loading, setLoading] = useState(true);
   const ONE_YEAR = 365 * 24 * 60 * 60 * 1000;
@@ -206,54 +213,82 @@ export default function IndicatorBuildingListing({
                 Real-time cryptocurrency trading data
               </p>
             </div>
+            {/* {!openForm && (
+              <div className="d-flex justify-content-end position-sticky top-0 ">
+                <button
+                  onClick={() => setOpenForm(true)}
+                  className="btn btn-primary d-flex align-items-center gap-1 mx-3"
+                  style={{ zIndex: 1050 }}
+                >
+                  <IoLink />
+                </button>
+              </div>
+            )} */}
+            {/* Sliding Panel */}
+            {/* <div
+              className="position-fixed top-0 end-0 vh-100 bg-white shadow"
+              style={{
+                width: "900px",
+                height: "100vh",
+                zIndex: 1050,
+                transform: openForm ? "translateX(0)" : "translateX(100%)",
+                transition: "transform 0.6s ease-out",
+              }}
+            >
+              <IndicatorRuleBuilder
+                onOpen={() => setOpenForm(true)}
+                onClose={() => setOpenForm(false)}
+              />
+              
+            </div> */}
           </div>
         </div>
 
         <div className="row">
           <div className="col-md-12">
-                   <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 overflow-hidden">
-            {/* Top Controls */}
-            <div className="flex items-center justify-between p-6 border-b border-slate-200/50 bg-gradient-to-r from-white to-slate-50/30">
-              {/* Export Buttons */}
-              <div className="flex gap-3">
-                <button
-                  onClick={() => handleCopy(rows)}
-                  className="group relative px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 hover:-translate-y-0.5 font-medium"
-                >
-                  <span className="relative z-10">Copy</span>
-                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-400 to-indigo-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
-                </button>
+            <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 overflow-hidden">
+              {/* Top Controls */}
+              <div className="flex items-center justify-between p-6 border-b border-slate-200/50 bg-gradient-to-r from-white to-slate-50/30">
+                {/* Export Buttons */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => handleCopy(rows)}
+                    className="group relative px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 hover:-translate-y-0.5 font-medium"
+                  >
+                    <span className="relative z-10">Copy</span>
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-400 to-indigo-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
+                  </button>
 
-                <button
-                  onClick={() => handleCSVDownload(rows)}
-                  className="group relative px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 hover:-translate-y-0.5 font-medium"
-                >
-                  <span className="relative z-10">CSV</span>
-                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-400 to-indigo-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
-                </button>
+                  <button
+                    onClick={() => handleCSVDownload(rows)}
+                    className="group relative px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 hover:-translate-y-0.5 font-medium"
+                  >
+                    <span className="relative z-10">CSV</span>
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-400 to-indigo-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
+                  </button>
 
-                <button
-                  onClick={() => handleExcelDownload(rows)}
-                  className="group relative px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 hover:-translate-y-0.5 font-medium"
-                >
-                  <span className="relative z-10">Excel</span>
-                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-400 to-indigo-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
-                </button>
+                  <button
+                    onClick={() => handleExcelDownload(rows)}
+                    className="group relative px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 hover:-translate-y-0.5 font-medium"
+                  >
+                    <span className="relative z-10">Excel</span>
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-400 to-indigo-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
+                  </button>
+                </div>
+
+                {/* Toggles */}
+                <div className="flex gap-6">
+                  {/* <Toggle label="Open New Charts" /> */}
+                  <Toggle
+                    label="Show Chart Preview"
+                    enabled={showPreview}
+                    setEnabled={setShowPreview}
+                  />
+                </div>
               </div>
 
-              {/* Toggles */}
-              <div className="flex gap-6">
-                {/* <Toggle label="Open New Charts" /> */}
-                <Toggle
-                  label="Show Chart Preview"
-                  enabled={showPreview}
-                  setEnabled={setShowPreview}
-                />
-              </div>
-            </div>
-
-            {/* Table */}
-            {/* <div className="overflow-x-auto">
+              {/* Table */}
+              {/* <div className="overflow-x-auto">
             {loading ? (
               <div className="flex items-center justify-center py-20">
                 <Spinner />
@@ -333,117 +368,116 @@ export default function IndicatorBuildingListing({
             )}
           </div> */}
 
-            {/* dummy dataa */}
-            <div>
-              <table width="100%" cellPadding="8" border="1">
-                <thead>
-                  <tr>
-                    <th>Symbol</th>
-                    <th>RSI</th>
-                    <th>Open</th>
-                    <th>High</th>
-                    <th>Low</th>
-                    <th>Close</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {rows?.map((row) => (
-                    <tr key={row.symbol}>
-                      <td
-                        style={{ position: "relative", cursor: "pointer" }}
-                        onMouseEnter={() => showPreview && setHover(row?.symbol)}
-                        onMouseLeave={() => showPreview && setHover(null)}
-                      >
-                        {row.symbol}
-
-                        {showPreview && hover === row.symbol && (
-                          <MiniChart
-                            symbol={row.symbol}
-                            selectedCurrency={selectedCurrency}
-                            timeframeValue={timeframeValue}
-                          />
-                        )}
-                      </td>
-
-                      <td>{row.rsi}</td>
-                      <td>{row.open}</td>
-                      <td>{row.high}</td>
-                      <td>{row.low}</td>
-                      <td>{row.close}</td>
+              {/* dummy dataa */}
+              <div>
+                <table width="100%" cellPadding="8" border="1">
+                  <thead>
+                    <tr>
+                      <th>Symbol</th>
+                      <th>RSI</th>
+                      <th>Open</th>
+                      <th>High</th>
+                      <th>Low</th>
+                      <th>Close</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
 
-            {/* Pagination */}
-            <div className="flex items-center justify-center gap-4 p-6 bg-gradient-to-r from-slate-50/50 to-white border-t border-slate-200/50">
-              <button
-                disabled={page === 1}
-                onClick={() => setPage(page - 1)}
-                className="group px-5 py-2.5 rounded-xl bg-white border-2 border-slate-200 hover:border-purple-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 font-semibold text-slate-700 hover:text-purple-600 disabled:hover:text-slate-700 hover:shadow-lg hover:-translate-y-0.5 disabled:hover:translate-y-0 disabled:hover:shadow-none"
-              >
-                <span className="flex items-center gap-2">
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 19l-7-7 7-7"
-                    />
-                  </svg>
-                  Prev
-                </span>
-              </button>
+                  <tbody>
+                    {rows?.map((row) => (
+                      <tr key={row.symbol}>
+                        <td
+                          style={{ position: "relative", cursor: "pointer" }}
+                          onMouseEnter={() =>
+                            showPreview && setHover(row?.symbol)
+                          }
+                          onMouseLeave={() => showPreview && setHover(null)}
+                        >
+                          {row.symbol}
 
-              <div className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl font-bold text-white shadow-lg shadow-purple-500/30">
-                Page {page} / {totalPages}
+                          {showPreview && hover === row.symbol && (
+                            <MiniChart
+                              symbol={row.symbol}
+                              selectedCurrency={selectedCurrency}
+                              timeframeValue={timeframeValue}
+                            />
+                          )}
+                        </td>
+
+                        <td>{row.rsi}</td>
+                        <td>{row.open}</td>
+                        <td>{row.high}</td>
+                        <td>{row.low}</td>
+                        <td>{row.close}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
 
-              <button
-                disabled={page === totalPages}
-                onClick={() => setPage(page + 1)}
-                className="group px-5 py-2.5 rounded-xl bg-white border-2 border-slate-200 hover:border-purple-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 font-semibold text-slate-700 hover:text-purple-600 disabled:hover:text-slate-700 hover:shadow-lg hover:-translate-y-0.5 disabled:hover:translate-y-0 disabled:hover:shadow-none"
-              >
-                <span className="flex items-center gap-2">
-                  Next
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
-                </span>
-              </button>
+              {/* Pagination */}
+              <div className="flex items-center justify-center gap-4 p-6 bg-gradient-to-r from-slate-50/50 to-white border-t border-slate-200/50">
+                <button
+                  disabled={page === 1}
+                  onClick={() => setPage(page - 1)}
+                  className="group px-5 py-2.5 rounded-xl bg-white border-2 border-slate-200 hover:border-purple-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 font-semibold text-slate-700 hover:text-purple-600 disabled:hover:text-slate-700 hover:shadow-lg hover:-translate-y-0.5 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                >
+                  <span className="flex items-center gap-2">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 19l-7-7 7-7"
+                      />
+                    </svg>
+                    Prev
+                  </span>
+                </button>
+
+                <div className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl font-bold text-white shadow-lg shadow-purple-500/30">
+                  Page {page} / {totalPages}
+                </div>
+
+                <button
+                  disabled={page === totalPages}
+                  onClick={() => setPage(page + 1)}
+                  className="group px-5 py-2.5 rounded-xl bg-white border-2 border-slate-200 hover:border-purple-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 font-semibold text-slate-700 hover:text-purple-600 disabled:hover:text-slate-700 hover:shadow-lg hover:-translate-y-0.5 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                >
+                  <span className="flex items-center gap-2">
+                    Next
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </span>
+                </button>
+              </div>
             </div>
-          </div>
           </div>
         </div>
       </div>
 
-
       {/* <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-indigo-50 p-8"> */}
-        {/* <div className="max-w-7xl mx-auto"> */}
-          {/* Header Section */}
+      {/* <div className="max-w-7xl mx-auto"> */}
+      {/* Header Section */}
 
+      {/* </div> */}
 
-       
-        {/* </div> */}
-
-        <style jsx>{`
+      <style jsx>{`
         @keyframes fadeIn {
           from {
             opacity: 0;
@@ -494,10 +528,11 @@ export default function IndicatorBuildingListing({
           onClick={() => setEnabled(!enabled)}
           className={`
           relative w-14 h-7 flex items-center rounded-5 p-1 transition-all duration-300 ease-in-out
-          ${enabled
+          ${
+            enabled
               ? "bg-gradient-to-r from-purple-600 to-indigo-600 shadow-lg shadow-purple-500/40"
               : "bg-slate-300 shadow-inner"
-            }
+          }
           hover:scale-105 active:scale-95
         `}
         >

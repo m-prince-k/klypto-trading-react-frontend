@@ -1,124 +1,279 @@
 import React, { useEffect, useRef, useState } from "react";
-import { createChart, LineSeries } from "lightweight-charts";
+import {
+  createChart,
+  CandlestickSeries,
+  LineSeries,
+} from "lightweight-charts";
 
-const sampleCandleData = [
-  // uptrend
-  { time: 1687392000, open: 30000, high: 30500, low: 29500, close: 30400 },
-  { time: 1687478400, open: 30400, high: 30800, low: 30200, close: 30700 },
-  { time: 1687564800, open: 30700, high: 31200, low: 30500, close: 31000 },
-  { time: 1687651200, open: 31000, high: 31500, low: 30800, close: 31400 },
-  { time: 1687737600, open: 31400, high: 31800, low: 31200, close: 31700 }, // strong downtrend (force negative aroon)
+function hexToRGBA(hex, alpha = 1) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
 
-  { time: 1687824000, open: 31700, high: 31800, low: 31000, close: 31200 },
-  { time: 1687910400, open: 31200, high: 31300, low: 30500, close: 30700 },
-  { time: 1687996800, open: 30700, high: 30800, low: 30000, close: 30200 },
-  { time: 1688083200, open: 30200, high: 30300, low: 29500, close: 29700 },
-  { time: 1688169600, open: 29700, high: 29800, low: 29000, close: 29200 }, // sideways / mixed
+// Dummy candles
+const dummyCandles = Array.from({ length: 100 }, (_, i) => {
+  const open = 100 + Math.random() * 10;
+  const close = open + (Math.random() - 0.5) * 5;
+  const high = Math.max(open, close) + Math.random() * 2;
+  const low = Math.min(open, close) - Math.random() * 2;
+  const volume = 100 + Math.random() * 50;
+  return { time: i, open, high, low, close, volume };
+});
 
-  { time: 1688256000, open: 29200, high: 29600, low: 28900, close: 29400 },
-  { time: 1688342400, open: 29400, high: 29900, low: 29200, close: 29800 },
-  { time: 1688428800, open: 29800, high: 30000, low: 29500, close: 29600 },
-  { time: 1688515200, open: 29600, high: 30100, low: 29400, close: 30000 },
-  { time: 1688601600, open: 30000, high: 30300, low: 29700, close: 29900 },
-];
+// VWAP LOGIC (same)
+function calculateVWAP(candles, settings) {
+  let cumulativePV = 0;
+  let cumulativeVolume = 0;
 
-const calculateAroon = (data, period = 14) => {
-  const result = [];
-  for (let i = 0; i < data.length; i++) {
-    if (i < period) continue;
-    let highestIndex = i;
-    let lowestIndex = i;
-    for (let j = i - period; j <= i; j++) {
-      if (data[j].high > data[highestIndex].high) highestIndex = j;
-      if (data[j].low < data[lowestIndex].low) lowestIndex = j;
-    }
-    const aroonUp = ((period - (i - highestIndex)) / period) * 100;
-    const aroonDown = ((period - (i - lowestIndex)) / period) * 100;
-    result.push({ time: data[i].time, value: aroonUp - aroonDown });
-  }
-  return result;
-};
+  let prices = [];
 
-export default function Testing() {
-  const chartContainerRef = useRef(null);
-  const chartRef = useRef(null);
-  const [period, setPeriod] = useState(14);
+  const vwapData = [];
+  const upperBands = settings.bandMultipliers.map(() => []);
+  const lowerBands = settings.bandMultipliers.map(() => []);
 
-  useEffect(() => {
-    if (!chartContainerRef.current) return;
-    if (chartRef.current) return;
+  candles.forEach((candle, i) => {
+    const { open, high, low, close, volume } = candle;
 
-    const chart = createChart(chartContainerRef.current, {
-      width: chartContainerRef.current.clientWidth,
-      height: 400,
-      layout: { background: { color: "#0F172A" }, textColor: "#FFFFFF" },
-      grid: {
-        vertLines: { color: "#334155" },
-        horzLines: { color: "#334155" },
-      },
-    });
+    let price;
+    switch (settings.source) {
+      case "hl2": price = (high + low) / 2; break;
+      case "close": price = close; break;
+      case "open": price = open; break;
+      case "high": price = high; break;
+      case "low": price = low; break;
+      case "volume": price = volume; break;
+      default: price = (high + low + close) / 3;
+    }
 
-    const positiveSeries = chart.addSeries(LineSeries, {
-      color: "#22C55E",
-      lineWidth: 2,
-    });
+    cumulativePV += price * volume;
+    cumulativeVolume += volume;
 
-    const negativeSeries = chart.addSeries(LineSeries, {
-      color: "#EF4444",
-      lineWidth: 2,
-    });
+    const vwap = cumulativePV / cumulativeVolume;
+    prices.push(price);
 
-    chartRef.current = { chart, positiveSeries, negativeSeries };
+    let stdDev = 0;
+    if (settings.bandMode === "std") {
+      const mean = vwap;
+      let variance = 0;
+      for (let j = 0; j < prices.length; j++) {
+        variance += Math.pow(prices[j] - mean, 2);
+      }
+      variance /= prices.length;
+      stdDev = Math.sqrt(variance);
+    }
 
-    const handleResize = () => {
-      if (!chartContainerRef.current) return;
-      chart.applyOptions({ width: chartContainerRef.current.clientWidth });
-    };
+    vwapData.push({ time: i + settings.offset, value: vwap });
 
-    window.addEventListener("resize", handleResize);
+    settings.bandMultipliers.forEach((mult, idx) => {
+      let upper, lower;
 
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      chart.remove();
-      chartRef.current = null;
-    };
-  }, []);
+      if (settings.bandMode === "percentage") {
+        const percent = (vwap * mult) / 100;
+        upper = vwap + percent;
+        lower = vwap - percent;
+      } else {
+        upper = vwap + stdDev * mult;
+        lower = vwap - stdDev * mult;
+      }
 
-  useEffect(() => {
-    if (!chartRef.current) return;
-    const { chart, positiveSeries, negativeSeries } = chartRef.current;
+      upperBands[idx].push({ time: i + settings.offset, value: upper });
+      lowerBands[idx].push({ time: i + settings.offset, value: lower });
+    });
+  });
 
-    const aroonData = calculateAroon(sampleCandleData, period);
-    const positiveData = aroonData
-      .filter((d) => d.value >= 0)
-      .map((d) => ({ time: d.time, value: d.value }));
+  return { vwapData, upperBands, lowerBands };
+}
 
-    const negativeData = aroonData
-      .filter((d) => d.value < 0)
-      .map((d) => ({ time: d.time, value: d.value }));
+export default function DynamicVWAPChart() {
+  const chartRef = useRef();
 
-    positiveSeries.setData(positiveData);
-    negativeSeries.setData(negativeData);
-    chart.timeScale().fitContent();
-  }, [period]);
+  const [settings, setSettings] = useState({
+    source: "hlc3",
+    bandMode: "std",
+    offset: 0,
+    bandMultipliers: [1, 2, 3],
+    vwapColor: "#2962FF",
+    bandColor: "#00C853",
+    lineWidth: 2,
+  });
 
-  return (
-    <div style={{ padding: 20, background: "#020617", color: "white" }}>
-            <h2>Aroon Oscillator (Line)</h2>
-            
-      <div style={{ marginBottom: 10 }}>
-                <label>Period: </label>
-                
-        <input
-          type="number"
-          value={period}
-          onChange={(e) => setPeriod(Number(e.target.value))}
-        />
-              
-      </div>
-            
-      <div ref={chartContainerRef} style={{ width: "100%", height: "400px" }} />
-          
-    </div>
-  );
+  useEffect(() => {
+    const chart = createChart(chartRef.current, {
+      width: 900,
+      height: 450,
+      layout: { backgroundColor: "#fff", textColor: "#000" },
+    });
+
+    const candleSeries = chart.addSeries(CandlestickSeries);
+    candleSeries.setData(dummyCandles);
+
+    const { vwapData, upperBands, lowerBands } = calculateVWAP(
+      dummyCandles,
+      settings
+    );
+
+    // VWAP
+    const vwapSeries = chart.addSeries(LineSeries, {
+      color: settings.vwapColor,
+      lineWidth: settings.lineWidth,
+    });
+    vwapSeries.setData(vwapData);
+
+    // Bands
+    settings.bandMultipliers.forEach((_, i) => {
+      const upper = chart.addSeries(LineSeries, {
+        color: settings.bandColor,
+        lineWidth: 1,
+      });
+
+      const lower = chart.addSeries(LineSeries, {
+        color: settings.bandColor,
+        lineWidth: 1,
+      });
+
+      upper.setData(upperBands[i]);
+      lower.setData(lowerBands[i]);
+    });
+
+    chartRef.current.style.position = "relative";
+    // :white_check_mark: REAL CLOUD (MAIN FIX)
+    const canvas = document.createElement("canvas");
+    canvas.style.position = "absolute";
+    canvas.style.top = "0";
+    canvas.style.zIndex = "10";
+    canvas.style.left = "0";
+    canvas.style.pointerEvents = "none";
+    chartRef.current.appendChild(canvas);
+
+    const ctx = canvas.getContext("2d");
+
+    function resizeCanvas() {
+      canvas.width = chartRef.current.clientWidth;
+      canvas.height = chartRef.current.clientHeight;
+    }
+    resizeCanvas();
+
+    function drawCloud() {
+      const timeScale = chart.timeScale();
+      const refSeries = vwapSeries; // :white_check_mark: important
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      settings.bandMultipliers.forEach((_, i) => {
+        const upperData = upperBands[i];
+        const lowerData = lowerBands[i];
+
+        ctx.beginPath();
+
+        upperData.forEach((point, idx) => {
+          const x = timeScale.timeToCoordinate(point.time);
+          const y = refSeries.priceToCoordinate(point.value);
+
+          if (x === null || y === null) return;
+
+          if (idx === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+
+        for (let j = lowerData.length - 1; j >= 0; j--) {
+          const point = lowerData[j];
+          const x = timeScale.timeToCoordinate(point.time);
+          const y = refSeries.priceToCoordinate(point.value);
+
+          if (x === null || y === null) continue;
+
+          ctx.lineTo(x, y);
+        }
+
+        ctx.closePath();
+        ctx.fillStyle = hexToRGBA(settings.bandColor, 0.08 + i * 0.03);
+        ctx.fill();
+      });
+    }
+
+    chart.timeScale().subscribeVisibleTimeRangeChange(drawCloud);
+    chart.subscribeCrosshairMove(drawCloud);
+
+    setTimeout(drawCloud, 0);
+
+    const resizeObserver = new ResizeObserver(() => {
+      resizeCanvas();
+      drawCloud();
+    });
+    resizeObserver.observe(chartRef.current);
+
+    return () => chart.remove();
+  }, [settings]);
+
+  return (
+    <div>
+      <div style={{ marginBottom: 10 }}>
+        <select
+          value={settings.bandMode}
+          onChange={(e) =>
+            setSettings({ ...settings, bandMode: e.target.value })
+          }
+        >
+          <option value="std">STD</option>
+          <option value="percentage">%</option>
+        </select>
+
+        <select
+          value={settings.source}
+          onChange={(e) =>
+            setSettings({ ...settings, source: e.target.value })
+          }
+        >
+          <option value="hlc3">hlc3</option>
+          <option value="hl2">hl2</option>
+          <option value="close">close</option>
+          <option value="open">open</option>
+        </select>
+
+        <input
+          type="number"
+          value={settings.offset}
+          onChange={(e) =>
+            setSettings({
+              ...settings,
+              offset: parseInt(e.target.value) || 0,
+            })
+          }
+        />
+
+        <input
+          type="color"
+          value={settings.vwapColor}
+          onChange={(e) =>
+            setSettings({ ...settings, vwapColor: e.target.value })
+          }
+        />
+
+        <input
+          type="color"
+          value={settings.bandColor}
+          onChange={(e) =>
+            setSettings({ ...settings, bandColor: e.target.value })
+          }
+        />
+
+        {settings.bandMultipliers.map((val, i) => (
+          <input
+            key={i}
+            type="number"
+            value={val}
+            onChange={(e) => {
+              const arr = [...settings.bandMultipliers];
+              arr[i] = Number(e.target.value);
+              setSettings({ ...settings, bandMultipliers: arr });
+            }}
+          />
+        ))}
+      </div>
+
+      <div ref={chartRef} style={{ position: "relative" }}></div>
+    </div>
+  );
 }

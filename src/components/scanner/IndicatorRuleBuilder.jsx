@@ -20,6 +20,7 @@ import {
   CardHeader,
 } from "react-bootstrap";
 import { IoClose } from "react-icons/io5";
+import IndicatorBuildingListing from "./IndicatorBuilderListing";
 
 export default function IndicatorRuleBuilder({ onClose, onOpen }) {
   const [timeframeOptions, setTimeframeOptions] = useState([]);
@@ -28,7 +29,6 @@ export default function IndicatorRuleBuilder({ onClose, onOpen }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState(null);
   const [currencies, setCurrencies] = useState([]);
-  const [selectedCurrency, setSelectedCurrency] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedCurrencies, setSelectedCurrencies] = useState([]);
@@ -606,6 +606,10 @@ export default function IndicatorRuleBuilder({ onClose, onOpen }) {
           timeframeOptions={timeframeOptions}
         />
       )}
+      {/* Listing */}
+      <IndicatorBuildingListing
+       
+        />
     </Container>
   );
 }

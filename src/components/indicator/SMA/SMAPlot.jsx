@@ -11,208 +11,208 @@ export default function SMAPlot({
   containerRef,
   indicatorConfigs,
 }) {
-  const cloudCanvasRef = useRef(null);
-  const cloudCtxRef = useRef(null);
+
+  const seriesRef = useRef({});
+  const canvasRef = useRef(null);
+
+  const bandDataRef = useRef({
+    upper: [],
+    lower: [],
+  });
 
   const maType = indicatorConfigs?.SMA?.maType;
 
-  /* ================= CREATE SMA ================= */
+  const clean = (d) =>
+    Array.isArray(d) ? d.filter((x) => x?.time && x?.value != null) : [];
+
+  /* ---------------- CREATE SERIES ---------------- */
 
   useEffect(() => {
-    if (!result) return;
 
-    if (indicatorSeriesRef.current?.SMA) {
-      Object.values(indicatorSeriesRef.current.SMA).forEach((s) => {
-        if (s?.setData) {
-          try {
-            s.setData([]);
-          } catch {}
-        }
-      });
+    if (!chart || seriesRef.current.sma) return;
 
-      indicatorSeriesRef.current.SMA = null;
-    }
+    const s = {};
 
-    const groupedSeries = {};
+    Object.entries(indicatorStyle?.SMA || {}).forEach(([key]) => {
 
-    Object.entries(result.data || {}).forEach(([lineName, lineData]) => {
-      if (!Array.isArray(lineData)) return;
+      if (["bbFill"].includes(key)) return;
 
-      const rowConfig = rows?.find((r) => r.key === lineName);
-      const styleConfig = indicatorStyle?.SMA?.[lineName];
+      s[key] = addSeries("SMA", LineSeries, indicatorStyle.SMA[key]);
 
-      const series = addSeries("SMA", LineSeries, {
-        color: styleConfig?.color || rowConfig?.color || "#ff9800",
-        lineWidth: styleConfig?.width || 2,
-        visible: styleConfig?.visible ?? true,
-        priceLineVisible: false,
-        lastValueVisible: true,
-      });
-
-      if (!series) return;
-
-      series.setData(lineData);
-
-      groupedSeries[lineName] = series;
     });
 
-    indicatorSeriesRef.current.SMA = {
-      ...groupedSeries,
-      result,
-    };
-  }, [result]);
+    seriesRef.current = s;
+    indicatorSeriesRef.current.SMA = s;
 
-  /* ================= CREATE CLOUD CANVAS ================= */
+  }, [chart]);
+
+
+  /* ---------------- UPDATE DATA ---------------- */
 
   useEffect(() => {
-    if (!containerRef?.current || !chart) return;
 
-    if (cloudCanvasRef.current) return;
+    if (!result?.data) return;
+
+    const d = result.data;
+
+    const sma = clean(d.sma);
+    const smoothingMA = clean(d.smoothingMA);
+    const upper = clean(d.bbUpper);
+    const lower = clean(d.bbLower);
+
+    bandDataRef.current = { upper, lower };
+
+    seriesRef.current.sma?.setData(sma);
+    seriesRef.current.smoothingMA?.setData(smoothingMA);
+
+    seriesRef.current.bbUpper?.setData(upper);
+    seriesRef.current.bbLower?.setData(lower);
+
+    drawCloud();
+
+  }, [result]);
+
+
+  /* ---------------- STYLE UPDATE ---------------- */
+
+  useEffect(() => {
+
+    const group = seriesRef.current;
+
+    Object.entries(group).forEach(([key, s]) => {
+
+      const style = indicatorStyle?.SMA?.[key];
+      if (!style) return;
+
+      s.applyOptions({
+        color: style.color,
+        lineWidth: style.width,
+        lineStyle: style.lineStyle,
+        visible: style.visible,
+      });
+
+    });
+
+    drawCloud();
+
+  }, [indicatorStyle]);
+
+
+  /* ---------------- CANVAS INIT ---------------- */
+
+  useEffect(() => {
+
+    if (!containerRef || canvasRef.current) return;
 
     const canvas = document.createElement("canvas");
 
     canvas.style.position = "absolute";
-    canvas.style.left = "0";
-    canvas.style.top = "0";
+    canvas.style.left = "0px";
+    canvas.style.top = "0px";
     canvas.style.pointerEvents = "none";
-    canvas.style.zIndex = "0";
+    canvas.style.zIndex = 1;
 
-    containerRef.current.appendChild(canvas);
+    containerRef.appendChild(canvas);
 
-    cloudCanvasRef.current = canvas;
-    cloudCtxRef.current = canvas.getContext("2d");
+    canvasRef.current = canvas;
 
-    const resize = () => {
-      const rect = containerRef.current.getBoundingClientRect();
-      canvas.width = rect.width;
-      canvas.height = rect.height;
-    };
+  }, [containerRef]);
 
-    resize();
 
-    const resizeObserver = new ResizeObserver(resize);
-    resizeObserver.observe(containerRef.current);
+  /* ---------------- DRAW BAND ---------------- */
 
-    return () => resizeObserver.disconnect();
-  }, [chart]);
+  const drawBand = (ctx, upper, lower, color, series) => {
 
-  /* ================= DRAW CLOUD ================= */
+    if (!upper.length || !lower.length) return;
 
-  useEffect(() => {
-    const ctx = cloudCtxRef.current;
-    const canvas = cloudCanvasRef.current;
+    const len = Math.min(upper.length, lower.length);
 
-    if (!ctx || !canvas) return;
+    ctx.beginPath();
+    ctx.fillStyle = color;
 
-    if (maType !== "SMA + Bollinger Bands") {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      return;
+    for (let i = 0; i < len; i++) {
+
+      const p = upper[i];
+
+      const x = chart.timeScale().timeToCoordinate(p.time);
+      const y = series.priceToCoordinate(p.value);
+
+      if (x == null || y == null) continue;
+
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
     }
 
-    const smaGroup = indicatorSeriesRef.current?.SMA;
+    for (let i = len - 1; i >= 0; i--) {
 
-    const upperSeries = smaGroup?.bbUpper;
-    const lowerSeries = smaGroup?.bbLower;
+      const p = lower[i];
 
-    const upperData = smaGroup?.result?.data?.bbUpper;
-    const lowerData = smaGroup?.result?.data?.bbLower;
+      const x = chart.timeScale().timeToCoordinate(p.time);
+      const y = series.priceToCoordinate(p.value);
 
-    if (!upperSeries || !lowerSeries) return;
-    if (!upperData?.length || !lowerData?.length) return;
+      if (x == null || y == null) continue;
 
-    const drawCloud = () => {
-      const fillStyle = indicatorStyle?.SMA?.bbFill;
+      ctx.lineTo(x, y);
+    }
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.closePath();
+    ctx.fill();
+  };
 
-      if (!fillStyle?.visible) return;
 
-      const upperCoords = [];
-      const lowerCoords = [];
+  /* ---------------- DRAW CLOUD ---------------- */
 
-      upperData.forEach((p) => {
-        const x = chart.timeScale().timeToCoordinate(p.time);
-        const y = upperSeries.priceToCoordinate(p.value);
+  const drawCloud = () => {
 
-        if (x != null && y != null) {
-          upperCoords.push({ x, y });
-        }
-      });
+    if (!canvasRef.current || !chart || !containerRef) return;
 
-      lowerData.forEach((p) => {
-        const x = chart.timeScale().timeToCoordinate(p.time);
-        const y = lowerSeries.priceToCoordinate(p.value);
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
 
-        if (x != null && y != null) {
-          lowerCoords.push({ x, y });
-        }
-      });
+    const rect = containerRef.getBoundingClientRect();
 
-      if (!upperCoords.length || !lowerCoords.length) return;
+    canvas.width = rect.width;
+    canvas.height = rect.height;
 
-      ctx.beginPath();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      ctx.moveTo(upperCoords[0].x, upperCoords[0].y);
+    if (maType !== "SMA + Bollinger Bands") return;
 
-      upperCoords.forEach((p) => ctx.lineTo(p.x, p.y));
+    const fill = indicatorStyle?.SMA?.bbFill;
 
-      for (let i = lowerCoords.length - 1; i >= 0; i--) {
-        ctx.lineTo(lowerCoords[i].x, lowerCoords[i].y);
-      }
+    if (!fill?.visible) return;
 
-      ctx.closePath();
+    drawBand(
+      ctx,
+      bandDataRef.current.upper,
+      bandDataRef.current.lower,
+      fill.topFillColor1 || "rgba(76,175,80,0.2)",
+      seriesRef.current.bbUpper
+    );
+  };
 
-      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
 
-      gradient.addColorStop(
-        0,
-        fillStyle?.topFillColor1 || "rgba(0,255,0,0.25)"
-      );
+  /* ---------------- REDRAW EVENTS ---------------- */
 
-      gradient.addColorStop(
-        1,
-        fillStyle?.bottomFillColor1 || "rgba(0,255,0,0)"
-      );
+  useEffect(() => {
 
-      ctx.fillStyle = gradient;
-      ctx.fill();
-    };
-
-    drawCloud();
+    if (!chart) return;
 
     const redraw = () => drawCloud();
 
-    chart.timeScale().subscribeVisibleLogicalRangeChange(redraw);
+    chart.timeScale().subscribeVisibleTimeRangeChange(redraw);
     chart.subscribeCrosshairMove(redraw);
 
+    drawCloud();
+
     return () => {
-      chart.timeScale().unsubscribeVisibleLogicalRangeChange(redraw);
+
+      chart.timeScale().unsubscribeVisibleTimeRangeChange(redraw);
       chart.unsubscribeCrosshairMove(redraw);
+
     };
-  }, [indicatorStyle?.SMA?.bbFill, result, indicatorConfigs]);
 
-  /* ================= STYLE UPDATE ================= */
-
-  useEffect(() => {
-    const smaGroup = indicatorSeriesRef.current?.SMA;
-    if (!smaGroup) return;
-
-    const styles = indicatorStyle?.SMA;
-
-    ["sma", "smoothingMA", "bbUpper", "bbLower"].forEach((key) => {
-      if (!smaGroup[key]) return;
-
-      const s = styles?.[key];
-
-      smaGroup[key].applyOptions({
-        color: s?.color,
-        lineWidth: s?.width,
-        lineStyle: s?.lineStyle ?? 0,
-        visible: s?.visible,
-        lastValueVisible: s?.visible,
-      });
-    });
-  }, [indicatorStyle]);
+  }, [chart, indicatorConfigs, indicatorStyle, result]);
 
   return null;
 }
