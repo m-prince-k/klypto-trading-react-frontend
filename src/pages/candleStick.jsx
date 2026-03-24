@@ -99,7 +99,20 @@ export default function Candlestick() {
     paneIndexRef.current[indicator] = nextPane;
     return nextPane;
   };
-
+  // signal: {
+  //         visible: true, // usually EMA of NVI (like 255 EMA)
+  //         color: "rgba(33,150,243,1)", // blue
+  //         width: 1,
+  //         lineStyle: 2,
+  //       },
+  //       baseLine: {
+  //         visible: false,
+  //         value: 1000,
+  //         color: "rgba(158,158,158,0.6)",
+  //         width: 1,
+  //         lineStyle: 1,
+  //       },
+  //     }
   const [indicatorConfigs, setIndicatorConfigs] = useState({
     SMA: {
       length: 9,
@@ -117,7 +130,6 @@ export default function Candlestick() {
       maLength: 14,
       bbStdDev: 2,
     },
-
     WMA: {
       length: 9,
       source: "close",
@@ -134,13 +146,15 @@ export default function Candlestick() {
     TEMA: {
       length: 9,
     },
+    AD: {
+      length: 14,
+    },
     KAMA: {
       ERlength: 10,
       fastLength: 2,
       slowLength: 30,
       source: "close",
     },
-
     ICHIMOKU: {
       conversionLength: 9,
       baseLength: 26,
@@ -178,7 +192,7 @@ export default function Candlestick() {
       maLength: 14,
       bbStdDev: 2,
     },
-    Stochastic: {
+    STOCH: {
       kLength: 14,
       kSmoothing: 1,
       dSmoothing: 3,
@@ -222,19 +236,24 @@ export default function Candlestick() {
       middleLength: 14,
       slowLength: 28,
     },
-    ChandeMomentumOscillator: {
+    CMO: {
       length: 9,
       source: "close",
     },
     TRIX: {
       length: 18,
     },
-    FisherTransform: {
+    FT: {
       length: 9,
     },
     ATR: {
       length: 14,
       smoothing: "RMA",
+    },
+
+    VP: {
+      maType: "SMA", // or "none"
+      maLength: 14,
     },
     BB: {
       length: 20,
@@ -266,11 +285,11 @@ export default function Candlestick() {
       length: 14,
       offset: 0,
     },
-    StandardDeviation: {
+    STDDEV: {
       length: 20,
       source: "close",
     },
-    Volume: {
+    VOL: {
       maLength: 20,
       colorByPrevious: false,
     },
@@ -282,7 +301,7 @@ export default function Candlestick() {
       maLlength: 14,
       bbStdDev: 2,
     },
-    "Percentage Volume Oscillator": {
+    PVO: {
       fastLength: 12,
       slowLength: 26,
       signalLength: 9,
@@ -299,10 +318,10 @@ export default function Candlestick() {
       length: 14,
       divisor: 10000,
     },
-    "Negative Volume Index": {
+    NVI: {
       emaLength: 255,
     },
-    "Positive Volume Index": {
+    PVI: {
       emaLength: 255,
     },
     VWAP: {
@@ -317,7 +336,7 @@ export default function Candlestick() {
         band3: { enabled: false, multiplier: 3 },
       },
     },
-    "Zig Zag": {
+    ZIGZAG: {
       priceDeviation: 5,
       pivotLegs: 10,
       lineColor: "#2962ff",
@@ -430,26 +449,67 @@ export default function Candlestick() {
         bottomFillColor1: "rgba(76,175,80,0.05)",
       },
     },
+
     BBW: {
-      bollingerBandWidth: {
-        visible: true,
-        color: "rgba(41, 98, 255, 1)", // default blue
+      bbwLine: {
+        color: "rgba(33,150,243,1)",
         width: 2,
         lineStyle: 0,
+        visible: true,
       },
-      highestExpansion: {
+      highest: {
+        color: "rgba(244,67,54,1)",
+        width: 1,
+        lineStyle: 2,
         visible: true,
-        color: "rgba(38,166,154,1)", // teal
-        width: 2,
-        lineStyle: 0,
       },
-      lowestContraction: {
+
+      lowest: {
+        color: "rgba(0,200,83,1)",
+        width: 1,
+        lineStyle: 2,
         visible: true,
-        color: "rgba(38,166,154,1)", // same as above
-        width: 2,
-        lineStyle: 0,
       },
     },
+
+    STDDEV: {
+      stddev: {
+        color: "rgba(33,150,243,1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+    },
+
+
+
+    OBV: {
+      obv: {
+        color: "rgba(156,39,176,1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+      smoothingMA: {
+        color: "rgba(255,193,7,1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+      bbUpper: {
+        color: "rgba(0,200,83,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+      },
+      bbLower: {
+        color: "rgba(255,82,82,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+      },
+    },
+
     ICHIMOKU: {
       conversionLine: {
         color: "rgba(41,98,255,1)",
@@ -784,7 +844,6 @@ export default function Candlestick() {
         lineStyle: 2,
         value: -20,
       },
-
       middleBand: {
         visible: true,
         color: "rgba(158,158,158,1)",
@@ -792,7 +851,6 @@ export default function Candlestick() {
         lineStyle: 2,
         value: -50,
       },
-
       lowerBand: {
         visible: true,
         color: "rgba(38,166,154,1)",
@@ -800,7 +858,6 @@ export default function Candlestick() {
         lineStyle: 2,
         value: -80,
       },
-
       bg: {
         visible: true,
         topFillColor1: "rgba(38,166,154,0.08)",
@@ -814,6 +871,48 @@ export default function Candlestick() {
         width: 2,
         lineStyle: 0,
         opacity: 100,
+      },
+    },
+    STOCH: {
+      k: {
+        visible: true,
+        color: "rgba(38,166,154,1)",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+      },
+      d: {
+        visible: true,
+        color: "rgba(255,152,0,1)",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+      },
+      upperBand: {
+        value: 80,
+        visible: true,
+        color: "rgba(120,123,134,0.6)",
+        width: 1,
+        lineStyle: 2,
+      },
+      middleBand: {
+        value: 50,
+        visible: true,
+        color: "rgba(120,123,134,0.5)",
+        width: 1,
+        lineStyle: 2,
+      },
+      lowerBand: {
+        value: 20,
+        visible: true,
+        color: "rgba(120,123,134,0.6)",
+        width: 1,
+        lineStyle: 2,
+      },
+      bgFill: {
+        visible: true,
+        topFillColor1: "rgba(41,98,255,0.12)",
+        topFillColor2: "rgba(41,98,255,0.05)",
       },
     },
     MFI: {
@@ -854,6 +953,28 @@ export default function Candlestick() {
         topFillColor2: "rgba(41, 98, 255, 0.08)",
       },
     },
+    VOL: {
+      volume: {
+        color: "rgba(38,166,154,1)", // fallback
+        visible: true,
+      },
+      volumeMA: {
+        color: "rgba(255,193,7,1)",
+        width: 2,
+        visible: true,
+      },
+    },
+    VP: {
+      volume: {
+        color: "rgba(38,166,154,1)",
+        visible: true,
+      },
+      volumeMA: {
+        color: "rgba(255,193,7,1)",
+        width: 2,
+        visible: true,
+      },
+    },
     PSAR: {
       psar: {
         visible: true,
@@ -866,24 +987,48 @@ export default function Candlestick() {
       eom: {
         color: "rgba(38, 166, 154, 1)",
         width: 3,
-        lineStyle: 0, // 0 solid, 1 dotted, 2 dashed
+        lineStyle: 0,
         visible: true,
       },
+    },
 
-      /* Histogram colors */
+    PVO: {
       histogram: {
-        upColor: "rgba(38, 166, 154, 1)",   // green
-        downColor: "rgba(239, 83, 80, 1)",  // red
-        base: 0,
         visible: true,
+        color0: "rgba(0, 150, 136, 1)",   // dark green
+        color1: "rgba(178, 223, 219, 1)", // light green
+        color2: "rgba(255, 205, 210, 1)", // light red
+        color3: "rgba(244, 67, 54, 1)",   // dark red
       },
 
-      /* Zero line */
-      zeroLine: {
+      pvo: {
+        visible: true,
+        color: "rgba(33, 150, 243, 1)", // blue
+        lineStyle: 0,
+        lineWidth: 2,
+      },
+
+      signal: {
+        visible: true,
+        color: "rgba(255, 152, 0, 1)", // orange
+        lineStyle: 0,
+        lineWidth: 2,
+      },
+
+      zero: {
+        visible: true,
         value: 0,
-        color: "rgba(153, 153, 153, 1)", // grey
-        width: 1,
-        lineStyle: 2, // dashed
+        color: "rgba(120, 120, 120, 0.6)",
+        lineStyle: 2,
+        lineWidth: 1,
+      },
+    },
+
+    AD: {
+      ad: {
+        color: "rgba(156,39,176,1)",
+        width: 2,
+        lineStyle: 0,
         visible: true,
       },
       upper: {
@@ -940,29 +1085,26 @@ export default function Candlestick() {
     },
     KC: {
       upper: {
-        visible: true,
-        color: "rgba(239,83,80,1)",
+        color: "rgba(33,150,243,1)",
         width: 1,
         lineStyle: 0,
+        visible: true,
       },
-      basis: {
-        visible: true,
-        color: "rgba(38,166,154,1)",
+      middle: {
+        color: "rgba(33,150,243,1)",
         width: 1,
         lineStyle: 0,
+        visible: true,
       },
       lower: {
-        visible: true,
-        color: "rgba(38,166,154,1)",
+        color: "rgba(33,150,243,1)",
         width: 1,
         lineStyle: 0,
-      },
-      bg: {
         visible: true,
-        topFillColor1: "rgba(38,166,154,0.1)",
-        topFillColor2: "rgba(239,83,80,0.1)",
       },
+
     },
+
     EOM: {
       eom: {
         color: "rgba(38, 166, 154, 1)",
@@ -973,47 +1115,85 @@ export default function Candlestick() {
     },
     BB: {
       upper: {
-        visible: true,
-        color: "rgba(239,83,80,1)",
-        width: 1,
+        color: "rgba(244,67,54,1)", // red
+        width: 2,
         lineStyle: 0,
-      },
-      basis: {
         visible: true,
-        color: "rgba(38,166,154,1)",
-        width: 1,
-        lineStyle: 0,
       },
+
       lower: {
+        color: "rgba(33,150,243,1)", // blue
+        width: 2,
+        lineStyle: 0,
         visible: true,
+      },
+
+      basis: {
+        color: "rgba(255,193,7,1)", // yellow
+        width: 2,
+        lineStyle: 2, // dashed
+        visible: true,
+      },
+    },
+    UO: {
+      ultimateoscillator: {
         color: "rgba(38,166,154,1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+    },
+    PVI: {
+      pvi: {
+        color: "rgba(41,98,255,1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+      pviEma: {
+        color: "rgb(153, 166, 38)",
         width: 1,
         lineStyle: 0,
-      },
-      bg: {
         visible: true,
-        topFillColor1: "rgba(38,166,154,0.1)",
-        topFillColor2: "rgba(239,83,80,0.1)",
       },
     },
     MACD: {
       macd: {
         visible: true,
-        color: "rgba(33,150,243,1)", // blue
+        color: "rgba(33,150,243,1)",
         width: 2,
         lineStyle: 0,
       },
+
       signal: {
         visible: true,
-        color: "rgba(255,193,7,1)", // yellow
+        color: "rgba(255,193,7,1)",
         width: 2,
         lineStyle: 0,
       },
+
       histogram: {
         visible: true,
-        upColor: "rgba(38,166,154,1)",   // green
-        downColor: "rgba(239,83,80,1)",  // red
+
+        palette: {
+          0: "rgba(38,166,154,1)", // strong up
+          1: "rgba(129,199,132,1)", // weak up
+          2: "rgba(239,83,80,1)", // strong down
+          3: "rgba(255,138,128,1)", // weak down
+        },
+
+        upColor: "rgba(38,166,154,1)",
+        downColor: "rgba(239,83,80,1)",
+
         base: 0,
+      },
+
+      zeroLine: {
+        visible: true,
+        color: "rgba(150,150,150,0.5)",
+        width: 1,
+        value: 0,
+        lineStyle: 2,
       },
     },
     VWAP: {
@@ -1042,73 +1222,185 @@ export default function Candlestick() {
       },
     },
     CKS: {
-      longStop: {
-        visible: true,
-        color: "rgba(38,166,154,1)", // green
+      long: {
+        color: "rgba(33,150,243,1)",
         width: 2,
         lineStyle: 0,
-      },
-      shortStop: {
         visible: true,
-        color: "rgba(239,83,80,1)", // red
+      },
+      short: {
+        color: "rgba(244,67,54,1)",
         width: 2,
         lineStyle: 0,
-      },
-      bg: {
-        visible: false,
-        topFillColor1: "rgba(38,166,154,0.1)",
-        topFillColor2: "rgba(239,83,80,0.1)",
+        visible: true,
       },
     },
-   HV: {
-  hv: {
-    visible: true,
-    color: "#ff9800",
-    width: 2,
-    lineStyle: 0,
-  },
-},
-    CMF: {
-      cmf: {
+    HV: {
+      hv: {
         visible: true,
-        color: "rgba(0,188,212,1)", // cyan
+        color: "rgba(255,152,0,1)",
         width: 2,
         lineStyle: 0,
+      }
+    },
+    CMF: {
+      cmfLine: {
+        color: "rgba(255,193,7,1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
       },
       zeroLine: {
+        color: "rgba(158,158,158,1)",
+        width: 1,
+        lineStyle: 2,
         visible: true,
         value: 0,
-        color: "rgba(158,158,158,0.8)",
-        width: 1,
-        lineStyle: 1,
-      },
-      bg: {
-        visible: true,
-        topFillColor1: "rgba(38,166,154,0.15)", // above 0
-        topFillColor2: "rgba(239,83,80,0.15)", // below 0
       },
     },
     NVI: {
       nvi: {
-        visible: true,
-        color: "rgba(121,85,72,1)", // brown
+        color: "rgba(41,98,255,1)",
         width: 2,
         lineStyle: 0,
+        visible: true,
       },
-      signal: {
-        visible: true, // usually EMA of NVI (like 255 EMA)
-        color: "rgba(33,150,243,1)", // blue
+      nviEma: {
+        color: "rgba(38,166,154,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+    },
+    STOCHRSI: {
+      kLine: {
+        visible: true,
+        color: "#2962FF",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+      },
+      dLine: {
+        visible: true,
+        color: "#FF6D00",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+      },
+
+      upperBand: {
+        value: 80,
+        visible: true,
+        color: "rgba(120,123,134,0.6)",
         width: 1,
         lineStyle: 2,
       },
-      baseLine: {
-        visible: false,
-        value: 1000,
-        color: "rgba(158,158,158,0.6)",
+
+      middleBand: {
+        value: 50,
+        visible: true,
+        color: "rgba(120,123,134,0.5)",
         width: 1,
-        lineStyle: 1,
+        lineStyle: 2,
       },
-    }
+
+      lowerBand: {
+        value: 20,
+        visible: true,
+        color: "rgba(120,123,134,0.6)",
+        width: 1,
+        lineStyle: 2,
+      },
+
+      bgFill: {
+        visible: true,
+        topFillColor1: "rgba(41,98,255,0.12)",
+        topFillColor2: "rgba(41,98,255,0.05)",
+      },
+    },
+    CMO: {
+      cmoLine: {
+        color: "rgba(38,166,154,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+      zeroLine: {
+        color: "rgba(158,158,158,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: 0,
+      },
+    },
+    TRIX: {
+      trixLine: {
+        color: "rgba(33,150,243,1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+      zeroLine: {
+        color: "rgba(158,158,158,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: 0,
+      },
+    },
+    FT: {
+      fisherLine: {
+        color: "rgba(38,166,154,1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+      triggerLine: {
+        color: "rgba(255,152,0,1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+      level1_5: {
+        color: "rgba(239,83,80,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: 1.5,
+      },
+      level0_75: {
+        color: "rgba(255,183,77,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: 0.75,
+      },
+      level0: {
+        color: "rgba(158,158,158,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: 0,
+      },
+
+      level_minus0_75: {
+        color: "rgba(129,199,132,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: -0.75,
+      },
+
+      level_minus1_5: {
+        color: "rgba(38,166,154,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: -1.5,
+      },
+    },
+
+
   };
 
   const [indicatorStyle, setIndicatorStyle] = useState(indicatorStyleDefault);
@@ -1163,8 +1455,6 @@ export default function Candlestick() {
         return "RSI";
       case "MACD":
         return "MACD";
-      case "Volume":
-        return "volume";
       case "ATR":
         return "ATR";
       case "AROON":
@@ -1183,16 +1473,48 @@ export default function Candlestick() {
         return "AO";
       case "CHOP":
         return "CHOP";
+      case "FT":
+        return "FT";
       case "EOM":
         return "EOM";
       case "MOM":
         return "MOM";
+      case "UO":
+        return "UO";
+      case "PVI":
+        return "PVI";
+      case "NVI":
+        return "NVI";
+      case "STOCHRSI":
+        return "STOCHRSI";
+      case "STOCH":
+        return "STOCH";
+      case "CMO":
+        return "CMO";
       case "EOM":
         return "EOM";
-        case "HV":
+      case "HV":
         return "HV";
-        //  case "VWAP":
-        // return "VWAP";
+      case "PVO":
+        return "PVO";
+      case "OBV":
+        return "OBV";
+      case "CMO":
+        return "CMO";
+      case "STDDEV":
+        return "STDDEV";
+      case "AD":
+        return "AD";
+      case "TRIX":
+        return "TRIX";
+      case "VP":
+        return "VP";
+      case "BBW":
+        return "BBW";
+      case "KC":
+        return "KC";
+
+
     }
   }
 
@@ -1238,13 +1560,13 @@ export default function Candlestick() {
 
         try {
           chart.removeSeries(series);
-        } catch { }
+        } catch {}
       });
     } else {
       /* SINGLE SERIES */
       try {
         chart.removeSeries(entry);
-      } catch { }
+      } catch {}
     }
 
     delete indicatorSeriesRef.current[indicator];
@@ -1347,7 +1669,7 @@ export default function Candlestick() {
 
           try {
             chart.removeSeries(series);
-          } catch (e) { }
+          } catch (e) {}
         });
 
         delete indicatorSeriesRef.current[indicator];
@@ -1366,6 +1688,8 @@ export default function Candlestick() {
   const renderValue = (indicator, value) => {
     if (value == null) return "--";
 
+    /* ================= NUMBER VALUES ================= */
+
     if (typeof value === "number") {
       const style =
         indicatorStyle?.[indicator]?.sma ||
@@ -1375,8 +1699,11 @@ export default function Candlestick() {
       if (style?.visible === false) return null;
 
       const color = style?.color || "#333";
+
       return <span style={{ color }}>{Number(value).toFixed(2)}</span>;
     }
+
+    /* ================= OBJECT VALUES ================= */
 
     if (typeof value === "object") {
       let keysToShow;
@@ -1385,18 +1712,27 @@ export default function Candlestick() {
         case "RSI":
           keysToShow = ["rsi", "smoothingMA"];
           break;
+
         case "CCI":
           keysToShow = ["cciLine", "cciMa"];
           break;
+
+        case "EOM":
+          keysToShow = ["eom"];
+          break;
+
         case "ROC":
           keysToShow = ["roc"];
           break;
+
         case "MOM":
           keysToShow = ["mom"];
           break;
-        // case "AO":
-        //   keysToShow = ["oscData"];
-        //   break;
+
+        case "UO":
+          keysToShow = ["ultimateoscillator"];
+          break;
+
         case "ICHIMOKU":
           keysToShow = [
             "conversionLine",
@@ -1408,8 +1744,9 @@ export default function Candlestick() {
             "kumoCloudLower",
           ];
           break;
+
         default:
-          keysToShow = Object.keys(value); // fallback for other indicators
+          keysToShow = Object.keys(value);
       }
 
       return keysToShow
@@ -1424,7 +1761,7 @@ export default function Candlestick() {
 
           return (
             <span key={key} style={{ marginRight: 8, color }}>
-              {Number.isFinite(val) ? val.toFixed(2) : "--"}
+              {Number.isFinite(val) ? Number(val).toFixed(2) : "--"}
             </span>
           );
         });
@@ -1444,17 +1781,18 @@ export default function Candlestick() {
       return (
         <Component
           key={normalizedType}
-          result={data?.result} // pass undefined if not yet fetched
+          result={data?.result}
           rows={data?.rows}
           indicatorStyle={indicatorStyle}
           indicatorSeriesRef={indicatorSeriesRef}
           addSeries={addSeries}
           chart={chartRef.current}
-          containerRef={containerRef}
+          containerRef={containerRef.current}
           panesRef={panesRef}
           indicatorConfigs={indicatorConfigs}
           pane={indicatorSeriesRef.current}
           timeframeValue={timeframeValue} // pass timeframe so useEffect can trigger update
+          selectedCurrency={selectedCurrency}
         />
       );
     });
@@ -1494,7 +1832,7 @@ export default function Candlestick() {
   // ATTACH CROSSHAIR
 
   const attachCrosshair = useCallback((chart) => {
-    if (!chart) return () => { };
+    if (!chart) return () => {};
     const handler = (param) => {
       const charts = [
         chartRef.current,
@@ -1562,7 +1900,7 @@ export default function Candlestick() {
         if (seriesRef.current) {
           try {
             chartRef.current.removeSeries(seriesRef.current);
-          } catch (e) { }
+          } catch (e) {}
           seriesRef.current = null;
         }
 

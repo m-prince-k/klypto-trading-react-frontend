@@ -9,22 +9,29 @@ export default function EOMPlot({
   indicatorConfigs,
 }) {
 
+  /* ================= CREATE EOM SERIES ================= */
+
   useEffect(() => {
 
     if (!result?.data) return;
 
-    if (indicatorSeriesRef.current?.EOM) {
-      const s = indicatorSeriesRef.current.EOM;
-      if (s?.setData) {
-        try { s.setData([]); } catch {}
-      }
+    /* remove previous series */
+
+    if (indicatorSeriesRef.current?.EOM?.eom) {
+      try {
+        indicatorSeriesRef.current.EOM.eom.setData([]);
+      } catch {}
       indicatorSeriesRef.current.EOM = null;
     }
+
+    /* format data */
 
     const eomData = (result.data || []).map((p) => ({
       time: Number(p.time),
       value: Number(p.value),
     }));
+
+    /* create line */
 
     const series = addSeries("EOM", LineSeries, {
       color: indicatorStyle?.EOM?.eom?.color ?? "rgba(38,166,154,1)",
@@ -37,15 +44,21 @@ export default function EOMPlot({
 
     series.setData(eomData);
 
-    indicatorSeriesRef.current.EOM = series;
+    /* IMPORTANT: store using key */
 
-  }, [result, indicatorConfigs, indicatorStyle]);
+    indicatorSeriesRef.current.EOM = {
+      eom: series,
+    };
+
+  }, [result, indicatorConfigs]);
+
+
 
   /* ================= APPLY STYLE UPDATES ================= */
 
   useEffect(() => {
 
-    const series = indicatorSeriesRef.current?.EOM;
+    const series = indicatorSeriesRef.current?.EOM?.eom;
     if (!series) return;
 
     series.applyOptions({
@@ -58,6 +71,8 @@ export default function EOMPlot({
     });
 
   }, [indicatorStyle]);
+
+
 
   return null;
 }

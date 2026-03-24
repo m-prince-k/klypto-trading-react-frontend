@@ -52,7 +52,7 @@ export default function IndicatorRuleBuilder({ onClose, onOpen }) {
       const raw = response?.data ?? [];
 
       const formatted = [
-        { label: "Select Currency", value: "" },
+        // { label: "Select Currency", value: "" },
         ...raw.map((item) => ({
           label: item.label ?? item.name ?? item.symbol,
           value: item.value ?? item.symbol ?? item.label,
@@ -65,7 +65,7 @@ export default function IndicatorRuleBuilder({ onClose, onOpen }) {
       setError(err.message);
 
       /* Always keep dropdown usable */
-      setCurrencies([{ label: "Select Currency", value: "" }]);
+      // setCurrencies([{ label: "Select Currency", value: "" }]);
     } finally {
       setLoading(false);
     }
@@ -275,7 +275,7 @@ export default function IndicatorRuleBuilder({ onClose, onOpen }) {
   async function fetchIndicators() {
     try {
       const response = await apiService.post("/api/getIndicators");
-      const raw = response.data;
+      const raw = await response.data;
 
       const formatted = [
         { label: "Add Indicator", value: "" },
@@ -295,8 +295,9 @@ export default function IndicatorRuleBuilder({ onClose, onOpen }) {
 
   async function fetchScanners() {
     try {
-      const response = await apiService.get("/api/scanner");
-      const raw = response.data;
+      const response = await apiService.post("/api/scanner");
+      const raw = await response.data;
+      // console.log(raw, "resssssssssssss")
 
       const formatted = [
         { label: "Select Scanner", value: "" }, // ⭐ DEFAULT OPTION

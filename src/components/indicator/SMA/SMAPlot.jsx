@@ -69,40 +69,45 @@ export default function SMAPlot({
 
     if (cloudCanvasRef.current) return;
 
-    const rect = containerRef.current.getBoundingClientRect();
-
     const canvas = document.createElement("canvas");
-
-    canvas.width = rect.width;
-    canvas.height = rect.height;
 
     canvas.style.position = "absolute";
     canvas.style.left = "0";
     canvas.style.top = "0";
     canvas.style.pointerEvents = "none";
-    canvas.style.zIndex = "1";
+    canvas.style.zIndex = "0";
 
     containerRef.current.appendChild(canvas);
 
     cloudCanvasRef.current = canvas;
     cloudCtxRef.current = canvas.getContext("2d");
+
+    const resize = () => {
+      const rect = containerRef.current.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+    };
+
+    resize();
+
+    const resizeObserver = new ResizeObserver(resize);
+    resizeObserver.observe(containerRef.current);
+
+    return () => resizeObserver.disconnect();
   }, [chart]);
 
   /* ================= DRAW CLOUD ================= */
 
   useEffect(() => {
+    const ctx = cloudCtxRef.current;
+    const canvas = cloudCanvasRef.current;
+
+    if (!ctx || !canvas) return;
+
     if (maType !== "SMA + Bollinger Bands") {
-      const ctx = cloudCtxRef.current;
-      const canvas = cloudCanvasRef.current;
-
-      if (ctx && canvas) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-      }
-
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       return;
     }
-
-    if (maType !== "SMA + Bollinger Bands") return;
 
     const smaGroup = indicatorSeriesRef.current?.SMA;
 
@@ -112,53 +117,61 @@ export default function SMAPlot({
     const upperData = smaGroup?.result?.data?.bbUpper;
     const lowerData = smaGroup?.result?.data?.bbLower;
 
-    const fillStyle = indicatorStyle?.SMA?.bbFill;
-
-    const ctx = cloudCtxRef.current;
-    const canvas = cloudCanvasRef.current;
-
-    
-
-    if (!ctx || !canvas) return;
     if (!upperSeries || !lowerSeries) return;
     if (!upperData?.length || !lowerData?.length) return;
-    if (!fillStyle?.visible) return;
 
     const drawCloud = () => {
+      const fillStyle = indicatorStyle?.SMA?.bbFill;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      ctx.beginPath();
+      if (!fillStyle?.visible) return;
 
-      upperData.forEach((p, i) => {
+      const upperCoords = [];
+      const lowerCoords = [];
+
+      upperData.forEach((p) => {
         const x = chart.timeScale().timeToCoordinate(p.time);
         const y = upperSeries.priceToCoordinate(p.value);
 
-        if (x === null || y === null) return;
-
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+        if (x != null && y != null) {
+          upperCoords.push({ x, y });
+        }
       });
 
-      for (let i = lowerData.length - 1; i >= 0; i--) {
-        const p = lowerData[i];
-
+      lowerData.forEach((p) => {
         const x = chart.timeScale().timeToCoordinate(p.time);
         const y = lowerSeries.priceToCoordinate(p.value);
 
-        if (x === null || y === null) continue;
+        if (x != null && y != null) {
+          lowerCoords.push({ x, y });
+        }
+      });
 
-        ctx.lineTo(x, y);
+      if (!upperCoords.length || !lowerCoords.length) return;
+
+      ctx.beginPath();
+
+      ctx.moveTo(upperCoords[0].x, upperCoords[0].y);
+
+      upperCoords.forEach((p) => ctx.lineTo(p.x, p.y));
+
+      for (let i = lowerCoords.length - 1; i >= 0; i--) {
+        ctx.lineTo(lowerCoords[i].x, lowerCoords[i].y);
       }
 
       ctx.closePath();
 
       const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
 
-      gradient.addColorStop(0, fillStyle?.topFillColor1 || "rgba(0,255,0,0.2)");
+      gradient.addColorStop(
+        0,
+        fillStyle?.topFillColor1 || "rgba(0,255,0,0.25)"
+      );
 
       gradient.addColorStop(
         1,
-        fillStyle?.bottomFillColor1 || "rgba(0,255,0,0)",
+        fillStyle?.bottomFillColor1 || "rgba(0,255,0,0)"
       );
 
       ctx.fillStyle = gradient;
@@ -167,12 +180,14 @@ export default function SMAPlot({
 
     drawCloud();
 
-    chart.timeScale().subscribeVisibleLogicalRangeChange(drawCloud);
-    chart.subscribeCrosshairMove(drawCloud);
+    const redraw = () => drawCloud();
+
+    chart.timeScale().subscribeVisibleLogicalRangeChange(redraw);
+    chart.subscribeCrosshairMove(redraw);
 
     return () => {
-      chart.timeScale().unsubscribeVisibleLogicalRangeChange(drawCloud);
-      chart.unsubscribeCrosshairMove(drawCloud);
+      chart.timeScale().unsubscribeVisibleLogicalRangeChange(redraw);
+      chart.unsubscribeCrosshairMove(redraw);
     };
   }, [indicatorStyle?.SMA?.bbFill, result, indicatorConfigs]);
 

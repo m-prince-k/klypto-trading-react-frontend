@@ -96,6 +96,7 @@ export default function IndicatorPropertyDialog({
     };
 
     console.log(payload, "payloadddddddddd");
+
     setIndicatorLoading(true);
     try {
       setIndicatorLoading(true); // START LOADER
@@ -367,7 +368,7 @@ export default function IndicatorPropertyDialog({
 
       case "TEMA":
       case "TRIX":
-      case "Fisher Transform":
+      case "FT":
         return <BaseSettings showOffset={false} showSource={false} />;
 
       case "KAMA":
@@ -626,7 +627,7 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "Stochastic":
+      case "STOCH":
         return (
           <>
             <div className="mb-3">
@@ -667,7 +668,7 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "Stochastic RSI":
+      case "STOCHRSI":
         return (
           <>
             <div className="mb-3">
@@ -817,7 +818,7 @@ export default function IndicatorPropertyDialog({
       case "WPR": {
         return <BaseSettings showOffset={false} />;
       }
-      case "UltimateOscillator":
+      case "UO":
         return (
           <>
             <div className="mb-3">
@@ -1037,14 +1038,14 @@ export default function IndicatorPropertyDialog({
             <BaseSettings showSource={false} />
           </>
         );
-      case "Standard Deviation":
+      case "STDDEV":
         return (
           <>
             <BaseSettings showOffset={false} />
           </>
         );
 
-      case "Volume":
+      case "VOL":
         return (
           <>
             <div className="mb-3">
@@ -1076,8 +1077,6 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-
-
       case "OBV":
         return (
           <>
@@ -1085,10 +1084,9 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "Percentage Volume Oscillator":
+      case "PVO":
         return (
           <>
-            {/* Fast Length */}
             <Form.Group
               as={Row}
               className="mb-3 align-items-center"
@@ -1210,8 +1208,6 @@ export default function IndicatorPropertyDialog({
         return (
           <>
             <BaseSettings showOffset={false} showSource={false} />
-
-            {/* Divisor */}
             <Form.Group
               as={Row}
               className="mb-3 align-items-center"
@@ -1233,14 +1229,13 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "Negative Volume Index":
+      case "NVI":
         return (
           <>
             <Form.Group
               as={Row}
               className="mb-3 align-items-center"
-              controlId="nviEmaLength"
-            >
+              controlId="nviEmaLength" >
               <Form.Label style={labelStyle} className="mb-0">
                 EMA Length
               </Form.Label>
@@ -1257,7 +1252,7 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "Positive Volume Index":
+      case "PVI":
         return (
           <>
             <Form.Group
@@ -1284,16 +1279,11 @@ export default function IndicatorPropertyDialog({
       case "CKS":
         return (
           <>
-            {/* Base Settings */}
-            <BaseSettings />
-
-            <hr />
-            <h6 className="mb-3">Chande Kroll Stop Settings</h6>
-
+            
             {/* ATR Length */}
             <Form.Group as={Row} className="mb-3 align-items-center">
               <Form.Label style={labelStyle} className="mb-0">
-                ATR Length
+                ATR Length(p)
               </Form.Label>
               <Col>
                 <Form.Control
@@ -1309,15 +1299,15 @@ export default function IndicatorPropertyDialog({
             {/* ATR Multiplier */}
             <Form.Group as={Row} className="mb-3 align-items-center">
               <Form.Label style={labelStyle} className="mb-0">
-                ATR Multiplier
+                ATR Coefficient(x)
               </Form.Label>
               <Col>
                 <Form.Control
                   type="number"
                   step="0.1"
-                  value={currentConfig.atrMultiplier}
+                  value={currentConfig.atrCoefficient}
                   onChange={(e) =>
-                    updateProperty("atrMultiplier", Number(e.target.value))
+                    updateProperty("atrCoefficient", Number(e.target.value))
                   }
                 />
               </Col>
@@ -1326,7 +1316,7 @@ export default function IndicatorPropertyDialog({
             {/* Stop Length */}
             <Form.Group as={Row} className="mb-3 align-items-center">
               <Form.Label style={labelStyle} className="mb-0">
-                Stop Length
+                Stop Length (q)
               </Form.Label>
               <Col>
                 <Form.Control
@@ -1339,75 +1329,13 @@ export default function IndicatorPropertyDialog({
               </Col>
             </Form.Group>
 
-            {/* Source */}
-            <Form.Group as={Row} className="mb-3 align-items-center">
-              <Form.Label style={labelStyle} className="mb-0">
-                Source
-              </Form.Label>
-              <Col>
-                <Form.Select
-                  value={currentConfig.source}
-                  onChange={(e) =>
-                    updateProperty("source", e.target.value)
-                  }
-                >
-                  <option value="close">Close</option>
-                  <option value="high">High</option>
-                  <option value="low">Low</option>
-                  <option value="hl2">HL2</option>
-                  <option value="hlc3">HLC3</option>
-                  <option value="ohlc4">OHLC4</option>
-                </Form.Select>
-              </Col>
-            </Form.Group>
           </>
         );
       case "CMF":
         return (
           <>
             {/* Base Settings */}
-            <BaseSettings />
-
-            <hr />
-            <h6 className="mb-3">Chaikin Money Flow Settings</h6>
-
-            {/* CMF Period */}
-            <Form.Group as={Row} className="mb-3 align-items-center">
-              <Form.Label style={labelStyle} className="mb-0">
-                CMF Period
-              </Form.Label>
-              <Col>
-                <Form.Control
-                  type="number"
-                  value={currentConfig.period}
-                  onChange={(e) =>
-                    updateProperty("period", Number(e.target.value))
-                  }
-                />
-              </Col>
-            </Form.Group>
-
-            {/* Source */}
-            <Form.Group as={Row} className="mb-3 align-items-center">
-              <Form.Label style={labelStyle} className="mb-0">
-                Source
-              </Form.Label>
-              <Col>
-                <Form.Select
-                  value={currentConfig.source}
-                  onChange={(e) =>
-                    updateProperty("source", e.target.value)
-                  }
-                >
-                  <option value="close">Close</option>
-                  <option value="high">High</option>
-                  <option value="low">Low</option>
-                  <option value="hl2">HL2</option>
-                  <option value="hlc3">HLC3</option>
-                  <option value="ohlc4">OHLC4</option>
-                </Form.Select>
-              </Col>
-            </Form.Group>
+            <BaseSettings showOffset={false} showSource={false} />
           </>
         );
       case "NVI":
@@ -1602,7 +1530,7 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "ZigZag":
+      case "ZIGZAG":
         return (
           <>
             {/* Price Deviation */}

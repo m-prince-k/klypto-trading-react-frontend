@@ -1,4 +1,3 @@
-import { LineSeries, HistogramSeries } from "lightweight-charts";
 import apiService from "../services/apiServices";
 import { getRowsByIndicator } from "./common";
 import { useRef } from "react";
@@ -12,6 +11,8 @@ export default function useChartFunctions({
   indicatorConfigs,
   setIndicatorLoading,
 }) {
+  const indicatorMetaRef = useRef({});
+
   /* ================= FETCH INDICATOR API ================= */
 
   async function fetchDataByCurrency(selectedCurrency, timeframeValue) {
@@ -44,7 +45,7 @@ export default function useChartFunctions({
           indicator,
           timeframeValue,
           setIndicatorLoading,
-          indicatorSeriesRef,
+          indicatorMetaRef,
         );
 
         if (!result) continue;
@@ -83,11 +84,10 @@ export default function useChartFunctions({
 
             break;
           }
-          //this is bbw proceed
           case "BBW": {
-            const bbwData = result?.data?.bollingerBandWidth ?? [];
-            const highestExpansionData = result?.data?.highestExpansion ?? [];
-            const lowestContractionData = result?.data?.lowestContraction ?? [];
+            const bbwData = result?.data?.bbw ?? [];
+            const highestData = result?.data?.highest ?? [];
+            const lowestData = result?.data?.lowest ?? [];
 
             indicatorSeriesRef.current.BBW = {
               result,
@@ -95,14 +95,17 @@ export default function useChartFunctions({
             };
 
             latestIndicatorValuesRef.current.BBW = {
-              bollingerBandWidth:
-                bbwData[bbwData.length - 1]?.value ?? null,
+              bbw: bbwData[bbwData.length - 1]?.value ?? null,
 
-              highestExpansion:
-                highestExpansionData[highestExpansionData.length - 1]?.value ?? null,
+              highest:
+                highestData.length > 0
+                  ? highestData[highestData.length - 1]?.value
+                  : null,
 
-              lowestContraction:
-                lowestContractionData[lowestContractionData.length - 1]?.value ?? null,
+              lowest:
+                lowestData.length > 0
+                  ? lowestData[lowestData.length - 1]?.value
+                  : null,
             };
 
             break;
@@ -129,8 +132,8 @@ export default function useChartFunctions({
           }
           case "VWAP": {
             const vwapData = result?.data?.vwap ?? [];
-            const upperBandData = result?.data?.upperBand ?? [];
-            const lowerBandData = result?.data?.lowerBand ?? [];
+            const upper1 = result?.data?.upper1 ?? [];
+            const lower1 = result?.data?.lower1 ?? [];
 
             indicatorSeriesRef.current.VWAP = {
               result,
@@ -140,30 +143,28 @@ export default function useChartFunctions({
             latestIndicatorValuesRef.current.VWAP = {
               vwap: vwapData[vwapData.length - 1]?.value ?? null,
 
-              upperBand: upperBandData.length
-                ? upperBandData[upperBandData.length - 1]?.value
-                : null,
+              upper1: upper1.length ? upper1[upper1.length - 1]?.value : null,
 
-              lowerBand: lowerBandData.length
-                ? lowerBandData[lowerBandData.length - 1]?.value
-                : null,
+              lower1: lower1.length ? lower1[lower1.length - 1]?.value : null,
             };
 
             break;
           }
           case "CKS": {
-            const longStopData = result?.data?.longStop ?? [];
-            const shortStopData = result?.data?.shortStop ?? [];
+            const longData = result?.data?.long ?? [];
+            const shortData = result?.data?.short ?? [];
+            console.log(longData, "longgggggg")
 
             indicatorSeriesRef.current.CKS = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.CKS = {
-              longStop: longStopData[longStopData.length - 1]?.value ?? null,
+            console.log(result, "resssssssss")
 
-              shortStop: shortStopData[shortStopData.length - 1]?.value ?? null,
+            latestIndicatorValuesRef.current.CKS = {
+              long: longData[longData.length - 1]?.value ?? null,
+              short: shortData[shortData.length - 1]?.value ?? null,
             };
 
             break;
@@ -177,11 +178,12 @@ export default function useChartFunctions({
             };
 
             latestIndicatorValuesRef.current.HV = {
-              hv: hvData[hvData.length - 1]?.value ?? null,
+              hvLine: hvData[hvData.length - 1]?.value ?? null,
             };
 
             break;
           }
+
           case "CMF": {
             const cmfData = result?.data?.cmf ?? [];
 
@@ -189,8 +191,9 @@ export default function useChartFunctions({
               result,
               rows,
             };
+
             latestIndicatorValuesRef.current.CMF = {
-              cmf: cmfData[cmfData.length - 1]?.value ?? null,
+              cmfLine: cmfData[cmfData.length - 1]?.value ?? null,
             };
 
             break;
@@ -238,7 +241,6 @@ export default function useChartFunctions({
 
             break;
           }
-
           case "EMA": {
             const emaData = result?.data?.ema ?? [];
             const smoothingData = result?.data?.smoothingMA ?? [];
@@ -414,6 +416,26 @@ export default function useChartFunctions({
 
             break;
           }
+          case "CMO": {
+            const cmoData = result?.data?.cmo ?? [];
+
+            if (!indicatorSeriesRef.current.CMO) {
+              indicatorSeriesRef.current.CMO = {};
+            }
+
+            indicatorSeriesRef.current.CMO.result = result;
+            indicatorSeriesRef.current.CMO.rows = rows;
+
+            if (!latestIndicatorValuesRef.current.CMO) {
+              latestIndicatorValuesRef.current.CMO = {};
+            }
+
+            latestIndicatorValuesRef.current.CMO.cmo = cmoData.length
+              ? cmoData[cmoData.length - 1].value
+              : null;
+
+            break;
+          }
 
           case "MOM": {
             const momentum = result?.data?.MOM ?? [];
@@ -517,37 +539,17 @@ export default function useChartFunctions({
               rows,
             };
 
-
-
-            console.log(result, "resssssssss")
+            console.log(result, "resssssssss");
             latestIndicatorValuesRef.current.EOM = {
               eom: eomData[eomData.length - 1]?.value,
             };
-
             break;
           }
-          case "DC": {
-            const upperData = result?.data?.upper ?? [];
-            const lowerData = result?.data?.lower ?? [];
-            const basisData = result?.data?.basis ?? [];
 
-            indicatorSeriesRef.current.DC = {
-              result,
-              rows,
-            };
-
-            latestIndicatorValuesRef.current.DC = {
-              upper: upperData[upperData.length - 1]?.value,
-              lower: lowerData[lowerData.length - 1]?.value,
-              basis: basisData[basisData.length - 1]?.value,
-            };
-
-            break;
-          }
           case "KC": {
             const upperData = result?.data?.upper ?? [];
             const lowerData = result?.data?.lower ?? [];
-            const basisData = result?.data?.basis ?? [];
+            const middleData = result?.data?.middle ?? [];
 
             indicatorSeriesRef.current.KC = {
               result,
@@ -555,27 +557,231 @@ export default function useChartFunctions({
             };
 
             latestIndicatorValuesRef.current.KC = {
-              upper: upperData[upperData.length - 1]?.value,
-              lower: lowerData[lowerData.length - 1]?.value,
-              basis: basisData[basisData.length - 1]?.value,
+              upper: upperData[upperData.length - 1]?.value ?? null,
+              lower: lowerData[lowerData.length - 1]?.value ?? null,
+              middle: middleData[middleData.length - 1]?.value ?? null,
             };
 
             break;
           }
-          case "EOM": {
-            const eomData = result?.data ?? [];
 
-            indicatorSeriesRef.current.EOM = {
+          case "PVO": {
+            const pvoData = result?.data?.pvo ?? [];
+            const signalData = result?.data?.signal ?? [];
+            const histData = result?.data?.hist ?? [];
+
+            if (!indicatorSeriesRef.current.PVO) {
+              indicatorSeriesRef.current.PVO = {};
+            }
+
+            indicatorSeriesRef.current.PVO.result = result;
+            indicatorSeriesRef.current.PVO.rows = rows;
+
+            if (!latestIndicatorValuesRef.current.PVO) {
+              latestIndicatorValuesRef.current.PVO = {};
+            }
+
+            latestIndicatorValuesRef.current.PVO = {
+              pvo: pvoData[pvoData.length - 1]?.value,
+              signal: signalData[signalData.length - 1]?.value,
+              hist: histData[histData.length - 1]?.value,
+            };
+
+            break;
+          }
+          case "UO": {
+            const uoData = result?.data ?? [];
+
+            indicatorSeriesRef.current.UO = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.EOM = {
-              eom: eomData[eomData.length - 1]?.value,
+            latestIndicatorValuesRef.current.UO = {
+              ultimateoscillator: uoData[uoData.length - 1]?.value,
             };
 
             break;
           }
+          case "PVI": {
+            const pviData = result?.data?.pvi ?? [];
+            const pviEmaData = result?.data?.pviEma ?? [];
+
+            indicatorSeriesRef.current.PVI = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.PVI = {
+              pvi: pviData[pviData.length - 1]?.value ?? null,
+              pviEma: pviEmaData[pviEmaData.length - 1]?.value ?? null,
+            };
+
+            break;
+          }
+          case "NVI": {
+            const nviData = result?.data?.nvi ?? [];
+            const nviEmaData = result?.data?.pviEma ?? [];
+
+            indicatorSeriesRef.current.NVI = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.NVI = {
+              nvi: nviData[nviData.length - 1]?.value ?? null,
+              nviEma: nviEmaData[nviEmaData.length - 1]?.value ?? null,
+            };
+
+            break;
+          }
+
+          case "STOCHRSI": {
+            const kData = result?.data?.kLine ?? [];
+            const dData = result?.data?.dLine ?? [];
+
+            indicatorSeriesRef.current.STOCHRSI = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.STOCHRSI = {
+              kLine: kData[kData.length - 1]?.value ?? null,
+              dLine: dData[dData.length - 1]?.value ?? null,
+            };
+
+            break;
+          }
+
+          case "STOCH": {
+            const k = result?.data?.k ?? [];
+            const d = result?.data?.d ?? [];
+
+            indicatorSeriesRef.current.STOCH = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.STOCH = {
+              k: k.length ? k[k.length - 1].value : null,
+              d: d.length ? d[d.length - 1].value : null,
+            };
+
+            break;
+          }
+
+          case "TRIX": {
+            const trixData = result?.data?.trix ?? [];
+
+            indicatorSeriesRef.current.TRIX = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.TRIX = {
+              trixLine: trixData[trixData.length - 1]?.value ?? null,
+            };
+
+            break;
+          }
+          case "FT": {
+            const rows = result?.data?.candles ?? [];
+
+            indicatorSeriesRef.current.FT = {
+              result,
+              rows,
+            };
+
+            console.log("result", result);
+
+            latestIndicatorValuesRef.current.FT = {
+              fisherLine: rows[rows.length - 1]?.fish ?? null,
+              triggerLine: rows[rows.length - 1]?.trigger ?? null,
+            };
+
+            break;
+          }
+          case "ZIGZAG": {
+            const lineData = result?.data?.zigzagLine ?? [];
+            const pivots = result?.data?.paneLabels ?? [];
+
+            indicatorSeriesRef.current.ZIGZAG = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.ZIGZAG = {
+              zigzagLine: lineData[lineData.length - 1]?.value ?? null,
+              lastPivotType: pivots[pivots.length - 1]?.type ?? null,
+            };
+
+            break;
+          }
+
+          case "VP": {
+            const volume = result?.data?.volume ?? [];
+            const volumeMA = result?.data?.volumeMA ?? [];
+
+            indicatorSeriesRef.current.VP = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.VP = {
+              volume: volume.at(-1)?.value,
+              volumeMA: volumeMA.at(-1)?.value,
+            };
+
+            break;
+          }
+          case "OBV": {
+            const obv = result?.data?.obv ?? [];
+            const ma = result?.data?.smoothingMA ?? [];
+            const bbUpper = result?.data?.bbUpper ?? [];
+            const bbLower = result?.data?.bbLower ?? [];
+
+            indicatorSeriesRef.current.OBV = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.OBV = {
+              obv: obv.at(-1)?.value ?? null,
+              smoothingMA: ma.at(-1)?.value ?? null,
+              bbUpper: bbUpper.at(-1)?.value ?? null,
+              bbLower: bbLower.at(-1)?.value ?? null,
+            };
+
+            break;
+          }
+
+          case "VOL": {
+            const volData = result?.data?.volume ?? [];
+
+            latestIndicatorValuesRef.current.VOL = {
+              volume: volData[volData.length - 1]?.value ?? null,
+            };
+
+            break;
+          }
+
+
+
+          case "STDDEV": {
+            const stddevData = result?.data ?? [];
+
+            indicatorSeriesRef.current.STDDEV = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.STDDEV = {
+              value: stddevData.at(-1)?.value,
+            };
+
+            break;
+          }
+
           case "BB": {
             const upperData = result?.data?.upper ?? [];
             const lowerData = result?.data?.lower ?? [];
@@ -587,9 +793,43 @@ export default function useChartFunctions({
             };
 
             latestIndicatorValuesRef.current.BB = {
-              upper: upperData[upperData.length - 1]?.value,
-              lower: lowerData[lowerData.length - 1]?.value,
-              basis: basisData[basisData.length - 1]?.value,
+              upper: upperData[upperData.length - 1]?.value ?? null,
+              lower: lowerData[lowerData.length - 1]?.value ?? null,
+              basis: basisData[basisData.length - 1]?.value ?? null,
+            };
+
+            break;
+          }
+          case "AD": {
+            const adData = result?.data ?? [];
+
+            indicatorSeriesRef.current.AD = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.AD = {
+              value: adData.at(-1)?.value,
+            };
+
+            break;
+          }
+          case "KVO": {
+            const koData = result?.data?.ko ?? [];
+            const signalData = result?.data?.signal ?? [];
+
+            indicatorSeriesRef.current.KO = {
+              result,
+              rows,
+            };
+
+            console.log("KO result:", result);
+
+            latestIndicatorValuesRef.current.KO = {
+              ko: koData.length ? koData[koData.length - 1]?.value : null,
+              signal: signalData.length
+                ? signalData[signalData.length - 1]?.value
+                : null,
             };
 
             break;
@@ -615,14 +855,15 @@ async function fetchDataForIndicators(
   type,
   timeframeValue,
   setIndicatorLoading,
-  indicatorSeriesRef,
+  indicatorMetaRef,
 ) {
   try {
     const normalizedType = type?.replace(/[\s/%]+/g, "") || "";
 
-    /* -------- SKIP IF ALREADY FETCHED -------- */
-    if (indicatorSeriesRef.current?.[normalizedType]) {
-      console.log(`${normalizedType} already loaded, skipping API`);
+    const key = `${normalizedType}_${selectedCurrency}_${timeframeValue}`;
+
+    if (indicatorMetaRef.current[normalizedType] === key) {
+      console.log(`${normalizedType} already loaded for this symbol/timeframe`);
       return;
     }
 
@@ -632,7 +873,10 @@ async function fetchDataForIndicators(
 
     const response = await apiService.post(url);
 
-    console.log("Raw indicator data for", type, ":", response);
+    console.log("Raw indicator data for", normalizedType, ":", response);
+
+    // store last request key
+    indicatorMetaRef.current[normalizedType] = key;
 
     const mapLine = (arr, field) =>
       arr
@@ -643,36 +887,67 @@ async function fetchDataForIndicators(
         .filter((d) => d.value !== null) ?? [];
 
     console.log("mapped conversion", response.data, "conversionLine");
+
     switch (normalizedType) {
       /* ---------------- SINGLE VALUE ---------------- */
-      case "AwesomeOscillator":
-      case "MACDHistogram":
-      case "TRIX":
-      case "StandardDeviation":
-      case "Volume":
-      case "OBV":
-      case "VolumeOscillator":
-      case "ChaikinMoneyFlow":
-      case "NegativeVolumeIndex":
-      case "PositiveVolumeIndex":
-      case "VWAP":
-      case "HistoricalVolatility":
-      case "ChoppinessIndex":
-      case "AccumulationDistribution":
-      case "UltimateOscillator":
-      case "StochasticRSI":
-      case "CMO":
+
+      case "VWAP": {
+        const rows = Array.isArray(response?.data) ? response.data : [];
 
         return {
-          type: "single",
-          data:
-            (await response.data
-              ?.filter((d) => d.value != null && d.time != null)
+          type: "multi",
+          data: {
+            vwap: rows
+              .filter((d) => d?.vwap != null && d?.time != null)
               .map((d) => ({
                 time: d.time,
-                value: d.value,
-              }))) ?? [],
+                value: Number(d.vwap),
+              })),
+
+            upper1: rows
+              .filter((d) => d?.bands?.[0]?.upper != null)
+              .map((d) => ({
+                time: d.time,
+                value: Number(d.bands[0].upper),
+              })),
+
+            lower1: rows
+              .filter((d) => d?.bands?.[0]?.lower != null)
+              .map((d) => ({
+                time: d.time,
+                value: Number(d.bands[0].lower),
+              })),
+
+            upper2: rows
+              .filter((d) => d?.bands?.[1]?.upper != null)
+              .map((d) => ({
+                time: d.time,
+                value: Number(d.bands[1].upper),
+              })),
+
+            lower2: rows
+              .filter((d) => d?.bands?.[1]?.lower != null)
+              .map((d) => ({
+                time: d.time,
+                value: Number(d.bands[1].lower),
+              })),
+
+            upper3: rows
+              .filter((d) => d?.bands?.[2]?.upper != null)
+              .map((d) => ({
+                time: d.time,
+                value: Number(d.bands[2].upper),
+              })),
+
+            lower3: rows
+              .filter((d) => d?.bands?.[2]?.lower != null)
+              .map((d) => ({
+                time: d.time,
+                value: Number(d.bands[2].lower),
+              })),
+          },
         };
+      }
 
       case "PSAR":
         return {
@@ -686,175 +961,49 @@ async function fetchDataForIndicators(
               }))) ?? [],
         };
 
-      case "VWAP":
-        return {
-          type: "multi", // VWAP + upper + lower
-          data: {
-            vwap: response.data
-              ?.filter(d => d.vwap != null && d.time != null)
-              .map(d => ({ time: Number(d.time), value: Number(d.vwap) })) ?? [],
-
-            upperBand: response.data
-              ?.filter(d => d.bands?.[0]?.upper != null && d.time != null)
-              .map(d => ({ time: Number(d.time), value: Number(d.bands[0].upper) })) ?? [],
-
-            lowerBand: response.data
-              ?.filter(d => d.bands?.[0]?.lower != null && d.time != null)
-              .map(d => ({ time: Number(d.time), value: Number(d.bands[0].lower) })) ?? [],
-          },
-        };
-
-      case "NVI":
-        return {
-          type: "single", // ✅ bilkul sahi
-          data:
-            (await response.data
-              ?.filter((d) => d?.time && d?.nvi !== undefined && d?.nvi !== null)
-              .map((d) => ({
-                time: d.time,
-                value: Number(d.nvi),
-              }))) ?? [],
-        };
-
-      case "CMF":
-        console.log(await response?.data
-          ?.filter((d) => d?.time && d?.cmf !== undefined && d?.cmf !== null)
-          .map((d) => ({
-            time: d.time,
-            value: Number(d.cmf),
-          })), "------------------***********************$$##@!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-        return {
-          type: "single",
-          data:
-            (await response?.data
-              ?.filter((d) => d?.time && d?.cmf !== undefined && d?.cmf !== null)
-              .map((d) => ({
-                time: d.time,
-                value: Number(d.cmf),
-              }))) ?? [],
-        };
-
-      case "HV":
+      case "CMO":
         return {
           type: "single",
           data: {
-            hv:
-              response.data
-                ?.filter(
-                  (d) =>
-                    (d.hv != null || d.historicalVolatility != null) &&
-                    d.time != null
-                )
+            cmo:
+              response?.data
+                ?.filter((d) => d.value != null && d.time != null)
                 .map((d) => ({
                   time: Number(d.time),
-                  value: Number(d.hv ?? d.historicalVolatility),
+                  value: Number(d.value),
                 })) ?? [],
           },
         };
-
-      case "CKS":
-        return {
-          type: "multi",
-          data: {
-            longStop:
-              (await response.data
-                ?.filter((d) => d?.time && d?.longStop != null)
-                .map((d) => ({
-                  time: d.time,
-                  value: Number(d.longStop),
-                }))) ?? [],
-
-            shortStop:
-              (await response.data
-                ?.filter((d) => d?.time && d?.shortStop != null)
-                .map((d) => ({
-                  time: d.time,
-                  value: Number(d.shortStop),
-                }))) ?? [],
-          },
-        };
-
-      case "CKS":
-        return {
-          type: "multi",
-          data: {
-            longStop:
-              (await response.data
-                ?.filter((d) => d?.time && d?.longStop != null)
-                .map((d) => ({
-                  time: d.time,
-                  value: Number(d.longStop),
-                }))) ?? [],
-
-            shortStop:
-              (await response.data
-                ?.filter((d) => d?.time && d?.shortStop != null)
-                .map((d) => ({
-                  time: d.time,
-                  value: Number(d.shortStop),
-                }))) ?? [],
-          },
-        };
-
-      case "MACD":
-        return {
-          type: "multi",
-          data: {
-            macd:
-              (await response.data
-                ?.filter((d) => d?.time && d?.macd != null)
-                .map((d) => ({
-                  time: d.time,
-                  value: Number(d.macd),
-                }))) ?? [],
-
-            signal:
-              (await response.data
-                ?.filter((d) => d?.time && d?.signal != null)
-                .map((d) => ({
-                  time: d.time,
-                  value: Number(d.signal),
-                }))) ?? [],
-
-            histogram:
-              (await response.data
-                ?.filter((d) => d?.time && d?.histogram != null)
-                .map((d) => ({
-                  time: d.time,
-                  value: Number(d.histogram),
-                }))) ?? [],
-          },
-        };
-
       case "BBW":
         return {
           type: "multi",
           data: {
-            bollingerBandWidth:
-              response.data
-                ?.filter((d) => d.bollingerBandWidth != null && d.time != null)
+            bbw:
+              response?.data
+                ?.filter((d) => d.bbw != null && d.time != null)
                 .map((d) => ({
-                  time: d.time,
-                  value: d.bollingerBandWidth,
+                  time: Number(d.time),
+                  value: Number(d.bbw),
                 })) ?? [],
 
-            highestExpansion:
-              response.data
+            highest:
+              response?.data
                 ?.filter((d) => d.highestExpansion != null && d.time != null)
                 .map((d) => ({
-                  time: d.time,
-                  value: d.highestExpansion,
+                  time: Number(d.time),
+                  value: Number(d.highestExpansion),
                 })) ?? [],
 
-            lowestContraction:
-              response.data
+            lowest:
+              response?.data
                 ?.filter((d) => d.lowestContraction != null && d.time != null)
                 .map((d) => ({
-                  time: d.time,
-                  value: d.lowestContraction,
+                  time: Number(d.time),
+                  value: Number(d.lowestContraction),
                 })) ?? [],
           },
         };
+        
       case "SMA":
         return {
           type: "multi",
@@ -892,6 +1041,63 @@ async function fetchDataForIndicators(
                 })) ?? [],
           },
         };
+
+      case "PVI":
+        return {
+          type: "multi",
+          data: {
+            pvi:
+              response.data
+                ?.filter((d) => d.pvi != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.pvi,
+                })) ?? [],
+
+            pviEma:
+              response.data
+                ?.filter((d) => d.pviEma != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.pviEma,
+                })) ?? [],
+          },
+        };
+
+      case "HV":
+        return {
+          type: "single",
+          data: {
+            hv:
+              response?.data
+                ?.filter((d) => d.historical_Vol != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.historical_Vol),
+                })) ?? [],
+          },
+        };
+      case "NVI":
+        return {
+          type: "single",
+          data: {
+            nvi:
+              response.data
+                ?.filter((d) => d.nvi != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.nvi,
+                })) ?? [],
+
+            nviEma:
+              response.data
+                ?.filter((d) => d.nviEma != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.nviEma,
+                })) ?? [],
+          },
+        };
       case "EOM":
         return {
           type: "single",
@@ -903,6 +1109,21 @@ async function fetchDataForIndicators(
                 value: d.eom,
               })) ?? [],
         };
+
+      case "CMF":
+        return {
+          type: "single",
+          data: {
+            cmf:
+              response.data
+                ?.filter((d) => d.cmf != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.cmf,
+                })) ?? [],
+          },
+        };
+
       case "EMA":
         return {
           type: "multi",
@@ -941,6 +1162,20 @@ async function fetchDataForIndicators(
           },
         };
 
+      case "CMF":
+        return {
+          type: "single",
+          data: {
+            cmf:
+              response?.data
+                ?.filter((d) => d.value != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.value),
+                })) ?? [],
+          },
+        };
+
       case "CCI": {
         const rows = Array.isArray(response?.data) ? response.data : [];
 
@@ -967,6 +1202,17 @@ async function fetchDataForIndicators(
           },
         };
       }
+      case "UO":
+        return {
+          type: "single",
+          data:
+            response.data?.candles
+              ?.filter((d) => d.uo != null && d.time != null)
+              .map((d) => ({
+                time: d.time,
+                value: d.uo,
+              })) ?? [],
+        };
 
       case "CHOP":
         return {
@@ -978,16 +1224,38 @@ async function fetchDataForIndicators(
                 .map((d) => ({ time: d.time, value: d.chop })) ?? [],
           },
         };
+
+      case "CKS":
+        return {
+          type: "multi",
+          data: {
+            long:
+              response?.data
+                ?.filter((d) => d.stopLong != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.stopLong),
+                })) ?? [],
+
+            short:
+              response?.data
+                ?.filter((d) => d.stopShort != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.stopShort),
+                })) ?? [],
+          },
+        };
       case "HMA":
         return {
           type: "multi",
           data: {
             hma:
               response.data
-                ?.filter((d) => d.value != null && d.time != null)
+                ?.filter((d) => d.hma != null && d.time != null)
                 .map((d) => ({
                   time: d.time,
-                  value: d.value,
+                  value: d.hma,
                 })) ?? [],
           },
         };
@@ -997,10 +1265,32 @@ async function fetchDataForIndicators(
           data: {
             dema:
               response.data
-                ?.filter((d) => d.value != null && d.time != null)
+                ?.filter((d) => d.dema != null && d.time != null)
                 .map((d) => ({
                   time: d.time,
-                  value: d.value,
+                  value: d.dema,
+                })) ?? [],
+          },
+        };
+
+      case "STOCHRSI":
+        return {
+          type: "multi",
+          data: {
+            kLine:
+              response.data.candles
+                ?.filter((d) => d.k != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.k,
+                })) ?? [],
+
+            dLine:
+              response.data.candles
+                ?.filter((d) => d.d != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.d,
                 })) ?? [],
           },
         };
@@ -1011,10 +1301,10 @@ async function fetchDataForIndicators(
           data: {
             tema:
               response.data
-                ?.filter((d) => d.value != null && d.time != null)
+                ?.filter((d) => d.tema != null && d.time != null)
                 .map((d) => ({
                   time: d.time,
-                  value: d.value,
+                  value: d.tema,
                 })) ?? [],
           },
         };
@@ -1110,6 +1400,19 @@ async function fetchDataForIndicators(
                 })) ?? [],
           },
         };
+      case "TRIX":
+        return {
+          type: "single",
+          data: {
+            trix:
+              response?.data
+                ?.filter((d) => d.value != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.value),
+                })) ?? [],
+          },
+        };
 
       case "ROC":
         return {
@@ -1125,21 +1428,29 @@ async function fetchDataForIndicators(
           },
         };
 
-      case "ZigZag": {
-        const rows = response?.data ?? [];
-
-        console.log("ZigZag:", rows.length);
-
+      case "ZIGZAG":
         return {
-          type: "single",
-          data: rows
-            .filter((d) => d.value != null && d.time != null)
-            .map((d) => ({
-              time: d.time,
-              value: d.value,
-            })),
+          type: "multi",
+          data: {
+            zigzagLine:
+              response.data?.series
+                ?.filter((d) => d.value != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.value,
+                })) ?? [],
+
+            paneLabels:
+              response.data?.pivots
+                ?.filter((d) => d.price != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.price,
+                  type: d.type,
+                })) ?? [],
+          },
         };
-      }
+
       case "ADX":
         return {
           type: "multi",
@@ -1151,6 +1462,131 @@ async function fetchDataForIndicators(
                   time: d.time,
                   value: d.adx,
                 })) ?? [],
+          },
+        };
+      case "VOL":
+        return {
+          type: "double",
+          data: {
+            volume:
+              response?.data
+                ?.filter((d) => d.volume != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.volume),
+                  color: d.color || "#26A69A",
+                  rising: d.rising,
+                  falling: d.falling,
+                })) ?? [],
+
+            volumeMA:
+              response?.data
+                ?.filter((d) => d.volumeMA != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.volumeMA),
+                })) ?? [],
+          },
+        };
+
+      case "PVO":
+        return {
+          type: "multi",
+          data: {
+            pvo:
+              response?.data
+                ?.filter((d) => d.pvo != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.pvo),
+                })) ?? [],
+
+            signal:
+              response?.data
+                ?.filter((d) => d.signal != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.signal),
+                })) ?? [],
+
+            hist:
+              response?.data
+                ?.filter((d) => d.hist != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.hist),
+                })) ?? [],
+          },
+        };
+      case "STDDEV":
+        return {
+          type: "single",
+          data:
+            response?.data
+              ?.filter((d) => d.value != null && d.time != null)
+              .map((d) => ({
+                time: Number(d.time),
+                value: Number(d.value),
+              })) ?? [],
+        };
+
+      case "OBV":
+        return {
+          type: "multi",
+          data: {
+            obv:
+              response?.data
+                ?.filter((d) => d.obv != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.obv),
+                })) ?? [],
+
+            smoothingMA:
+              response?.data
+                ?.filter((d) => d.smoothingMA != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.smoothingMA),
+                })) ?? [],
+
+            bbUpper:
+              response?.data
+                ?.filter((d) => d.bbUpper != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.bbUpper),
+                })) ?? [],
+
+            bbLower:
+              response?.data
+                ?.filter((d) => d.bbLower != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.bbLower),
+                })) ?? [],
+          },
+        };
+
+      case "VP":
+        return {
+          type: "multi",
+          data: {
+            volume:
+              response?.data?.map((d) => ({
+                time: Number(d.time),
+                value: Number(d.volume),
+                color:
+                  d.close >= d.open
+                    ? "rgba(38,166,154,1)"
+                    : "rgba(239,83,80,1)",
+              })) ?? [],
+
+            volumeMA:
+              response?.data?.map((d) => ({
+                time: Number(d.time),
+                value: Number(d.volumeMA),
+              })) ?? [],
           },
         };
       case "MFI":
@@ -1347,16 +1783,15 @@ async function fetchDataForIndicators(
       case "AD":
         return {
           type: "single",
-          data: {
-            ad:
-              response?.data
-                ?.filter((d) => d.value != null && d.time != null)
-                .map((d) => ({
-                  time: Number(d.time),
-                  value: Number(d.value),
-                })) ?? [],
-          },
+          data:
+            response?.data
+              ?.filter((d) => d.value != null && d.time != null)
+              .map((d) => ({
+                time: Number(d.time),
+                value: Number(d.value),
+              })) ?? [],
         };
+
       /* ---------------- MULTI LINE ---------------- */
 
       case "ICHIMOKU":
@@ -1397,41 +1832,24 @@ async function fetchDataForIndicators(
           },
         };
 
-      // case "AD": {
-      //   const adData = result?.data?.ad ?? [];
-
-      //   if (!indicatorSeriesRef.current.AD) {
-      //     indicatorSeriesRef.current.AD = {};
-      //   }
-
-      //   indicatorSeriesRef.current.AD.result = result;
-      //   indicatorSeriesRef.current.AD.rows = rows;
-
-      //   latestIndicatorValuesRef.current.AD = {
-      //     ad: adData[adData.length - 1]?.value,
-      //   };
-
-      //   break;
-      // }
-
-      case "Stochastic":
+      case "STOCH":
         return {
           type: "multi",
           data: {
             k:
-              response.data
-                ?.filter((d) => d.k != null && d.time != null)
+              response?.data
+                ?.filter((d) => d.stochastick != null && d.time != null)
                 .map((d) => ({
-                  time: d.time,
-                  value: d.k,
+                  time: Number(d.time),
+                  value: Number(d.stochastick),
                 })) ?? [],
 
             d:
-              response.data
-                ?.filter((d) => d.d != null && d.time != null)
+              response?.data
+                ?.filter((d) => d.stochasticd != null && d.time != null)
                 .map((d) => ({
-                  time: d.time,
-                  value: d.d,
+                  time: Number(d.time),
+                  value: Number(d.stochasticd),
                 })) ?? [],
           },
         };
@@ -1441,7 +1859,7 @@ async function fetchDataForIndicators(
           type: "multi",
           data: {
             macd:
-              response.data
+              response?.data
                 ?.filter((d) => d.macd != null && d.time != null)
                 .map((d) => ({
                   time: d.time,
@@ -1449,33 +1867,47 @@ async function fetchDataForIndicators(
                 })) ?? [],
 
             signal:
-              response.data
-                ?.filter((d) => d.macdSignal != null && d.time != null)
+              response?.data
+                ?.filter((d) => d.signal != null && d.time != null)
                 .map((d) => ({
                   time: d.time,
-                  value: d.macdSignal,
+                  value: d.signal,
                 })) ?? [],
 
             histogram:
               response.data
-                ?.filter((d) => d.macdHistogram != null && d.time != null)
+                ?.filter((d) => d.hist != null && d.time != null)
                 .map((d) => ({
                   time: d.time,
-                  value: d.macdHistogram,
+                  value: d.hist,
                 })) ?? [],
           },
         };
 
-      case "KlingerOscillator":
+      case "CMO":
+        return {
+          type: "single",
+          data: {
+            cmo:
+              response?.data
+                ?.filter((d) => d.cmo != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.cmo),
+                })) ?? [],
+          },
+        };
+
+      case "KVO":
         return {
           type: "multi",
           data: {
             kvo:
               response.data
-                ?.filter((d) => d.kvo != null && d.time != null)
+                ?.filter((d) => d.ko != null && d.time != null)
                 .map((d) => ({
                   time: d.time,
-                  value: d.kvo,
+                  value: d.ko,
                 })) ?? [],
 
             signal:
@@ -1490,88 +1922,85 @@ async function fetchDataForIndicators(
 
       case "BB":
         return {
-          type: "multi",
+          type: "triple",
           data: {
             upper:
-              response.data
+              response?.data
                 ?.filter((d) => d.upper != null && d.time != null)
                 .map((d) => ({
-                  time: d.time,
-                  value: d.upper,
+                  time: Number(d.time),
+                  value: Number(d.upper),
                 })) ?? [],
 
             lower:
-              response.data
+              response?.data
                 ?.filter((d) => d.lower != null && d.time != null)
                 .map((d) => ({
-                  time: d.time,
-                  value: d.lower,
+                  time: Number(d.time),
+                  value: Number(d.lower),
                 })) ?? [],
 
             basis:
-              response.data
+              response?.data
                 ?.filter((d) => d.basis != null && d.time != null)
                 .map((d) => ({
-                  time: d.time,
-                  value: d.basis,
+                  time: Number(d.time),
+                  value: Number(d.basis),
                 })) ?? [],
           },
         };
 
-      case "FisherTransform": {
-        const rows = response?.data ?? [];
-
+      case "FT":
         return {
           type: "multi",
           data: {
-            fisher: rows
-              .filter((d) => d.fisher != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.fisher,
-              })),
+            fisherLine:
+              response.data
+                ?.filter((d) => d.fish != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.fish,
+                })) ?? [],
 
-            trigger: rows
-              .filter((d) => d.trigger != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.trigger,
-              })),
+            triggerLine:
+              response.data
+                ?.filter((d) => d.trigger != null && d.time != null)
+                .map((d) => ({
+                  time: d.time,
+                  value: d.trigger,
+                })) ?? [],
           },
         };
-      }
 
       case "KC":
         return {
-          type: "multi",
+          type: "triple",
           data: {
             upper:
-              response.data
+              response?.data
                 ?.filter((d) => d.upper != null && d.time != null)
                 .map((d) => ({
-                  time: d.time,
-                  value: d.upper,
+                  time: Number(d.time),
+                  value: Number(d.upper),
                 })) ?? [],
 
             lower:
-              response.data
+              response?.data
                 ?.filter((d) => d.lower != null && d.time != null)
                 .map((d) => ({
-                  time: d.time,
-                  value: d.lower,
+                  time: Number(d.time),
+                  value: Number(d.lower),
                 })) ?? [],
 
-            basis:
-              response.data
+            middle:
+              response?.data
                 ?.filter((d) => d.middle != null && d.time != null)
                 .map((d) => ({
-                  time: d.time,
-                  value: d.middle,
+                  time: Number(d.time),
+                  value: Number(d.middle),
                 })) ?? [],
           },
         };
-
-
 
       default:
         return {

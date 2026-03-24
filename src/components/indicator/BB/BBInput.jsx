@@ -4,33 +4,40 @@ export default function BBInput(
   latestIndicatorValuesRef
 ) {
 
-  const rows = Array.isArray(response?.data) ? response.data : [];
+  const group = indicatorSeriesRef.current?.BB;
+  if (!group) return;
 
-  const bbData = rows
-    .filter((d) => d.upper != null && d.lower != null && d.basis != null)
-    .map((d) => ({
-      time: Number(d.time),
-      upper: Number(d.upper),
-      basis: Number(d.basis),
-      lower: Number(d.lower),
-    }));
+  const upper =
+    response?.data
+      ?.filter((d) => d.upper != null && d.time != null)
+      .map((d) => ({
+        time: Number(d.time),
+        value: Number(d.upper),
+      })) ?? [];
 
-  const series = indicatorSeriesRef.current?.BB;
-  if (!series) return;
+  const lower =
+    response?.data
+      ?.filter((d) => d.lower != null && d.time != null)
+      .map((d) => ({
+        time: Number(d.time),
+        value: Number(d.lower),
+      })) ?? [];
 
-  const upper = bbData.map((d) => ({ time: d.time, value: d.upper }));
-  const basis = bbData.map((d) => ({ time: d.time, value: d.basis }));
-  const lower = bbData.map((d) => ({ time: d.time, value: d.lower }));
+  const basis =
+    response?.data
+      ?.filter((d) => d.basis != null && d.time != null)
+      .map((d) => ({
+        time: Number(d.time),
+        value: Number(d.basis),
+      })) ?? [];
 
-  series.upper?.setData(upper);
-  series.basis?.setData(basis);
-  series.lower?.setData(lower);
-
-  series._data = { upper, lower };
+  group.upper?.setData(upper);
+  group.lower?.setData(lower);
+  group.basis?.setData(basis);
 
   latestIndicatorValuesRef.current.BB = {
-    upper: bbData[bbData.length - 1]?.upper,
-    basis: bbData[bbData.length - 1]?.basis,
-    lower: bbData[bbData.length - 1]?.lower,
+    upper: upper[upper.length - 1]?.value ?? null,
+    lower: lower[lower.length - 1]?.value ?? null,
+    basis: basis[basis.length - 1]?.value ?? null,
   };
 }

@@ -38,11 +38,22 @@ import MFIPlot from "./MFI/MFIPlot";
 import MFIInput from "./MFI/MFIInput";
 import PSARPlot from "./PSAR/PSARPlot";
 import PSARInput from "./PSAR/PSARInput";
-
-import CHOPPlot from "./CHOP/CHOPPlot";
 import CHOPInput from "./CHOP/CHOPInput";
 import EOMInput from "./EOM/EOMInput";
-
+import CMOInput from "./CMO/CMOInput";
+import CMOPlot from "./CMO/CMOPlot";
+import PVOInput from "./PVO/PVOInput";
+import PVOPlot from "./PVO/PVOPlot";
+import OBVInput from "./OBV/OBVInput";
+import OBVPlot from "./OBV/OBVPlot";
+import VOLPlot from "./VOL/VOLPlot";
+import VOLInput from "./VOL/VOLInput";
+import STDDEVInput from "./STDDEV/STDDEVInput";
+import STDDEVPlot from "./STDDEV/STDDEVPlot";
+import TRIXInput from "./TRIX/TRIXInput";
+import TRIXPlot from "./TRIX/TRIXPlot";
+import VPPlot from "./VP/VPPlot";
+import VPInput from "./VP/VPInput";
 import DCInput from "./DC/DCInput";
 import DCPlot from "./DC/DCPlot";
 import KCPlot from "./KC/KCPlot";
@@ -50,6 +61,7 @@ import KCInput from "./KC/KCInput";
 import EOMPlot from "./EOM/EOMPlot";
 import BBPlot from "./BB/BBPlot";
 import BBInput from "./BB/BBInput";
+<<<<<<< HEAD
 
 import BollingerBandWidthInputs from "./bollinder-band-width/bollinder-band-width-inputs";
 import BollingerBandWidthPlot from "./bollinder-band-width/bollinger-band-width-plot";
@@ -75,14 +87,44 @@ import MACDInput from "./MACD/macd-inputs";
 import VWAPPlot from "./VWAP/VWAPPlot";
 import VWAPInput from "./VWAP/VWAPInput";
 import HVInput from "./HV/HVInput";
+=======
+import UOInput from "./UO/UOInput";
+import UOPlot from "./UO/UOPlot";
+import PVIPlot from "./PVI/PVIPlot";
+import PVIInput from "./PVI/PVIInput";
+import NVIPlot from "./NVI/NVIPlot";
+import NVIInput from "./NVI/NVIInput";
+import STOCHRSIInput from "./Stochastic RSI/StochRSIInput";
+import STOCHRSIPlot from "./Stochastic RSI/StochRSIPlot";
+import FTInput from "./FisherTransform/FisherTransformInput";
+import FTPlot from "./FisherTransform/FisherTransformPlot";
+import ZIGZAGPlot from "./ZIgZag/ZigZagPlot";
+import ZIGZAGInput from "./ZIgZag/ZigZagInput";
+import MACDPlot from "./MACD/MACDPlot";
+import MACDInput from "./MACD/macd-inputs";
+import VWAPPlot from "./vwap/vwap-plot";
+import VWAPInput from "./vwap/vwap-inputs";
+import KVOPlot from "./KlingerOscillator/KVOPlot";
+import KVOInput from "./KlingerOscillator/KVOInput";
+import CMFPlot from "./CMF/CMFPlot";
+import CMFInput from "./CMF/CMFInput";
+import HVPlot from "./HV/HVPlot";
+import HVInput from "./HV/HVInput";
+import CKSInput from "./CKS/CKSInput";
+import CKSPlot from "./CKS/CKSPlot";
+import BBWInput from "./BBW/BBWInput";
+import BBWPlot from "./BBW/BBWPlot";
+>>>>>>> 74d4aff7095b3a6b6130baf32d081d88ad4573a8
 
 export const indicatorComponents = {
   MACD:MACDPlot,
+<<<<<<< HEAD
   CKS:ChandeKrollStopPlot,
   HV:HMAPlot,
   CMF:ChaikinMoneyFlowPlot,
+=======
+>>>>>>> 74d4aff7095b3a6b6130baf32d081d88ad4573a8
   NVI:NVIPlot,
-  BBW:BollingerBandWidthPlot,
   RSI: RSIPlot,
   SMA: SMAPlot,
   ICHIMOKU: IchimokuCloudPlot,
@@ -104,22 +146,47 @@ export const indicatorComponents = {
   MFI: MFIPlot,
   PSAR: PSARPlot,
   EOM: EMAPlot,
-
   DC: DCPlot,
   KC: KCPlot,
   EOM: EOMPlot,
   BB: BBPlot,
+<<<<<<< HEAD
   VWAP: VWAPPlot,
 
+=======
+  UO: UOPlot,
+  PVI: PVIPlot,
+  NVI: NVIPlot,
+  STOCHRSI: STOCHRSIPlot,
+  CMO: CMOPlot,
+  FT: FTPlot,
+  ZIGZAG: ZIGZAGPlot,
+  PVO:PVOPlot,
+  OBV:OBVPlot,
+  VOL:VOLPlot,
+  STDDEV:STDDEVPlot,
+  AD:ADXPlot,
+  TRIX:TRIXPlot,
+  VP:VPPlot,
+  CMF:CMFPlot,
+  HV:HVPlot,
+  CKS:CKSPlot,
+  BBW:BBWPlot,
+  STOCH: STOCHRSIPlot,
+  STDDEV: STDDEVPlot,
+  KVO: KVOPlot
+>>>>>>> 74d4aff7095b3a6b6130baf32d081d88ad4573a8
 };
 
 export const indicatorInputs = {
   MACD:MACDInput,
+<<<<<<< HEAD
   CKS:ChandeKrollStopInput,
   HV:HVInput,
   CMF:ChaikinMoneyFlowInput,
+=======
+>>>>>>> 74d4aff7095b3a6b6130baf32d081d88ad4573a8
   NVI:NVIInput,
-  BBW:BollingerBandWidthInputs,
   RSI: RSIInput,
   SMA: SMAInput,
   ICHIMOKU: IchimokuCloudInput,
@@ -140,16 +207,38 @@ export const indicatorInputs = {
   ATR: ATRInput,
   MFI: MFIInput,
   PSAR: PSARInput,
-
+  STOCH: STOCHRSIInput,
   CHOP: CHOPInput,
   EOM: EOMInput,
-
   DC: DCInput,
   KC: KCInput,
   EOM: EOMInput,
   BB: BBInput,
+<<<<<<< HEAD
   VWAP:VWAPInput,
 
+=======
+  UO: UOInput,
+  PVI: PVIInput,
+  NVI: NVIInput,
+  STOCHRSI: STOCHRSIInput,
+  CMO: CMOInput,
+  TRIX: TRIXInput,
+  FT:FTInput,
+  ZIGZAG: ZIGZAGInput,  
+  PVO:PVOInput,
+ OBV:OBVInput,
+ VOL:VOLInput,
+ STDDEV:STDDEVInput,
+ AD:ADXInput,
+ VP:VPInput,
+ CMF:CMFInput,
+ HV:HVInput,
+ CKS:CKSInput,
+ BBW:BBWInput,
+ KVO: KVOInput
+  
+>>>>>>> 74d4aff7095b3a6b6130baf32d081d88ad4573a8
 };
 
 export function updateIndicatorFromInput(

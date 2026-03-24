@@ -117,11 +117,10 @@ export const ChartProprties = {
   },
 };
 
-
 export function getIndicatorChartProperties() {
   return {
     ...ChartProprties,
-    height:140,
+    height: 140,
     layout: { ...ChartProprties.layout },
 
     timeScale: {
@@ -140,7 +139,6 @@ export function getIndicatorChartProperties() {
     crosshair: { ...ChartProprties.crosshair },
   };
 }
-
 
 export const MiniChartProprties = {
   width: 620, // small footprint for hover
@@ -696,50 +694,47 @@ export const getRowsByIndicator = (indicator, maType) => {
     case "ADX":
       return [{ key: "adx", label: "ADX", type: "line" }];
 
-    case "Chande Kroll Stop":
+
+
+
+    case "CKS":
       return [
         {
-          key: "stopLong",
-          label: "Stop Long",
+          key: "longStop",
+          label: "Long Stop",
           type: "line",
-          color: "#26a69a",
+          color: "#26a69a", // green
         },
         {
-          key: "stopShort",
-          label: "Stop Short",
+          key: "shortStop",
+          label: "Short Stop",
           type: "line",
-          color: "#ef5350",
+          color: "#ef5350", // red
+        },
+
+        {
+          key: "fillArea",
+          label: "CKS Fill Area",
+          type: "fill",
+          color0: "rgba(38,166,154,0.08)", // green light
+          color1: "rgba(239,83,80,0.08)", // red light
         },
       ];
 
-      case "CKS":
-  return [
-    {
-      key: "longStop",
-      label: "Long Stop",
-      type: "line",
-      color: "#26a69a", // green
-    },
-    {
-      key: "shortStop",
-      label: "Short Stop",
-      type: "line",
-      color: "#ef5350", // red
-    },
-
-    {
-      key: "fillArea",
-      label: "CKS Fill Area",
-      type: "fill",
-      color0: "rgba(38,166,154,0.08)", // green light
-      color1: "rgba(239,83,80,0.08)", // red light
-    },
-  ];
-
-    case "Stochastic":
+    case "STOCH":
       return [
-        { key: "kLine", label: "%K", type: "line", color: "#26a69a" },
-        { key: "dLine", label: "%D", type: "line", color: "#ff9800" },
+        {
+          key: "k",
+          label: "%K",
+          type: "line",
+          visible: true,
+        },
+        {
+          key: "d",
+          label: "%D",
+          type: "line",
+          visible: true,
+        },
 
         {
           key: "upperBand",
@@ -747,15 +742,16 @@ export const getRowsByIndicator = (indicator, maType) => {
           type: "band",
           showValue: true,
           value: 80,
-          color: "#ef5350",
+          visible: true,
         },
+
         {
           key: "middleBand",
           label: "Middle Band",
           type: "band",
           showValue: true,
           value: 50,
-          color: "#9e9e9e",
+          visible: true,
         },
         {
           key: "lowerBand",
@@ -763,22 +759,20 @@ export const getRowsByIndicator = (indicator, maType) => {
           type: "band",
           showValue: true,
           value: 20,
-          color: "#26a69a",
+          visible: true,
         },
 
         {
           key: "bgFill",
-          label: "Stochastic Background Fill",
+          label: "Background Fill",
           type: "fill",
-          color0: "rgba(38,166,154,0.05)",
-          color1: "rgba(38,166,154,0.05)",
+          visible: true,
         },
       ];
-
-    case "Stochastic RSI":
+    case "STOCHRSI":
       return [
-        { key: "kLine", label: "%K", type: "line", color: "#26a69a" },
-        { key: "dLine", label: "%D", type: "line", color: "#ff9800" },
+        { key: "kLine", label: "%K", type: "line"},
+        { key: "dLine", label: "%D", type: "line" },
 
         {
           key: "upperBand",
@@ -786,7 +780,6 @@ export const getRowsByIndicator = (indicator, maType) => {
           type: "band",
           showValue: true,
           value: 80,
-          color: "#ef5350",
         },
         {
           key: "middleBand",
@@ -794,7 +787,6 @@ export const getRowsByIndicator = (indicator, maType) => {
           type: "band",
           showValue: true,
           value: 50,
-          color: "#9e9e9e",
         },
         {
           key: "lowerBand",
@@ -802,51 +794,48 @@ export const getRowsByIndicator = (indicator, maType) => {
           type: "band",
           showValue: true,
           value: 20,
-          color: "#26a69a",
         },
         {
           key: "bgFill",
           label: "StochRSI Background Fill",
           type: "fill",
-          color0: "rgba(38,166,154,0.05)",
-          color1: "rgba(38,166,154,0.05)",
         },
       ];
 
     case "MACD":
       return [
         {
-          key: "macdLine",
+          key: "macd",
           label: "MACD Line",
           type: "line",
           color: "#26a69a",
         },
 
         {
-          key: "signalLine",
+          key: "signal",
           label: "Signal Line",
           type: "line",
           color: "#ff9800",
         },
 
-        // Histogram bars
         {
           key: "histogram",
           label: "Histogram",
           type: "histogram",
-          color0: "#26a69a", // bullish
-          color1: "#81c784", // light bullish
-          color2: "#ef5350", // bearish
-          color3: "#e57373", // light bearish
+
+          palette: [
+            { key: "0", label: "Color 0" },
+            { key: "1", label: "Color 1" },
+            { key: "2", label: "Color 2" },
+            { key: "3", label: "Color 3" },
+          ],
         },
 
-        // Zero line
         {
           key: "zeroLine",
           label: "Zero Line",
           type: "line",
           value: 0,
-          color: "#9e9e9e",
         },
       ];
     case "CCI": {
@@ -949,7 +938,7 @@ export const getRowsByIndicator = (indicator, maType) => {
           color1: "rgba(38,166,154,0.05)",
         },
       ];
-    case "Ultimate Oscillator":
+    case "UO":
       return [
         {
           key: "ultimateoscillator",
@@ -969,28 +958,21 @@ export const getRowsByIndicator = (indicator, maType) => {
         },
       ];
 
-    case "Chande Momentum Oscillator":
+    case "CMO":
       return [
-        // CMO line
         { key: "cmoLine", label: "CMO", type: "line", color: "#26a69a" },
-
-        // Zero line
         {
           key: "zeroLine",
           label: "Zero Line",
           type: "line",
           value: 0,
           showValue: true,
-          color: "#9e9e9e",
         },
       ];
 
     case "TRIX":
       return [
-        // CMO line
         { key: "trixLine", label: "TRIX", type: "line", color: "#26a69a" },
-
-        // Zero line
         {
           key: "zeroLine",
           label: "Zero ",
@@ -1000,9 +982,8 @@ export const getRowsByIndicator = (indicator, maType) => {
           color: "#9e9e9e",
         },
       ];
-    case "Fisher Transform":
+    case "FT":
       return [
-        // Lines
         {
           key: "fisherLine",
           label: "Fisher",
@@ -1015,8 +996,6 @@ export const getRowsByIndicator = (indicator, maType) => {
           type: "line",
           color: "#ff9800",
         },
-
-        // Reference Levels
         {
           key: "level1_5",
           label: "Level 1.5",
@@ -1053,24 +1032,12 @@ export const getRowsByIndicator = (indicator, maType) => {
           color: "#26a69a",
         },
       ];
-    case "Klinger Oscillator":
-      return [
-        // Klinger Oscillator line
-        {
-          key: "klingerLine",
-          label: "Klinger Oscillator",
-          type: "line",
-          color: "#26a69a",
-        },
 
-        // Signal line
-        {
-          key: "signalLine",
-          label: "Signal Line",
-          type: "line",
-          color: "#ff9800",
-        },
-      ];
+case "KVO":
+  return [
+    { key: "ko", label: "KO", type: "line"},
+    { key: "signal", label: "Signal", type: "line" },
+  ];
     case "ATR":
       return [{ key: "atr", label: "ATR", type: "line" }];
 
@@ -1081,14 +1048,12 @@ export const getRowsByIndicator = (indicator, maType) => {
           key: "upper",
           label: "Upper Channel",
           type: "line",
-          color: "#ef5350",
         },
-        { key: "basis", label: "Basis Line", type: "line", color: "#26a69a" },
+        { key: "middle", label: "Basis Line", type: "line"},
         {
           key: "lower",
           label: "Lower Channel",
           type: "line",
-          color: "#26a69a",
         },
         {
           key: "bg",
@@ -1098,8 +1063,8 @@ export const getRowsByIndicator = (indicator, maType) => {
           color1: "rgba(239,83,80,0.1)", // color under bearish trend
         },
       ];
-    
-      case "BB":
+
+    case "BB":
       return [
         {
           key: "upper",
@@ -1122,25 +1087,23 @@ export const getRowsByIndicator = (indicator, maType) => {
           color1: "rgba(239,83,80,0.1)", // color under bearish trend
         },
       ];
-    
-      case "BBW":
+
+    case "BBW":
       return [
         {
-          key: "bollingerBandWidth",
+          key: "bbwLine",
           label: "Bollinger Band Width",
           type: "line",
         },
         {
-          key: "highestExpansion",
+          key: "highest",
           label: "Highest Expansion",
           type: "line",
-          color: "#26a69a",
         },
         {
-          key: "lowestContraction",
+          key: "lowest",
           label: "Lowest Contraction",
           type: "line",
-          color: "#26a69a",
         },
       ];
 
@@ -1152,7 +1115,7 @@ export const getRowsByIndicator = (indicator, maType) => {
           label: "Upper Channel",
           type: "line",
         },
-        { key: "basis", label: "Basis Line", type: "line"},
+        { key: "basis", label: "Basis Line", type: "line" },
         {
           key: "lower",
           label: "Lower Channel",
@@ -1161,7 +1124,7 @@ export const getRowsByIndicator = (indicator, maType) => {
         {
           key: "bg",
           label: "Background ",
-          type: "fill"
+          type: "fill",
         },
       ];
 
@@ -1204,18 +1167,18 @@ export const getRowsByIndicator = (indicator, maType) => {
         },
       ];
 
-    case "Standard Deviation":
+    case "STDDEV":
       return [
         // Lines
         {
-          key: "plotLine",
+          key: "stddev",
           label: "Plot",
           type: "line",
           color: "#ef5350",
         },
       ];
 
-    case "Volume":
+    case "VOL":
       return [
         {
           key: "volumeBars",
@@ -1239,20 +1202,16 @@ export const getRowsByIndicator = (indicator, maType) => {
 
     case "HV":
       return [
-        // HV Line
         {
           key: "hv",
           label: "HV",
           type: "line",
-          color: "#1890ff",
-          width: 2,
-          visible: false, // default unchecked
+          visible: false,
         },
       ];
 
-    case "OBV":
-      return [
-        // VIX Line
+    case "OBV": {
+      const rows = [
         {
           key: "obv",
           label: "On Balance Volume",
@@ -1261,8 +1220,45 @@ export const getRowsByIndicator = (indicator, maType) => {
           width: 2,
         },
       ];
+      if (maType !== "none") {
+        rows.push({
+          key: "smoothingMA",
+          label: "OBV MA",
+          type: "line",
+          color: "#faad14",
+          width: 2,
+        });
+      }
 
-    case "Percentage Volume Oscillator":
+      /* 🔥 ADD BOLLINGER BANDS */
+      if (maType === "SMA + Bollinger Bands") {
+        rows.push(
+          {
+            key: "bbUpper",
+            label: "BB Upper",
+            type: "line",
+            color: "#52c41a",
+            width: 1,
+          },
+          {
+            key: "bbLower",
+            label: "BB Lower",
+            type: "line",
+            color: "#ff7875",
+            width: 1,
+          },
+          {
+            key: "bbFill",
+            label: "BB Background",
+            type: "fill",
+          },
+        );
+      }
+
+      return rows;
+    }
+
+    case "PVO":
       return [
         // Histogram (multi-state coloring)
         {
@@ -1302,25 +1298,20 @@ export const getRowsByIndicator = (indicator, maType) => {
 
         // Zero Line
         {
-          key: "zeroLine",
+          key: "zero",
           label: "Zero Line",
           type: "line",
           value: 0, // fixed level
-          color: "#9e9e9e",
-          width: 1,
-          lineStyle: 2, // optional: dashed
           visible: true,
         },
       ];
 
-    case "Accumulation / Distribution":
+    case "AD":
       return [
-        // PVO Line
         {
           key: "accumulationDistribution",
           label: "Accumulation / Distribution",
           type: "line",
-          color: "#2962ff",
           width: 2,
           visible: true,
         },
@@ -1329,20 +1320,16 @@ export const getRowsByIndicator = (indicator, maType) => {
     case "CMF":
       return [
         {
-          key: "cmf",
+          key: "cmfLine",
           label: "CMF",
           type: "line",
-          color: "#2962ff",
-          width: 2,
           visible: true,
         },
         {
           key: "zeroLine",
           label: "Zero Line",
           type: "line",
-          value: 0, // fixed level
-          color: "#9e9e9e",
-          width: 1,
+          value: 0,
           visible: true,
         },
       ];
@@ -1400,33 +1387,35 @@ export const getRowsByIndicator = (indicator, maType) => {
           visible: true,
         },
       ];
-
-    case "Negative Volume Index":
+    case "NVI":
       return [
-        // EOM Line
         {
           key: "nvi",
           label: "NVI",
           type: "line",
           visible: true,
         },
-      ];
-
-    case "Positive Volume Index":
-      return [
-        // EOM Line
         {
-          key: "nvi",
+          key: "nviEma",
+          label: "NVI Based EMA",
+          type: "line",
+          color: "#26a69a",
+          width: 1,
+          visible: true,
+        },
+      ];
+    case "PVI":
+      return [
+        {
+          key: "pvi",
           label: "PVI",
           type: "line",
           color: "#2962ff",
           width: 2,
           visible: true,
         },
-
-        // Maxima Line
         {
-          key: "nviBasedema",
+          key: "pviEma",
           label: "PVI Based EMA",
           type: "line",
           color: "#26a69a",
@@ -1437,17 +1426,12 @@ export const getRowsByIndicator = (indicator, maType) => {
 
     case "VWAP":
       return [
-        // Main VWAP Line
         {
           key: "vwap",
           label: "VWAP",
           type: "line",
-          color: "#2962ff",
-          width: 2,
           visible: true,
         },
-
-        // ===== Band #1 =====
         {
           key: "upperBand1",
           label: "Upper Band #1",
@@ -1473,8 +1457,6 @@ export const getRowsByIndicator = (indicator, maType) => {
           upperKey: "upperBand1",
           lowerKey: "lowerBand1",
         },
-
-        // ===== Band #2 =====
         {
           key: "upperBand2",
           label: "Upper Band #2",
@@ -1500,8 +1482,6 @@ export const getRowsByIndicator = (indicator, maType) => {
           upperKey: "upperBand2",
           lowerKey: "lowerBand2",
         },
-
-        // ===== Band #3 =====
         {
           key: "upperBand3",
           label: "Upper Band #3",
@@ -1527,7 +1507,7 @@ export const getRowsByIndicator = (indicator, maType) => {
           lowerKey: "lowerBand3",
         },
       ];
-    case "Zig Zag":
+    case "ZIGZAG":
       return [
         {
           key: "zigzagLine",
@@ -1535,7 +1515,7 @@ export const getRowsByIndicator = (indicator, maType) => {
           type: "line",
           color: "#2962ff",
           width: 2,
-          visible: true, // checked by default
+          visible: true,
         },
         {
           key: "paneLabels",
@@ -1543,7 +1523,7 @@ export const getRowsByIndicator = (indicator, maType) => {
           type: "label",
           color: "#000000",
           backgroundColor: "rgba(41,98,255,0.15)",
-          visible: true, // checked by default
+          visible: true,
         },
       ];
 
@@ -1554,31 +1534,38 @@ export const getRowsByIndicator = (indicator, maType) => {
 
 export const PANE_INDICATORS = new Set([
   "RSI",
+  "FT",
   "MACD",
-  "MACDHistogram",
+  "STDDEV",
   "CCI",
   "ROC",
   "WPR",
-  "UltimateOscillator",
+  "UO",
   "AROON",
+  "HV",
   "AO",
-  "ChandeMomentumOscillator", // CMO
+  "CMO",
   "TRIX",
-  "FisherTransform",
-  "KlingerOscillator",
+  "VP",
+  "KO",
   "ATR",
   "ADX",
   "MFI",
   "EOM",
-  "MOM",
-  "EOM",
+  "PVI",
+  "NVI",
   "CHOP",
+  "STOCHRSI",
+  "STOCH",
   "Volume",
-  "VWAP",
-  "HV",
-  "ChaikinMoneyFlow",
+  "MOM",
+  "PVO",
+  "AD",
+  "OBV",
+  "BBW",
+  "CMF",
+  "KC",
 ]);
-
 
 export const RANGE_INTERVAL_MAPPING = {
   "1D": "1m",
@@ -1586,8 +1573,8 @@ export const RANGE_INTERVAL_MAPPING = {
   "1M": "30m",
   "3M": "1h",
   "6M": "4h",
-  "YTD": "1d",
+  YTD: "1d",
   "1Y": "1d",
   "5Y": "1w",
-  "All": "1d"
+  All: "1d",
 };

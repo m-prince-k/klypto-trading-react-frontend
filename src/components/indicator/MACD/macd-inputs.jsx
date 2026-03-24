@@ -6,56 +6,42 @@ export default function MACDInput(
 
   const rows = Array.isArray(response?.data) ? response.data : [];
 
-  /* ================= MACD ================= */
-
   const macdData = rows
-    .filter((d) => d.macd != null && d.time != null)
+    .filter((d) => d?.macd != null && d?.time != null)
     .map((d) => ({
-      time: Number(d.time),
+      time: d.time,
       value: Number(d.macd),
-    }))
-    .sort((a, b) => a.time - b.time);
-
-  /* ================= SIGNAL ================= */
+    }));
 
   const signalData = rows
-    .filter((d) => d.signal != null && d.time != null)
+    .filter((d) => d?.signal != null && d?.time != null)
     .map((d) => ({
-      time: Number(d.time),
+      time: d.time,
       value: Number(d.signal),
-    }))
-    .sort((a, b) => a.time - b.time);
-
-  /* ================= HISTOGRAM ================= */
+    }));
 
   const histogramData = rows
-    .filter((d) => d.histogram != null && d.time != null)
+    .filter((d) => d?.hist != null && d?.time != null)
     .map((d) => ({
-      time: Number(d.time),
-      value: Number(d.histogram),
-    }))
-    .sort((a, b) => a.time - b.time);
+      time: d.time,
+      value: Number(d.hist),
+      color:
+        d?.histColor ??
+        (Number(d.hist) >= 0
+          ? "rgba(38,166,154,1)"
+          : "rgba(239,83,80,1)"),
+    }));
 
-  const series = indicatorSeriesRef.current?.MACD;
 
-  if (!series) return;
+  const result = {
+    data: {
+      macd: macdData,
+      signal: signalData,
+      histogram: histogramData,
+    },
+  };
 
-  /* ================= UPDATE SERIES ================= */
-
-  series.macd?.setData(macdData);
-  series.signal?.setData(signalData);
-
-  /* 🔥 Histogram with dynamic color */
-  series.histogram?.setData(
-    histogramData.map((d) => ({
-      ...d,
-      color: d.value >= 0
-        ? "rgba(38,166,154,1)"   // green
-        : "rgba(239,83,80,1)", // red
-    }))
-  );
-
-  /* ================= HOVER VALUE ================= */
+  /* store latest values */
 
   latestIndicatorValuesRef.current.MACD = {
     macd: macdData[macdData.length - 1]?.value ?? null,
@@ -63,13 +49,10 @@ export default function MACDInput(
     histogram: histogramData[histogramData.length - 1]?.value ?? null,
   };
 
-  /* ================= STORE RESULT ================= */
-
-  indicatorSeriesRef.current.MACD.result = {
-    data: {
-      macd: macdData,
-      signal: signalData,
-      histogram: histogramData,
-    },
+  indicatorSeriesRef.current.MACD = {
+    result,
+    rows,
   };
+
+  return result;
 }

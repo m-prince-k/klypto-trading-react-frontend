@@ -4,46 +4,40 @@ export default function KCInput(
   latestIndicatorValuesRef
 ) {
 
-  const rows = Array.isArray(response?.data) ? response.data : [];
+  const group = indicatorSeriesRef.current?.KC;
+  if (!group) return;
 
-  const kcData = rows
-    .filter(
-      (d) =>
-        d.upper != null &&
-        d.middle != null &&
-        d.lower != null &&
-        d.time != null
-    )
-    .map((d) => ({
-      time: Number(d.time),
-      upper: Number(d.upper),
-      basis: Number(d.middle),
-      lower: Number(d.lower),
-    }));
+  const upper =
+    response?.data
+      ?.filter((d) => d.upper != null && d.time != null)
+      .map((d) => ({
+        time: Number(d.time),
+        value: Number(d.upper),
+      })) ?? [];
 
-  const series = indicatorSeriesRef.current?.KC;
-  if (!series) return;
+  const lower =
+    response?.data
+      ?.filter((d) => d.lower != null && d.time != null)
+      .map((d) => ({
+        time: Number(d.time),
+        value: Number(d.lower),
+      })) ?? [];
 
-  const upper = kcData.map((d) => ({ time: d.time, value: d.upper }));
-  const basis = kcData.map((d) => ({ time: d.time, value: d.basis }));
-  const lower = kcData.map((d) => ({ time: d.time, value: d.lower }));
+  const middle =
+    response?.data
+      ?.filter((d) => d.middle != null && d.time != null)
+      .map((d) => ({
+        time: Number(d.time),
+        value: Number(d.middle),
+      })) ?? [];
 
-  series.upper?.setData(upper);
-  series.basis?.setData(basis);
-  series.lower?.setData(lower);
-
-  /* update cloud data */
-
-  series._data = {
-    upper,
-    lower,
-  };
+  group.upper?.setData(upper);
+  group.lower?.setData(lower);
+  group.middle?.setData(middle);
 
   latestIndicatorValuesRef.current.KC = {
-    upper: kcData[kcData.length - 1]?.upper ?? 0,
-    basis: kcData[kcData.length - 1]?.basis ?? 0,
-    lower: kcData[kcData.length - 1]?.lower ?? 0,
+    upper: upper[upper.length - 1]?.value ?? null,
+    lower: lower[lower.length - 1]?.value ?? null,
+    middle: middle[middle.length - 1]?.value ?? null,
   };
-
-  indicatorSeriesRef.current.KC.result = kcData;
 }

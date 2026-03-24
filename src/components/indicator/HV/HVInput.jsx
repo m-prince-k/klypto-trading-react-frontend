@@ -3,6 +3,7 @@ export default function HVInput(
   indicatorSeriesRef,
   latestIndicatorValuesRef
 ) {
+<<<<<<< HEAD
   if (!indicatorSeriesRef?.current || !latestIndicatorValuesRef?.current) return;
 
   const rows = Array.isArray(response?.data) ? response.data : [];
@@ -30,5 +31,27 @@ export default function HVInput(
 
   indicatorSeriesRef.current.HV.result = {
     data: { hv },
+=======
+
+  const rows = Array.isArray(response?.data)
+    ? response.data
+    : [];
+
+  const hvSeries = indicatorSeriesRef.current?.HV?.hvLine;
+
+  if (!hvSeries) return;
+
+  const hvData = rows
+    .filter((d) => d.historical_Vol != null && d.time != null)
+    .map((d) => ({
+      time: Number(d.time),
+      value: Number(d.historical_Vol),
+    }));
+
+  hvSeries.setData(hvData);
+
+  latestIndicatorValuesRef.current.HV = {
+    hvLine: hvData[hvData.length - 1]?.value ?? null,
+>>>>>>> 74d4aff7095b3a6b6130baf32d081d88ad4573a8
   };
 }

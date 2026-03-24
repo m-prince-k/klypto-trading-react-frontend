@@ -141,10 +141,10 @@ export default function CCIPlot({
 
   useEffect(() => {
 
-    if (!indicatorSeriesRef?.current || !chart) return;
+    if (!chart?.current || !chart) return;
     if (cloudCanvasRef.current) return;
 
-    const rect = indicatorSeriesRef.current.getBoundingClientRect();
+    const rect = chart.current.getBoundingClientRect();
 
     const canvas = document.createElement("canvas");
 
@@ -157,7 +157,7 @@ export default function CCIPlot({
     canvas.style.pointerEvents = "none";
     canvas.style.zIndex = "1";
 
-    indicatorSeriesRef.current.appendChild(canvas);
+    chart.current.appendChild(canvas);
 
     cloudCanvasRef.current = canvas;
     cloudCtxRef.current = canvas.getContext("2d");
@@ -169,7 +169,7 @@ export default function CCIPlot({
 
   useEffect(() => {
 
-    const cciGroup = indicatorSeriesRef.current?.CCI;
+    const cciGroup = chart.current?.CCI;
 
     const upperSeries = cciGroup?.bbUpper;
     const lowerSeries = cciGroup?.bbLower;
