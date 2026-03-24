@@ -1,205 +1,279 @@
-// import React, { useEffect, useRef, useState } from "react";
-// import { CandlestickSeries, createChart } from "lightweight-charts";
-// import { Calendar, CandlestickChart } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  createChart,
+  CandlestickSeries,
+  LineSeries,
+} from "lightweight-charts";
 
-// const ranges = [
-//   { label: "1D", days: 1 },
-//   { label: "5D", days: 5 },
-//   { label: "1M", days: 30 },
-//   { label: "3M", days: 90 },
-//   { label: "6M", days: 180 },
-//   { label: "YTD", type: "ytd" },
-//   { label: "1Y", days: 365 },
-//   { label: "5Y", days: 365 * 5 },
-//   { label: "All", type: "all" }
-// ];
+function hexToRGBA(hex, alpha = 1) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
 
-// const generateDummyData = (from, to) => {
-//   const data = [];
-//   let current = from ? new Date(from) : new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
-//   const end = to ? new Date(to) : new Date();
+// Dummy candles
+const dummyCandles = Array.from({ length: 100 }, (_, i) => {
+  const open = 100 + Math.random() * 10;
+  const close = open + (Math.random() - 0.5) * 5;
+  const high = Math.max(open, close) + Math.random() * 2;
+  const low = Math.min(open, close) - Math.random() * 2;
+  const volume = 100 + Math.random() * 50;
+  return { time: i, open, high, low, close, volume };
+});
 
-//   let price = 100;
+// VWAP LOGIC (same)
+function calculateVWAP(candles, settings) {
+  let cumulativePV = 0;
+  let cumulativeVolume = 0;
 
-//   while (current <= end) {
-//     const open = price;
-//     const close = open + (Math.random() - 0.5) * 5;
-//     const high = Math.max(open, close) + Math.random() * 2;
-//     const low = Math.min(open, close) - Math.random() * 2;
+  let prices = [];
 
-//     data.push({
-//       time: Math.floor(current.getTime() / 1000),
-//       open,
-//       high,
-//       low,
-//       close
-//     });
+  const vwapData = [];
+  const upperBands = settings.bandMultipliers.map(() => []);
+  const lowerBands = settings.bandMultipliers.map(() => []);
 
-//     price = close;
-//     current.setDate(current.getDate() + 1);
-//   }
+  candles.forEach((candle, i) => {
+    const { open, high, low, close, volume } = candle;
 
-//   return data;
-// };
+    let price;
+    switch (settings.source) {
+      case "hl2": price = (high + low) / 2; break;
+      case "close": price = close; break;
+      case "open": price = open; break;
+      case "high": price = high; break;
+      case "low": price = low; break;
+      case "volume": price = volume; break;
+      default: price = (high + low + close) / 3;
+    }
 
-// export default function AdvancedChart() {
-//   const containerRef = useRef();
-//   const chartRef = useRef();
+    cumulativePV += price * volume;
+    cumulativeVolume += volume;
 
-//   const [data, setData] = useState([]);
-//   const [active, setActive] = useState("All");
-//   const [showCalendar, setShowCalendar] = useState(false);
-//   const [startDate, setStartDate] = useState("");
-//   const [endDate, setEndDate] = useState("");
-//   const [time, setTime] = useState(new Date());
+    const vwap = cumulativePV / cumulativeVolume;
+    prices.push(price);
 
-//   useEffect(() => {
-//     const interval = setInterval(() => setTime(new Date()), 1000);
-//     return () => clearInterval(interval);
-//   }, []);
+    let stdDev = 0;
+    if (settings.bandMode === "std") {
+      const mean = vwap;
+      let variance = 0;
+      for (let j = 0; j < prices.length; j++) {
+        variance += Math.pow(prices[j] - mean, 2);
+      }
+      variance /= prices.length;
+      stdDev = Math.sqrt(variance);
+    }
 
-//   const formatTime = (date) =>
-//     date.toLocaleTimeString("en-IN", {
-//       hour: "2-digit",
-//       minute: "2-digit",
-//       second: "2-digit",
-//       hour12: false
-//     });
+    vwapData.push({ time: i + settings.offset, value: vwap });
 
-//   const formatDate = (date) =>
-//     date.toLocaleDateString("en-IN", {
-//       year: "numeric",
-//       month: "short",
-//       day: "numeric"
-//     });
+    settings.bandMultipliers.forEach((mult, idx) => {
+      let upper, lower;
 
-//   useEffect(() => {
-//     const chart = createChart(containerRef.current, {
-//       height: 400,
-//       layout: { background: { color: "#0F172A" }, textColor: "#fff" }
-//     });
+      if (settings.bandMode === "percentage") {
+        const percent = (vwap * mult) / 100;
+        upper = vwap + percent;
+        lower = vwap - percent;
+      } else {
+        upper = vwap + stdDev * mult;
+        lower = vwap - stdDev * mult;
+      }
 
-//     const candleSeries = chart.addSeries(CandlestickSeries);
-//     chartRef.current = { chart, candleSeries };
+      upperBands[idx].push({ time: i + settings.offset, value: upper });
+      lowerBands[idx].push({ time: i + settings.offset, value: lower });
+    });
+  });
 
-//     setData(generateDummyData());
+  return { vwapData, upperBands, lowerBands };
+}
 
-//     return () => chart.remove();
-//   }, []);
+export default function DynamicVWAPChart() {
+  const chartRef = useRef();
 
-//   useEffect(() => {
-//     if (chartRef.current && data.length) {
-//       chartRef.current.candleSeries.setData(data);
-//     }
-//   }, [data]);
+  const [settings, setSettings] = useState({
+    source: "hlc3",
+    bandMode: "std",
+    offset: 0,
+    bandMultipliers: [1, 2, 3],
+    vwapColor: "#2962FF",
+    bandColor: "#00C853",
+    lineWidth: 2,
+  });
 
-//   const fetchData = async ({ from, to, all }) => {
-//     return new Promise((resolve) => {
-//       setTimeout(() => {
-//         if (all) resolve(generateDummyData());
-//         else resolve(generateDummyData(from, to));
-//       }, 300);
-//     });
-//   };
+  useEffect(() => {
+    const chart = createChart(chartRef.current, {
+      width: 900,
+      height: 450,
+      layout: { backgroundColor: "#fff", textColor: "#000" },
+    });
 
-//   const handleRange = async (item) => {
-//     setActive(item.label);
+    const candleSeries = chart.addSeries(CandlestickSeries);
+    candleSeries.setData(dummyCandles);
 
-//     let params = {};
-//     const now = new Date();
+    const { vwapData, upperBands, lowerBands } = calculateVWAP(
+      dummyCandles,
+      settings
+    );
 
-//     if (item.days) {
-//       const from = new Date();
-//       from.setDate(now.getDate() - item.days);
-//       params = { from, to: now };
-//     }
+    // VWAP
+    const vwapSeries = chart.addSeries(LineSeries, {
+      color: settings.vwapColor,
+      lineWidth: settings.lineWidth,
+    });
+    vwapSeries.setData(vwapData);
 
-//     if (item.type === "ytd") {
-//       params = { from: new Date(now.getFullYear(), 0, 1), to: now };
-//     }
+    // Bands
+    settings.bandMultipliers.forEach((_, i) => {
+      const upper = chart.addSeries(LineSeries, {
+        color: settings.bandColor,
+        lineWidth: 1,
+      });
 
-//     if (item.type === "all") {
-//       params = { all: true };
-//     }
+      const lower = chart.addSeries(LineSeries, {
+        color: settings.bandColor,
+        lineWidth: 1,
+      });
 
-//     const res = await fetchData(params);
-//     setData(res);
-//   };
+      upper.setData(upperBands[i]);
+      lower.setData(lowerBands[i]);
+    });
 
-//   const applyCustomRange = async () => {
-//     if (!startDate || !endDate) return;
+    chartRef.current.style.position = "relative";
+    // ✅ REAL CLOUD (MAIN FIX)
+    const canvas = document.createElement("canvas");
+    canvas.style.position = "absolute";
+    canvas.style.top = "0";
+    canvas.style.zIndex = "10";
+    canvas.style.left = "0";
+    canvas.style.pointerEvents = "none";
+    chartRef.current.appendChild(canvas);
 
-//     setActive("custom");
-//     setShowCalendar(false);
+    const ctx = canvas.getContext("2d");
 
-//     const res = await fetchData({ from: new Date(startDate), to: new Date(endDate) });
-//     setData(res);
-//   };
+    function resizeCanvas() {
+      canvas.width = chartRef.current.clientWidth;
+      canvas.height = chartRef.current.clientHeight;
+    }
+    resizeCanvas();
 
-//   return (
-//     <div className="w-full relative">
-//       <div ref={containerRef} />
+    function drawCloud() {
+      const timeScale = chart.timeScale();
+      const refSeries = vwapSeries; // ✅ important
 
-//       {/* RANGE BAR */}
-//       <div className="flex items-center justify-between p-3 bg-gray-900 text-white mt-2 rounded-2xl border border-gray-800 shadow-lg">
-//         <div className="flex items-center gap-2 relative">
-//           {ranges.map((item) => (
-//             <button
-//               key={item.label}
-//               onClick={() => handleRange(item)}
-//               className={`px-3 py-1 rounded-lg text-sm ${active === item.label ? "bg-blue-500" : "bg-gray-700 hover:bg-gray-600"}`}
-//             >
-//               {item.label}
-//             </button>
-//           ))}
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-//           <div className="relative">
-//             <button
-//               onClick={() => setShowCalendar(!showCalendar)}
-//               className="p-2 bg-gray-700 rounded-lg hover:bg-gray-600"
-//             >
-//               <Calendar size={16} />
-//             </button>
+      settings.bandMultipliers.forEach((_, i) => {
+        const upperData = upperBands[i];
+        const lowerData = lowerBands[i];
 
-//             {showCalendar && (
-//               <div className="absolute bottom-12 left-0 w-64 bg-gray-900 p-4 rounded-xl shadow-xl border border-gray-700 z-50">
-//                 <div className="text-sm mb-3 text-gray-300 font-medium">Select Range</div>
+        ctx.beginPath();
 
-//                 <div className="flex flex-col gap-3">
-//                   <input
-//                     type="date"
-//                     value={startDate}
-//                     onChange={(e) => setStartDate(e.target.value)}
-//                     className="p-2 bg-gray-800 rounded border border-gray-600"
-//                   />
-//                   <input
-//                     type="date"
-//                     value={endDate}
-//                     onChange={(e) => setEndDate(e.target.value)}
-//                     className="p-2 bg-gray-800 rounded border border-gray-600"
-//                   />
+        upperData.forEach((point, idx) => {
+          const x = timeScale.timeToCoordinate(point.time);
+          const y = refSeries.priceToCoordinate(point.value);
 
-//                   <button
-//                     onClick={applyCustomRange}
-//                     className="bg-blue-500 px-3 py-2 rounded mt-2"
-//                   >
-//                     Apply Range
-//                   </button>
-//                 </div>
-//               </div>
-//             )}
-//           </div>
-//         </div>
+          if (x === null || y === null) return;
 
-//         {/* TIMEZONE */}
-//         <div className="flex items-center gap-3 bg-gray-800 px-4 py-2 rounded-xl border border-gray-700">
-//           <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-//           <div className="flex flex-col">
-//             <span className="text-sm font-semibold">{formatTime(time)}</span>
-//             <span className="text-xs text-gray-400">{formatDate(time)} (IST)</span>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
+          if (idx === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+
+        for (let j = lowerData.length - 1; j >= 0; j--) {
+          const point = lowerData[j];
+          const x = timeScale.timeToCoordinate(point.time);
+          const y = refSeries.priceToCoordinate(point.value);
+
+          if (x === null || y === null) continue;
+
+          ctx.lineTo(x, y);
+        }
+
+        ctx.closePath();
+        ctx.fillStyle = hexToRGBA(settings.bandColor, 0.08 + i * 0.03);
+        ctx.fill();
+      });
+    }
+
+    chart.timeScale().subscribeVisibleTimeRangeChange(drawCloud);
+    chart.subscribeCrosshairMove(drawCloud);
+
+    setTimeout(drawCloud, 0);
+
+    const resizeObserver = new ResizeObserver(() => {
+      resizeCanvas();
+      drawCloud();
+    });
+    resizeObserver.observe(chartRef.current);
+
+    return () => chart.remove();
+  }, [settings]);
+
+  return (
+    <div>
+      <div style={{ marginBottom: 10 }}>
+        <select
+          value={settings.bandMode}
+          onChange={(e) =>
+            setSettings({ ...settings, bandMode: e.target.value })
+          }
+        >
+          <option value="std">STD</option>
+          <option value="percentage">%</option>
+        </select>
+
+        <select
+          value={settings.source}
+          onChange={(e) =>
+            setSettings({ ...settings, source: e.target.value })
+          }
+        >
+          <option value="hlc3">hlc3</option>
+          <option value="hl2">hl2</option>
+          <option value="close">close</option>
+          <option value="open">open</option>
+        </select>
+
+        <input
+          type="number"
+          value={settings.offset}
+          onChange={(e) =>
+            setSettings({
+              ...settings,
+              offset: parseInt(e.target.value) || 0,
+            })
+          }
+        />
+
+        <input
+          type="color"
+          value={settings.vwapColor}
+          onChange={(e) =>
+            setSettings({ ...settings, vwapColor: e.target.value })
+          }
+        />
+
+        <input
+          type="color"
+          value={settings.bandColor}
+          onChange={(e) =>
+            setSettings({ ...settings, bandColor: e.target.value })
+          }
+        />
+
+        {settings.bandMultipliers.map((val, i) => (
+          <input
+            key={i}
+            type="number"
+            value={val}
+            onChange={(e) => {
+              const arr = [...settings.bandMultipliers];
+              arr[i] = Number(e.target.value);
+              setSettings({ ...settings, bandMultipliers: arr });
+            }}
+          />
+        ))}
+      </div>
+
+      <div ref={chartRef} style={{ position: "relative" }}></div>
+    </div>
+  );
+}

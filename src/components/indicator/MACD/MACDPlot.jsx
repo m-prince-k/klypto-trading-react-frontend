@@ -28,12 +28,17 @@ export default function MACDPlot({
 
     /* ================= MAIN SERIES ================= */
 
-    Object.entries(result?.data).forEach(([lineName, lineData]) => {
+    Object.entries(result?.data || {}).forEach(([lineName, lineData]) => {
+
+      if (!Array.isArray(lineData)) {
+        console.warn(`❌ ${lineName} is not array`, lineData);
+        return;
+      }
 
       const style = indicatorStyle?.MACD?.[lineName];
-
       let series;
 
+      /* ================= HISTOGRAM FIX ================= */
       if (lineName === "histogram") {
 
         series = addSeries("MACD", HistogramSeries, {
@@ -41,29 +46,54 @@ export default function MACDPlot({
           lastValueVisible: true,
         });
 
-        series.setData(
-          lineData.map((d) => ({
-            ...d,
+        const formattedData = lineData
+          .filter(d =>
+            d &&
+            d.time != null &&
+            d.value != null &&
+            !isNaN(d.value)
+          )
+          .map((d) => ({
+            time: d.time,
+            value: Number(d.value),
             color:
-              d.value >= 0
+              Number(d.value) >= 0
                 ? (style?.upColor || "rgba(38,166,154,1)")
                 : (style?.downColor || "rgba(239,83,80,1)"),
-          }))
-        );
+          }));
 
-      } else {
+        console.log("✅ Histogram Final:", formattedData);
+
+        if (formattedData.length === 0) {
+          console.warn("❌ Histogram EMPTY");
+        }
+
+        series.setData(formattedData);
+      }
+
+      /* ================= LINE SERIES ================= */
+      else {
 
         series = addSeries("MACD", LineSeries, {
-          color: style?.color,
+          color: style?.color || "blue",
           lineWidth: style?.width || 2,
           visible: style?.visible ?? true,
           priceLineVisible: false,
           lastValueVisible: true,
         });
 
-        series.setData(lineData);
+        const cleanData = lineData
+          .filter(d => d && d.time != null && d.value != null)
+          .map(d => ({
+            time: d.time,
+            value: Number(d.value),
+          }));
 
-        if (lineName === "macd") macdData = lineData;
+        series.setData(cleanData);
+
+        if (lineName === "macd") {
+          macdData = cleanData;
+        }
       }
 
       if (!series) return;
@@ -91,13 +121,11 @@ export default function MACDPlot({
     );
 
     groupedSeries.zeroLine = zeroLine;
-
     groupedSeries.macdData = macdData;
 
     indicatorSeriesRef.current.MACD = groupedSeries;
 
   }, [result]);
-
 
   /* ================= STYLE UPDATE ================= */
 
