@@ -3,123 +3,176 @@ import { LineSeries, BaselineSeries } from "lightweight-charts";
 
 export default function CHOPPlot({
   result,
+  rows,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
-  indicatorConfigs,
 }) {
-  /* ================= CREATE / RESET SERIES ================= */
-  useEffect(() => {
-    if (!result) return;
 
-    // Clear previous series
+  console.log(result, "xdcfvghbjngcfh")
+
+  useEffect(() => {
+
+    if (!result?.data?.chopLine) return;
+
     if (indicatorSeriesRef.current?.CHOP) {
+
       Object.values(indicatorSeriesRef.current.CHOP).forEach((s) => {
-        if (s?.setData) s.setData([]);
+        if (s?.setData) {
+          try { s.setData([]); } catch {}
+        }
       });
+
       indicatorSeriesRef.current.CHOP = null;
     }
 
-    const groupedSeries = {};
-    const chopData = result.data?.chopLine ?? [];
-    const makeLevel = (v) => chopData.map((p) => ({ time: p.time, value: v }));
+    const grouped = {};
 
-    // CHOP main line
-    const chopSeries = addSeries("CHOP", LineSeries, {
-      color: indicatorStyle?.CHOP?.chopLine?.color,
-      lineWidth: indicatorStyle?.CHOP?.chopLine?.width ?? 2,
-      lineStyle: indicatorStyle?.CHOP?.chopLine?.lineStyle ?? 0,
-      visible: indicatorStyle?.CHOP?.chopLine?.visible ?? true,
-      priceLineVisible: false,
-      lastValueVisible: true,
-    });
-    chopSeries.setData(chopData);
-    groupedSeries.chopLine = chopSeries;
-
-    // Bands
-    ["upper", "middle", "lower"].forEach((key) => {
-      const value =
-        indicatorConfigs?.CHOP?.[key] ?? (key === "upper" ? 61.8 : key === "middle" ? 50 : 38.2);
-      const s = addSeries("CHOP", LineSeries, {
-        color: indicatorStyle?.CHOP?.[key]?.color,
-        lineWidth: indicatorStyle?.CHOP?.[key]?.width ?? 1,
-        lineStyle: indicatorStyle?.CHOP?.[key]?.lineStyle ?? 0,
-        visible: indicatorStyle?.CHOP?.[key]?.visible ?? true,
-        priceLineVisible: false,
-        lastValueVisible: false,
-      });
-      s.setData(makeLevel(value));
-      groupedSeries[key] = s;
-    });
-
-    // Background fill
-    const bandBackground = addSeries("CHOP", BaselineSeries, {
-      baseValue: { type: "price", price: indicatorConfigs?.CHOP?.lower ?? 38.2 },
-      topLineColor: "transparent",
-      bottomLineColor: "transparent",
-      topFillColor1: indicatorStyle?.CHOP?.bgFill?.topFillColor1,
-      topFillColor2: indicatorStyle?.CHOP?.bgFill?.topFillColor2,
-      bottomFillColor1: "rgba(0,0,0,0)",
-      bottomFillColor2: "rgba(0,0,0,0)",
-      visible: indicatorStyle?.CHOP?.bgFill?.visible ?? true,
-      priceLineVisible: false,
-      lastValueVisible: false,
-    });
-    bandBackground.setData(makeLevel(indicatorConfigs?.CHOP?.upper ?? 61.8));
-    groupedSeries.bandBackground = bandBackground;
-
-    groupedSeries.chopData = chopData;
-    indicatorSeriesRef.current.CHOP = groupedSeries;
-  }, [result]);
-
-  /* ================= STYLE & BAND UPDATE ================= */
-  useEffect(() => {
-    const chopGroup = indicatorSeriesRef.current?.CHOP;
-    if (!chopGroup) return;
-
-    const chopData = chopGroup.chopData ?? [];
+    const chopData = result?.data?.chopLine ?? [];
     if (!chopData.length) return;
-    const makeLevel = (v) => chopData.map((p) => ({ time: p.time, value: v }));
 
-    const upper = indicatorConfigs?.CHOP?.upper ?? 61.8;
-    const middle = indicatorConfigs?.CHOP?.middle ?? 50;
-    const lower = indicatorConfigs?.CHOP?.lower ?? 38.2;
-    const bgFill = indicatorStyle?.CHOP?.bgFill;
+    const upper = indicatorStyle?.CHOP?.upper?.value ?? 61.8;
+    const middle = indicatorStyle?.CHOP?.middle?.value ?? 50;
+    const lower = indicatorStyle?.CHOP?.lower?.value ?? 38.2;
 
-    // Update main CHOP line
-    chopGroup.chopLine?.applyOptions({
+    const makeLevel = (v) =>
+      chopData.map((p) => ({
+        time: p.time,
+        value: v,
+      }));
+
+
+    /* CHOP LINE */
+
+    const chopSeries = addSeries("CHOP", LineSeries, {
       color: indicatorStyle?.CHOP?.chopLine?.color,
       lineWidth: indicatorStyle?.CHOP?.chopLine?.width,
       lineStyle: indicatorStyle?.CHOP?.chopLine?.lineStyle ?? 0,
       visible: indicatorStyle?.CHOP?.chopLine?.visible,
-      lastValueVisible: indicatorStyle?.CHOP?.chopLine?.visible,
+      priceLineVisible: false,
+      lastValueVisible: true,
     });
 
-    // Update bands
-    ["upper", "middle", "lower"].forEach((key) => {
-      const value = key === "upper" ? upper : key === "middle" ? middle : lower;
-      const s = chopGroup[key];
-      const style = indicatorStyle?.CHOP?.[key];
-      if (!s) return;
-      s.setData(makeLevel(value));
-      s.applyOptions({
-        color: style?.color,
-        lineWidth: style?.width,
-        lineStyle: style?.lineStyle ?? 0,
-        visible: style?.visible,
-        lastValueVisible: false,
-      });
+    chopSeries.setData(chopData);
+
+    grouped.chopLine = chopSeries;
+
+
+    /* BANDS */
+
+    const upperSeries = addSeries("CHOP", LineSeries, {
+      color: indicatorStyle?.CHOP?.upper?.color,
+      lineWidth: indicatorStyle?.CHOP?.upper?.width,
+      lineStyle: indicatorStyle?.CHOP?.upper?.lineStyle ?? 2,
+      visible: indicatorStyle?.CHOP?.upper?.visible,
+      priceLineVisible: false,
+      lastValueVisible: false,
     });
 
-    // Update background fill properly
-    chopGroup.bandBackground?.applyOptions({
-      baseValue: { price: lower },
-      topFillColor1: bgFill?.topFillColor1,
-      topFillColor2: bgFill?.topFillColor2,
-      visible: bgFill?.visible,
+    upperSeries.setData(makeLevel(upper));
+
+
+    const middleSeries = addSeries("CHOP", LineSeries, {
+      color: indicatorStyle?.CHOP?.middle?.color,
+      lineWidth: indicatorStyle?.CHOP?.middle?.width,
+      lineStyle: indicatorStyle?.CHOP?.middle?.lineStyle ?? 2,
+      visible: indicatorStyle?.CHOP?.middle?.visible,
+      priceLineVisible: false,
+      lastValueVisible: false,
     });
-    chopGroup.bandBackground?.setData(makeLevel(upper));
-  }, [indicatorStyle, indicatorConfigs]);
+
+    middleSeries.setData(makeLevel(middle));
+
+
+    const lowerSeries = addSeries("CHOP", LineSeries, {
+      color: indicatorStyle?.CHOP?.lower?.color,
+      lineWidth: indicatorStyle?.CHOP?.lower?.width,
+      lineStyle: indicatorStyle?.CHOP?.lower?.lineStyle ?? 2,
+      visible: indicatorStyle?.CHOP?.lower?.visible,
+      priceLineVisible: false,
+      lastValueVisible: false,
+    });
+
+    lowerSeries.setData(makeLevel(lower));
+
+
+    grouped.upper = upperSeries;
+    grouped.middle = middleSeries;
+    grouped.lower = lowerSeries;
+
+
+    /* BACKGROUND FILL */
+
+    const bg = indicatorStyle?.CHOP?.bg;
+
+    const bgSeries = addSeries("CHOP", BaselineSeries, {
+      baseValue: { type: "price", price: lower },
+      topFillColor1: bg?.topFillColor1,
+      topFillColor2: bg?.topFillColor2,
+      bottomFillColor1: "rgba(0,0,0,0)",
+      bottomFillColor2: "rgba(0,0,0,0)",
+      topLineColor: "transparent",
+      bottomLineColor: "transparent",
+      visible: bg?.visible ?? true,
+      priceLineVisible: false,
+      lastValueVisible: false,
+    });
+
+    bgSeries.setData(makeLevel(upper));
+
+    grouped.bg = bgSeries;
+
+    grouped.chopData = chopData;
+
+    indicatorSeriesRef.current.CHOP = grouped;
+
+  }, [result]);
+
+
+  /* STYLE UPDATE */
+
+  useEffect(() => {
+
+    const group = indicatorSeriesRef.current?.CHOP;
+    if (!group) return;
+
+    const chopData = group.chopData ?? [];
+
+    const upper = indicatorStyle?.CHOP?.upper?.value ?? 61.8;
+    const middle = indicatorStyle?.CHOP?.middle?.value ?? 50;
+    const lower = indicatorStyle?.CHOP?.lower?.value ?? 38.2;
+
+    const makeLevel = (v) => chopData.map((p) => ({ time: p.time, value: v }));
+
+
+    group.upper?.setData(makeLevel(upper));
+    group.middle?.setData(makeLevel(middle));
+    group.lower?.setData(makeLevel(lower));
+
+
+    group.chopLine?.applyOptions({
+      color: indicatorStyle?.CHOP?.chopLine?.color,
+      lineWidth: indicatorStyle?.CHOP?.chopLine?.width,
+      visible: indicatorStyle?.CHOP?.chopLine?.visible,
+    });
+
+
+    group.upper?.applyOptions({
+      color: indicatorStyle?.CHOP?.upper?.color,
+      visible: indicatorStyle?.CHOP?.upper?.visible,
+    });
+
+    group.middle?.applyOptions({
+      color: indicatorStyle?.CHOP?.middle?.color,
+      visible: indicatorStyle?.CHOP?.middle?.visible,
+    });
+
+    group.lower?.applyOptions({
+      color: indicatorStyle?.CHOP?.lower?.color,
+      visible: indicatorStyle?.CHOP?.lower?.visible,
+    });
+
+  }, [indicatorStyle]);
 
   return null;
 }

@@ -1,185 +1,217 @@
-import React, { useEffect, useRef, useState } from "react";
-import { createChart, CandlestickSeries, LineSeries } from "lightweight-charts";
+import React, { useEffect, useRef } from "react";
+import {
+  createChart,
+  CandlestickSeries,
+  LineSeries,
+  AreaSeries,
+} from "lightweight-charts";
 
-export default function BollingerCloudChart() {
+const SupertrendChart = () => {
+  const ref = useRef();
 
-    const containerRef = useRef(null);
-    const [cloudColor, setCloudColor] = useState("#3B82F6");
+  useEffect(() => {
+    const chart = createChart(ref.current, {
+      width: 1000,
+      height: 500,
+      layout: {
+        background: { color: "#0D1117" },
+        textColor: "#DDD",
+      },
+      grid: {
+        vertLines: { color: "#222" },
+        horzLines: { color: "#222" },
+      },
+    }); // :white_check_mark: CANDLE (TOP LAYER FEEL)
 
-    function hexToRGBA(hex, a) {
-        const r = parseInt(hex.slice(1, 3), 16);
-        const g = parseInt(hex.slice(3, 5), 16);
-        const b = parseInt(hex.slice(5, 7), 16);
-        return `rgba(${r},${g},${b},${a})`;
-    }
+    const candle = chart.addSeries(CandlestickSeries, {
+      upColor: "#00FF88",
+      downColor: "#FF4D4F",
+      borderUpColor: "#00FF88",
+      borderDownColor: "#FF4D4F",
+      wickUpColor: "#00FF88",
+      wickDownColor: "#FF4D4F",
+    });
 
-    useEffect(() => {
+    const start = Math.floor(new Date("2024-01-01").getTime() / 1000);
 
-        const width = 900;
-        const height = 500;
+    const data = Array.from({ length: 150 }, (_, i) => {
+      const base = 100 + Math.sin(i / 6) * 15;
+      return {
+        time: start + i * 86400,
+        open: base + Math.random() * 5,
+        high: base + Math.random() * 10,
+        low: base - Math.random() * 10,
+        close: base + (Math.random() - 0.5) * 10,
+      };
+    });
 
-        const chart = createChart(containerRef.current, {
-            width,
-            height
-        });
+    candle.setData(data); // :fire: SUPER TREND
 
-        const candleSeries = chart.addSeries(CandlestickSeries);
+    function supertrend(data, period = 10, multiplier = 3) {
+      let tr = [],
+        atr = [];
 
-        // dummy candles
-        const candles = [];
-        let price = 100;
-        const start = new Date(2024, 2, 1);
+      for (let i = 0; i < data.length; i++) {
+        if (i === 0) tr.push(data[i].high - data[i].low);
+        else {
+          const pc = data[i - 1].close;
+          tr.push(
+            Math.max(
+              data[i].high - data[i].low,
+              Math.abs(data[i].high - pc),
+              Math.abs(data[i].low - pc),
+            ),
+          );
+        }
+      }
 
-        for (let i = 0; i < 120; i++) {
+      for (let i = 0; i < tr.length; i++) {
+        if (i < period) atr.push(null);
+        else {
+          let sum = 0;
+          for (let j = i - period; j < i; j++) sum += tr[j];
+          atr.push(sum / period);
+        }
+      }
 
-            price += (Math.random() - 0.5) * 5;
+      let res = [],
+        dir = 1,
+        prevU = 0,
+        prevL = 0;
 
-            const d = new Date(start);
-            d.setDate(start.getDate() + i);
+      for (let i = 0; i < data.length; i++) {
+        if (!atr[i]) {
+          res.push(null);
+          continue;
+        }
 
-            const yyyy = d.getFullYear();
-            const mm = String(d.getMonth() + 1).padStart(2, "0");
-            const dd = String(d.getDate()).padStart(2, "0");
+        const hl2 = (data[i].high + data[i].low) / 2;
+        const upper = hl2 + multiplier * atr[i];
+        const lower = hl2 - multiplier * atr[i];
 
-            candles.push({
-                time: `${yyyy}-${mm}-${dd}`,
-                open: price - 2,
-                high: price + 3,
-                low: price - 3,
-                close: price
-            });
-        }
+        let fU = upper,
+          fL = lower;
 
-        candleSeries.setData(candles);
+        if (i > 0) {
+          fU = upper < prevU || data[i - 1].close > prevU ? upper : prevU;
+          fL = lower > prevL || data[i - 1].close < prevL ? lower : prevL;
+        }
 
-        const closeData = candles.map(c => ({ time: c.time, value: c.close }));
+        if (data[i].close > prevU) dir = 1;
+        else if (data[i].close < prevL) dir = -1;
 
-        // bollinger calc
-        function Bollinger(data, p = 20) {
+        const value = dir === 1 ? fL : fU;
 
-            const upper = [];
-            const lower = [];
+        res.push({
+          time: data[i].time,
+          value,
+          direction: dir,
+        });
 
-            for (let i = p; i < data.length; i++) {
+        prevU = fU;
+        prevL = fL;
+      }
 
-                let sum = 0;
-                for (let j = 0; j < p; j++) sum += data[i - j].value;
+      return res.filter(Boolean);
+    }
 
-                const mean = sum / p;
+    const st = supertrend(data); // :fire: SPLIT SEGMENTS (LINE BREAK)
 
-                let v = 0;
-                for (let j = 0; j < p; j++)
-                    v += Math.pow(data[i - j].value - mean, 2);
+    let segments = [];
+    let current = [];
 
-                const std = Math.sqrt(v / p);
+    for (let i = 0; i < st.length; i++) {
+      if (!current.length) {
+        current.push(st[i]);
+        continue;
+      }
 
-                upper.push({ time: data[i].time, value: mean + std * 2 });
-                lower.push({ time: data[i].time, value: mean - std * 2 });
+      const prev = current[current.length - 1];
 
-            }
+      if (st[i].direction !== prev.direction) {
+        segments.push([...current]);
+        current = [];
+      }
 
-            return { upper, lower };
-        }
+      current.push(st[i]);
+    }
 
-        const { upper, lower } = Bollinger(closeData);
+    if (current.length) segments.push(current); // :fire: DRAW BAND + LINE
 
-        // lines
-        const upperLine = chart.addSeries(LineSeries, { color: "#22C55E", lineWidth: 2 });
-        const lowerLine = chart.addSeries(LineSeries, { color: "#EF4444", lineWidth: 2 });
+    segments.forEach((seg) => {
+      const isBull = seg[0].direction === 1;
 
-        upperLine.setData(upper);
-        lowerLine.setData(lower);
+      const candleMap = {};
+      data.forEach((c) => (candleMap[c.time] = c)); // :fire: Upper boundary (candle side)
 
-        // cloud canvas
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
+      const topData = seg
+        .map((d) => {
+          const c = candleMap[d.time];
+          if (!c) return null;
 
-        canvas.style.position = "absolute";
-        canvas.style.left = "0";
-        canvas.style.top = "0";
-        canvas.style.pointerEvents = "none";
-        canvas.style.zIndex = "1";
+          return {
+            time: d.time,
+            value: isBull ? d.value : c.high, // red = high
+          };
+        })
+        .filter(Boolean); // :fire: Lower boundary (line side)
 
-        containerRef.current.appendChild(canvas);
+      const bottomData = seg
+        .map((d) => {
+          const c = candleMap[d.time];
+          if (!c) return null;
 
-        const ctx = canvas.getContext("2d");
+          return {
+            time: d.time,
+            value: isBull ? c.low : d.value, // green = low
+          };
+        })
+        .filter(Boolean); // :white_check_mark: AREA (TRICK: stack illusion)
 
-        function drawCloud() {
+      const area = chart.addSeries(AreaSeries, {
+        lineColor: "transparent",
+        topColor: isBull
+          ? "rgba(0, 247, 132, 100)" // :large_green_circle: dense green
+          : "rgba(248, 1, 6, 100)", // :red_circle: dense red
+        bottomColor: "transparent",
+      }); // :point_down: midpoint trick to keep inside
 
-            ctx.clearRect(0, 0, width, height);
+      const areaData = seg
+        .map((d) => {
+          const c = candleMap[d.time];
+          if (!c) return null;
 
-            ctx.beginPath();
+          let top = isBull ? d.value : c.high;
+          let bottom = isBull ? c.low : d.value;
 
-            // upper
-            upper.forEach((p, i) => {
+          return {
+            time: d.time,
+            value: (top + bottom) / 2,
+          };
+        })
+        .filter(Boolean);
 
-                const x = chart.timeScale().timeToCoordinate(p.time);
-                const y = upperLine.priceToCoordinate(p.value);
+      area.setData(areaData); // :white_check_mark: SUPER TREND LINE
 
-                if (x === null || y === null) return;
+      const line = chart.addSeries(LineSeries, {
+        color: isBull ? "#00FF88" : "#FF4D4F",
+        lineWidth: 2,
+      });
 
-                if (i === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
+      line.setData(
+        seg.map((d) => ({
+          time: d.time,
+          value: d.value,
+        })),
+      );
+    });
 
-            });
+    chart.timeScale().fitContent();
 
-            // lower reverse
-            for (let i = lower.length - 1; i >= 0; i--) {
+    return () => chart.remove();
+  }, []);
 
-                const p = lower[i];
+  return <div ref={ref} />;
+};
 
-                const x = chart.timeScale().timeToCoordinate(p.time);
-                const y = lowerLine.priceToCoordinate(p.value);
-
-                if (x === null || y === null) continue;
-
-                ctx.lineTo(x, y);
-
-            }
-
-            ctx.closePath();
-
-            ctx.fillStyle = hexToRGBA(cloudColor, 0.35);
-            ctx.fill();
-
-        }
-
-        // redraw on zoom/scroll
-        chart.timeScale().subscribeVisibleLogicalRangeChange(drawCloud);
-        chart.subscribeCrosshairMove(drawCloud);
-
-        setTimeout(drawCloud, 200);
-
-        return () => chart.remove();
-
-    }, [cloudColor]);
-
-
-
-    return (
-
-        <div>
-
-            <h3>Bollinger Cloud</h3>
-
-            <input
-                type="color"
-                value={cloudColor}
-                onChange={(e) => setCloudColor(e.target.value)}
-            />
-
-            <div
-                ref={containerRef}
-                style={{
-                    position: "relative",
-                    width: "900px",
-                    height: "500px"
-                }}
-            ></div>
-
-        </div>
-
-    );
-
-}
+export default SupertrendChart;

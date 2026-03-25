@@ -3,38 +3,58 @@ import { useState, useRef, useEffect } from "react";
 import ColorPalettePanel from "./ColorPalettePanel";
 import { getRowsByIndicator } from "../../util/common";
 
-
-
-
-
 export default function IndicatorStyle({
   indicatorStyle,
   setIndicatorStyle,
   activeBarIndicator,
   indicatorConfigs,
 }) {
-const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
+  const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
   const selectedStyle = indicatorStyle?.[normalizedType];
   const config = indicatorConfigs?.[normalizedType] || {};
   const { maType, maLength } = config;
-  const rows = getRowsByIndicator(normalizedType, maType,indicatorConfigs);
+  const rows = getRowsByIndicator(normalizedType, maType, indicatorConfigs);
 
   const [activePalette, setActivePalette] = useState(null);
   const paletteRef = useRef(null);
 
   /* ================= UPDATE FUNCTION ================= */
-
   const update = (section, key, value) => {
-    setIndicatorStyle((prev) => ({
-      ...prev,
-      [normalizedType]: {
-        ...prev[normalizedType],
-        [section]: {
-          ...prev[normalizedType]?.[section],
-          [key]: value,
+    setIndicatorStyle((prev) => {
+      const indicator = prev[normalizedType] || {};
+
+      // ---------------- HISTOGRAM / VOLUME PALETTE ----------------
+      if (
+        (section === "histogram" && ["pf", "pr", "nf", "nr"].includes(key)) ||
+        (section === "volumeBars" && ["up", "down"].includes(key))
+      ) {
+        return {
+          ...prev,
+          [normalizedType]: {
+            ...indicator,
+            [section]: {
+              ...indicator[section],
+              palette: {
+                ...indicator[section]?.palette,
+                [key]: value,
+              },
+            },
+          },
+        };
+      }
+
+      // ---------------- NORMAL STYLE UPDATE ----------------
+      return {
+        ...prev,
+        [normalizedType]: {
+          ...indicator,
+          [section]: {
+            ...indicator?.[section],
+            [key]: value,
+          },
         },
-      },
-    }));
+      };
+    });
   };
 
   useEffect(() => {
@@ -43,15 +63,26 @@ const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
         setActivePalette(null);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
-
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
+  /* ================= FILL / COLOR PREVIEW ================= */
   const getFillPreview = (row, selectedStyle) => {
+    // HISTOGRAM CHILDREN
+    if (
+      (row.parent === "histogram" &&
+        selectedStyle?.histogram?.palette?.[row.key]) ||
+      (row.parent === "volumeBars" &&
+        selectedStyle?.volumeBars?.palette?.[row.key])
+    ) {
+      const section = row.parent;
+      return selectedStyle?.[section]?.palette?.[row.key] || "#888";
+    }
+
+    // NORMAL STYLE
     const style = {
       ...row,
       ...(selectedStyle?.[row.key] || {}),
@@ -62,17 +93,19 @@ const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
       style.bottomFillColor1 ||
       style.topFillColor2 ||
       style.bottomFillColor2 ||
+      style.color ||
       "#888"
     );
   };
 
+  /* ================= RENDER ROWS ================= */
   return (
     <div style={{ padding: "4px 0" }}>
       {rows
         .flatMap((row) => (row.children ? [row, ...row.children] : [row]))
         .map((row) => (
           <Row
-            key={row.key}
+            key={row.key + (row.parent ? `-${row.parent}` : "")}
             className="align-items-center mx-0"
             style={{
               borderBottom: "1px solid #ebebeb",
@@ -86,7 +119,6 @@ const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
             }
           >
             {/* CHECKBOX + LABEL */}
-
             <Col
               className="ps-3 pe-1 py-2"
               style={{
@@ -94,33 +126,44 @@ const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
                 paddingLeft: row.children ? 0 : row.parent ? 28 : 0,
               }}
             >
-              <Form.Check
-                type="checkbox"
-                checked={
-                  selectedStyle?.[row.key]?.visible ?? row.visible ?? true
-                }
-                onChange={(e) => update(row.key, "visible", e.target.checked)}
-                label={
-                  <span
-                    style={{
-                      fontSize: "14.5px",
-                      fontWeight: 600,
-                      color: "#111827",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      letterSpacing: "-0.15px",
-                      display: "block",
-                    }}
-                  >
-                    {row.label}
-                  </span>
-                }
-              />
+              {!row.parent ? (
+                <Form.Check
+                  type="checkbox"
+                  checked={
+                    selectedStyle?.[row.key]?.visible ?? row.visible ?? true
+                  }
+                  onChange={(e) => update(row.key, "visible", e.target.checked)}
+                  label={
+                    <span
+                      style={{
+                        fontSize: "14.5px",
+                        fontWeight: 600,
+                        color: "#111827",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        letterSpacing: "-0.15px",
+                        display: "block",
+                      }}
+                    >
+                      {row.label}
+                    </span>
+                  }
+                />
+              ) : (
+                <span
+                  style={{
+                    fontSize: "14.5px",
+                    fontWeight: 600,
+                    color: "#111827",
+                  }}
+                >
+                  {row.label}
+                </span>
+              )}
             </Col>
 
             {/* SWATCH COLUMN */}
-
             <Col
               xs="auto"
               className="px-1 py-2 d-flex justify-content-center align-items-center"
@@ -137,14 +180,12 @@ const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
                   border: "1.5px solid #d1d5db",
                   borderRadius: 7,
                   cursor: "pointer",
-
                   background:
                     row.type !== "fill"
                       ? (selectedStyle?.[row.key]?.color ??
                         row.color ??
                         "#2962ff")
                       : getFillPreview(row, selectedStyle),
-
                   boxShadow: "0 1px 3px rgba(0,0,0,0.10)",
                   transition: "box-shadow 0.15s, transform 0.1s",
                   flexShrink: 0,
@@ -160,7 +201,6 @@ const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
                   e.currentTarget.style.transform = "scale(1)";
                 }}
               />
-
               {activePalette === row.key && (
                 <div
                   ref={paletteRef}
@@ -176,11 +216,28 @@ const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
                 >
                   <ColorPalettePanel
                     mode={row.type !== "fill" ? "line" : row.key}
-                    currentStyle={selectedStyle?.[row.key] ?? row}
+                    currentStyle={
+                      row.parent === "histogram"
+                        ? {
+                            color: selectedStyle?.histogram?.palette?.[row.key],
+                          }
+                        : row.parent === "volumeBars"
+                          ? {
+                              color:
+                                selectedStyle?.volumeBars?.palette?.[row.key],
+                            }
+                          : (selectedStyle?.[row.key] ?? row)
+                    }
                     onChange={(style) => {
-                      Object.entries(style).forEach(([k, v]) =>
-                        update(row.key, k, v),
-                      );
+                      if (row.parent === "histogram") {
+                        update("histogram", row.key, style.color);
+                      } else if (row.parent === "volumeBars") {
+                        update("volumeBars", row.key, style.color);
+                      } else {
+                        Object.entries(style).forEach(([k, v]) =>
+                          update(row.key, k, v),
+                        );
+                      }
                     }}
                   />
                 </div>
@@ -188,7 +245,6 @@ const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
             </Col>
 
             {/* INPUT COLUMN */}
-
             <Col
               xs="auto"
               className="pe-3 ps-1 py-2 d-flex align-items-center justify-content-center"

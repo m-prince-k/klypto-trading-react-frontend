@@ -669,11 +669,15 @@ export default function IndicatorPropertyDialog({
       case "STOCHRSI":
         return (
           <>
+            <BaseSettings showOffset={false} showSource={false} />
+
             <div className="mb-3">
+
               <label className="form-label">K</label>
               <input
                 type="number"
                 className="form-control"
+                min={1}
                 value={currentConfig.kSmoothing}
                 onChange={(e) =>
                   updateProperty("kSmoothing", Number(e.target.value))
@@ -686,20 +690,10 @@ export default function IndicatorPropertyDialog({
               <input
                 type="number"
                 className="form-control"
+                min={1}
                 value={currentConfig.dSmoothing}
                 onChange={(e) =>
                   updateProperty("dSmoothing", Number(e.target.value))
-                }
-              />
-            </div>
-            <div className="mb-3">
-              <label className="form-label">Stochastic Length</label>
-              <input
-                type="number"
-                className="form-control"
-                value={currentConfig.stochasticLength}
-                onChange={(e) =>
-                  updateProperty("stochasticLength", Number(e.target.value))
                 }
               />
             </div>
@@ -708,26 +702,32 @@ export default function IndicatorPropertyDialog({
               <input
                 type="number"
                 className="form-control"
-                value={currentConfig.rsiLength}
+                min={1}
+                value={currentConfig.lengthRSI}
                 onChange={(e) =>
-                  updateProperty("rsiLength", Number(e.target.value))
+                  updateProperty("lengthRSI", Number(e.target.value))
                 }
               />
             </div>
+            
 
             <div className="mb-3">
-              <label className="form-label">RSI Source</label>
-              <select
-                className="form-control"
-                value={currentConfig.rsiSource}
-                onChange={(e) => updateProperty("rsiSource", e.target.value)}
-              >
-                <option value="close">Close</option>
-                <option value="open">Open</option>
-                <option value="high">High</option>
-                <option value="low">Low</option>
-              </select>
-            </div>
+            <label className="form-label"> RSI Source</label>
+            <select
+              className="form-select"
+              value={currentConfig.source}
+              onChange={(e) => updateProperty("source", e.target.value)}
+            >
+              {["Close", "Open", "High", "Low", "HL2", "HLC3", "OHLC4"].map(
+                (opt) => (
+                  <option key={opt} value={opt.toLowerCase()}>
+                    {opt}
+                  </option>
+                ),
+              )}
+            </select>
+          </div> 
+
           </>
         );
 

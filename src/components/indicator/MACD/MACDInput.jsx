@@ -3,36 +3,25 @@ export default function MACDInput(
   indicatorSeriesRef,
   latestIndicatorValuesRef
 ) {
-
+  // Ensure rows exist
   const rows = Array.isArray(response?.data) ? response.data : [];
 
+  // Prepare MACD line data
   const macdData = rows
     .filter((d) => d?.macd != null && d?.time != null)
-    .map((d) => ({
-      time: d.time,
-      value: Number(d.macd),
-    }));
+    .map((d) => ({ time: d.time, value: Number(d.macd) }));
 
+  // Prepare Signal line data
   const signalData = rows
     .filter((d) => d?.signal != null && d?.time != null)
-    .map((d) => ({
-      time: d.time,
-      value: Number(d.signal),
-    }));
+    .map((d) => ({ time: d.time, value: Number(d.signal) }));
 
+  // Prepare Histogram data
   const histogramData = rows
     .filter((d) => d?.hist != null && d?.time != null)
-    .map((d) => ({
-      time: d.time,
-      value: Number(d.hist),
-      color:
-        d?.histColor ??
-        (Number(d.hist) >= 0
-          ? "rgba(38,166,154,1)"
-          : "rgba(239,83,80,1)"),
-    }));
+    .map((d) => ({ time: d.time, value: Number(d.hist) }));
 
-
+  // Combine into result object
   const result = {
     data: {
       macd: macdData,
@@ -41,14 +30,15 @@ export default function MACDInput(
     },
   };
 
-  /* store latest values */
-
+  // Store latest values for display / inputs
   latestIndicatorValuesRef.current.MACD = {
     macd: macdData[macdData.length - 1]?.value ?? null,
     signal: signalData[signalData.length - 1]?.value ?? null,
     histogram: histogramData[histogramData.length - 1]?.value ?? null,
   };
 
+  // Store only the data and rows, NOT the series
+  // The plot component (MACDPlot) will handle series creation & updates
   indicatorSeriesRef.current.MACD = {
     result,
     rows,

@@ -74,7 +74,7 @@ import FTPlot from "./FisherTransform/FisherTransformPlot";
 import ZIGZAGPlot from "./ZIgZag/ZigZagPlot";
 import ZIGZAGInput from "./ZIgZag/ZigZagInput";
 import MACDPlot from "./MACD/MACDPlot";
-import MACDInput from "./MACD/macd-inputs";
+import MACDInput from "./MACD/MACDInput";
 import VWAPPlot from "./VWAP/VWAPPlot";
 import VWAPInput from "./VWAP/VWAPInput";
 import KVOPlot from "./KlingerOscillator/KVOPlot";

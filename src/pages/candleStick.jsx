@@ -43,6 +43,7 @@ import IndicatorBar from "../components/indicator/IndicatorBar";
 export default function Candlestick() {
   const chartRef = useRef();
   const containerRef = useRef();
+  const paneContainerRef = useRef();
   const seriesRef = useRef(null);
   const indicatorSeriesRef = useRef({});
   const latestIndicatorValuesRef = useRef({});
@@ -198,9 +199,9 @@ export default function Candlestick() {
       dSmoothing: 3,
     },
     STOCHRSI: {
-      rsiLength: 14,
-      rsiSource: "close",
-      stochasticLength: 14,
+      lengthRSI: 14,
+      source: "close",
+      length: 14,
       kSmoothing: 3,
       dSmoothing: 3,
     },
@@ -353,68 +354,43 @@ export default function Candlestick() {
   let indicatorStyleDefault = {
     RSI: {
       rsi: {
-        visible: true,
         color: "rgba(38,166,154,1)",
-        width: 1,
-        lineStyle: 0,
-        opacity: 100,
+        width: 2,
+        visible: true,
       },
       smoothingMA: {
+        color: "rgba(255,193,7,1)",
+        width: 2,
         visible: true,
-        color: "rgba(255,202,28,1)",
-        width: 1,
-        lineStyle: 0,
-        opacity: 100,
       },
-      upper: {
+      bbUpper: {
+        color: "rgba(255,152,0,1)",
+        width: 1,
         visible: true,
-        value: 70,
-        color: "rgba(158,158,158,1)",
-        width: 1,
-        lineStyle: 2,
-        opacity: 100,
       },
-      middle: {
-        visible: false,
-        value: 50,
-        color: "rgba(158,158,158,1)",
+      bbLower: {
+        color: "rgba(255,152,0,1)",
         width: 1,
-        lineStyle: 2,
-        opacity: 100,
-      },
-      lower: {
         visible: true,
-        value: 30,
-        color: "rgba(158,158,158,1)",
-        width: 1,
-        lineStyle: 2,
-        opacity: 100,
       },
       bandFill: {
         visible: true,
         topFillColor1: "rgba(140,120,255,0.05)",
         topFillColor2: "rgba(140,120,255,0.05)",
       },
+
       obFill: {
         visible: true,
-        topFillColor1: "rgba(38, 166, 106, 0.1)",
-        topFillColor2: "rgba(38, 166, 106, 0.2)",
+        topFillColor1: "rgba(38,166,106,0.1)",
+        topFillColor2: "rgba(38,166,106,0.2)",
       },
+
       osFill: {
         visible: true,
-        bottomFillColor1: "rgba(239, 83, 80, 0.1)",
+        bottomFillColor1: "rgba(239,83,80,0.1)",
         bottomFillColor2: "rgba(239,83,80,0.4)",
       },
-      bbUpperBand: {
-        visible: true,
-        color: "#4caf50",
-        width: 1,
-      },
-      bbLowerBand: {
-        visible: true,
-        color: "#f44336",
-        width: 1,
-      },
+
       bbFill: {
         visible: true,
         topFillColor1: "rgba(76,175,80,0.2)",
@@ -577,6 +553,44 @@ export default function Candlestick() {
         color: "rgba(244,67,54,0.35)",
         opacity: 35,
         visible: true,
+      },
+    },
+    CHOP: {
+      chopLine: {
+        visible: true,
+        color: "rgba(33,150,243,1)",
+        width: 1,
+        lineStyle: 0,
+      },
+
+      upper: {
+        value: 61.8,
+        visible: true,
+        color: "rgba(239,83,80,1)",
+        width: 1,
+        lineStyle: 2,
+      },
+
+      middle: {
+        value: 50,
+        visible: true,
+        color: "rgba(38,166,154,1)",
+        width: 1,
+        lineStyle: 2,
+      },
+
+      lower: {
+        value: 38.2,
+        visible: true,
+        color: "rgba(38,166,154,1)",
+        width: 1,
+        lineStyle: 2,
+      },
+
+      bg: {
+        visible: true,
+        topFillColor1: "rgba(38,166,154,0.15)",
+        topFillColor2: "rgba(38,166,154,0.05)",
       },
     },
     EMA: {
@@ -970,11 +984,12 @@ export default function Candlestick() {
     },
     VOL: {
       volumeBars: {
-        upColor: "rgba(38,166,154,0.6)",
-        downColor: "rgba(239,83,80,0.6)",
         visible: true,
+        palette: {
+          up: "rgba(38,166,154,0.6)", // Growing volume
+          down: "rgba(239,83,80,0.6)", // Falling volume
+        },
       },
-
       volumeMA: {
         color: "rgba(255,193,7,1)",
         width: 2,
@@ -1150,31 +1165,25 @@ export default function Candlestick() {
       macd: {
         visible: true,
         color: "rgba(33,150,243,1)",
-        width: 2,
+        width: 1,
         lineStyle: 0,
       },
 
       signal: {
         visible: true,
         color: "rgba(255,193,7,1)",
-        width: 2,
+        width: 1,
         lineStyle: 0,
       },
 
       histogram: {
         visible: true,
-
         palette: {
-          0: "rgba(38,166,154,1)", // strong up
-          1: "rgba(129,199,132,1)", // weak up
-          2: "rgba(239,83,80,1)", // strong down
-          3: "rgba(255,138,128,1)", // weak down
+          pr: "rgba(38,166,154,1)",
+          pf: "rgba(129,199,132,1)",
+          nf: "rgba(239,83,80,1)",
+          nr: "rgba(255,138,128,1)",
         },
-
-        upColor: "rgba(38,166,154,1)",
-        downColor: "rgba(239,83,80,1)",
-
-        base: 0,
       },
 
       zeroLine: {
@@ -1732,7 +1741,7 @@ export default function Candlestick() {
 
       switch (indicator) {
         case "RSI":
-          keysToShow = ["rsi", "smoothingMA"];
+          keysToShow = ["rsi", "smoothingMA", "bbUpper", "bbLower"];
           break;
 
         case "CCI":
@@ -1810,9 +1819,9 @@ export default function Candlestick() {
           addSeries={addSeries}
           chart={chartRef.current}
           containerRef={containerRef.current}
-          panesRef={panesRef}
+          panesContainerRef={paneContainerRef.current}
           indicatorConfigs={indicatorConfigs}
-          pane={indicatorSeriesRef.current}
+          pane={seriesRef.current}
           timeframeValue={timeframeValue} // pass timeframe so useEffect can trigger update
           selectedCurrency={selectedCurrency}
         />
@@ -2109,7 +2118,11 @@ export default function Candlestick() {
             </div>
           </div>
 
-          <div className="row" style={{ position: "relative" }}>
+          <div
+            className="row"
+            ref={paneContainerRef}
+            style={{ position: "relative" }}
+          >
             {/* <div className="col-md-1 p-0 m-0"> */}
             {/* <ChartLeftSidebar
                 chartRef={chartRef}

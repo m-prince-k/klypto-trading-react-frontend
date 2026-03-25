@@ -1,105 +1,142 @@
-import {useEffect} from "react";
-import {LineSeries,AreaSeries} from "lightweight-charts";
+import { useEffect } from "react";
+import { LineSeries, AreaSeries } from "lightweight-charts";
 
 export default function SuperTrendPlot({
   result,
-  rows,
   indicatorStyle,
   indicatorSeriesRef,
-  addSeries
-}){
+  addSeries,
+}) {
+  const buildTrendData = (data = []) => {
+    const up = [];
+    const down = [];
+    const mid = [];
 
-  /* CREATE SERIES */
+    if (!Array.isArray(data)) return { up, down, mid };
 
-  useEffect(()=>{
+    data.forEach((d) => {
+      if (!d?.time) return;
 
-    if(!result) return;
-
-    if(indicatorSeriesRef.current?.SuperTrend){
-      Object.values(indicatorSeriesRef.current.SuperTrend).forEach(s=>{
-        if(s?.setData){
-          try{s.setData([])}catch{}
-        }
+      up.push({
+        time: d.time,
+        value: d.upTrend ?? null,
       });
-      indicatorSeriesRef.current.SuperTrend=null;
+
+      down.push({
+        time: d.time,
+        value: d.downTrend ?? null,
+      });
+
+      mid.push({
+        time: d.time,
+        value: d.supertrend ?? null,
+      });
+    });
+
+    return { up, down, mid };
+  };
+
+  useEffect(() => {
+    const raw = result?.data;
+
+    const data = Array.isArray(raw) ? raw : Object.values(raw || {});
+
+    if (!data.length) {
+      console.log("SuperTrend: no data");
+      return;
     }
 
-    const grouped={};
+    /* REMOVE OLD SERIES */
 
-    const upLine=addSeries("SuperTrend",LineSeries,{
-      color:indicatorStyle?.SuperTrend?.upTrend?.color,
-      lineWidth:indicatorStyle?.SuperTrend?.upTrend?.width
+    if (indicatorSeriesRef.current?.SuperTrend) {
+      Object.values(indicatorSeriesRef.current.SuperTrend).forEach((s) => {
+        try {
+          s.setData([]);
+        } catch {}
+      });
+
+      indicatorSeriesRef.current.SuperTrend = null;
+    }
+
+    /* CREATE SERIES */
+
+    const upLine = addSeries("SuperTrend", LineSeries, {
+      color: indicatorStyle?.SuperTrend?.upTrend?.color || "#26a69a",
+      lineWidth: indicatorStyle?.SuperTrend?.upTrend?.width || 2,
     });
 
-    const downLine=addSeries("SuperTrend",LineSeries,{
-      color:indicatorStyle?.SuperTrend?.downTrend?.color,
-      lineWidth:indicatorStyle?.SuperTrend?.downTrend?.width
+    const downLine = addSeries("SuperTrend", LineSeries, {
+      color: indicatorStyle?.SuperTrend?.downTrend?.color || "#ef5350",
+      lineWidth: indicatorStyle?.SuperTrend?.downTrend?.width || 2,
     });
 
-    const bodyMiddle=addSeries("SuperTrend",LineSeries,{
-      color:indicatorStyle?.SuperTrend?.bodyMiddle?.color,
-      lineWidth:indicatorStyle?.SuperTrend?.bodyMiddle?.width,
-      visible:indicatorStyle?.SuperTrend?.bodyMiddle?.visible
+    const midLine = addSeries("SuperTrend", LineSeries, {
+      color: indicatorStyle?.SuperTrend?.bodyMiddle?.color || "#999",
+      lineWidth: indicatorStyle?.SuperTrend?.bodyMiddle?.width || 1,
+      visible: indicatorStyle?.SuperTrend?.bodyMiddle?.visible ?? false,
     });
 
-    const upBg=addSeries("SuperTrend",AreaSeries,{
-      topColor:indicatorStyle?.SuperTrend?.upTrendBg?.color0,
-      bottomColor:indicatorStyle?.SuperTrend?.upTrendBg?.color1,
-      lineColor:"transparent",
-      lineWidth:0
+    const upBg = addSeries("SuperTrend", AreaSeries, {
+      topColor:
+        indicatorStyle?.SuperTrend?.upTrendBg?.color0 || "rgba(0,200,0,0.2)",
+      bottomColor:
+        indicatorStyle?.SuperTrend?.upTrendBg?.color1 || "rgba(0,200,0,0.02)",
+      lineColor: "transparent",
+      lineWidth: 0,
     });
 
-    const downBg=addSeries("SuperTrend",AreaSeries,{
-      topColor:indicatorStyle?.SuperTrend?.downTrendBg?.color0,
-      bottomColor:indicatorStyle?.SuperTrend?.downTrendBg?.color1,
-      lineColor:"transparent",
-      lineWidth:0
+    const downBg = addSeries("SuperTrend", AreaSeries, {
+      topColor:
+        indicatorStyle?.SuperTrend?.downTrendBg?.color0 || "rgba(200,0,0,0.2)",
+      bottomColor:
+        indicatorStyle?.SuperTrend?.downTrendBg?.color1 || "rgba(200,0,0,0.02)",
+      lineColor: "transparent",
+      lineWidth: 0,
     });
 
-    upLine.setData(result.data.upTrend);
-    downLine.setData(result.data.downTrend);
-    bodyMiddle.setData(result.data.bodyMiddle);
+    /* FORMAT DATA */
 
-    upBg.setData(result.data.upTrend);
-    downBg.setData(result.data.downTrend);
+    const { up, down, mid } = buildTrendData(data);
 
-    grouped.upTrend=upLine;
-    grouped.downTrend=downLine;
-    grouped.bodyMiddle=bodyMiddle;
-    grouped.upTrendBg=upBg;
-    grouped.downTrendBg=downBg;
+    console.log("SuperTrend up:", up.length);
+    console.log("SuperTrend down:", down.length);
 
-    indicatorSeriesRef.current.SuperTrend=grouped;
+    /* SET DATA */
 
-  },[result]);
+    upLine.setData(up);
+    downLine.setData(down);
+    midLine.setData(mid);
 
+    upBg.setData(up);
+    downBg.setData(down);
 
+    indicatorSeriesRef.current.SuperTrend = {
+      upTrend: upLine,
+      downTrend: downLine,
+      bodyMiddle: midLine,
+      upTrendBg: upBg,
+      downTrendBg: downBg,
+    };
+  }, [result]);
 
   /* STYLE UPDATE */
 
-  useEffect(()=>{
-
-    const st=indicatorSeriesRef.current?.SuperTrend;
-    if(!st) return;
+  useEffect(() => {
+    const st = indicatorSeriesRef.current?.SuperTrend;
+    if (!st) return;
 
     st.upTrend?.applyOptions({
-      color:indicatorStyle?.SuperTrend?.upTrend?.color,
-      lineWidth:indicatorStyle?.SuperTrend?.upTrend?.width,
-      visible:indicatorStyle?.SuperTrend?.upTrend?.visible
+      color: indicatorStyle?.SuperTrend?.upTrend?.color,
+      lineWidth: indicatorStyle?.SuperTrend?.upTrend?.width,
+      visible: indicatorStyle?.SuperTrend?.upTrend?.visible,
     });
 
     st.downTrend?.applyOptions({
-      color:indicatorStyle?.SuperTrend?.downTrend?.color,
-      lineWidth:indicatorStyle?.SuperTrend?.downTrend?.width,
-      visible:indicatorStyle?.SuperTrend?.downTrend?.visible
+      color: indicatorStyle?.SuperTrend?.downTrend?.color,
+      lineWidth: indicatorStyle?.SuperTrend?.downTrend?.width,
+      visible: indicatorStyle?.SuperTrend?.downTrend?.visible,
     });
-
-    st.bodyMiddle?.applyOptions({
-      visible:indicatorStyle?.SuperTrend?.bodyMiddle?.visible,
-      color:indicatorStyle?.SuperTrend?.bodyMiddle?.color
-    });
-
-  },[indicatorStyle]);
+  }, [indicatorStyle]);
 
   return null;
 }

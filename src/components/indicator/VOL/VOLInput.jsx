@@ -1,33 +1,41 @@
 export default function VOLInput(
   response,
   indicatorSeriesRef,
-  latestIndicatorValuesRef,
+  latestIndicatorValuesRef
 ) {
+  // Ensure rows exist
   const rows = Array.isArray(response?.data) ? response.data : [];
 
-  const volumeSeries = indicatorSeriesRef.current?.VOL?.volume;
-  const maSeries = indicatorSeriesRef.current?.VOL?.volumeMA;
+  // Prepare Volume bars data
+  const volumeData = rows
+    .filter((d) => d?.volume != null && d?.time != null)
+    .map((d) => ({ time: d.time, value: Number(d.volume) }));
 
-  if (!volumeSeries) return;
+  // Prepare Volume MA line data
+  const volumeMAData = rows
+    .filter((d) => d?.volumeMA != null && d?.time != null)
+    .map((d) => ({ time: d.time, value: Number(d.volumeMA) }));
 
-  const volumeData = rows.map((d) => ({
-    time: Number(d.time),
-    value: Number(d.volume),
-    color: d.color || "#26A69A",
-  }));
+  // Combine into result object
+  const result = {
+    data: {
+      volume: volumeData,
+      volumeMA: volumeMAData,
+    },
+  };
 
-  const maData = rows
-    .filter((d) => d.volumeMA != null)
-    .map((d) => ({
-      time: Number(d.time),
-      value: Number(d.volumeMA),
-    }));
-
-  volumeSeries.setData(volumeData);
-  if (maSeries) maSeries.setData(maData);
-
+  // Store latest values for inputs
   latestIndicatorValuesRef.current.VOL = {
     volume: volumeData[volumeData.length - 1]?.value ?? null,
-    volumeMA: maData[maData.length - 1]?.value ?? null,
+    volumeMA: volumeMAData[volumeMAData.length - 1]?.value ?? null,
   };
+
+  // Store only the data and rows
+  // The plot component (VOLPlot) will handle series creation & updates
+  indicatorSeriesRef.current.VOL = {
+    result,
+    rows,
+  };
+
+  return result;
 }

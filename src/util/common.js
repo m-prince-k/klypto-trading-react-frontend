@@ -544,13 +544,13 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
       if (maType === "SMA + Bollinger Bands") {
         rows.push(
           {
-            key: "bbUpperBand",
+            key: "bbUpper",
             label: "BB Upper Band",
             type: "line",
             width: 1,
           },
           {
-            key: "bbLowerBand",
+            key: "bbLower",
             label: "BB Lower Band",
             type: "line",
             width: 1,
@@ -820,11 +820,34 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           label: "Histogram",
           type: "histogram",
 
-          palette: [
-            { key: "0", label: "Color 0" },
-            { key: "1", label: "Color 1" },
-            { key: "2", label: "Color 2" },
-            { key: "3", label: "Color 3" },
+          children: [
+            {
+              key: "pr",
+              parent: "histogram",
+              label: "Positive Rising",
+              type: "fill",
+            },
+
+            {
+              key: "pf",
+              parent: "histogram",
+              label: "Positive Falling",
+              type: "fill",
+            },
+
+            {
+              key: "nf",
+              parent: "histogram",
+              label: "Negative Falling",
+              type: "fill",
+            },
+
+            {
+              key: "nr",
+              parent: "histogram",
+              label: "Negative Rising",
+              type: "fill",
+            },
           ],
         },
 
@@ -835,6 +858,7 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           value: 0,
         },
       ];
+
     case "CCI": {
       const rows = [{ key: "cciLine", label: "CCI", type: "line" }];
 
@@ -1187,28 +1211,23 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
       return [
         {
           key: "volumeBars",
-          label: "Growing Volume",
-          type: "color",
-          field: "upColor",
-          visible: true,
+          label: "Volume Bars",
+          type: "checkbox", // Parent checkbox controls visibility
+          children: [
+            {
+              key: "up",
+              parent: "volumeBars",
+              label: "Growing Volume",
+              type: "fill",
+            },
+            {
+              key: "down",
+              parent: "volumeBars",
+              label: "Falling Volume",
+              type: "fill",
+            },
+          ],
         },
-
-        {
-          key: "volumeBars",
-          label: "Falling Volume",
-          type: "color",
-          field: "downColor",
-          visible: true,
-        },
-
-        {
-          key: "volumeBars",
-          label: "Show Volume Bars",
-          type: "checkbox",
-          field: "visible",
-          value: true,
-        },
-
         {
           key: "volumeMA",
           label: "Volume MA",

@@ -768,6 +768,21 @@ export default function useChartFunctions({
 
             break;
           }
+          case "CHOP": {
+            const chopData = result?.data?.chopLine ?? [];
+
+            indicatorSeriesRef.current.CHOP = {
+              result,
+              rows,
+            };
+
+            console.log(result, "ressssss")
+            latestIndicatorValuesRef.current.CHOP = {
+              chop: chopData[chopData.length - 1]?.value ?? null,
+            };
+
+            break;
+          }
           case "STDDEV": {
             const stddevData = result?.data ?? [];
 
@@ -1148,7 +1163,6 @@ async function fetchDataForIndicators(
           },
         };
 
-
       case "CCI": {
         const rows = Array.isArray(response?.data) ? response.data : [];
 
@@ -1249,7 +1263,6 @@ async function fetchDataForIndicators(
           },
         };
 
-      
       case "TEMA":
         return {
           type: "multi",
