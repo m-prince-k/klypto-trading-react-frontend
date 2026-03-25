@@ -5,6 +5,7 @@ import EditableMultiSelect, {
   EditableNumber,
   OPERATORS,
 } from "../indicator/EditTableLabel";
+import { Copy, Trash2, Ban, Files } from "lucide-react";
 import { HiOutlineSave } from "react-icons/hi";
 import apiService from "../../services/apiServices";
 import { IndicatorRuleModals } from "./IndicatorRuleModals";
@@ -70,6 +71,41 @@ export default function IndicatorRuleBuilder({ onClose, onOpen }) {
       setLoading(false);
     }
   }
+
+  const copyToClipboard = (filter) => {
+    let values = {
+      id:filter.id,
+      indicator:filter.indicator,
+      disabled:filter.disabled,
+      operator:filter.operator,
+      period:filter.period,
+      scanner:filter.scanner,
+      timeframe:filter.timeframe,
+      value:filter.value
+    }
+    console.log(values,"---------------------->>>>>>")
+    navigator.clipboard.writeText(JSON.stringify(values));
+    alert("Copied: " + filter.indicator);
+  };
+
+  const duplicateFilter = (filter) => {
+    const newFilter = {
+      ...filter,
+      id: Date.now(),
+      name: filter.indicator + " (copy)"
+    };
+    setRules((prev) => [...prev, newFilter]);
+  };
+
+
+const toggleDisable = (id) => {
+    setRules((prev) =>
+      prev.map((f) =>
+        f.id === id ? { ...f, disabled: !f.disabled } : f
+      )
+    );
+  };
+
 
   /* Fetch once on mount OR when symbol changes */
   useEffect(() => {
@@ -194,12 +230,18 @@ export default function IndicatorRuleBuilder({ onClose, onOpen }) {
         operator: parsed.operator,
         scanner: "",
         value: parsed.value,
+        disabled: false
       };
     });
 
-    setRules((prev) => [...prev, ...generatedRules]);
+    setRules((prev) => [...prev, ...generatedRules.map(rule => ({
+      ...rule,
+      disabled: false
+    }))]);
     setInput("");
   };
+
+
 
   /* ================= APPEND EMPTY RULE (+ BUTTON) ================= */
   function appendRule() {
@@ -296,7 +338,7 @@ export default function IndicatorRuleBuilder({ onClose, onOpen }) {
   async function fetchScanners() {
     try {
       const response = await apiService.post("/api/scanner");
-      const raw = await response.data;
+      const raw = await response?.data;
       // console.log(raw, "resssssssssssss")
 
       const formatted = [
@@ -419,7 +461,7 @@ export default function IndicatorRuleBuilder({ onClose, onOpen }) {
               onChange={setSelectedCurrencies}
               placeholder="Select Currency"
             />
-            <span className="text-secondary fw-medium small">segment</span>
+            <span className="text-secondary fw-medium small">Segment</span>
           </Stack>
 
           {/* EMPTY STATE */}
@@ -498,19 +540,47 @@ export default function IndicatorRuleBuilder({ onClose, onOpen }) {
                 onChange={(v) => updateField(rule.id, "value", v)}
               />
 
-              <Button
-                variant="light"
-                onClick={() => removeRule(rule.id)}
-                className="p-0 border-0 bg-transparent text-secondary d-flex align-items-center justify-content-center"
-                style={{
-                  width: "24px",
-                  height: "24px",
-                  fontSize: "18px",
-                  lineHeight: 1,
-                }}
+              <button
+              title="copy to clipboard"
+                onClick={() => copyToClipboard(rule)}
+                className="hover:text-blue-500"
               >
-                x
-              </Button>
+                <Copy size={18} />
+              </button>
+
+              {/* DUPLICATE */}
+              <button
+              title="duplicate filter"
+                onClick={() => duplicateFilter(rule)}
+                className="hover:text-green-500"
+              >
+                <Files size={18} />
+              </button>
+
+
+              <button
+              title="disabled"
+                onClick={() => toggleDisable(rule.id)}
+                className="hover:text-yellow-500"
+              >
+                <Ban size={18} /> 
+              </button>
+
+
+              <button
+                title="Delete"
+                variant="light"
+                onClick={() => removeRule(rule?.id)}
+                className="hover:text-red-500"
+              // style={{
+              //   width: "24px",
+              //   height: "24px",
+              //   fontSize: "18px",
+              //   lineHeight: 1,
+              // }}
+              >
+                <Trash2 size={18} />
+              </button>
             </Stack>
           ))}
 
@@ -602,7 +672,7 @@ export default function IndicatorRuleBuilder({ onClose, onOpen }) {
           type={modalType}
           onClose={closeModal}
           rules={rules}
-          conditions = {conditions}
+          conditions={conditions}
           timeframeOptions={timeframeOptions}
         />
       )}

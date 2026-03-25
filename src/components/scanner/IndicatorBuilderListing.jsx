@@ -3,198 +3,251 @@ import apiService from "../../services/apiServices";
 import { Spinner } from "../tradingModals/Spinner";
 import MiniChart from "./MiniChart";
 import { handleCopy, handleCSVDownload, handleExcelDownload } from "../../util/common";
+import ReactPaginate from "react-paginate";
+import axios from "axios";
+import { Loader,ArrowUp ,ArrowDown } from "lucide-react";
 
-const PAGE_SIZE = 5;
 
 export default function IndicatorBuildingListing({
   selectedCurrency,
   timeframeValue,
 }) {
-  const [sortField, setSortField] = useState("id");
-  const [sortAsc, setSortAsc] = useState(true);
-  const [page, setPage] = useState(1);
-  // const [openNewCharts, setOpenNewCharts] = useState(true);
+
+  const [data, setData] = useState([]);
+  const itemsPerPage = 10;
+
+  const [pageCount, setPageCount] = useState(0);
+  const [currentItems, setCurrentItems] = useState([]);
+  const [itemOffset, setItemOffset] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [limit] = useState(10);
   const [showPreview, setShowPreview] = useState(true);
   const [coins, setCoins] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const ONE_YEAR = 365 * 24 * 60 * 60 * 1000;
-  const QUOTES = ["USDT", "BTC", "ETH", "BNB", "FDUSD", "TRY"];
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalRec, setTotalRec] = useState(0);
+    const [sortKey, setSortKey] = useState({ key: "", order: "ASC" });
+  const [active, setActive] = useState({
+    isActive1: true,
+    isActive2: true,
+    isActive3: true,
+    isActive4: true,
+    isActive5: true,
+  });
 
-  function splitSymbol(symbol) {
-    const quote = QUOTES.find((q) => symbol.endsWith(q));
-    if (!quote) return { base: symbol, quote: "UNKNOWN" };
 
-    return {
-      base: symbol.slice(0, -quote.length),
-      quote,
-    };
-  }
 
-  async function fetchAllSymbols() {
-    const res = await fetch("https://api.binance.com/api/v3/exchangeInfo");
-    const data = await res.json();
-
-    return data.symbols
-      .filter((s) => s.status === "TRADING")
-      .map((s) => s.symbol);
-  }
-
-  // 2️⃣ Fetch OHLC for single symbol
-  async function fetchOHLC(symbol) {
-    const endTime = Date.now();
-    const startTime = endTime - ONE_YEAR;
-
-    const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=1d&startTime=${startTime}&endTime=${endTime}`;
-
-    const res = await fetch(url);
-    const data = await res.json();
-
-    return data.map((k) => ({
-      time: new Date(k[0]).toISOString().split("T")[0],
-      open: Number(k[1]),
-      high: Number(k[2]),
-      low: Number(k[3]),
-      close: Number(k[4]),
-      volume: Number(k[5]),
-    }));
-  }
-
-  // 3️⃣ Fetch ALL coins + OHLC
-  async function loadAllCoins() {
+  const fetchData = async (page = 1) => {
+    setLoading(true);
     try {
-      setLoading(true);
-
-      const symbols = await fetchAllSymbols();
-
-      /* ✅ Browser safety limit */
-      const SAFE_LIMIT = 40;
-      const limitedSymbols = symbols.slice(0, SAFE_LIMIT);
-
-      const finalData = [];
-
-      for (const symbol of limitedSymbols) {
-        try {
-          const ohlc = await fetchOHLC(symbol);
-          const { base, quote } = splitSymbol(symbol);
-
-          finalData.push({
-            symbol,
-            baseCurrency: base,
-            quoteCurrency: quote,
-            ohlc,
-          });
-        } catch (err) {
-          console.error("Failed:", symbol);
-        }
+      let response;
+       if (sortKey?.key && sortKey?.order) {
+        response =  response = await axios.post(
+          `https://loiteringly-homeliest-breana.ngrok-free.dev/api/scannerDetail?symbol=${selectedCurrency}&interval=${timeframeValue}&page=${currentPage}&limit=${itemsPerPage}&sortField=${sortKey.key}&sortOrder=${sortKey?.order}`,
+          {
+            rules: [
+              { indicator: "rsi", operator: "<", value: 30 }
+            ]
+          }
+        );
+      } else {
+        response = await axios.post(
+          `https://loiteringly-homeliest-breana.ngrok-free.dev/api/scannerDetail?symbol=${selectedCurrency}&interval=${timeframeValue}&page=${currentPage}&limit=${itemsPerPage}`,
+          {
+            rules: [
+              { indicator: "rsi", operator: "<", value: 30 }
+            ]
+          }
+        );
       }
 
-      setCoins(finalData);
-      console.log(finalData, "listing data");
-    } catch (err) {
-      console.error("Load error:", err);
+      console.log(response?.data?.data, "-----------------------09657898567_______________________")
+
+      setData(await response?.data?.data || []);
+      setTotalRec(await response.data.totalPages || 0);
+      // setCurrentPage(await response.data.page || 1);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setData([]);
     } finally {
       setLoading(false);
     }
-  }
+  };
+
+    useEffect(() => {
+    fetchData(currentPage);
+  }, [selectedCurrency, timeframeValue, currentPage, itemsPerPage,sortKey?.key, sortKey?.order]);
+
+  const onSortChange = (key, order) => {
+    if (order == "ASC" && key == "symbol") {
+      setSortKey((prevState) => ({
+        ...prevState,
+        key: key,
+        order: "DESC",
+      }));
+
+      setActive((prev) => ({ ...prev, isActive1: false }));
+    } else if (order == "DESC" && key == "symbol") {
+      setSortKey((prevState) => ({
+        ...prevState,
+        key: key,
+        order: "ASC",
+      }));
+      setActive((prev) => ({ ...prev, isActive1: true }));
+    }
+
+
+    if (order == "ASC" && key == "base") {
+      setSortKey((prevState) => ({
+        ...prevState,
+        key: key,
+        order: "DESC",
+      }));
+
+      setActive((prev) => ({ ...prev, isActive2: false }));
+    } else if (order == "DESC" && key == "base") {
+      setSortKey((prevState) => ({
+        ...prevState,
+        key: key,
+        order: "ASC",
+      }));
+      setActive((prev) => ({ ...prev, isActive2: true }));
+    }
+
+
+     if (order == "ASC" && key == "close") {
+      setSortKey((prevState) => ({
+        ...prevState,
+        key: key,
+        order: "DESC",
+      }));
+
+      setActive((prev) => ({ ...prev, isActive3: false }));
+    } else if (order == "DESC" && key == "close") {
+      setSortKey((prevState) => ({
+        ...prevState,
+        key: key,
+        order: "ASC",
+      }));
+      setActive((prev) => ({ ...prev, isActive3: true }));
+    }
+
+
+      if (order == "ASC" && key == "high") {
+      setSortKey((prevState) => ({
+        ...prevState,
+        key: key,
+        order: "DESC",
+      }));
+
+      setActive((prev) => ({ ...prev, isActive4: false }));
+    } else if (order == "DESC" && key == "high") {
+      setSortKey((prevState) => ({
+        ...prevState,
+        key: key,
+        order: "ASC",
+      }));
+      setActive((prev) => ({ ...prev, isActive4: true }));
+    }
+
+
+     if (order == "ASC" && key == "low") {
+      setSortKey((prevState) => ({
+        ...prevState,
+        key: key,
+        order: "DESC",
+      }));
+
+      setActive((prev) => ({ ...prev, isActive5: false }));
+    } else if (order == "DESC" && key == "low") {
+      setSortKey((prevState) => ({
+        ...prevState,
+        key: key,
+        order: "ASC",
+      }));
+      setActive((prev) => ({ ...prev, isActive5: true }));
+    }
+
+
+  };
+
+
+
+
+  useEffect(() => {
+    const endOffset = itemOffset + itemsPerPage;
+    setCurrentItems(data?.slice(itemOffset, endOffset));
+    setPageCount(Math.ceil(totalRec / itemsPerPage));
+  }, [itemOffset, itemsPerPage, data]);
+
+  const handlePageClick = (event) => {
+    const nextPage = event.selected + 1;
+    const newOffset = (nextPage * itemsPerPage) % data?.length;
+    setItemOffset(newOffset);
+    setCurrentPage(nextPage);
+  };
 
   // useEffect(() => {
   //   loadAllCoins();
   // }, []);
 
-  function handleSort(field) {
-    if (sortField === field) {
-      setSortAsc(!sortAsc);
-    } else {
-      setSortField(field);
-      setSortAsc(true);
-    }
-  }
+  // useEffect(() => {
+  //   async function scan() {
+  //     const symbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT"];
+  //     const out = [];
 
-  // dummy
-  const [rows, setRows] = useState([]);
-  const [hover, setHover] = useState(null);
+  //     for (let s of symbols) {
+  //       const candles = await fetchOHLC(s);
+  //       const closes = candles.map((c) => c.close);
+  //       const rsi = calcRSI(closes);
 
-  useEffect(() => {
-    async function scan() {
-      const symbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT"];
-      const out = [];
+  //       if (rsi >= 10) {
+  //         const last = candles[candles.length - 1];
+  //         out.push({
+  //           symbol: s,
+  //           rsi: rsi.toFixed(2),
+  //           ...last,
+  //         });
+  //       }
+  //     }
+  //     setRows(out);
+  //   }
+  //   scan();
+  // }, []);
 
-      for (let s of symbols) {
-        const candles = await fetchOHLC(s);
-        const closes = candles.map((c) => c.close);
-        const rsi = calcRSI(closes);
+  // function calcRSI(closes, period = 14) {
+  //   let gain = 0,
+  //     loss = 0;
+  //   for (let i = closes.length - period; i < closes.length; i++) {
+  //     const diff = closes[i] - closes[i - 1];
+  //     diff >= 0 ? (gain += diff) : (loss -= diff);
+  //   }
+  //   if (loss === 0) return 100;
+  //   const rs = gain / loss;
+  //   return 100 - 100 / (1 + rs);
+  // }
 
-        if (rsi >= 10) {
-          const last = candles[candles.length - 1];
-          out.push({
-            symbol: s,
-            rsi: rsi.toFixed(2),
-            ...last,
-          });
-        }
-      }
-      setRows(out);
-    }
-    scan();
-  }, []);
+  // const formattedData = useMemo(() => {
+  //   if (!coins.length) return []; // ✅ NEVER return undefined
 
-  function calcRSI(closes, period = 14) {
-    let gain = 0,
-      loss = 0;
-    for (let i = closes.length - period; i < closes.length; i++) {
-      const diff = closes[i] - closes[i - 1];
-      diff >= 0 ? (gain += diff) : (loss -= diff);
-    }
-    if (loss === 0) return 100;
-    const rs = gain / loss;
-    return 100 - 100 / (1 + rs);
-  }
+  //   return coins.map((item, index) => {
+  //     const lastCandle = item.ohlc?.[item.ohlc.length - 1];
 
-  const formattedData = useMemo(() => {
-    if (!coins.length) return []; // ✅ NEVER return undefined
+  //     return {
+  //       id: index + 1,
+  //       name: item.baseCurrency,
+  //       quote: item.quoteCurrency,
+  //       symbol: item.symbol,
+  //       price: Number(lastCandle?.close ?? 0),
+  //       volume: Number(lastCandle?.volume ?? 0),
+  //     };
+  //   });
+  // }, [coins]);
 
-    return coins.map((item, index) => {
-      const lastCandle = item.ohlc?.[item.ohlc.length - 1];
-
-      return {
-        id: index + 1,
-        name: item.baseCurrency,
-        quote: item.quoteCurrency,
-        symbol: item.symbol,
-        price: Number(lastCandle?.close ?? 0),
-        volume: Number(lastCandle?.volume ?? 0),
-      };
-    });
-  }, [coins]);
-
-  const sortedData = useMemo(() => {
-    if (!formattedData.length) return [];
-
-    return [...formattedData].sort((a, b) => {
-      const valA = a[sortField];
-      const valB = b[sortField];
-
-      if (typeof valA === "string") {
-        return sortAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
-      }
-
-      return sortAsc ? valA - valB : valB - valA;
-    });
-  }, [formattedData, sortField, sortAsc]);
-
-  const ITEMS_PER_PAGE = 20;
-
-  const totalPages = Math.ceil(sortedData.length / ITEMS_PER_PAGE);
-
-  const paginatedData = useMemo(() => {
-    if (!sortedData.length) return [];
-
-    const start = (page - 1) * ITEMS_PER_PAGE;
-    return sortedData.slice(start, start + ITEMS_PER_PAGE);
-  }, [sortedData, page]);
 
   return (
     <>
+
+
       <div className="container-fluid p-0 m-0">
         <div className="row">
           <div className="col-md-12 mt-5">
@@ -211,239 +264,182 @@ export default function IndicatorBuildingListing({
 
         <div className="row">
           <div className="col-md-12">
-                   <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 overflow-hidden">
-            {/* Top Controls */}
-            <div className="flex items-center justify-between p-6 border-b border-slate-200/50 bg-gradient-to-r from-white to-slate-50/30">
-              {/* Export Buttons */}
-              <div className="flex gap-3">
-                <button
-                  onClick={() => handleCopy(rows)}
-                  className="group relative px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 hover:-translate-y-0.5 font-medium"
-                >
-                  <span className="relative z-10">Copy</span>
-                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-400 to-indigo-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
-                </button>
+            <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 overflow-hidden">
+              {/* Top Controls */}
+              <div className="flex items-center justify-between p-6 border-b border-slate-200/50 bg-gradient-to-r from-white to-slate-50/30">
+                {/* Export Buttons */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => handleCopy(data)}
+                    className="group relative px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 hover:-translate-y-0.5 font-medium"
+                  >
+                    <span className="relative z-10">Copy</span>
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-400 to-indigo-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
+                  </button>
 
-                <button
-                  onClick={() => handleCSVDownload(rows)}
-                  className="group relative px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 hover:-translate-y-0.5 font-medium"
-                >
-                  <span className="relative z-10">CSV</span>
-                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-400 to-indigo-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
-                </button>
+                  <button
+                    onClick={() => handleCSVDownload(data)}
+                    className="group relative px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 hover:-translate-y-0.5 font-medium"
+                  >
+                    <span className="relative z-10">CSV</span>
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-400 to-indigo-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
+                  </button>
 
-                <button
-                  onClick={() => handleExcelDownload(rows)}
-                  className="group relative px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 hover:-translate-y-0.5 font-medium"
-                >
-                  <span className="relative z-10">Excel</span>
-                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-400 to-indigo-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
-                </button>
+                  <button
+                    onClick={() => handleExcelDownload(data)}
+                    className="group relative px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 hover:-translate-y-0.5 font-medium"
+                  >
+                    <span className="relative z-10">Excel</span>
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-400 to-indigo-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
+                  </button>
+                </div>
+
+                {/* Toggles */}
+                <div className="flex gap-6">
+                  {/* <Toggle label="Open New Charts" /> */}
+                  <Toggle
+                    label="Show Chart Preview"
+                    enabled={showPreview}
+                    setEnabled={setShowPreview}
+                  />
+                </div>
               </div>
 
-              {/* Toggles */}
-              <div className="flex gap-6">
-                {/* <Toggle label="Open New Charts" /> */}
-                <Toggle
-                  label="Show Chart Preview"
-                  enabled={showPreview}
-                  setEnabled={setShowPreview}
-                />
-              </div>
-            </div>
+              {/* dummy dataa */}
+              <div style={{ padding: "20px" }}>
+                <h2>Scanner Data</h2>
 
-            {/* Table */}
-            {/* <div className="overflow-x-auto">
-            {loading ? (
-              <div className="flex items-center justify-center py-20">
-                <Spinner />
-              </div>
-            ) : (
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
-                    <Header label="ID" onClick={() => handleSort("id")} />
-                    <Header label="Name" onClick={() => handleSort("name")} />
-                    <Header
-                      label="Symbol"
-                      onClick={() => handleSort("symbol")}
-                    />
-                    <Header label="Price" onClick={() => handleSort("price")} />
-                    <Header
-                      label="Volume"
-                      onClick={() => handleSort("volume")}
-                    />
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedData.map((row, index) => (
-                    <tr
-                      key={row.id}
-                      className="group border-b border-slate-100 hover:bg-gradient-to-r hover:from-purple-50/50 hover:to-indigo-50/50 transition-all duration-200"
+                <div className="table-wrapper" style={{ position: "relative" }}>
+                  {/* Loader Overlay */}
+                  {loading && (
+                    <div
+                      className="loader-overlay"
                       style={{
-                        animation: `fadeIn 0.3s ease-out ${index * 0.05}s both`,
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        width: "100%",
+                        height: "100%",
+                        backgroundColor: "rgba(255,255,255,0.7)",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        zIndex: 10,
                       }}
                     >
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 font-semibold text-sm group-hover:from-purple-100 group-hover:to-indigo-100 group-hover:text-purple-700 transition-all duration-200">
-                          {row.id}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-purple-500/30">
-                            {(row.name ?? "--").slice(0, 2)}
-                          </div>
+                      <Loader size={48} className="animate-spin" />
+                    </div>
+                  )}
 
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-slate-900 text-base">
-                              {row.name}
-                            </span>
-                            <span className="text-slate-300 font-light">/</span>
-                            <span className="text-slate-600 font-medium">
-                              {row.quote}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex gap-2">
-                          <button className="px-3 py-1.5 text-xs font-semibold bg-gradient-to-r from-purple-100 to-purple-50 text-purple-700 rounded-lg hover:from-purple-200 hover:to-purple-100 transition-all duration-200 border border-purple-200/50 hover:shadow-md hover:shadow-purple-500/20 hover:-translate-y-0.5">
-                            {row.symbol}
-                          </button>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-left">
-                        <span className="font-bold text-slate-900 ">
-                          {row.price}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-left">
-                        <div className="flex flex-col">
-                          <span className="text-slate-900 font-semibold">
-                            {row.volume.toLocaleString()}
-                          </span>
-                           <span className="text-xs text-slate-500">Volume</span> 
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div> */}
+                  {/* Table */}
+                  <table border="1" style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr>
+                        <th>Sr.</th>
+                        <th>Symbol
+                          {active?.isActive1 ? (
+                       <ArrowUp size={16}  onClick={() => onSortChange("symbol", "ASC")} />
+                      ) : (
+                        <ArrowDown size={16} onClick={() => onSortChange("symbol", "DESC")} />
+                      )}
+                        </th>
+                        <th>Base
+                          {active?.isActive2 ? (
+                       <ArrowUp size={16} onClick={() => onSortChange("base", "ASC")} />
+                      ) : (
+                        <ArrowDown size={16} onClick={() => onSortChange("base", "DESC")} />
+                      )}
+                        </th>
+                        <th>Close
+                          {active?.isActive3 ? (
+                       <ArrowUp size={16} onClick={() => onSortChange("symbol", "ASC")} />
+                      ) : (
+                        <ArrowDown size={16} onClick={() => onSortChange("symbol", "DESC")} />
+                      )}
+                        </th>
+                        <th>High
+                          {active?.isActive4 ? (
+                       <ArrowUp size={16} onClick={() => onSortChange("high", "ASC")} />
+                      ) : (
+                        <ArrowDown size={16} onClick={() => onSortChange("high", "DESC")} />
+                      )}
+                        </th>
+                        <th>Low
+                          {active?.isActive5 ? (
+                       <ArrowUp size={16} onClick={() => onSortChange("low", "ASC")} />
+                      ) : (
+                        <ArrowDown size={16} onClick={() => onSortChange("low", "DESC")} />
+                      )}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {!loading && data?.length > 0 ? (
+                        data.map((row, index) => (
+                          <tr key={index}>
+                            <td>{index + 1}</td>
+                            <td>{row.symbol}</td>
+                            <td>{row.base}</td>
+                            <td>{row.close}</td>
+                            <td>{row.high}</td>
+                            <td>{row.low}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        !loading && (
+                          <tr>
+                            <td colSpan="6" style={{ textAlign: "center", color: "red", padding: "20px" }}>
+                              <strong>Data Not Found</strong>
+                            </td>
+                          </tr>
+                        )
+                      )}
+                    </tbody>
+                  </table>
 
-            {/* dummy dataa */}
-            <div>
-              <table width="100%" cellPadding="8" border="1">
-                <thead>
-                  <tr>
-                    <th>Symbol</th>
-                    <th>RSI</th>
-                    <th>Open</th>
-                    <th>High</th>
-                    <th>Low</th>
-                    <th>Close</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {rows?.map((row) => (
-                    <tr key={row.symbol}>
-                      <td
-                        style={{ position: "relative", cursor: "pointer" }}
-                        onMouseEnter={() => showPreview && setHover(row?.symbol)}
-                        onMouseLeave={() => showPreview && setHover(null)}
-                      >
-                        {row.symbol}
-
-                        {showPreview && hover === row.symbol && (
-                          <MiniChart
-                            symbol={row.symbol}
-                            selectedCurrency={selectedCurrency}
-                            timeframeValue={timeframeValue}
-                          />
-                        )}
-                      </td>
-
-                      <td>{row.rsi}</td>
-                      <td>{row.open}</td>
-                      <td>{row.high}</td>
-                      <td>{row.low}</td>
-                      <td>{row.close}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
-            <div className="flex items-center justify-center gap-4 p-6 bg-gradient-to-r from-slate-50/50 to-white border-t border-slate-200/50">
-              <button
-                disabled={page === 1}
-                onClick={() => setPage(page - 1)}
-                className="group px-5 py-2.5 rounded-xl bg-white border-2 border-slate-200 hover:border-purple-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 font-semibold text-slate-700 hover:text-purple-600 disabled:hover:text-slate-700 hover:shadow-lg hover:-translate-y-0.5 disabled:hover:translate-y-0 disabled:hover:shadow-none"
-              >
-                <span className="flex items-center gap-2">
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 19l-7-7 7-7"
-                    />
-                  </svg>
-                  Prev
-                </span>
-              </button>
-
-              <div className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl font-bold text-white shadow-lg shadow-purple-500/30">
-                Page {page} / {totalPages}
+                  {/* Pagination */}
+                  {!loading && data?.length > 0 && (
+                    <ul className="flex justify-end mt-4 pagination">
+                      <ReactPaginate
+                        nextLabel="Next>"
+                        onPageChange={(event) => handlePageClick(event)}
+                        pageRangeDisplayed={3}
+                        marginPagesDisplayed={2}
+                        pageCount={pageCount}
+                        previousLabel="< Previous"
+                        pageClassName="page-item"
+                        pageLinkClassName="page-link"
+                        previousClassName="page-item"
+                        previousLinkClassName="page-link"
+                        nextClassName="page-item"
+                        nextLinkClassName="page-link"
+                        breakLabel="..."
+                        breakClassName="page-item"
+                        breakLinkClassName="page-link"
+                        containerClassName="pagination"
+                        activeClassName="active"
+                        renderOnZeroPageCount={null}
+                      />
+                    </ul>
+                  )}
+                </div>
               </div>
 
-              <button
-                disabled={page === totalPages}
-                onClick={() => setPage(page + 1)}
-                className="group px-5 py-2.5 rounded-xl bg-white border-2 border-slate-200 hover:border-purple-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 font-semibold text-slate-700 hover:text-purple-600 disabled:hover:text-slate-700 hover:shadow-lg hover:-translate-y-0.5 disabled:hover:translate-y-0 disabled:hover:shadow-none"
-              >
-                <span className="flex items-center gap-2">
-                  Next
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
-                </span>
-              </button>
             </div>
-          </div>
           </div>
         </div>
       </div>
 
 
       {/* <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-indigo-50 p-8"> */}
-        {/* <div className="max-w-7xl mx-auto"> */}
-          {/* Header Section */}
+      {/* <div className="max-w-7xl mx-auto"> */}
+      {/* Header Section */}
 
 
-       
-        {/* </div> */}
 
-        <style jsx>{`
+      {/* </div> */}
+
+      <style jsx>{`
         @keyframes fadeIn {
           from {
             opacity: 0;
