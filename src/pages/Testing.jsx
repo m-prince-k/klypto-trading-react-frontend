@@ -182,4 +182,8 @@ export default function BollingerCloudChart() {
 
     );
 
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> b9c4f8e41f172adcc0276e87881f22bf45fce9ce
