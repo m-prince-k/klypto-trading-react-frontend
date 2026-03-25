@@ -1001,15 +1001,6 @@ export default function Candlestick() {
         opacity: 100,
       },
     },
-    EOM: {
-      eom: {
-        color: "rgba(38, 166, 154, 1)",
-        width: 3,
-        lineStyle: 0,
-        visible: true,
-      },
-    },
-
     PVO: {
       histogram: {
         visible: true,
@@ -1313,14 +1304,14 @@ export default function Candlestick() {
     STOCHRSI: {
       kLine: {
         visible: true,
-        color: "#2962FF",
+        color: "rgba(38,166,154,1)",
         width: 1,
         lineStyle: 0,
         opacity: 100,
       },
       dLine: {
         visible: true,
-        color: "#FF6D00",
+        color: "rgba(255,152,0,1)",
         width: 1,
         lineStyle: 0,
         opacity: 100,
@@ -1528,16 +1519,12 @@ export default function Candlestick() {
         return "STOCH";
       case "CMO":
         return "CMO";
-      case "EOM":
-        return "EOM";
       case "HV":
         return "HV";
       case "PVO":
         return "PVO";
       case "OBV":
         return "OBV";
-      case "CMO":
-        return "CMO";
       case "STDDEV":
         return "STDDEV";
       case "AD":

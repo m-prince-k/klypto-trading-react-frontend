@@ -722,10 +722,10 @@ export default function IndicatorPropertyDialog({
                 value={currentConfig.rsiSource}
                 onChange={(e) => updateProperty("rsiSource", e.target.value)}
               >
-                <option value="Close">Close</option>
-                <option value="Open">Open</option>
-                <option value="High">High</option>
-                <option value="Low">Low</option>
+                <option value="close">Close</option>
+                <option value="open">Open</option>
+                <option value="high">High</option>
+                <option value="low">Low</option>
               </select>
             </div>
           </>

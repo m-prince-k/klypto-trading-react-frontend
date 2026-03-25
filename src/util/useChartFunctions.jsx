@@ -667,22 +667,6 @@ export default function useChartFunctions({
 
             break;
           }
-          case "STOCHRSI": {
-            const kData = result?.data?.kLine ?? [];
-            const dData = result?.data?.dLine ?? [];
-
-            indicatorSeriesRef.current.STOCHRSI = {
-              result,
-              rows,
-            };
-
-            latestIndicatorValuesRef.current.STOCHRSI = {
-              kLine: kData[kData.length - 1]?.value ?? null,
-              dLine: dData[dData.length - 1]?.value ?? null,
-            };
-
-            break;
-          }
 
           case "TRIX": {
             const trixData = result?.data?.trix ?? [];
@@ -891,7 +875,7 @@ async function fetchDataForIndicators(
     console.log("Raw indicator data for", normalizedType, ":", response);
 
     // store last request key
-    // indicatorMetaRef.current[normalizedType] = key;
+    indicatorMetaRef.current[normalizedType] = key;
 
     const mapLine = (arr, field) =>
       arr
@@ -1164,19 +1148,6 @@ async function fetchDataForIndicators(
           },
         };
 
-      case "CMF":
-        return {
-          type: "single",
-          data: {
-            cmf:
-              (await response?.data
-                ?.filter((d) => d.value != null && d.time != null)
-                .map((d) => ({
-                  time: Number(d.time),
-                  value: Number(d.value),
-                }))) ?? [],
-          },
-        };
 
       case "CCI": {
         const rows = Array.isArray(response?.data) ? response.data : [];
@@ -1278,28 +1249,7 @@ async function fetchDataForIndicators(
           },
         };
 
-      case "STOCHRSI":
-        return {
-          type: "multi",
-          data: {
-            kLine:
-              response.data.candles
-                ?.filter((d) => d.k != null && d.time != null)
-                .map((d) => ({
-                  time: d.time,
-                  value: d.k,
-                })) ?? [],
-
-            dLine:
-              response.data.candles
-                ?.filter((d) => d.d != null && d.time != null)
-                .map((d) => ({
-                  time: d.time,
-                  value: d.d,
-                })) ?? [],
-          },
-        };
-
+      
       case "TEMA":
         return {
           type: "multi",
@@ -1765,18 +1715,6 @@ async function fetchDataForIndicators(
           ].filter((level) => !Number.isNaN(level.value)),
         };
       }
-
-      case "EOM":
-        return {
-          type: "single",
-          data:
-            response.data
-              ?.filter((d) => d.eom != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.eom,
-              })) ?? [],
-        };
 
       case "AD":
         return {
