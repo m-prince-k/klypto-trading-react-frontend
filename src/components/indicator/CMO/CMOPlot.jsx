@@ -6,57 +6,55 @@ export default function CMOPlot({
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
-  indicatorConfigs,
 }) {
-
-  /* ================= CREATE SERIES ================= */
+  /* ================= CREATE ================= */
 
   useEffect(() => {
+    const cmoDataRaw = result?.data?.cmo;
 
-    if (!result?.data?.cmo) return;
+    if (!Array.isArray(cmoDataRaw) || !cmoDataRaw.length) {
+      console.log(":x: CMO data missing", result);
+      return;
+    } // :fire: REMOVE OLD
 
     if (indicatorSeriesRef.current?.CMO) {
-
       Object.values(indicatorSeriesRef.current.CMO).forEach((s) => {
-        if (s?.setData) {
-          try { s.setData([]); } catch {}
-        }
+        try {
+          s.setData([]);
+        } catch {}
       });
-
       indicatorSeriesRef.current.CMO = null;
     }
 
-    const mapSeries = (arr) =>
-      (arr || []).map((p) => ({
+    const map = (arr) =>
+      arr.map((p) => ({
         time: Number(p.time),
         value: Number(p.value),
       }));
 
-    const cmoData = mapSeries(result.data.cmo);
+    const cmoData = map(cmoDataRaw);
 
-    /* ================= CMO LINE ================= */
+    const style = indicatorStyle?.CMO; /* :fire: CMO LINE */
 
     const cmoSeries = addSeries("CMO", LineSeries, {
-      color: indicatorStyle?.CMO?.cmoLine?.color ?? "rgba(38,166,154,1)",
-      lineWidth: indicatorStyle?.CMO?.cmoLine?.width ?? 2,
-      lineStyle: indicatorStyle?.CMO?.cmoLine?.lineStyle ?? 0,
-      visible: indicatorStyle?.CMO?.cmoLine?.visible ?? true,
+      color: style?.cmoLine?.color ?? "rgba(38,166,154,1)",
+      lineWidth: style?.cmoLine?.width ?? 2,
+      lineStyle: style?.cmoLine?.lineStyle ?? 0,
+      visible: style?.cmoLine?.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: true,
-    });
-
-    /* ================= ZERO LINE ================= */
-
-    const zeroValue = indicatorStyle?.CMO?.zeroLine?.value ?? 0;
+    }); /* :fire: ZERO LINE */
 
     const zeroSeries = addSeries("CMO", LineSeries, {
-      color: indicatorStyle?.CMO?.zeroLine?.color ?? "rgba(158,158,158,1)",
-      lineWidth: indicatorStyle?.CMO?.zeroLine?.width ?? 1,
-      lineStyle: indicatorStyle?.CMO?.zeroLine?.lineStyle ?? 2,
-      visible: indicatorStyle?.CMO?.zeroLine?.visible ?? true,
+      color: style?.zeroLine?.color ?? "rgba(158,158,158,1)",
+      lineWidth: style?.zeroLine?.width ?? 1,
+      lineStyle: style?.zeroLine?.lineStyle ?? 2,
+      visible: style?.zeroLine?.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: false,
     });
+
+    const zeroValue = style?.zeroLine?.value ?? 0;
 
     const zeroData = cmoData.map((p) => ({
       time: p.time,
@@ -72,40 +70,39 @@ export default function CMOPlot({
       cmoData,
     };
 
-  }, [result, indicatorConfigs]);
-
-
-  /* ================= STYLE UPDATE ================= */
+    console.log(":white_check_mark: CMO plotted");
+  }, [result]); /* ================= STYLE UPDATE ================= */
 
   useEffect(() => {
+    const g = indicatorSeriesRef.current?.CMO;
+    if (!g) return;
 
-    const group = indicatorSeriesRef.current?.CMO;
-    if (!group) return;
+    const style = indicatorStyle?.CMO;
+    if (!style) return; /* :fire: UPDATE ZERO LINE DATA */
 
-    const zeroValue = indicatorStyle?.CMO?.zeroLine?.value ?? 0;
+    const zeroValue = style?.zeroLine?.value ?? 0;
 
-    const zeroData = group.cmoData.map((p) => ({
+    const zeroData = g.cmoData.map((p) => ({
       time: p.time,
       value: zeroValue,
     }));
 
-    group.zeroLine?.setData(zeroData);
+    g.zeroLine?.setData(zeroData); /* :fire: APPLY STYLE */
 
-    group.cmoLine?.applyOptions({
-      color: indicatorStyle?.CMO?.cmoLine?.color,
-      lineWidth: indicatorStyle?.CMO?.cmoLine?.width,
-      lineStyle: indicatorStyle?.CMO?.cmoLine?.lineStyle ?? 0,
-      visible: indicatorStyle?.CMO?.cmoLine?.visible,
+    g.cmoLine?.applyOptions({
+      color: style?.cmoLine?.color,
+      lineWidth: style?.cmoLine?.width,
+      lineStyle: style?.cmoLine?.lineStyle,
+      visible: style?.cmoLine?.visible,
     });
 
-    group.zeroLine?.applyOptions({
-      color: indicatorStyle?.CMO?.zeroLine?.color,
-      lineWidth: indicatorStyle?.CMO?.zeroLine?.width,
-      lineStyle: indicatorStyle?.CMO?.zeroLine?.lineStyle ?? 2,
-      visible: indicatorStyle?.CMO?.zeroLine?.visible,
+    g.zeroLine?.applyOptions({
+      color: style?.zeroLine?.color,
+      lineWidth: style?.zeroLine?.width,
+      lineStyle: style?.zeroLine?.lineStyle,
+      visible: style?.zeroLine?.visible,
     });
-
-  }, [indicatorStyle]);
+  }, [indicatorStyle?.CMO]);
 
   return null;
 }

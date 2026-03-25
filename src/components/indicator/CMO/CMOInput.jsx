@@ -1,15 +1,11 @@
 export default function CMOInput(
   response,
   indicatorSeriesRef,
-  latestIndicatorValuesRef
+  latestIndicatorValuesRef,
 ) {
-
-  const rows = Array.isArray(response?.data)
-    ? response.data
-    : [];
+  const rows = response?.data ?? [];
 
   const cmoSeries = indicatorSeriesRef.current?.CMO?.cmoLine;
-  const zeroSeries = indicatorSeriesRef.current?.CMO?.zeroLine;
 
   if (!cmoSeries) return;
 
@@ -20,19 +16,9 @@ export default function CMOInput(
       value: Number(d.cmo),
     }));
 
-  const zeroValue =
-    indicatorSeriesRef.current?.CMO?.zeroValue ?? 0;
-
-  const zeroData = cmoData.map((p) => ({
-    time: p.time,
-    value: zeroValue,
-  }));
-
   cmoSeries.setData(cmoData);
 
-  if (zeroSeries) zeroSeries.setData(zeroData);
-
   latestIndicatorValuesRef.current.CMO = {
-    cmoLine: cmoData[cmoData.length - 1]?.value ?? null,
+    cmo: cmoData[cmoData.length - 1]?.value ?? null,
   };
 }

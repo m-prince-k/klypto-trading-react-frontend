@@ -1,31 +1,23 @@
 export default function MFIInput(
   response,
   indicatorSeriesRef,
-  latestIndicatorValuesRef
+  latestIndicatorValuesRef,
 ) {
+  const rows = response?.data ?? [];
 
-  const rows = Array.isArray(response?.data) ? response.data : [];
+  const group = indicatorSeriesRef.current?.MFI;
+  if (!group) return;
 
   const mfiData = rows
-    .filter((d) => d.mfi != null && d.time != null)
+    .filter((d) => d.value != null && d.time != null)
     .map((d) => ({
       time: Number(d.time),
-      value: Number(d.mfi),
-    }))
-    .sort((a, b) => a.time - b.time);
+      value: Number(d.value ?? d.mfi),
+    }));
 
-  const series = indicatorSeriesRef.current?.MFI;
-  if (!series) return;
-
-  series.mfiLine?.setData(mfiData);
+  group.mfiLine?.setData([...mfiData]);
 
   latestIndicatorValuesRef.current.MFI = {
-    mfiLine: mfiData[mfiData.length - 1]?.value,
-  };
-
-  indicatorSeriesRef.current.MFI.result = {
-    data: {
-      mfiLine: mfiData,
-    },
+    mfi: mfiData[mfiData.length - 1]?.value ?? null,
   };
 }

@@ -1,133 +1,170 @@
 import { useEffect } from "react";
 import { LineSeries, BaselineSeries } from "lightweight-charts";
 
-export default function CHOPPlot({
+export default function MFIPlot({
   result,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
-  indicatorConfigs,
 }) {
+  /* ================= CREATE ================= */
 
-  /* ================= CREATE CHOP ================= */
   useEffect(() => {
-    if (!result) return;
+    const raw = result?.data?.mfi;
 
-    if (indicatorSeriesRef.current?.CHOP) {
-      Object.values(indicatorSeriesRef.current.CHOP).forEach(s => {
-        if (s?.setData) try { s.setData([]); } catch {}
+    if (!Array.isArray(raw) || !raw.length) {
+      console.log(":x: MFI data missing", result);
+      return;
+    } // :fire: REMOVE OLD
+
+    if (indicatorSeriesRef.current?.MFI) {
+      Object.values(indicatorSeriesRef.current.MFI).forEach((s) => {
+        try {
+          s.setData([]);
+        } catch {}
       });
-      indicatorSeriesRef.current.CHOP = null;
+      indicatorSeriesRef.current.MFI = null;
     }
 
-    const groupedSeries = {};
-    const chopData = result.data?.chopLine ?? [];
+    const mfiData = raw.map((d) => ({
+      time: Number(d.time),
+      value: Number(d.value ?? d.mfi),
+    }));
 
-    const upper = indicatorConfigs?.CHOP?.upper ?? 61.8;
-    const middle = indicatorConfigs?.CHOP?.middle ?? 50;
-    const lower = indicatorConfigs?.CHOP?.lower ?? 38.2;
-    const bgFill = indicatorStyle?.CHOP?.bgFill;
+    const style =
+      indicatorStyle?.MFI; /* ================= MFI LINE ================= */
 
-    const makeLevel = (v) => chopData.map(p => ({ time: p.time, value: v }));
-
-    // CHOP line
-    const chopSeries = addSeries("CHOP", LineSeries, {
-      color: indicatorStyle?.CHOP?.chopLine?.color,
-      lineWidth: indicatorStyle?.CHOP?.chopLine?.width ?? 2,
-      lineStyle: indicatorStyle?.CHOP?.chopLine?.lineStyle ?? 0,
-      visible: indicatorStyle?.CHOP?.chopLine?.visible ?? true,
+    const mfiSeries = addSeries("MFI", LineSeries, {
+      color: style?.mfiLine?.color,
+      lineWidth: style?.mfiLine?.width,
+      lineStyle: style?.mfiLine?.lineStyle ?? 0,
+      visible: style?.mfiLine?.visible,
       priceLineVisible: false,
-      lastValueVisible: true,
-    });
-    chopSeries.setData(chopData);
-    groupedSeries.chopLine = chopSeries;
+    }); /* ================= LEVEL LINES ================= */
 
-    // Bands
-    ["upper","middle","lower"].forEach(key=>{
-      const s = addSeries("CHOP", LineSeries, {
-        color: indicatorStyle?.CHOP?.[key]?.color,
-        lineWidth: indicatorStyle?.CHOP?.[key]?.width ?? 1,
-        lineStyle: indicatorStyle?.CHOP?.[key]?.lineStyle ?? 0,
-        visible: indicatorStyle?.CHOP?.[key]?.visible ?? true,
-        priceLineVisible: false,
-        lastValueVisible: false,
-      });
-      const value = key === "upper" ? upper : key === "middle" ? middle : lower;
-      s.setData(makeLevel(value));
-      groupedSeries[key] = s;
+    const makeLevel = (value) => mfiData.map((p) => ({ time: p.time, value }));
+
+    const upperVal = style?.upperBand?.value ?? 80;
+    const middleVal = style?.middleBand?.value ?? 50;
+    const lowerVal = style?.lowerBand?.value ?? 20;
+
+    const upperSeries = addSeries("MFI", LineSeries, {
+      color: style?.upperBand?.color,
+      lineWidth: style?.upperBand?.width,
+      lineStyle: style?.upperBand?.lineStyle ?? 2,
+      visible: style?.upperBand?.visible,
     });
 
-    // Background fill (between lower & upper)
-    const bandBackground = addSeries("CHOP", BaselineSeries, {
-      baseValue: { type: "price", price: lower },
-      topLineColor: "transparent",
-      bottomLineColor: "transparent",
-      topFillColor1: bgFill?.topFillColor1,
-      topFillColor2: bgFill?.topFillColor2,
+    const middleSeries = addSeries("MFI", LineSeries, {
+      color: style?.middleBand?.color,
+      lineWidth: style?.middleBand?.width,
+      lineStyle: style?.middleBand?.lineStyle ?? 2,
+      visible: style?.middleBand?.visible,
+    });
+
+    const lowerSeries = addSeries("MFI", LineSeries, {
+      color: style?.lowerBand?.color,
+      lineWidth: style?.lowerBand?.width,
+      lineStyle: style?.lowerBand?.lineStyle ?? 2,
+      visible: style?.lowerBand?.visible,
+    });
+
+    upperSeries.setData(makeLevel(upperVal));
+    middleSeries.setData(makeLevel(middleVal));
+    lowerSeries.setData(
+      makeLevel(lowerVal),
+    ); /* ================= BACKGROUND ================= */
+
+    const bgSeries = addSeries("MFI", BaselineSeries, {
+      baseValue: { type: "price", price: lowerVal },
+
+      topFillColor1: style?.bgFill?.topFillColor1,
+      topFillColor2: style?.bgFill?.topFillColor2,
+
       bottomFillColor1: "rgba(0,0,0,0)",
       bottomFillColor2: "rgba(0,0,0,0)",
-      visible: bgFill?.visible ?? true,
+
+      topLineColor: "transparent",
+      bottomLineColor: "transparent",
+
+      visible: style?.bgFill?.visible,
       priceLineVisible: false,
-      lastValueVisible: false,
     });
-    bandBackground.setData(makeLevel(upper));
-    groupedSeries.bandBackground = bandBackground;
 
-    groupedSeries.chopData = chopData;
-    indicatorSeriesRef.current.CHOP = groupedSeries;
+    const bgData = mfiData.map((p) => ({
+      time: p.time,
+      value: upperVal,
+    }));
 
-  }, [result]);
+    bgSeries.setData(bgData); /* ================= SET DATA ================= */
 
-  /* ================= STYLE & BAND UPDATE ================= */
+    mfiSeries.setData(mfiData);
+
+    indicatorSeriesRef.current.MFI = {
+      mfiLine: mfiSeries,
+      upperBand: upperSeries,
+      middleBand: middleSeries,
+      lowerBand: lowerSeries,
+      bgFill: bgSeries,
+      mfiData,
+    };
+
+    console.log(":white_check_mark: MFI plotted");
+  }, [result]); /* ================= STYLE UPDATE ================= */
+
   useEffect(() => {
-    const chopGroup = indicatorSeriesRef.current?.CHOP;
-    if (!chopGroup) return;
+    const g = indicatorSeriesRef.current?.MFI;
+    if (!g) return;
 
-    const chopData = chopGroup.chopData ?? [];
-    if (!chopData.length) return;
+    const style = indicatorStyle?.MFI;
+    if (!style) return;
 
-    const makeLevel = (v) => chopData.map(p => ({ time: p.time, value: v }));
+    const makeLevel = (value) =>
+      g.mfiData.map((p) => ({ time: p.time, value })); /* :fire: LINE */
 
-    const upper = indicatorConfigs?.CHOP?.upper ?? 61.8;
-    const middle = indicatorConfigs?.CHOP?.middle ?? 50;
-    const lower = indicatorConfigs?.CHOP?.lower ?? 38.2;
-    const bgFill = indicatorStyle?.CHOP?.bgFill;
+    g.mfiLine?.applyOptions({
+      color: style?.mfiLine?.color,
+      lineWidth: style?.mfiLine?.width,
+      lineStyle: style?.mfiLine?.lineStyle ?? 0,
+      visible: style?.mfiLine?.visible,
+    }); /* :fire: UPPER */
 
-    // Update CHOP line style
-    chopGroup.chopLine?.applyOptions({
-      color: indicatorStyle?.CHOP?.chopLine?.color,
-      lineWidth: indicatorStyle?.CHOP?.chopLine?.width,
-      lineStyle: indicatorStyle?.CHOP?.chopLine?.lineStyle ?? 0,
-      visible: indicatorStyle?.CHOP?.chopLine?.visible,
-      lastValueVisible: indicatorStyle?.CHOP?.chopLine?.visible,
+    g.upperBand?.applyOptions({
+      color: style?.upperBand?.color,
+      lineWidth: style?.upperBand?.width,
+      lineStyle: style?.upperBand?.lineStyle ?? 2,
+      visible: style?.upperBand?.visible,
     });
+    g.upperBand?.setData(
+      makeLevel(style?.upperBand?.value ?? 80),
+    ); /* :fire: MIDDLE */
 
-    // Update bands values & style
-    ["upper","middle","lower"].forEach(key=>{
-      const value = key === "upper" ? upper : key === "middle" ? middle : lower;
-      const s = chopGroup[key];
-      const style = indicatorStyle?.CHOP?.[key];
-      if (!s) return;
-      s.setData(makeLevel(value));
-      s.applyOptions({
-        color: style?.color,
-        lineWidth: style?.width,
-        lineStyle: style?.lineStyle ?? 0,
-        visible: style?.visible,
-        lastValueVisible: false,
-      });
+    g.middleBand?.applyOptions({
+      color: style?.middleBand?.color,
+      lineWidth: style?.middleBand?.width,
+      lineStyle: style?.middleBand?.lineStyle ?? 2,
+      visible: style?.middleBand?.visible,
     });
+    g.middleBand?.setData(
+      makeLevel(style?.middleBand?.value ?? 50),
+    ); /* :fire: LOWER */
 
-    // Update background fill dynamically between lower & upper
-    chopGroup.bandBackground?.applyOptions({
-      baseValue: { price: lower },
-      topFillColor1: bgFill?.topFillColor1,
-      topFillColor2: bgFill?.topFillColor2,
-      visible: bgFill?.visible,
+    g.lowerBand?.applyOptions({
+      color: style?.lowerBand?.color,
+      lineWidth: style?.lowerBand?.width,
+      lineStyle: style?.lowerBand?.lineStyle ?? 2,
+      visible: style?.lowerBand?.visible,
     });
-    chopGroup.bandBackground?.setData(makeLevel(upper));
+    g.lowerBand?.setData(
+      makeLevel(style?.lowerBand?.value ?? 20),
+    ); /* :fire: BACKGROUND */
 
-  }, [indicatorStyle, indicatorConfigs]);
+    g.bgFill?.applyOptions({
+      visible: style?.bgFill?.visible,
+      topFillColor1: style?.bgFill?.topFillColor1,
+      topFillColor2: style?.bgFill?.topFillColor2,
+    });
+  }, [indicatorStyle?.MFI]);
 
   return null;
 }

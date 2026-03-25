@@ -428,7 +428,7 @@ export function handleCopy(rows = null) {
   alert("Copied to clipboard ✔");
 }
 
-export const getRowsByIndicator = (indicator, maType) => {
+export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
   switch (indicator) {
     case "SMA": {
       const rows = [{ key: "sma", label: "SMA", type: "line" }];
@@ -694,9 +694,6 @@ export const getRowsByIndicator = (indicator, maType) => {
     case "ADX":
       return [{ key: "adx", label: "ADX", type: "line" }];
 
-
-
-
     case "CKS":
       return [
         {
@@ -771,7 +768,7 @@ export const getRowsByIndicator = (indicator, maType) => {
       ];
     case "STOCHRSI":
       return [
-        { key: "kLine", label: "%K", type: "line"},
+        { key: "kLine", label: "%K", type: "line" },
         { key: "dLine", label: "%D", type: "line" },
 
         {
@@ -941,12 +938,11 @@ export const getRowsByIndicator = (indicator, maType) => {
     case "UO":
       return [
         {
-          key: "ultimateoscillator",
+          key: "uoLine",
           label: "Ultimate Oscillator",
           type: "line",
         },
       ];
-
     case "Awesome Oscillator":
       return [
         {
@@ -960,7 +956,7 @@ export const getRowsByIndicator = (indicator, maType) => {
 
     case "CMO":
       return [
-        { key: "cmoLine", label: "CMO", type: "line", color: "#26a69a" },
+        { key: "cmoLine", label: "CMO", type: "line", color: "#26A69A" },
         {
           key: "zeroLine",
           label: "Zero Line",
@@ -1033,34 +1029,46 @@ export const getRowsByIndicator = (indicator, maType) => {
         },
       ];
 
-case "KVO":
-  return [
-    { key: "ko", label: "KO", type: "line"},
-    { key: "signal", label: "Signal", type: "line" },
-  ];
+    case "KVO":
+      return [
+        {
+          key: "kvoLine",
+          label: "Klinger Oscillator",
+          type: "line",
+          width: 1,
+          lineStyle: 0,
+          visible: true,
+        },
+
+        {
+          key: "signalLine",
+          label: "Signal Line",
+          type: "line",
+          width: 1,
+          lineStyle: 0,
+          visible: true,
+        },
+      ];
     case "ATR":
       return [{ key: "atr", label: "ATR", type: "line" }];
 
     case "KC":
       return [
-        // Lines
         {
           key: "upper",
           label: "Upper Channel",
           type: "line",
         },
-        { key: "middle", label: "Basis Line", type: "line"},
+        { key: "middle", label: "Basis Line", type: "line" },
         {
           key: "lower",
           label: "Lower Channel",
           type: "line",
         },
         {
-          key: "bg",
+          key: "bbFill",
           label: "Background ",
           type: "fill",
-          color0: "rgba(38,166,154,0.1)", // color under bullish trend
-          color1: "rgba(239,83,80,0.1)", // color under bearish trend
         },
       ];
 
@@ -1080,11 +1088,9 @@ case "KVO":
           color: "#26a69a",
         },
         {
-          key: "bg",
+          key: "bbFill",
           label: "Background ",
           type: "fill",
-          color0: "rgba(38,166,154,0.1)", // color under bullish trend
-          color1: "rgba(239,83,80,0.1)", // color under bearish trend
         },
       ];
 
@@ -1169,7 +1175,6 @@ case "KVO":
 
     case "STDDEV":
       return [
-        // Lines
         {
           key: "stddev",
           label: "Plot",
@@ -1182,24 +1187,37 @@ case "KVO":
       return [
         {
           key: "volumeBars",
-          label: "Volume Bars",
-          type: "bars",
-          colorUp: "#26a69a", // growing volume
-          colorDown: "#ef5350", // falling volume
-          colorByPrevious: true, // toggle for coloring based on previous bar
+          label: "Growing Volume",
+          type: "color",
+          field: "upColor",
+          visible: true,
         },
 
-        // Volume MA line
+        {
+          key: "volumeBars",
+          label: "Falling Volume",
+          type: "color",
+          field: "downColor",
+          visible: true,
+        },
+
+        {
+          key: "volumeBars",
+          label: "Show Volume Bars",
+          type: "checkbox",
+          field: "visible",
+          value: true,
+        },
+
         {
           key: "volumeMA",
           label: "Volume MA",
           type: "line",
-          color: "#2962ff",
           width: 2,
-          visible: false, // by default unchecked
+          lineStyle: 0,
+          visible: true,
         },
       ];
-
     case "HV":
       return [
         {
@@ -1340,7 +1358,7 @@ case "KVO":
           key: "mfiLine",
           label: "MFI",
           type: "line",
-          color: "#2962ff",
+          color: "#2962FF",
           width: 2,
           visible: true,
         },
@@ -1351,7 +1369,7 @@ case "KVO":
           type: "band",
           value: 80,
           showValue: true,
-          color: "#ef5350",
+          color: "#EF5350",
         },
         {
           key: "middleBand",
@@ -1359,7 +1377,7 @@ case "KVO":
           type: "band",
           value: 50,
           showValue: true,
-          color: "#9e9e9e",
+          color: "#9E9E9E",
         },
         {
           key: "lowerBand",
@@ -1367,7 +1385,7 @@ case "KVO":
           type: "band",
           value: 20,
           showValue: true,
-          color: "#26a69a",
+          color: "#26A69A",
         },
         {
           key: "bgFill",
@@ -1418,103 +1436,118 @@ case "KVO":
           key: "pviEma",
           label: "PVI Based EMA",
           type: "line",
-          color: "#26a69a",
           width: 1,
           visible: true,
         },
       ];
 
-    case "VWAP":
-      return [
+    case "VWAP": {
+      const config = indicatorConfigs?.VWAP || {};
+
+      const rows = [
         {
           key: "vwap",
           label: "VWAP",
           type: "line",
           visible: true,
         },
-        {
-          key: "upperBand1",
-          label: "Upper Band #1",
-          type: "line",
-          color: "#26a69a",
-          width: 1,
-          visible: true,
-        },
-        {
-          key: "lowerBand1",
-          label: "Lower Band #1",
-          type: "line",
-          color: "#26a69a",
-          width: 1,
-          visible: true,
-        },
-        {
-          key: "bandFill1",
-          label: "Bands Fill #1",
-          type: "fill",
-          color: "rgba(38,166,154,0.08)",
-          visible: true,
-          upperKey: "upperBand1",
-          lowerKey: "lowerBand1",
-        },
-        {
-          key: "upperBand2",
-          label: "Upper Band #2",
-          type: "line",
-          color: "#ff9800",
-          width: 1,
-          visible: false,
-        },
-        {
-          key: "lowerBand2",
-          label: "Lower Band #2",
-          type: "line",
-          color: "#ff9800",
-          width: 1,
-          visible: false,
-        },
-        {
-          key: "bandFill2",
-          label: "Bands Fill #2",
-          type: "fill",
-          color: "rgba(255,152,0,0.08)",
-          visible: false,
-          upperKey: "upperBand2",
-          lowerKey: "lowerBand2",
-        },
-        {
-          key: "upperBand3",
-          label: "Upper Band #3",
-          type: "line",
-          color: "#ef5350",
-          width: 1,
-          visible: false,
-        },
-        {
-          key: "lowerBand3",
-          label: "Lower Band #3",
-          type: "line",
-          color: "#ef5350",
-          width: 1,
-          visible: false,
-        },
-        {
-          key: "bandFill3",
-          label: "Bands Fill #3",
-          type: "fill",
-          visible: false,
-          upperKey: "upperBand3",
-          lowerKey: "lowerBand3",
-        },
       ];
+
+      /* -------- BAND 1 -------- */
+
+      if (config?.band1?.enabled) {
+        rows.push(
+          {
+            key: "upperBand1",
+            label: "Upper Band #1",
+            type: "line",
+            width: 1,
+            visible: true,
+          },
+          {
+            key: "lowerBand1",
+            label: "Lower Band #1",
+            type: "line",
+            width: 1,
+            visible: true,
+          },
+          {
+            key: "bandFill1",
+            label: "Bands Fill #1",
+            type: "fill",
+            visible: true,
+            upperKey: "upperBand1",
+            lowerKey: "lowerBand1",
+          },
+        );
+      }
+
+      /* -------- BAND 2 -------- */
+
+      if (config?.band2?.enabled) {
+        rows.push(
+          {
+            key: "upperBand2",
+            label: "Upper Band #2",
+            type: "line",
+            width: 1,
+            visible: true,
+          },
+          {
+            key: "lowerBand2",
+            label: "Lower Band #2",
+            type: "line",
+            width: 1,
+            visible: true,
+          },
+          {
+            key: "bandFill2",
+            label: "Bands Fill #2",
+            type: "fill",
+            visible: true,
+            upperKey: "upperBand2",
+            lowerKey: "lowerBand2",
+          },
+        );
+      }
+
+      /* -------- BAND 3 -------- */
+
+      if (config?.band3?.enabled) {
+        rows.push(
+          {
+            key: "upperBand3",
+            label: "Upper Band #3",
+            type: "line",
+            width: 1,
+            visible: true,
+          },
+          {
+            key: "lowerBand3",
+            label: "Lower Band #3",
+            type: "line",
+            width: 1,
+            visible: true,
+          },
+          {
+            key: "bandFill3",
+            label: "Bands Fill #3",
+            type: "fill",
+            visible: true,
+            upperKey: "upperBand3",
+            lowerKey: "lowerBand3",
+          },
+        );
+      }
+
+      return rows;
+    }
     case "ZIGZAG":
       return [
         {
           key: "zigzagLine",
           label: "Lines",
           type: "line",
-          color: "#2962ff",
-          width: 2,
           visible: true,
         },
         {
@@ -1564,7 +1597,7 @@ export const PANE_INDICATORS = new Set([
   "OBV",
   "BBW",
   "CMF",
-  "KC",
+  "KVO",
 ]);
 
 export const RANGE_INTERVAL_MAPPING = {

@@ -1,33 +1,33 @@
 export default function VOLInput(
   response,
   indicatorSeriesRef,
-  latestIndicatorValuesRef
+  latestIndicatorValuesRef,
 ) {
+  const rows = Array.isArray(response?.data) ? response.data : [];
 
-  const group = indicatorSeriesRef.current?.VOL;
-  if (!group) return;
+  const volumeSeries = indicatorSeriesRef.current?.VOL?.volume;
+  const maSeries = indicatorSeriesRef.current?.VOL?.volumeMA;
 
-  const volume =
-    response?.data
-      ?.filter((d) => d.volume != null && d.time != null)
-      .map((d) => ({
-        time: Number(d.time),
-        value: Number(d.volume),
-        color: d.color || "#26A69A",
-      })) ?? [];
+  if (!volumeSeries) return;
 
-  const volumeMA =
-    response?.data
-      ?.filter((d) => d.volumeMA != null && d.time != null)
-      .map((d) => ({
-        time: Number(d.time),
-        value: Number(d.volumeMA),
-      })) ?? [];
+  const volumeData = rows.map((d) => ({
+    time: Number(d.time),
+    value: Number(d.volume),
+    color: d.color || "#26A69A",
+  }));
 
-  group.volume?.setData(volume);
-  group.volumeMA?.setData(volumeMA);
+  const maData = rows
+    .filter((d) => d.volumeMA != null)
+    .map((d) => ({
+      time: Number(d.time),
+      value: Number(d.volumeMA),
+    }));
+
+  volumeSeries.setData(volumeData);
+  if (maSeries) maSeries.setData(maData);
 
   latestIndicatorValuesRef.current.VOL = {
-    volume: volume[volume.length - 1]?.value ?? null,
+    volume: volumeData[volumeData.length - 1]?.value ?? null,
+    volumeMA: maData[maData.length - 1]?.value ?? null,
   };
 }

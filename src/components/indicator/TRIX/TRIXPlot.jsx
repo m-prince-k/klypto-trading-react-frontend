@@ -6,57 +6,52 @@ export default function TRIXPlot({
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
-  indicatorConfigs,
 }) {
-
-  /* ================= CREATE SERIES ================= */
+  /* ================= CREATE ================= */
 
   useEffect(() => {
+    const trixRaw = result?.data?.trix;
 
-    if (!result?.data?.trix) return;
+    if (!Array.isArray(trixRaw) || !trixRaw.length) {
+      console.log(":x: TRIX data missing", result);
+      return;
+    } // :fire: REMOVE OLD
 
     if (indicatorSeriesRef.current?.TRIX) {
-
       Object.values(indicatorSeriesRef.current.TRIX).forEach((s) => {
-        if (s?.setData) {
-          try { s.setData([]); } catch {}
-        }
+        try {
+          s.setData([]);
+        } catch {}
       });
-
       indicatorSeriesRef.current.TRIX = null;
     }
 
-    const mapSeries = (arr) =>
-      (arr || []).map((p) => ({
-        time: Number(p.time),
-        value: Number(p.value),
-      }));
+    const trixData = trixRaw.map((p) => ({
+      time: Number(p.time),
+      value: Number(p.value),
+    }));
 
-    const trixData = mapSeries(result.data.trix);
-
-    /* ================= TRIX LINE ================= */
+    const style = indicatorStyle?.TRIX; /* :fire: TRIX LINE */
 
     const trixSeries = addSeries("TRIX", LineSeries, {
-      color: indicatorStyle?.TRIX?.trixLine?.color ?? "rgba(33,150,243,1)",
-      lineWidth: indicatorStyle?.TRIX?.trixLine?.width ?? 2,
-      lineStyle: indicatorStyle?.TRIX?.trixLine?.lineStyle ?? 0,
-      visible: indicatorStyle?.TRIX?.trixLine?.visible ?? true,
+      color: style?.trixLine?.color ?? "rgba(33,150,243,1)",
+      lineWidth: style?.trixLine?.width ?? 2,
+      lineStyle: style?.trixLine?.lineStyle ?? 0,
+      visible: style?.trixLine?.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: true,
-    });
-
-    /* ================= ZERO LINE ================= */
-
-    const zeroValue = indicatorStyle?.TRIX?.zeroLine?.value ?? 0;
+    }); /* :fire: ZERO LINE */
 
     const zeroSeries = addSeries("TRIX", LineSeries, {
-      color: indicatorStyle?.TRIX?.zeroLine?.color ?? "rgba(158,158,158,1)",
-      lineWidth: indicatorStyle?.TRIX?.zeroLine?.width ?? 1,
-      lineStyle: indicatorStyle?.TRIX?.zeroLine?.lineStyle ?? 2,
-      visible: indicatorStyle?.TRIX?.zeroLine?.visible ?? true,
+      color: style?.zeroLine?.color ?? "rgba(158,158,158,1)",
+      lineWidth: style?.zeroLine?.width ?? 1,
+      lineStyle: style?.zeroLine?.lineStyle ?? 2,
+      visible: style?.zeroLine?.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: false,
     });
+
+    const zeroValue = style?.zeroLine?.value ?? 0;
 
     const zeroData = trixData.map((p) => ({
       time: p.time,
@@ -72,45 +67,39 @@ export default function TRIXPlot({
       trixData,
     };
 
-  }, [result, indicatorConfigs]);
-
-
-  /* ================= STYLE UPDATE ================= */
+    console.log(":white_check_mark: TRIX plotted");
+  }, [result]); /* ================= STYLE UPDATE ================= */
 
   useEffect(() => {
+    const g = indicatorSeriesRef.current?.TRIX;
+    if (!g) return;
 
-    const group = indicatorSeriesRef.current?.TRIX;
-    if (!group) return;
+    const style = indicatorStyle?.TRIX;
+    if (!style) return; /* :fire: UPDATE ZERO LINE DATA */
 
-    const trixStyle = indicatorStyle?.TRIX;
-    if (!trixStyle) return;
+    const zeroValue = style?.zeroLine?.value ?? 0;
 
-    const zeroValue = trixStyle.zeroLine?.value ?? 0;
+    const zeroData = g.trixData.map((p) => ({
+      time: p.time,
+      value: zeroValue,
+    }));
 
-    if (group.trixData) {
-      const zeroData = group.trixData.map((p) => ({
-        time: p.time,
-        value: zeroValue,
-      }));
+    g.zeroLine?.setData(zeroData); /* :fire: APPLY STYLE */
 
-      group.zeroLine?.setData(zeroData);
-    }
-
-    group.trixLine?.applyOptions({
-      color: trixStyle.trixLine?.color,
-      lineWidth: Number(trixStyle.trixLine?.width ?? 2),
-      lineStyle: trixStyle.trixLine?.lineStyle ?? 0,
-      visible: trixStyle.trixLine?.visible,
+    g.trixLine?.applyOptions({
+      color: style?.trixLine?.color,
+      lineWidth: style?.trixLine?.width,
+      lineStyle: style?.trixLine?.lineStyle,
+      visible: style?.trixLine?.visible,
     });
 
-    group.zeroLine?.applyOptions({
-      color: trixStyle.zeroLine?.color,
-      lineWidth: Number(trixStyle.zeroLine?.width ?? 1),
-      lineStyle: trixStyle.zeroLine?.lineStyle ?? 2,
-      visible: trixStyle.zeroLine?.visible,
+    g.zeroLine?.applyOptions({
+      color: style?.zeroLine?.color,
+      lineWidth: style?.zeroLine?.width,
+      lineStyle: style?.zeroLine?.lineStyle,
+      visible: style?.zeroLine?.visible,
     });
-
-  }, [indicatorStyle]);
+  }, [indicatorStyle?.TRIX]);
 
   return null;
 }

@@ -9,10 +9,10 @@ export default function TEMAInput(
   /* ================= TEMA ================= */
 
   const temaData = rows
-    .filter((d) => d.value != null && d.time != null)
+    .filter((d) => d.tema != null && d.time != null)
     .map((d) => ({
       time: Number(d.time),
-      value: Number(d.value),
+      value: Number(d.tema),
     }))
     .sort((a, b) => a.time - b.time);
 

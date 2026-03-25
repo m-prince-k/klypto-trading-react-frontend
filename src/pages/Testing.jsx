@@ -1,102 +1,185 @@
-import React, { useEffect, useRef } from "react";
-import { createChart } from "lightweight-charts";
+import React, { useEffect, useRef, useState } from "react";
+import { createChart, CandlestickSeries, LineSeries } from "lightweight-charts";
 
-export default function CandlestickMACDChart() {
-  const chartContainerRef = useRef();
+export default function BollingerCloudChart() {
 
-  useEffect(() => {
-    // ---------------- Dummy Candlestick Data ----------------
-    const candles = [
-      { time: 1, open: 100, high: 105, low: 95, close: 102 },
-      { time: 2, open: 102, high: 108, low: 101, close: 106 },
-      { time: 3, open: 106, high: 110, low: 104, close: 107 },
-      { time: 4, open: 107, high: 109, low: 103, close: 105 },
-      { time: 5, open: 105, high: 107, low: 100, close: 101 },
-      { time: 6, open: 101, high: 104, low: 98, close: 100 },
-      { time: 7, open: 100, high: 103, low: 95, close: 97 },
-      { time: 8, open: 97, high: 100, low: 93, close: 99 },
-      { time: 9, open: 99, high: 102, low: 96, close: 101 },
-      { time: 10, open: 101, high: 106, low: 100, close: 104 },
-      { time: 11, open: 104, high: 108, low: 103, close: 107 },
-      { time: 12, open: 107, high: 111, low: 105, close: 110 },
-      { time: 13, open: 110, high: 112, low: 107, close: 108 },
-      { time: 14, open: 108, high: 109, low: 104, close: 105 },
-      { time: 15, open: 105, high: 106, low: 101, close: 103 },
-    ];
+    const containerRef = useRef(null);
+    const [cloudColor, setCloudColor] = useState("#3B82F6");
 
-    // ---------------- EMA Helper ----------------
-    const EMA = (values, period) => {
-      const k = 2 / (period + 1);
-      let emaArr = [];
-      values.forEach((price, i) => {
-        if (i === 0) emaArr.push(price);
-        else emaArr.push(price * k + emaArr[i - 1] * (1 - k));
-      });
-      return emaArr;
-    };
+    function hexToRGBA(hex, a) {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `rgba(${r},${g},${b},${a})`;
+    }
 
-    // ---------------- MACD Calculation ----------------
-    const closes = candles.map(c => c.close);
-    const ema12 = EMA(closes, 12);
-    const ema26 = EMA(closes, 26);
-    const macdLine = ema12.map((v, i) => v - ema26[i]);
-    const signalLine = EMA(macdLine.slice(25), 9);
-    const histogram = macdLine.slice(25).map((macd, i) => macd - signalLine[i]);
+    useEffect(() => {
 
-    // ---------------- Histogram Colors ----------------
-    const colors = histogram.map((val, i, arr) => {
-      if (i === 0) return val >= 0 ? "#00b300" : "#ff0000";
-      const prev = arr[i - 1];
+        const width = 900;
+        const height = 500;
 
-      if (val >= 0 && val >= prev) return "#00b300";       // Bullish Increasing
-      if (val >= 0 && val < prev) return "#99ff99";       // Bullish Decreasing
-      if (val < 0 && val <= prev) return "#ff0000";       // Bearish Increasing
-      if (val < 0 && val > prev) return "#ff99cc";        // Bearish Decreasing
-      return "#888888";
-    });
+        const chart = createChart(containerRef.current, {
+            width,
+            height
+        });
 
-    // ---------------- Create Chart ----------------
-    const chart = createChart(chartContainerRef.current, {
-      width: 900,
-      height: 500,
-      layout: { backgroundColor: "#ffffff", textColor: "#000" },
-      rightPriceScale: { borderColor: "#cccccc" },
-      timeScale: { borderColor: "#cccccc" },
-    });
+        const candleSeries = chart.addSeries(CandlestickSeries);
 
-    // ---------------- Candlestick Series ----------------
-    const candleSeries = chart.addCandlestickSeries();
-    candleSeries.setData(candles.map(c => ({
-      time: c.time,
-      open: c.open,
-      high: c.high,
-      low: c.low,
-      close: c.close,
-    })));
+        // dummy candles
+        const candles = [];
+        let price = 100;
+        const start = new Date(2024, 2, 1);
 
-    // ---------------- MACD Histogram Series (Separate Pane) ----------------
-    const histSeries = chart.addHistogramSeries({
-      color: "#26a69a",
-      scaleMargins: { top: 0.85, bottom: 0 },  // histogram pane below
-      priceFormat: { type: 'volume' },
-      priceScaleId: '', // separate Y-axis
-    });
-    histSeries.setData(histogram.map((value, index) => ({
-      time: candles.slice(25)[index].time,
-      value: value,
-      color: colors[index],
-    })));
+        for (let i = 0; i < 120; i++) {
 
-    // Cleanup chart on unmount
-    return () => chart.remove();
-  }, []);
+            price += (Math.random() - 0.5) * 5;
 
-  return (
-    <div>
-      <h2 style={{ textAlign: "center" }}>
-        Candlestick + MACD Histogram (4 Colors)
-      </h2>
-      <div ref={chartContainerRef} />
-    </div>
-  );
+            const d = new Date(start);
+            d.setDate(start.getDate() + i);
+
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, "0");
+            const dd = String(d.getDate()).padStart(2, "0");
+
+            candles.push({
+                time: `${yyyy}-${mm}-${dd}`,
+                open: price - 2,
+                high: price + 3,
+                low: price - 3,
+                close: price
+            });
+        }
+
+        candleSeries.setData(candles);
+
+        const closeData = candles.map(c => ({ time: c.time, value: c.close }));
+
+        // bollinger calc
+        function Bollinger(data, p = 20) {
+
+            const upper = [];
+            const lower = [];
+
+            for (let i = p; i < data.length; i++) {
+
+                let sum = 0;
+                for (let j = 0; j < p; j++) sum += data[i - j].value;
+
+                const mean = sum / p;
+
+                let v = 0;
+                for (let j = 0; j < p; j++)
+                    v += Math.pow(data[i - j].value - mean, 2);
+
+                const std = Math.sqrt(v / p);
+
+                upper.push({ time: data[i].time, value: mean + std * 2 });
+                lower.push({ time: data[i].time, value: mean - std * 2 });
+
+            }
+
+            return { upper, lower };
+        }
+
+        const { upper, lower } = Bollinger(closeData);
+
+        // lines
+        const upperLine = chart.addSeries(LineSeries, { color: "#22C55E", lineWidth: 2 });
+        const lowerLine = chart.addSeries(LineSeries, { color: "#EF4444", lineWidth: 2 });
+
+        upperLine.setData(upper);
+        lowerLine.setData(lower);
+
+        // cloud canvas
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+
+        canvas.style.position = "absolute";
+        canvas.style.left = "0";
+        canvas.style.top = "0";
+        canvas.style.pointerEvents = "none";
+        canvas.style.zIndex = "1";
+
+        containerRef.current.appendChild(canvas);
+
+        const ctx = canvas.getContext("2d");
+
+        function drawCloud() {
+
+            ctx.clearRect(0, 0, width, height);
+
+            ctx.beginPath();
+
+            // upper
+            upper.forEach((p, i) => {
+
+                const x = chart.timeScale().timeToCoordinate(p.time);
+                const y = upperLine.priceToCoordinate(p.value);
+
+                if (x === null || y === null) return;
+
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+
+            });
+
+            // lower reverse
+            for (let i = lower.length - 1; i >= 0; i--) {
+
+                const p = lower[i];
+
+                const x = chart.timeScale().timeToCoordinate(p.time);
+                const y = lowerLine.priceToCoordinate(p.value);
+
+                if (x === null || y === null) continue;
+
+                ctx.lineTo(x, y);
+
+            }
+
+            ctx.closePath();
+
+            ctx.fillStyle = hexToRGBA(cloudColor, 0.35);
+            ctx.fill();
+
+        }
+
+        // redraw on zoom/scroll
+        chart.timeScale().subscribeVisibleLogicalRangeChange(drawCloud);
+        chart.subscribeCrosshairMove(drawCloud);
+
+        setTimeout(drawCloud, 200);
+
+        return () => chart.remove();
+
+    }, [cloudColor]);
+
+
+
+    return (
+
+        <div>
+
+            <h3>Bollinger Cloud</h3>
+
+            <input
+                type="color"
+                value={cloudColor}
+                onChange={(e) => setCloudColor(e.target.value)}
+            />
+
+            <div
+                ref={containerRef}
+                style={{
+                    position: "relative",
+                    width: "900px",
+                    height: "500px"
+                }}
+            ></div>
+
+        </div>
+
+    );
+
 }

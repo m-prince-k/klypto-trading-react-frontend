@@ -3,91 +3,120 @@ import { LineSeries } from "lightweight-charts";
 
 export default function KVOPlot({
   result,
-  rows,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
+  indicatorConfigs,
 }) {
-
-  /* ================= CREATE KO ================= */
+  /* ================= CREATE ================= */
 
   useEffect(() => {
+    if (!result?.data?.kvo) return;
 
-    if (!result?.data) return;
-
-    /* REMOVE OLD */
-
-    if (indicatorSeriesRef.current?.KO) {
-
-      Object.values(indicatorSeriesRef.current.KO).forEach((s) => {
+    if (indicatorSeriesRef.current?.KVO) {
+      Object.values(indicatorSeriesRef.current.KVO).forEach((s) => {
         if (s?.setData) {
-          try { s.setData([]); } catch {}
+          try {
+            s.setData([]);
+          } catch {}
         }
       });
-
-      indicatorSeriesRef.current.KO = null;
+      indicatorSeriesRef.current.KVO = null;
     }
 
-    const grouped = {};
+    const map = (arr) =>
+      (arr || []).map((p) => ({
+        time: Number(p.time),
+        value: Number(p.value),
+      }));
 
-    Object.entries(result.data || {}).forEach(([lineName, lineData]) => {
+    const kvoData = map(result.data.kvo);
+    const signalData = map(
+      result.data.signal,
+    ); /* :large_blue_circle: KVO LINE */
 
-      if (!Array.isArray(lineData)) return;
+    const kvoSeries = addSeries("KVO", LineSeries, {
+      color: indicatorStyle?.KVO?.kvoLine?.color ?? "rgba(33,150,243,1)",
+      lineWidth: indicatorStyle?.KVO?.kvoLine?.width ?? 2,
+      lineStyle: indicatorStyle?.KVO?.kvoLine?.lineStyle ?? 0,
+      visible: indicatorStyle?.KVO?.kvoLine?.visible ?? true,
+      priceLineVisible: false,
+      lastValueVisible: true,
+    }); /* :large_orange_circle: SIGNAL LINE */
 
-      const rowConfig = rows?.find((r) => r.key === lineName);
-      const styleConfig = indicatorStyle?.KO?.[lineName];
+    const signalSeries = addSeries("KVO", LineSeries, {
+      color: indicatorStyle?.KVO?.signalLine?.color ?? "rgba(255,152,0,1)",
+      lineWidth: indicatorStyle?.KVO?.signalLine?.width ?? 2,
+      lineStyle: indicatorStyle?.KVO?.signalLine?.lineStyle ?? 0,
+      visible: indicatorStyle?.KVO?.signalLine?.visible ?? true,
+      priceLineVisible: false,
+      lastValueVisible: true,
+    }); /* :white_circle: ZERO LINE */
 
-      const series = addSeries("KO", LineSeries, {
-        color: styleConfig?.color || rowConfig?.color || "#2962ff",
-        lineWidth: styleConfig?.width || 2,
-        lineStyle: styleConfig?.lineStyle ?? 0,
-        visible: styleConfig?.visible ?? true,
-        priceFormat: { type: "price", precision: 4, minMove: 0.0001 },
-        title: rowConfig?.label || lineName,
-        priceLineVisible: false,
-        lastValueVisible: true,
-      });
+    const zeroValue = indicatorStyle?.KVO?.zeroLine?.value ?? 0;
 
-      if (!series) return;
-
-      series.setData(lineData);
-
-      grouped[lineName] = series;
+    const zeroSeries = addSeries("KVO", LineSeries, {
+      color: indicatorStyle?.KVO?.zeroLine?.color ?? "rgba(158,158,158,1)",
+      lineWidth: indicatorStyle?.KVO?.zeroLine?.width ?? 1,
+      lineStyle: indicatorStyle?.KVO?.zeroLine?.lineStyle ?? 2,
+      visible: indicatorStyle?.KVO?.zeroLine?.visible ?? true,
+      priceLineVisible: false,
+      lastValueVisible: false,
     });
 
-    indicatorSeriesRef.current.KO = {
-      ...grouped,
-      result,
+    const zeroData = kvoData.map((p) => ({
+      time: p.time,
+      value: zeroValue,
+    }));
+
+    kvoSeries.setData(kvoData);
+    signalSeries.setData(signalData);
+    zeroSeries.setData(zeroData);
+
+    indicatorSeriesRef.current.KVO = {
+      kvoLine: kvoSeries,
+      signalLine: signalSeries,
+      zeroLine: zeroSeries,
+      kvoData,
     };
-
-  }, [result]);
-
-
-  /* ================= STYLE UPDATE ================= */
+  }, [
+    result,
+    indicatorConfigs,
+  ]); /* ================= STYLE UPDATE ================= */
 
   useEffect(() => {
+    const g = indicatorSeriesRef.current?.KVO;
+    if (!g) return;
 
-    const koGroup = indicatorSeriesRef.current?.KO;
-    if (!koGroup) return;
+    const zeroValue = indicatorStyle?.KVO?.zeroLine?.value ?? 0;
 
-    const styles = indicatorStyle?.KO;
+    const zeroData = g.kvoData.map((p) => ({
+      time: p.time,
+      value: zeroValue,
+    }));
 
-    ["ko", "signal"].forEach((key) => {
+    g.zeroLine?.setData(zeroData);
 
-      if (!koGroup[key]) return;
-
-      const s = styles?.[key];
-
-      koGroup[key].applyOptions({
-        color: s?.color,
-        lineWidth: s?.width,
-        lineStyle: s?.lineStyle ?? 0,
-        visible: s?.visible,
-        lastValueVisible: s?.visible,
-      });
-
+    g.kvoLine?.applyOptions({
+      color: indicatorStyle?.KVO?.kvoLine?.color,
+      lineWidth: indicatorStyle?.KVO?.kvoLine?.width,
+      lineStyle: indicatorStyle?.KVO?.kvoLine?.lineStyle ?? 0,
+      visible: indicatorStyle?.KVO?.kvoLine?.visible,
     });
 
+    g.signalLine?.applyOptions({
+      color: indicatorStyle?.KVO?.signalLine?.color,
+      lineWidth: indicatorStyle?.KVO?.signalLine?.width,
+      lineStyle: indicatorStyle?.KVO?.signalLine?.lineStyle ?? 0,
+      visible: indicatorStyle?.KVO?.signalLine?.visible,
+    });
+
+    g.zeroLine?.applyOptions({
+      color: indicatorStyle?.KVO?.zeroLine?.color,
+      lineWidth: indicatorStyle?.KVO?.zeroLine?.width,
+      lineStyle: indicatorStyle?.KVO?.zeroLine?.lineStyle ?? 2,
+      visible: indicatorStyle?.KVO?.zeroLine?.visible,
+    });
   }, [indicatorStyle]);
 
   return null;

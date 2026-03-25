@@ -138,12 +138,14 @@ export default function FTPlot({
       color: indicatorStyle?.FT?.fisherLine?.color,
       visible: indicatorStyle?.FT?.fisherLine?.visible,
       lineWidth: indicatorStyle?.FT?.fisherLine?.width,
+      lineStyle: indicatorStyle?.FT?.fisherLine?.lineStyle,
     });
 
     group.triggerLine?.applyOptions({
       color: indicatorStyle?.FT?.triggerLine?.color,
       visible: indicatorStyle?.FT?.triggerLine?.visible,
       lineWidth: indicatorStyle?.FT?.triggerLine?.width,
+      lineStyle: indicatorStyle?.FT?.triggerLine?.lineStyle,
     });
 
   }, [indicatorStyle]);

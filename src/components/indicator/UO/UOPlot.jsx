@@ -6,90 +6,59 @@ export default function UOPlot({
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
-  indicatorConfigs,
 }) {
-
-//   console.log(result, "UO result");
-
-  /* ================= CREATE UO SERIES ================= */
-
   useEffect(() => {
+    const raw = result?.data?.series;
 
-    if (!result) return;
+    if (!Array.isArray(raw) || raw.length === 0) {
+      console.log(":x: UO data missing", result);
+      return;
+    }
 
-    // get correct array safely
-    const rows = Array.isArray(result?.data)
-      ? result.data
-      : Array.isArray(result?.data?.candles)
-      ? result.data.candles
-      : [];
-
-    if (!rows.length) return;
-
-    /* remove old series */
-
-    if (indicatorSeriesRef.current?.UO?.ultimateoscillator) {
-      try {
-        indicatorSeriesRef.current.UO.ultimateoscillator.setData([]);
-      } catch {}
+    if (indicatorSeriesRef.current?.UO) {
+      Object.values(indicatorSeriesRef.current.UO).forEach((s) => {
+        try {
+          s.setData([]);
+        } catch {}
+      });
       indicatorSeriesRef.current.UO = null;
     }
 
-    /* create series */
+    const uoData = raw.map((d) => ({
+      time: Number(d.time),
+      value: Number(d.uo),
+    }));
 
-    const series = addSeries("UO", LineSeries, {
-      color:
-        indicatorStyle?.UO?.ultimateoscillator?.color ??
-        "rgba(38,166,154,1)",
-      lineWidth:
-        indicatorStyle?.UO?.ultimateoscillator?.width ?? 2,
-      lineStyle:
-        indicatorStyle?.UO?.ultimateoscillator?.lineStyle ?? 0,
-      visible:
-        indicatorStyle?.UO?.ultimateoscillator?.visible ?? true,
-      priceLineVisible: false,
-      lastValueVisible: true,
+    const uoSeries = addSeries("UO", LineSeries, {
+      color: indicatorStyle?.UO?.uoLine?.color ?? "#E05273",
+      lineWidth: indicatorStyle?.UO?.uoLine?.width ?? 2,
+      lineStyle: indicatorStyle?.UO?.uoLine?.lineStyle ?? 0,
+      visible: indicatorStyle?.UO?.uoLine?.visible ?? true,
     });
 
-    /* map data */
-
-    const data = rows
-      .filter((d) => (d.value ?? d.uo) != null && d.time != null)
-      .map((d) => ({
-        time: Number(d.time),
-        value: Number(d.value ?? d.uo),
-      }));
-
-    series.setData(data);
+    uoSeries.setData(uoData);
 
     indicatorSeriesRef.current.UO = {
-      ultimateoscillator: series,
+      uoLine: uoSeries,
+      uoData,
     };
 
-  }, [result, indicatorConfigs]);
-
-
-
-  /* ================= STYLE UPDATE ================= */
+    console.log(":white_check_mark: UO plotted");
+  }, [result]);
 
   useEffect(() => {
+    const g = indicatorSeriesRef.current?.UO;
+    if (!g) return;
 
-    const series = indicatorSeriesRef.current?.UO?.ultimateoscillator;
-    if (!series) return;
+    const style = indicatorStyle?.UO;
 
-    series.applyOptions({
-      color:
-        indicatorStyle?.UO?.ultimateoscillator?.color ??
-        "rgba(38,166,154,1)",
-      lineWidth:
-        indicatorStyle?.UO?.ultimateoscillator?.width ?? 2,
-      lineStyle:
-        indicatorStyle?.UO?.ultimateoscillator?.lineStyle ?? 0,
-      visible:
-        indicatorStyle?.UO?.ultimateoscillator?.visible ?? true,
+    g.uoLine?.applyOptions({
+      color: style?.uoLine?.color,
+      lineWidth: style?.uoLine?.width,
+      lineStyle: style?.uoLine?.lineStyle,
+      visible: style?.uoLine?.visible,
     });
-
-  }, [indicatorStyle]);
+  }, [indicatorStyle?.UO]);
 
   return null;
 }

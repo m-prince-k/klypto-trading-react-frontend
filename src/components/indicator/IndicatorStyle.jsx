@@ -17,7 +17,7 @@ const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
   const selectedStyle = indicatorStyle?.[normalizedType];
   const config = indicatorConfigs?.[normalizedType] || {};
   const { maType, maLength } = config;
-  const rows = getRowsByIndicator(normalizedType, maType);
+  const rows = getRowsByIndicator(normalizedType, maType,indicatorConfigs);
 
   const [activePalette, setActivePalette] = useState(null);
   const paletteRef = useRef(null);

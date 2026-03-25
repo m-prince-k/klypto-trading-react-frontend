@@ -2,85 +2,68 @@ import { useEffect } from "react";
 import { LineSeries } from "lightweight-charts";
 
 export default function ADPlot({
-  chart, // 🔥 PASS chart instance directly
   result,
   indicatorStyle,
   indicatorSeriesRef,
+  addSeries,
 }) {
-
-  /* ================= CREATE AD ================= */
   useEffect(() => {
+    // ✅ Get AD data
+    const adData = result?.data ?? [];
 
-    if (!chart || !result?.data?.ad) return;
+    if (!Array.isArray(adData) || !adData.length) {
+      console.log("❌ AD data missing", result);
+      return;
+    }
 
-    // 🔥 Remove old series
-    if (indicatorSeriesRef.current?.AD) {
+    // 🔥 Remove previous series
+    if (indicatorSeriesRef.current?.AD?.ad) {
       try {
-        chart.removeSeries(indicatorSeriesRef.current.AD);
+        indicatorSeriesRef.current.AD.ad.setData([]);
       } catch {}
       indicatorSeriesRef.current.AD = null;
     }
 
+    // 🔹 Get style
     const style = indicatorStyle?.AD?.ad;
 
-    // 🔥 Create series on NEW PANE
-    const adSeries = chart.addSeries(LineSeries, {
-      color: style?.color || "#FFC107",
-      lineWidth: style?.width || 2,
+    // 🔹 Add LineSeries
+    const adSeries = addSeries("AD", LineSeries, {
+      color: style?.color ?? "rgba(156,39,176,1)",
+      lineWidth: style?.width ?? 2,
       lineStyle: style?.lineStyle ?? 0,
+      visible: style?.visible ?? true,
       priceLineVisible: false,
-      lastValueVisible: true,
-    }, 1); // 👈 🔥 THIS CREATES SEPARATE PANE (paneIndex = 1)
-
-    // 🔥 Clean data
-    const cleanData = result.data.ad
-      .filter(d =>
-        d &&
-        d.time != null &&
-        d.value != null &&
-        !isNaN(d.value)
-      )
-      .map(d => ({
-        time: Number(d.time),   // MUST be number (seconds)
-        value: Number(d.value),
-      }))
-      .sort((a, b) => a.time - b.time);
-
-    // 🔥 Apply data
-    adSeries.setData(cleanData);
-
-    // 🔥 Autoscale fix (important for indicators)
-    adSeries.priceScale().applyOptions({
-      autoScale: true,
-      scaleMargins: {
-        top: 0.2,
-        bottom: 0.2,
-      },
     });
 
-    indicatorSeriesRef.current.AD = adSeries;
+    // 🔹 Set the data
+    adSeries.setData(adData);
 
-  }, [chart, result]);
+    // 🔹 Store reference
+    indicatorSeriesRef.current.AD = {
+      ad: adSeries,
+      result,
+      adData,
+    };
 
+    console.log("✅ AD plotted successfully", adData.length);
+  }, [result]);
 
-  /* ================= STYLE UPDATE ================= */
+  // ================= STYLE UPDATE =================
   useEffect(() => {
-
-    const series = indicatorSeriesRef.current?.AD;
-    if (!series) return;
+    const g = indicatorSeriesRef.current?.AD;
+    if (!g) return;
 
     const style = indicatorStyle?.AD?.ad;
     if (!style) return;
 
-    series.applyOptions({
+    g.ad?.applyOptions({
       color: style.color,
       lineWidth: style.width,
-      lineStyle: style.lineStyle ?? 0,
+      lineStyle: style.lineStyle,
       visible: style.visible,
     });
-
-  }, [indicatorStyle]);
-
+  }, [indicatorStyle?.AD]);
 
   return null;
 }

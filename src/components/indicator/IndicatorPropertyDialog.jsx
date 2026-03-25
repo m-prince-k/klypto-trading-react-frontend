@@ -54,17 +54,14 @@ export default function IndicatorPropertyDialog({
     }));
   };
 
-  const updateNestedDoubleProperty = (parentKey, childKey, fieldKey, value) => {
+  const updateNestedDoubleProperty = (band, key, value) => {
     setIndicatorConfigs((prev) => ({
       ...prev,
-      [activeBarIndicator]: {
-        ...prev[activeBarIndicator],
-        [parentKey]: {
-          ...prev[activeBarIndicator][parentKey],
-          [childKey]: {
-            ...prev[activeBarIndicator][parentKey][childKey],
-            [fieldKey]: value,
-          },
+      [normalizedType]: {
+        ...prev[normalizedType],
+        [band]: {
+          ...prev[normalizedType][band],
+          [key]: value,
         },
       },
     }));
@@ -96,6 +93,7 @@ export default function IndicatorPropertyDialog({
     };
 
     console.log(payload, "payloadddddddddd");
+    console.log(config, "configggggg");
 
     setIndicatorLoading(true);
     try {
@@ -1235,7 +1233,8 @@ export default function IndicatorPropertyDialog({
             <Form.Group
               as={Row}
               className="mb-3 align-items-center"
-              controlId="nviEmaLength" >
+              controlId="nviEmaLength"
+            >
               <Form.Label style={labelStyle} className="mb-0">
                 EMA Length
               </Form.Label>
@@ -1279,7 +1278,6 @@ export default function IndicatorPropertyDialog({
       case "CKS":
         return (
           <>
-            
             {/* ATR Length */}
             <Form.Group as={Row} className="mb-3 align-items-center">
               <Form.Label style={labelStyle} className="mb-0">
@@ -1328,7 +1326,6 @@ export default function IndicatorPropertyDialog({
                 />
               </Col>
             </Form.Group>
-
           </>
         );
       case "CMF":
@@ -1342,18 +1339,21 @@ export default function IndicatorPropertyDialog({
         return (
           <>
             <Form.Group as={Row} className="mb-3 align-items-center">
-              <Form.Label style={labelStyle} className="mb-0">Signal EMA Length</Form.Label>
+              <Form.Label style={labelStyle} className="mb-0">
+                Signal EMA Length
+              </Form.Label>
               <Col>
                 <Form.Control
                   type="number"
                   value={currentConfig.signal.length || 255} // default 255 agar undefined ho
-                  onChange={(e) => updateProperty("signal.length", Number(e.target.value))}
+                  onChange={(e) =>
+                    updateProperty("signal.length", Number(e.target.value))
+                  }
                 />
               </Col>
             </Form.Group>
           </>
-        )
-
+        );
 
       case "VWAP":
         return (
@@ -1398,7 +1398,7 @@ export default function IndicatorPropertyDialog({
             <BaseSettings showLength={false} />
 
             {/* ========================= */}
-            {/* Band Settings Section */}
+            {/* Band Settings */}
             {/* ========================= */}
 
             <hr />
@@ -1411,12 +1411,17 @@ export default function IndicatorPropertyDialog({
               </Form.Label>
               <Col>
                 <Form.Select
-                  value={currentConfig.bandSettings.calculationMode}
+                  value={
+                    currentConfig.bandMode === "STD"
+                      ? "Standard Deviation"
+                      : "Percentage"
+                  }
                   onChange={(e) =>
-                    updateNestedProperty(
-                      "bandSettings",
-                      "calculationMode",
-                      e.target.value,
+                    updateProperty(
+                      "bandMode",
+                      e.target.value === "Standard Deviation"
+                        ? "STD"
+                        : "PERCENTAGE",
                     )
                   }
                 >
@@ -1434,10 +1439,9 @@ export default function IndicatorPropertyDialog({
               <Col className="d-flex align-items-center gap-3">
                 <Form.Check
                   type="checkbox"
-                  checked={currentConfig.bandSettings.band1.enabled}
+                  checked={currentConfig.band1.enabled}
                   onChange={(e) =>
                     updateNestedDoubleProperty(
-                      "bandSettings",
                       "band1",
                       "enabled",
                       e.target.checked,
@@ -1446,11 +1450,11 @@ export default function IndicatorPropertyDialog({
                 />
                 <Form.Control
                   type="number"
+                  disabled={!currentConfig.band1.enabled}
                   style={{ maxWidth: "120px" }}
-                  value={currentConfig.bandSettings.band1.multiplier}
+                  value={currentConfig.band1.multiplier}
                   onChange={(e) =>
                     updateNestedDoubleProperty(
-                      "bandSettings",
                       "band1",
                       "multiplier",
                       Number(e.target.value),
@@ -1468,10 +1472,9 @@ export default function IndicatorPropertyDialog({
               <Col className="d-flex align-items-center gap-3">
                 <Form.Check
                   type="checkbox"
-                  checked={currentConfig.bandSettings.band2.enabled}
+                  checked={currentConfig.band2.enabled}
                   onChange={(e) =>
                     updateNestedDoubleProperty(
-                      "bandSettings",
                       "band2",
                       "enabled",
                       e.target.checked,
@@ -1480,11 +1483,11 @@ export default function IndicatorPropertyDialog({
                 />
                 <Form.Control
                   type="number"
+                  disabled={!currentConfig.band2.enabled}
                   style={{ maxWidth: "120px" }}
-                  value={currentConfig.bandSettings.band2.multiplier}
+                  value={currentConfig.band2.multiplier}
                   onChange={(e) =>
                     updateNestedDoubleProperty(
-                      "bandSettings",
                       "band2",
                       "multiplier",
                       Number(e.target.value),
@@ -1502,10 +1505,9 @@ export default function IndicatorPropertyDialog({
               <Col className="d-flex align-items-center gap-3">
                 <Form.Check
                   type="checkbox"
-                  checked={currentConfig.bandSettings.band3.enabled}
+                  checked={currentConfig.band3.enabled}
                   onChange={(e) =>
                     updateNestedDoubleProperty(
-                      "bandSettings",
                       "band3",
                       "enabled",
                       e.target.checked,
@@ -1514,11 +1516,11 @@ export default function IndicatorPropertyDialog({
                 />
                 <Form.Control
                   type="number"
+                  disabled={!currentConfig.band3.enabled}
                   style={{ maxWidth: "120px" }}
-                  value={currentConfig.bandSettings.band3.multiplier}
+                  value={currentConfig.band3.multiplier}
                   onChange={(e) =>
                     updateNestedDoubleProperty(
-                      "bandSettings",
                       "band3",
                       "multiplier",
                       Number(e.target.value),

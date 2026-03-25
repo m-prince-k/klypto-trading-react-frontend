@@ -87,10 +87,12 @@ import CKSInput from "./CKS/CKSInput";
 import CKSPlot from "./CKS/CKSPlot";
 import BBWInput from "./BBW/BBWInput";
 import BBWPlot from "./BBW/BBWPlot";
+import ADInput from "./STDDEV/STDDEVInput";
 
 export const indicatorComponents = {
-  MACD:MACDPlot,
-  NVI:NVIPlot,
+  VWAP: VWAPPlot,
+  MACD: MACDPlot,
+  NVI: NVIPlot,
   RSI: RSIPlot,
   SMA: SMAPlot,
   ICHIMOKU: IchimokuCloudPlot,
@@ -123,25 +125,26 @@ export const indicatorComponents = {
   CMO: CMOPlot,
   FT: FTPlot,
   ZIGZAG: ZIGZAGPlot,
-  PVO:PVOPlot,
-  OBV:OBVPlot,
-  VOL:VOLPlot,
-  STDDEV:STDDEVPlot,
-  AD:ADXPlot,
-  TRIX:TRIXPlot,
-  VP:VPPlot,
-  CMF:CMFPlot,
-  HV:HVPlot,
-  CKS:CKSPlot,
-  BBW:BBWPlot,
+  PVO: PVOPlot,
+  OBV: OBVPlot,
+  VOL: VOLPlot,
+  STDDEV: STDDEVPlot,
+  AD: ADXPlot,
+  TRIX: TRIXPlot,
+  VP: VPPlot,
+  CMF: CMFPlot,
+  HV: HVPlot,
+  CKS: CKSPlot,
+  BBW: BBWPlot,
   STOCH: STOCHRSIPlot,
   STDDEV: STDDEVPlot,
-  KVO: KVOPlot
+  KVO: KVOPlot,
 };
 
 export const indicatorInputs = {
-  MACD:MACDInput,
-  NVI:NVIInput,
+  VWAP: VWAPInput,
+  MACD: MACDInput,
+  NVI: NVIInput,
   RSI: RSIInput,
   SMA: SMAInput,
   ICHIMOKU: IchimokuCloudInput,
@@ -175,20 +178,19 @@ export const indicatorInputs = {
   STOCHRSI: STOCHRSIInput,
   CMO: CMOInput,
   TRIX: TRIXInput,
-  FT:FTInput,
-  ZIGZAG: ZIGZAGInput,  
-  PVO:PVOInput,
- OBV:OBVInput,
- VOL:VOLInput,
- STDDEV:STDDEVInput,
- AD:ADXInput,
- VP:VPInput,
- CMF:CMFInput,
- HV:HVInput,
- CKS:CKSInput,
- BBW:BBWInput,
- KVO: KVOInput
-  
+  FT: FTInput,
+  ZIGZAG: ZIGZAGInput,
+  PVO: PVOInput,
+  OBV: OBVInput,
+  VOL: VOLInput,
+  STDDEV: STDDEVInput,
+  AD: ADInput,
+  VP: VPInput,
+  CMF: CMFInput,
+  HV: HVInput,
+  CKS: CKSInput,
+  BBW: BBWInput,
+  KVO: KVOInput,
 };
 
 export function updateIndicatorFromInput(

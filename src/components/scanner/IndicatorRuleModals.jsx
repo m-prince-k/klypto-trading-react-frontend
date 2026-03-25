@@ -96,81 +96,79 @@ function SaveScanContent({ onSubmit, onClose, categories = [], rules = [] }) {
   });
 
   const updateField = (key, value) => {
-  setForm((prev) => ({
-    ...prev,
-    [key]: value,
-  }));
-};
-
-const validatingForm = () => {
-  const errors = {};
-
-  const name = form?.name?.trim?.();   // ⭐ SAFE chaining
-
-  if (!name) {
-    errors.name = "Name is required";
-  } else if (name.length < 3) {
-    errors.name = "Name must be more than 3 characters";
-  }
-
-  if (!form?.category?.key) {          // ⭐ SAFE object check
-    errors.category = "Please select a scan category";
-  }
-
-  setErrors(errors);
-
-  return Object.keys(errors).length === 0;
-};
-
-const handleSubmit = async (e) => {
-  e?.stopPropagation?.();
-  e?.preventDefault?.();
-
-  const isValid = validatingForm();
-  if (!isValid) return;
-
-  if (!rules?.length) {
-    toast?.error?.("No scan condition found ❌");
-    return;
-  }
-
-  try {
-    const condition = await rules?.map(rule => ({
-    indicator: rule?.indicator,
-    operator: rule?.operator,
-    value: rule?.value,
-  }));
-
-  const payload = {
-    name: form?.name?.trim?.(),
-    description: form?.description?.trim?.(),
-
-    condition,   // ⭐ ALL RULES HERE
-
-        key: form?.category?.key,      // ⭐ FROM SELECTED CATEGORY
-    label: form?.category?.label, 
+    setForm((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
   };
 
-  setscannerPayload?.(payload);
+  const validatingForm = () => {
+    const errors = {};
 
-  console.log("SETTING PAYLOAD:", payload);
-    const response = await apiService?.post?.(
-      "api/addCustomIndicator",
-      payload
-    );
+    const name = form?.name?.trim?.(); // ⭐ SAFE chaining
 
-    console.log("API RESPONSE:", response);
-    toast?.success?.("Scanner saved successfully ✅");
-    onClose();
-  } catch (error) {
-    console.error("SAVE FAILED:", error);
+    if (!name) {
+      errors.name = "Name is required";
+    } else if (name.length < 3) {
+      errors.name = "Name must be more than 3 characters";
+    }
 
-    toast?.error?.(
-      error?.response?.data?.message ??
-      "Failed to save scanner ❌"
-    );
-  }
-};
+    if (!form?.category?.key) {
+      // ⭐ SAFE object check
+      errors.category = "Please select a scan category";
+    }
+
+    setErrors(errors);
+
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e?.stopPropagation?.();
+    e?.preventDefault?.();
+
+    const isValid = validatingForm();
+    if (!isValid) return;
+
+    if (!rules?.length) {
+      toast?.error?.("No scan condition found ❌");
+      return;
+    }
+
+    try {
+      const condition = await rules?.map((rule) => ({
+        indicator: rule?.indicator,
+        operator: rule?.operator,
+        value: rule?.value,
+      }));
+
+      const payload = {
+        label: form?.name?.trim?.(),
+        description: form?.description?.trim?.(),
+        condition, // ⭐ ALL RULES HERE
+        categoryKey: form?.category?.key, // ⭐ FROM SELECTED CATEGORY
+        categoryLabel: form?.category?.label,
+      };
+
+      setscannerPayload?.(payload);
+
+      console.log("SETTING PAYLOAD:", payload);
+      const response = await apiService?.post?.(
+        "api/addCustomIndicator",
+        payload,
+      );
+
+      console.log("API RESPONSE:", response);
+      toast?.success?.("Scanner saved successfully ✅");
+      onClose();
+    } catch (error) {
+      console.error("SAVE FAILED:", error);
+
+      toast?.error?.(
+        error?.response?.data?.message ?? "Failed to save scanner ❌",
+      );
+    }
+  };
 
   return (
     <div className=" bg-white rounded-2xl text-left ">
@@ -242,25 +240,25 @@ const handleSubmit = async (e) => {
             </label>
 
             <select
-  value={form.category?.key || ""}
-  onChange={(e) => {
-    const selectedKey = e.target.value;
+              value={form.category?.key || ""}
+              onChange={(e) => {
+                const selectedKey = e.target.value;
 
-    const selectedCategory = scanCategories.find(
-      (cat) => cat.key === selectedKey
-    );
+                const selectedCategory = scanCategories.find(
+                  (cat) => cat.key === selectedKey,
+                );
 
-    updateField("category", selectedCategory);
-  }}
->
-  <option value="">Select a scan category</option>
+                updateField("category", selectedCategory);
+              }}
+            >
+              <option value="">Select a scan category</option>
 
-  {scanCategories.map((cat) => (
-    <option key={cat.id} value={cat.key}>
-      {cat.label}
-    </option>
-  ))}
-</select>
+              {scanCategories.map((cat) => (
+                <option key={cat.id} value={cat.key}>
+                  {cat.label}
+                </option>
+              ))}
+            </select>
 
             {errors.category && (
               <p className="text-xs text-red-500 mt-1">{errors.category}</p>
