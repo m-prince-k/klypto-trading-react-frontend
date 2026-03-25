@@ -1,377 +1,102 @@
-import React, { useState } from "react";
-import { Copy, Trash2, Ban, Files } from "lucide-react";
+import React, { useEffect, useRef } from "react";
+import { createChart } from "lightweight-charts";
 
-export default function FilterActions() {
-  const [filters, setFilters] = useState([
-    { id: 1, name: "Price > 100", disabled: false },
-    { id: 2, name: "Volume > 1M", disabled: false }
-  ]);
+export default function CandlestickMACDChart() {
+  const chartContainerRef = useRef();
 
-  // COPY FILTER
-  const copyToClipboard = (filter) => {
-    navigator.clipboard.writeText(filter.name);
-    alert("Copied: " + filter.name);
-  };
+  useEffect(() => {
+    // ---------------- Dummy Candlestick Data ----------------
+    const candles = [
+      { time: 1, open: 100, high: 105, low: 95, close: 102 },
+      { time: 2, open: 102, high: 108, low: 101, close: 106 },
+      { time: 3, open: 106, high: 110, low: 104, close: 107 },
+      { time: 4, open: 107, high: 109, low: 103, close: 105 },
+      { time: 5, open: 105, high: 107, low: 100, close: 101 },
+      { time: 6, open: 101, high: 104, low: 98, close: 100 },
+      { time: 7, open: 100, high: 103, low: 95, close: 97 },
+      { time: 8, open: 97, high: 100, low: 93, close: 99 },
+      { time: 9, open: 99, high: 102, low: 96, close: 101 },
+      { time: 10, open: 101, high: 106, low: 100, close: 104 },
+      { time: 11, open: 104, high: 108, low: 103, close: 107 },
+      { time: 12, open: 107, high: 111, low: 105, close: 110 },
+      { time: 13, open: 110, high: 112, low: 107, close: 108 },
+      { time: 14, open: 108, high: 109, low: 104, close: 105 },
+      { time: 15, open: 105, high: 106, low: 101, close: 103 },
+    ];
 
-  // DUPLICATE FILTER
-  const duplicateFilter = (filter) => {
-    const newFilter = {
-      ...filter,
-      id: Date.now(),
-      name: filter.name + " (copy)"
+    // ---------------- EMA Helper ----------------
+    const EMA = (values, period) => {
+      const k = 2 / (period + 1);
+      let emaArr = [];
+      values.forEach((price, i) => {
+        if (i === 0) emaArr.push(price);
+        else emaArr.push(price * k + emaArr[i - 1] * (1 - k));
+      });
+      return emaArr;
     };
-    setFilters((prev) => [...prev, newFilter]);
-  };
 
-  // DISABLE FILTER
-  const toggleDisable = (id) => {
-    setFilters((prev) =>
-      prev.map((f) =>
-        f.id === id ? { ...f, disabled: !f.disabled } : f
-      )
-    );
-  };
+    // ---------------- MACD Calculation ----------------
+    const closes = candles.map(c => c.close);
+    const ema12 = EMA(closes, 12);
+    const ema26 = EMA(closes, 26);
+    const macdLine = ema12.map((v, i) => v - ema26[i]);
+    const signalLine = EMA(macdLine.slice(25), 9);
+    const histogram = macdLine.slice(25).map((macd, i) => macd - signalLine[i]);
 
-  // DELETE FILTER
-  const deleteFilter = (id) => {
-    setFilters((prev) => prev.filter((f) => f.id !== id));
-  };
+    // ---------------- Histogram Colors ----------------
+    const colors = histogram.map((val, i, arr) => {
+      if (i === 0) return val >= 0 ? "#00b300" : "#ff0000";
+      const prev = arr[i - 1];
+
+      if (val >= 0 && val >= prev) return "#00b300";       // Bullish Increasing
+      if (val >= 0 && val < prev) return "#99ff99";       // Bullish Decreasing
+      if (val < 0 && val <= prev) return "#ff0000";       // Bearish Increasing
+      if (val < 0 && val > prev) return "#ff99cc";        // Bearish Decreasing
+      return "#888888";
+    });
+
+    // ---------------- Create Chart ----------------
+    const chart = createChart(chartContainerRef.current, {
+      width: 900,
+      height: 500,
+      layout: { backgroundColor: "#ffffff", textColor: "#000" },
+      rightPriceScale: { borderColor: "#cccccc" },
+      timeScale: { borderColor: "#cccccc" },
+    });
+
+    // ---------------- Candlestick Series ----------------
+    const candleSeries = chart.addCandlestickSeries();
+    candleSeries.setData(candles.map(c => ({
+      time: c.time,
+      open: c.open,
+      high: c.high,
+      low: c.low,
+      close: c.close,
+    })));
+
+    // ---------------- MACD Histogram Series (Separate Pane) ----------------
+    const histSeries = chart.addHistogramSeries({
+      color: "#26a69a",
+      scaleMargins: { top: 0.85, bottom: 0 },  // histogram pane below
+      priceFormat: { type: 'volume' },
+      priceScaleId: '', // separate Y-axis
+    });
+    histSeries.setData(histogram.map((value, index) => ({
+      time: candles.slice(25)[index].time,
+      value: value,
+      color: colors[index],
+    })));
+
+    // Cleanup chart on unmount
+    return () => chart.remove();
+  }, []);
 
   return (
-    <div className="p-4 max-w-xl mx-auto">
-      <h2 className="text-xl font-bold mb-4">Scanner Filters</h2>
-
-      {filters.map((filter) => (
-        <div
-          key={filter.id}
-          className={`flex items-center justify-between p-3 mb-2 rounded-xl shadow ${
-            filter.disabled ? "opacity-50 bg-gray-100" : "bg-white"
-          }`}
-        >
-          <span>{filter.name}</span>
-
-          <div className="flex gap-3">
-            {/* COPY */}
-            <button
-              onClick={() => copyToClipboard(filter)}
-              className="hover:text-blue-500"
-            >
-              <Copy size={18} />
-            </button>
-
-            {/* DUPLICATE */}
-            <button
-              onClick={() => duplicateFilter(filter)}
-              className="hover:text-green-500"
-            >
-              <Files size={18} />
-            </button>
-
-
-            
-
-            {/* DISABLE */}
-            <button
-              onClick={() => toggleDisable(filter.id)}
-              className="hover:text-yellow-500"
-            >
-              <Ban size={18} />
-            </button>
-
-            {/* DELETE */}
-            <button
-              onClick={() => deleteFilter(filter.id)}
-              className="hover:text-red-500"
-            >
-              <Trash2 size={18} />
-            </button>
-          </div>
-        </div>
-      ))}
+    <div>
+      <h2 style={{ textAlign: "center" }}>
+        Candlestick + MACD Histogram (4 Colors)
+      </h2>
+      <div ref={chartContainerRef} />
     </div>
   );
 }
-
-
-
-
-
-// import React, { useEffect, useRef, useState } from "react";
-// import {
-//   createChart,
-//   CandlestickSeries,
-//   LineSeries,
-// } from "lightweight-charts";
-
-// function hexToRGBA(hex, alpha = 1) {
-//   const r = parseInt(hex.slice(1, 3), 16);
-//   const g = parseInt(hex.slice(3, 5), 16);
-//   const b = parseInt(hex.slice(5, 7), 16);
-//   return `rgba(${r},${g},${b},${alpha})`;
-// }
-
-// // Dummy candles
-// const dummyCandles = Array.from({ length: 100 }, (_, i) => {
-//   const open = 100 + Math.random() * 10;
-//   const close = open + (Math.random() - 0.5) * 5;
-//   const high = Math.max(open, close) + Math.random() * 2;
-//   const low = Math.min(open, close) - Math.random() * 2;
-//   const volume = 100 + Math.random() * 50;
-//   return { time: i, open, high, low, close, volume };
-// });
-
-// // VWAP LOGIC (same)
-// function calculateVWAP(candles, settings) {
-//   let cumulativePV = 0;
-//   let cumulativeVolume = 0;
-
-//   let prices = [];
-
-//   const vwapData = [];
-//   const upperBands = settings.bandMultipliers.map(() => []);
-//   const lowerBands = settings.bandMultipliers.map(() => []);
-
-//   candles.forEach((candle, i) => {
-//     const { open, high, low, close, volume } = candle;
-
-//     let price;
-//     switch (settings.source) {
-//       case "hl2": price = (high + low) / 2; break;
-//       case "close": price = close; break;
-//       case "open": price = open; break;
-//       case "high": price = high; break;
-//       case "low": price = low; break;
-//       case "volume": price = volume; break;
-//       default: price = (high + low + close) / 3;
-//     }
-
-//     cumulativePV += price * volume;
-//     cumulativeVolume += volume;
-
-//     const vwap = cumulativePV / cumulativeVolume;
-//     prices.push(price);
-
-//     let stdDev = 0;
-//     if (settings.bandMode === "std") {
-//       const mean = vwap;
-//       let variance = 0;
-//       for (let j = 0; j < prices.length; j++) {
-//         variance += Math.pow(prices[j] - mean, 2);
-//       }
-//       variance /= prices.length;
-//       stdDev = Math.sqrt(variance);
-//     }
-
-//     vwapData.push({ time: i + settings.offset, value: vwap });
-
-//     settings.bandMultipliers.forEach((mult, idx) => {
-//       let upper, lower;
-
-//       if (settings.bandMode === "percentage") {
-//         const percent = (vwap * mult) / 100;
-//         upper = vwap + percent;
-//         lower = vwap - percent;
-//       } else {
-//         upper = vwap + stdDev * mult;
-//         lower = vwap - stdDev * mult;
-//       }
-
-//       upperBands[idx].push({ time: i + settings.offset, value: upper });
-//       lowerBands[idx].push({ time: i + settings.offset, value: lower });
-//     });
-//   });
-
-//   return { vwapData, upperBands, lowerBands };
-// }
-
-// export default function DynamicVWAPChart() {
-//   const chartRef = useRef();
-
-//   const [settings, setSettings] = useState({
-//     source: "hlc3",
-//     bandMode: "std",
-//     offset: 0,
-//     bandMultipliers: [1, 2, 3],
-//     vwapColor: "#2962FF",
-//     bandColor: "#00C853",
-//     lineWidth: 2,
-//   });
-
-//   useEffect(() => {
-//     const chart = createChart(chartRef.current, {
-//       width: 900,
-//       height: 450,
-//       layout: { backgroundColor: "#fff", textColor: "#000" },
-//     });
-
-//     const candleSeries = chart.addSeries(CandlestickSeries);
-//     candleSeries.setData(dummyCandles);
-
-//     const { vwapData, upperBands, lowerBands } = calculateVWAP(
-//       dummyCandles,
-//       settings
-//     );
-
-//     // VWAP
-//     const vwapSeries = chart.addSeries(LineSeries, {
-//       color: settings.vwapColor,
-//       lineWidth: settings.lineWidth,
-//     });
-//     vwapSeries.setData(vwapData);
-
-//     // Bands
-//     settings.bandMultipliers.forEach((_, i) => {
-//       const upper = chart.addSeries(LineSeries, {
-//         color: settings.bandColor,
-//         lineWidth: 1,
-//       });
-
-//       const lower = chart.addSeries(LineSeries, {
-//         color: settings.bandColor,
-//         lineWidth: 1,
-//       });
-
-//       upper.setData(upperBands[i]);
-//       lower.setData(lowerBands[i]);
-//     });
-
-//     chartRef.current.style.position = "relative";
-//     // ✅ REAL CLOUD (MAIN FIX)
-//     const canvas = document.createElement("canvas");
-//     canvas.style.position = "absolute";
-//     canvas.style.top = "0";
-//     canvas.style.zIndex = "10";
-//     canvas.style.left = "0";
-//     canvas.style.pointerEvents = "none";
-//     chartRef.current.appendChild(canvas);
-
-//     const ctx = canvas.getContext("2d");
-
-//     function resizeCanvas() {
-//       canvas.width = chartRef.current.clientWidth;
-//       canvas.height = chartRef.current.clientHeight;
-//     }
-//     resizeCanvas();
-
-//     function drawCloud() {
-//       const timeScale = chart.timeScale();
-//       const refSeries = vwapSeries; // ✅ important
-
-//       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-//       settings.bandMultipliers.forEach((_, i) => {
-//         const upperData = upperBands[i];
-//         const lowerData = lowerBands[i];
-
-//         ctx.beginPath();
-
-//         upperData.forEach((point, idx) => {
-//           const x = timeScale.timeToCoordinate(point.time);
-//           const y = refSeries.priceToCoordinate(point.value);
-
-//           if (x === null || y === null) return;
-
-//           if (idx === 0) ctx.moveTo(x, y);
-//           else ctx.lineTo(x, y);
-//         });
-
-//         for (let j = lowerData.length - 1; j >= 0; j--) {
-//           const point = lowerData[j];
-//           const x = timeScale.timeToCoordinate(point.time);
-//           const y = refSeries.priceToCoordinate(point.value);
-
-//           if (x === null || y === null) continue;
-
-//           ctx.lineTo(x, y);
-//         }
-
-//         ctx.closePath();
-//         ctx.fillStyle = hexToRGBA(settings.bandColor, 0.08 + i * 0.03);
-//         ctx.fill();
-//       });
-//     }
-
-//     chart.timeScale().subscribeVisibleTimeRangeChange(drawCloud);
-//     chart.subscribeCrosshairMove(drawCloud);
-
-//     setTimeout(drawCloud, 0);
-
-//     const resizeObserver = new ResizeObserver(() => {
-//       resizeCanvas();
-//       drawCloud();
-//     });
-//     resizeObserver.observe(chartRef.current);
-
-//     return () => chart.remove();
-//   }, [settings]);
-
-//   return (
-//     <div>
-//       <div style={{ marginBottom: 10 }}>
-//         <select
-//           value={settings.bandMode}
-//           onChange={(e) =>
-//             setSettings({ ...settings, bandMode: e.target.value })
-//           }
-//         >
-//           <option value="std">STD</option>
-//           <option value="percentage">%</option>
-//         </select>
-
-//         <select
-//           value={settings.source}
-//           onChange={(e) =>
-//             setSettings({ ...settings, source: e.target.value })
-//           }
-//         >
-//           <option value="hlc3">hlc3</option>
-//           <option value="hl2">hl2</option>
-//           <option value="close">close</option>
-//           <option value="open">open</option>
-//         </select>
-
-//         <input
-//           type="number"
-//           value={settings.offset}
-//           onChange={(e) =>
-//             setSettings({
-//               ...settings,
-//               offset: parseInt(e.target.value) || 0,
-//             })
-//           }
-//         />
-
-//         <input
-//           type="color"
-//           value={settings.vwapColor}
-//           onChange={(e) =>
-//             setSettings({ ...settings, vwapColor: e.target.value })
-//           }
-//         />
-
-//         <input
-//           type="color"
-//           value={settings.bandColor}
-//           onChange={(e) =>
-//             setSettings({ ...settings, bandColor: e.target.value })
-//           }
-//         />
-
-//         {settings.bandMultipliers.map((val, i) => (
-//           <input
-//             key={i}
-//             type="number"
-//             value={val}
-//             onChange={(e) => {
-//               const arr = [...settings.bandMultipliers];
-//               arr[i] = Number(e.target.value);
-//               setSettings({ ...settings, bandMultipliers: arr });
-//             }}
-//           />
-//         ))}
-//       </div>
-
-//       <div ref={chartRef} style={{ position: "relative" }}></div>
-//     </div>
-//   );
-// }
