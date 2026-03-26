@@ -220,7 +220,6 @@ export default function useChartFunctions({
               bbUpper: bbUpper[bbUpper.length - 1]?.value,
               bbLower: bbLower[bbLower.length - 1]?.value,
             };
-
             break;
           }
 
@@ -562,6 +561,24 @@ export default function useChartFunctions({
 
             break;
           }
+          case "DC": {
+            const upperData = result?.data?.upper ?? [];
+            const lowerData = result?.data?.lower ?? [];
+            const basisData = result?.data?.basis ?? [];
+
+            indicatorSeriesRef.current.DC = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.DC = {
+              upper: upperData[upperData.length - 1]?.value ?? null,
+              lower: lowerData[lowerData.length - 1]?.value ?? null,
+              basis: basisData[basisData.length - 1]?.value ?? null,
+            };
+
+            break;
+          }
 
           case "PVO": {
             const pvoData = result?.data?.pvo ?? [];
@@ -776,7 +793,7 @@ export default function useChartFunctions({
               rows,
             };
 
-            console.log(result, "ressssss")
+            console.log(result, "ressssss");
             latestIndicatorValuesRef.current.CHOP = {
               chop: chopData[chopData.length - 1]?.value ?? null,
             };
@@ -848,6 +865,30 @@ export default function useChartFunctions({
 
             break;
           }
+          case "AWO": {
+            const rows = result?.data?.series ?? [];
+
+            const awoData = rows
+              .filter((d) => d.ao != null && d.time != null)
+              .map((d) => ({
+                time: Number(d.time),
+                value: Number(d.ao),
+                color: d.color, // optional if backend provides it
+                changeToGreen: d.changeToGreen,
+                changeToRed: d.changeToRed,
+              }));
+
+            indicatorSeriesRef.current.AWO = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.AWO = {
+              awo: awoData.length ? awoData[awoData.length - 1].value : null,
+            };
+
+            break;
+          }
 
           /* ================= DEFAULT ================= */
 
@@ -890,7 +931,7 @@ async function fetchDataForIndicators(
     console.log("Raw indicator data for", normalizedType, ":", response);
 
     // store last request key
-    indicatorMetaRef.current[normalizedType] = key;
+    // indicatorMetaRef.current[normalizedType] = key;
 
     const mapLine = (arr, field) =>
       arr
@@ -1969,6 +2010,18 @@ async function fetchDataForIndicators(
                   value: Number(d.middle),
                 }))) ?? [],
           },
+        };
+
+      case "AWO":
+        return {
+          type: "single", 
+          data:
+            response?.data
+              ?.filter((d) => d.ao != null && d.time != null)
+              .map((d) => ({
+                time: Number(d.time),
+                value: Number(d.ao),
+              })) ?? [],
         };
 
       default:

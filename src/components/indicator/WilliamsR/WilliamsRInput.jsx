@@ -3,28 +3,32 @@ export default function WilliamsRInput(
   indicatorSeriesRef,
   latestIndicatorValuesRef
 ) {
+  const rows = Array.isArray(response?.data?.series)
+    ? response.data.series
+    : [];
 
-  const rows = response?.data?.candles ?? [];
-
-  
+  // Process %R data
   const rData = rows
-    .filter((d) => d.percentR != null && d.time != null)
+    .filter((d) => d.williamPercentR != null && d.time != null)
     .map((d) => ({
       time: Number(d.time),
-      value: Number(d.percentR),
+      value: Number(d.williamPercentR),
     }))
     .sort((a, b) => a.time - b.time);
 
-  const series = indicatorSeriesRef.current?.["WPR"];
-  if (!series) return;
+  // Update series data in indicatorSeriesRef without removing the series
+  if (!indicatorSeriesRef.current.WPR) {
+    indicatorSeriesRef.current.WPR = {};
+  }
+  indicatorSeriesRef.current.WPR.rData = rData;
 
-  series.r?.setData(rData);
+  // Update result structure (used by plotting)
+  indicatorSeriesRef.current.WPR.result = { data: { r: rData } };
 
-  latestIndicatorValuesRef.current["WPR"] = {
-    r: rData[rData.length - 1]?.value,
+  // Update latest value
+  latestIndicatorValuesRef.current.WPR = {
+    r: rData.length ? rData[rData.length - 1].value : null,
   };
 
-  indicatorSeriesRef.current["WPR"].result = {
-    data: { r: rData },
-  };
+  return rData;
 }

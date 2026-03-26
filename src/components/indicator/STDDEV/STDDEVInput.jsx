@@ -1,11 +1,11 @@
-export default function ADInput(
+export default function STDDEVInput(
   response,
   indicatorSeriesRef,
   latestIndicatorValuesRef
 ) {
   const rows = Array.isArray(response?.data) ? response.data : [];
 
-  const adData = rows
+  const STDDEVData = rows
     .filter((d) => d.value != null && d.time != null)
     .map((d) => ({
       time: Number(d.time),
@@ -13,19 +13,19 @@ export default function ADInput(
     }))
     .sort((a, b) => a.time - b.time);
 
-  const series = indicatorSeriesRef.current?.AD;
+  const series = indicatorSeriesRef.current?.STDDEV;
   if (!series) return;
 
   /* 🔥 UPDATE */
-  series.ad?.setData(adData);
+  series.STDDEV?.setData(STDDEVData);
 
   /* 🔥 VALUES */
-  latestIndicatorValuesRef.current.AD = {
-    value: adData.at(-1)?.value,
+  latestIndicatorValuesRef.current.STDDEV = {
+    value: STDDEVData.at(-1)?.value,
   };
 
   /* 🔥 STORE */
-  indicatorSeriesRef.current.AD.result = {
-    data: adData,
+  indicatorSeriesRef.current.STDDEV.result = {
+    data: STDDEVData,
   };
 }

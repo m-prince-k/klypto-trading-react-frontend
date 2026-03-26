@@ -547,6 +547,9 @@ export default function IndicatorPropertyDialog({
       case "AO":
         return <BaseSettings showOffset={false} showSource={false} />;
 
+      case "AD":
+        return <BaseSettings showOffset={false} showSource={false} />;
+
       case "ADX":
         return (
           <>
@@ -672,7 +675,6 @@ export default function IndicatorPropertyDialog({
             <BaseSettings showOffset={false} showSource={false} />
 
             <div className="mb-3">
-
               <label className="form-label">K</label>
               <input
                 type="number"
@@ -709,25 +711,23 @@ export default function IndicatorPropertyDialog({
                 }
               />
             </div>
-            
 
             <div className="mb-3">
-            <label className="form-label"> RSI Source</label>
-            <select
-              className="form-select"
-              value={currentConfig.source}
-              onChange={(e) => updateProperty("source", e.target.value)}
-            >
-              {["Close", "Open", "High", "Low", "HL2", "HLC3", "OHLC4"].map(
-                (opt) => (
-                  <option key={opt} value={opt.toLowerCase()}>
-                    {opt}
-                  </option>
-                ),
-              )}
-            </select>
-          </div> 
-
+              <label className="form-label"> RSI Source</label>
+              <select
+                className="form-select"
+                value={currentConfig.source}
+                onChange={(e) => updateProperty("source", e.target.value)}
+              >
+                {["Close", "Open", "High", "Low", "HL2", "HLC3", "OHLC4"].map(
+                  (opt) => (
+                    <option key={opt} value={opt.toLowerCase()}>
+                      {opt}
+                    </option>
+                  ),
+                )}
+              </select>
+            </div>
           </>
         );
 
@@ -1056,21 +1056,6 @@ export default function IndicatorPropertyDialog({
                   updateProperty("maLength", Number(e.target.value))
                 }
               />
-            </div>
-
-            <div className="form-check mb-3">
-              <input
-                className="form-check-input"
-                type="checkbox"
-                id="colorByPrevious"
-                checked={currentConfig.colorByPrevious}
-                onChange={(e) =>
-                  updateProperty("colorByPrevious", e.target.checked)
-                }
-              />
-              <label className="form-check-label" htmlFor="colorByPrevious">
-                Color Based on Previous Bar
-              </label>
             </div>
           </>
         );

@@ -1,86 +1,157 @@
 import { useEffect } from "react";
 import { LineSeries, HistogramSeries } from "lightweight-charts";
 
-export default function PVOPlot({
-  result,
-  indicatorSeriesRef,
-  addSeries,
-  indicatorStyle,
-}) {
+export default function PVOPlot({ result, indicatorStyle, indicatorSeriesRef, addSeries }) {
 
-  /* ================= CREATE ================= */
-
+  /* ================= CREATE SERIES ================= */
   useEffect(() => {
-    if (!result?.data?.pvo?.length) return;
+    if (!result?.data) return;
 
+    // Remove old series
     if (indicatorSeriesRef.current?.PVO) {
       Object.values(indicatorSeriesRef.current.PVO).forEach((s) => {
-        if (s?.setData) {
-          try { s.setData([]); } catch {}
-        }
+        try { s?.setData?.([]); } catch {}
       });
+      indicatorSeriesRef.current.PVO = null;
     }
 
-    const grouped = {};
+    const groupedSeries = {};
+    let pvoData = [];
+    let histRaw = [];
 
-    /* 🔥 HISTOGRAM */
-    const histSeries = addSeries("PVO", HistogramSeries, {
-      color: "rgba(0,200,83,1)",
-      priceLineVisible: false,
+    Object.entries(result.data).forEach(([lineName, lineData]) => {
+      if (!Array.isArray(lineData)) return;
+      const style = indicatorStyle?.PVO?.[lineName];
+
+      /* ================= HISTOGRAM ================= */
+      if (lineName === "hist") {
+        const series = addSeries("PVO", HistogramSeries, {
+          visible: style?.visible ?? true,
+          priceLineVisible: false,
+          lastValueVisible: true,
+        });
+
+        histRaw = lineData
+          .filter((d) => d?.time != null && d?.value != null)
+          .map((d) => ({ time: d.time, value: Number(d.value) }));
+
+        // ALWAYS use palette from state (user-selected)
+        const palette = indicatorStyle?.PVO?.histogram?.palette;
+        if (!palette) return; // do nothing if palette is missing
+
+        const colored = histRaw.map((d, i, arr) => {
+          const v = d.value;
+          const prev = arr[i - 1]?.value;
+          let color;
+
+          if (v > 0) color = i === 0 || v >= prev ? palette.color0 : palette.color1;
+          else color = i === 0 || v <= prev ? palette.color3 : palette.color2;
+
+          return { ...d, color };
+        });
+
+        series.setData(colored);
+        groupedSeries.hist = series;
+        groupedSeries.histRaw = histRaw;
+      }
+
+      /* ================= PVO + SIGNAL LINES ================= */
+      else {
+        const series = addSeries("PVO", LineSeries, {
+          color: style?.color,
+          lineWidth: style?.width ?? 2,
+          lineStyle: style?.lineStyle ?? 0,
+          visible: style?.visible ?? true,
+          priceLineVisible: false,
+          lastValueVisible: true,
+        });
+
+        const cleanData = lineData
+          .filter((d) => d?.time != null && d?.value != null)
+          .map((d) => ({ time: d.time, value: Number(d.value) }));
+
+        series.setData(cleanData);
+        if (lineName === "pvo") pvoData = cleanData;
+        groupedSeries[lineName] = series;
+      }
     });
 
-    const histData = result.data.hist.map((d) => ({
-      time: d.time,
-      value: d.value,
-      color: d.value >= 0
-        ? "rgba(0,200,83,1)"
-        : "rgba(255,82,82,1)",
-    }));
+    /* ================= ZERO LINE ================= */
+    const zeroStyle = indicatorStyle?.PVO?.zero;
+    const zeroValue = zeroStyle?.value ?? 0;
 
-    histSeries.setData(histData);
-
-    /* 🔥 PVO LINE */
-    const pvoSeries = addSeries("PVO", LineSeries, {
-      color: indicatorStyle?.PVO?.pvo?.color || "rgba(33,150,243,1)",
-      lineWidth: 2,
+    const zeroLine = addSeries("PVO", LineSeries, {
+      color: zeroStyle?.color,
+      lineWidth: zeroStyle?.width ?? 1,
+      lineStyle: zeroStyle?.lineStyle ?? 2,
+      visible: zeroStyle?.visible ?? true,
       priceLineVisible: false,
+      lastValueVisible: false,
     });
 
-    pvoSeries.setData(result.data.pvo);
+    zeroLine.setData(pvoData.map((p) => ({ time: p.time, value: zeroValue })));
+    groupedSeries.zero = zeroLine;
+    groupedSeries.pvoData = pvoData;
 
-    /* 🔥 SIGNAL LINE */
-    const signalSeries = addSeries("PVO", LineSeries, {
-      color: indicatorStyle?.PVO?.signal?.color || "rgba(255,193,7,1)",
-      lineWidth: 2,
-      priceLineVisible: false,
-    });
+    indicatorSeriesRef.current.PVO = groupedSeries;
 
-    signalSeries.setData(result.data.signal);
+  }, [result, indicatorStyle]); // NOTE: added indicatorStyle to dependency
 
-    grouped.hist = histSeries;
-    grouped.pvo = pvoSeries;
-    grouped.signal = signalSeries;
-
-    indicatorSeriesRef.current.PVO = grouped;
-
-  }, [result]);
-
-
-  /* ================= STYLE UPDATE ================= */
-
+  /* ================= STYLE / PALETTE UPDATE ================= */
   useEffect(() => {
     const group = indicatorSeriesRef.current?.PVO;
     if (!group) return;
 
-    group.pvo?.applyOptions({
-      color: indicatorStyle?.PVO?.pvo?.color,
-      lineWidth: indicatorStyle?.PVO?.pvo?.width,
+    const style = indicatorStyle?.PVO;
+    const histRaw = group.histRaw ?? [];
+    const pvoData = group.pvoData ?? [];
+
+    /* ---------- PVO + SIGNAL LINES ---------- */
+    ["pvo", "signal"].forEach((key) => {
+      const s = group[key];
+      if (!s || !style?.[key]) return;
+
+      s.applyOptions({
+        color: style[key].color,
+        lineWidth: style[key].width,
+        lineStyle: style[key].lineStyle,
+        visible: style[key].visible,
+      });
     });
 
-    group.signal?.applyOptions({
-      color: indicatorStyle?.PVO?.signal?.color,
-      lineWidth: indicatorStyle?.PVO?.signal?.width,
+    /* ---------- ZERO LINE ---------- */
+    group.zero?.applyOptions({
+      color: style?.zero?.color,
+      lineWidth: style?.zero?.width,
+      lineStyle: style?.zero?.lineStyle,
+      visible: style?.zero?.visible,
     });
+
+    group.zero?.setData(
+      pvoData.map((p) => ({ time: p.time, value: style?.zero?.value ?? 0 }))
+    );
+
+    /* ---------- HISTOGRAM ---------- */
+    const histSeries = group.hist;
+    if (!histSeries || !histRaw.length) return;
+
+    histSeries.applyOptions({ visible: style?.histogram?.visible ?? true });
+
+    const palette = style?.histogram?.palette;
+    if (!palette) return; // do nothing if palette missing
+
+    const recolored = histRaw.map((d, i, arr) => {
+      const v = d.value;
+      const prev = arr[i - 1]?.value;
+      let color;
+
+      if (v > 0) color = i === 0 || v >= prev ? palette.color0 : palette.color1;
+      else color = i === 0 || v <= prev ? palette.color3 : palette.color2;
+
+      return { ...d, color };
+    });
+
+    histSeries.setData(recolored);
 
   }, [indicatorStyle]);
 

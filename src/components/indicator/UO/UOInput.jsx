@@ -7,18 +7,26 @@ export default function UOInput(
     ? response.data.series
     : [];
 
-  const series = indicatorSeriesRef.current?.UO?.uoLine;
-  if (!series) return;
+  // Process Ultimate Oscillator data
+  const uoData = rows
+    .filter((d) => d.uo != null && d.time != null)
+    .map((d) => ({
+      time: Number(d.time),
+      value: Number(d.uo),
+    }));
 
-  const uoData = rows.map((d) => ({
-    time: Number(d.time),
-    value: Number(d.uo),
-  }));
+  // Store in indicatorSeriesRef for the plotting component
+  if (!indicatorSeriesRef.current.UO) {
+    indicatorSeriesRef.current.UO = {};
+  }
 
-  series.setData([]);
-  series.setData(uoData);
+  indicatorSeriesRef.current.UO.uoData = uoData;
+  indicatorSeriesRef.current.UO.result = { data: { uo: uoData } };
 
+  // Store latest value
   latestIndicatorValuesRef.current.UO = {
-    uo: uoData[uoData.length - 1]?.value ?? null,
+    uo: uoData.length ? uoData[uoData.length - 1].value : null,
   };
+
+  return uoData;
 }

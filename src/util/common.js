@@ -1152,7 +1152,7 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           type: "line",
         },
         {
-          key: "bg",
+          key: "bbFill",
           label: "Background ",
           type: "fill",
         },
@@ -1169,7 +1169,6 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           key: "upper",
           label: "Upper Band",
           type: "line",
-          color: "#ef5350",
           showValue: true,
           value: 61.8,
         },
@@ -1177,7 +1176,6 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           key: "middle",
           label: "Middle Band",
           type: "line",
-          color: "#26a69a",
           showValue: true,
           value: 50,
         },
@@ -1185,7 +1183,6 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           key: "lower",
           label: "Lower Band",
           type: "line",
-          color: "#26a69a",
           showValue: true,
           value: 38.2,
         },
@@ -1207,12 +1204,35 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
         },
       ];
 
+    case "AWO":
+      return [
+        {
+          key: "awoBars",
+          label: "AWO Bars",
+          type: "checkbox",
+          children: [
+            {
+              key: "up",
+              parent: "awoBars",
+              label: "Positive AO",
+              type: "fill",
+            },
+            {
+              key: "down",
+              parent: "awoBars",
+              label: "Negative AO",
+              type: "fill",
+            },
+          ],
+        },
+      ];
+
     case "VOL":
       return [
         {
           key: "volumeBars",
           label: "Volume Bars",
-          type: "checkbox", // Parent checkbox controls visibility
+          type: "checkbox",
           children: [
             {
               key: "up",
@@ -1253,8 +1273,6 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           key: "obv",
           label: "On Balance Volume",
           type: "line",
-          color: "#ff4d4f",
-          width: 2,
         },
       ];
       if (maType !== "none") {
@@ -1262,27 +1280,19 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           key: "smoothingMA",
           label: "OBV MA",
           type: "line",
-          color: "#faad14",
-          width: 2,
         });
       }
-
-      /* 🔥 ADD BOLLINGER BANDS */
       if (maType === "SMA + Bollinger Bands") {
         rows.push(
           {
             key: "bbUpper",
             label: "BB Upper",
             type: "line",
-            color: "#52c41a",
-            width: 1,
           },
           {
             key: "bbLower",
             label: "BB Lower",
             type: "line",
-            color: "#ff7875",
-            width: 1,
           },
           {
             key: "bbFill",
@@ -1297,40 +1307,51 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
 
     case "PVO":
       return [
-        // Histogram (multi-state coloring)
+        // Histogram with multiple color states
         {
           key: "histogram",
           label: "Histogram",
           type: "histogram",
-
-          // 5 color states
-          color0: "#26a69a", // strong positive
-          color1: "#80cbc4", // weak positive
-          color2: "#b0bec5", // near zero
-          color3: "#ff8a80", // weak negative
-          color4: "#ef5350", // strong negative
-
-          visible: true,
+          children: [
+            {
+              key: "color0",
+              parent: "histogram",
+              label: "Positive Rising",
+              type: "fill",
+            },
+            {
+              key: "color1",
+              parent: "histogram",
+              label: "Positive Falling",
+              type: "fill",
+            },
+            {
+              key: "color2",
+              parent: "histogram",
+              label: "Negative Falling",
+              type: "fill",
+            },
+            {
+              key: "color3",
+              parent: "histogram",
+              label: "Negative Rising",
+              type: "fill",
+            },
+          ],
         },
 
         // PVO Line
         {
           key: "pvo",
-          label: "PVO",
+          label: "PVO Line",
           type: "line",
-          color: "#2962ff",
-          width: 2,
-          visible: true,
         },
 
         // Signal Line
         {
           key: "signal",
-          label: "Signal",
+          label: "Signal Line",
           type: "line",
-          color: "#ff6d00",
-          width: 2,
-          visible: true,
         },
 
         // Zero Line
@@ -1338,11 +1359,8 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           key: "zero",
           label: "Zero Line",
           type: "line",
-          value: 0, // fixed level
-          visible: true,
         },
       ];
-
     case "AD":
       return [
         {
@@ -1617,6 +1635,7 @@ export const PANE_INDICATORS = new Set([
   "BBW",
   "CMF",
   "KVO",
+  "AWO"
 ]);
 
 export const RANGE_INTERVAL_MAPPING = {

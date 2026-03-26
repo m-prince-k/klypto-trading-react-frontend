@@ -23,10 +23,21 @@ export default function IndicatorStyle({
     setIndicatorStyle((prev) => {
       const indicator = prev[normalizedType] || {};
 
-      // ---------------- HISTOGRAM / VOLUME PALETTE ----------------
+      // ---------------- HISTOGRAM / VOLUME / AWO PALETTE ----------------
       if (
-        (section === "histogram" && ["pf", "pr", "nf", "nr"].includes(key)) ||
-        (section === "volumeBars" && ["up", "down"].includes(key))
+        (section === "histogram" &&
+          [
+            "pf",
+            "pr",
+            "nf",
+            "nr",
+            "color0",
+            "color1",
+            "color2",
+            "color3",
+          ].includes(key)) ||
+        (section === "volumeBars" && ["up", "down"].includes(key)) ||
+        (section === "awoBars" && ["up", "down"].includes(key)) // <-- add AWO
       ) {
         return {
           ...prev,
@@ -71,12 +82,13 @@ export default function IndicatorStyle({
 
   /* ================= FILL / COLOR PREVIEW ================= */
   const getFillPreview = (row, selectedStyle) => {
-    // HISTOGRAM CHILDREN
+    // HISTOGRAM CHILDREN (MACD + PVO + AWO)
     if (
       (row.parent === "histogram" &&
         selectedStyle?.histogram?.palette?.[row.key]) ||
       (row.parent === "volumeBars" &&
-        selectedStyle?.volumeBars?.palette?.[row.key])
+        selectedStyle?.volumeBars?.palette?.[row.key]) ||
+      (row.parent === "awoBars" && selectedStyle?.awoBars?.palette?.[row.key]) // <-- add AWO
     ) {
       const section = row.parent;
       return selectedStyle?.[section]?.palette?.[row.key] || "#888";
@@ -120,10 +132,10 @@ export default function IndicatorStyle({
           >
             {/* CHECKBOX + LABEL */}
             <Col
-              className="ps-3 pe-1 py-2"
+              className="pe-1 py-2"
               style={{
                 minWidth: 0,
-                paddingLeft: row.children ? 0 : row.parent ? 28 : 0,
+                paddingLeft: row.parent ? "29px" : "5px",
               }}
             >
               {!row.parent ? (
@@ -169,78 +181,88 @@ export default function IndicatorStyle({
               className="px-1 py-2 d-flex justify-content-center align-items-center"
               style={{ width: 50, position: "relative" }}
             >
-              <div
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActivePalette(activePalette === row.key ? null : row.key);
-                }}
-                style={{
-                  width: 34,
-                  height: 34,
-                  border: "1.5px solid #d1d5db",
-                  borderRadius: 7,
-                  cursor: "pointer",
-                  background:
-                    row.type !== "fill"
-                      ? (selectedStyle?.[row.key]?.color ??
-                        row.color ??
-                        "#2962ff")
-                      : getFillPreview(row, selectedStyle),
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.10)",
-                  transition: "box-shadow 0.15s, transform 0.1s",
-                  flexShrink: 0,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow =
-                    "0 2px 8px rgba(0,0,0,0.18)";
-                  e.currentTarget.style.transform = "scale(1.06)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow =
-                    "0 1px 3px rgba(0,0,0,0.10)";
-                  e.currentTarget.style.transform = "scale(1)";
-                }}
-              />
-              {activePalette === row.key && (
-                <div
-                  ref={paletteRef}
-                  style={{
-                    position: "absolute",
-                    top: 42,
-                    left: 0,
-                    zIndex: 9999,
-                    borderRadius: 10,
-                    boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
-                    overflow: "hidden",
-                  }}
-                >
-                  <ColorPalettePanel
-                    mode={row.type !== "fill" ? "line" : row.key}
-                    currentStyle={
-                      row.parent === "histogram"
-                        ? {
-                            color: selectedStyle?.histogram?.palette?.[row.key],
-                          }
-                        : row.parent === "volumeBars"
-                          ? {
-                              color:
-                                selectedStyle?.volumeBars?.palette?.[row.key],
-                            }
-                          : (selectedStyle?.[row.key] ?? row)
-                    }
-                    onChange={(style) => {
-                      if (row.parent === "histogram") {
-                        update("histogram", row.key, style.color);
-                      } else if (row.parent === "volumeBars") {
-                        update("volumeBars", row.key, style.color);
-                      } else {
-                        Object.entries(style).forEach(([k, v]) =>
-                          update(row.key, k, v),
-                        );
-                      }
+              {!row.children && (
+                <>
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActivePalette(
+                        activePalette === row.key ? null : row.key,
+                      );
+                    }}
+                    style={{
+                      width: 34,
+                      height: 34,
+                      border: "1.5px solid #d1d5db",
+                      borderRadius: 7,
+                      cursor: "pointer",
+                      background:
+                        row.type !== "fill"
+                          ? (selectedStyle?.[row.key]?.color ??
+                            row.color ??
+                            "#2962ff")
+                          : getFillPreview(row, selectedStyle),
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.10)",
+                      transition: "box-shadow 0.15s, transform 0.1s",
+                      flexShrink: 0,
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.boxShadow =
+                        "0 2px 8px rgba(0,0,0,0.18)";
+                      e.currentTarget.style.transform = "scale(1.06)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.boxShadow =
+                        "0 1px 3px rgba(0,0,0,0.10)";
+                      e.currentTarget.style.transform = "scale(1)";
                     }}
                   />
-                </div>
+
+                  {activePalette === row.key && (
+                    <div
+                      ref={paletteRef}
+                      style={{
+                        position: "absolute",
+                        top: 42,
+                        left: 0,
+                        zIndex: 9999,
+                        borderRadius: 10,
+                        boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
+                        overflow: "hidden",
+                      }}
+                    >
+                      <ColorPalettePanel
+                        mode={row.type !== "fill" ? "line" : row.key}
+                        currentStyle={
+                          row.parent === "histogram"
+                            ? {
+                                color:
+                                  selectedStyle?.histogram?.palette?.[row.key],
+                              }
+                            : row.parent === "volumeBars"
+                              ? {
+                                  color:
+                                    selectedStyle?.volumeBars?.palette?.[
+                                      row.key
+                                    ],
+                                }
+                              : (selectedStyle?.[row.key] ?? row)
+                        }
+                        onChange={(style) => {
+                          if (row.parent === "histogram") {
+                            update("histogram", row.key, style.color);
+                          } else if (row.parent === "volumeBars") {
+                            update("volumeBars", row.key, style.color);
+                          } else {
+                            Object.entries(style).forEach(([k, v]) =>
+                              update(row.key, k, v),
+                            );
+                          }
+                        }}
+                      />
+                    </div>
+                  )}
+                </>
               )}
             </Col>
 

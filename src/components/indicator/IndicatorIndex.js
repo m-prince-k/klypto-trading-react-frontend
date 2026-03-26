@@ -87,7 +87,11 @@ import CKSInput from "./CKS/CKSInput";
 import CKSPlot from "./CKS/CKSPlot";
 import BBWInput from "./BBW/BBWInput";
 import BBWPlot from "./BBW/BBWPlot";
-import ADInput from "./STDDEV/STDDEVInput";
+import ADInput from "./AD/ADInput"
+import CHOPPlot from "./CHOP/CHOPPlot";
+import ADPlot from "./AD/ADPlot";
+import AWOPlot from "./AwesomeOscillator/AwesomeOscillatorPlot";
+import AWOInput from "./AwesomeOscillator/AwsomeOscillatorInput";
 
 export const indicatorComponents = {
   VWAP: VWAPPlot,
@@ -129,7 +133,7 @@ export const indicatorComponents = {
   OBV: OBVPlot,
   VOL: VOLPlot,
   STDDEV: STDDEVPlot,
-  AD: ADXPlot,
+  AD: ADPlot,
   TRIX: TRIXPlot,
   VP: VPPlot,
   CMF: CMFPlot,
@@ -139,6 +143,8 @@ export const indicatorComponents = {
   STOCH: STOCHRSIPlot,
   STDDEV: STDDEVPlot,
   KVO: KVOPlot,
+  CHOP: CHOPPlot,
+  AWO: AWOPlot,
 };
 
 export const indicatorInputs = {
@@ -184,13 +190,17 @@ export const indicatorInputs = {
   OBV: OBVInput,
   VOL: VOLInput,
   STDDEV: STDDEVInput,
-  AD: ADInput,
   VP: VPInput,
   CMF: CMFInput,
   HV: HVInput,
   CKS: CKSInput,
   BBW: BBWInput,
   KVO: KVOInput,
+
+
+  AD: ADInput,
+
+  AWO: AWOInput,
 };
 
 export function updateIndicatorFromInput(

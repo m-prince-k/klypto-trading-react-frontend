@@ -3,46 +3,46 @@ export default function MACDInput(
   indicatorSeriesRef,
   latestIndicatorValuesRef
 ) {
-  // Ensure rows exist
   const rows = Array.isArray(response?.data) ? response.data : [];
+  if (!rows.length) return;
 
-  // Prepare MACD line data
+  // ---------- MAP DATA ----------
   const macdData = rows
     .filter((d) => d?.macd != null && d?.time != null)
-    .map((d) => ({ time: d.time, value: Number(d.macd) }));
+    .map((d) => ({ time: Number(d.time), value: Number(d.macd) }));
 
-  // Prepare Signal line data
   const signalData = rows
     .filter((d) => d?.signal != null && d?.time != null)
-    .map((d) => ({ time: d.time, value: Number(d.signal) }));
+    .map((d) => ({ time: Number(d.time), value: Number(d.signal) }));
 
-  // Prepare Histogram data
   const histogramData = rows
     .filter((d) => d?.hist != null && d?.time != null)
-    .map((d) => ({ time: d.time, value: Number(d.hist) }));
+    .map((d) => ({ time: Number(d.time), value: Number(d.hist) }));
 
-  // Combine into result object
-  const result = {
-    data: {
-      macd: macdData,
-      signal: signalData,
-      histogram: histogramData,
-    },
-  };
+  // ---------- UPDATE SERIES IF EXISTS ----------
+  const series = indicatorSeriesRef.current?.MACD;
+  if (series) {
+    series.macd?.setData(macdData);
+    series.signal?.setData(signalData);
+    series.histogram?.setData(histogramData);
 
-  // Store latest values for display / inputs
+    // store rawData for style updates (like recoloring histogram)
+    series.rawData = { macd: macdData, signal: signalData, histogram: histogramData };
+
+    // store result for plot
+    series.result = { data: { macd: macdData, signal: signalData, histogram: histogramData } };
+  } else {
+    // If series does not exist yet, store result and rows for MACDPlot
+    indicatorSeriesRef.current.MACD = {
+      result: { data: { macd: macdData, signal: signalData, histogram: histogramData } },
+      rows,
+    };
+  }
+
+  // ---------- UPDATE LATEST VALUES ----------
   latestIndicatorValuesRef.current.MACD = {
     macd: macdData[macdData.length - 1]?.value ?? null,
     signal: signalData[signalData.length - 1]?.value ?? null,
     histogram: histogramData[histogramData.length - 1]?.value ?? null,
   };
-
-  // Store only the data and rows, NOT the series
-  // The plot component (MACDPlot) will handle series creation & updates
-  indicatorSeriesRef.current.MACD = {
-    result,
-    rows,
-  };
-
-  return result;
 }

@@ -1,84 +1,39 @@
 export default function OBVInput(
   response,
   indicatorSeriesRef,
-  latestIndicatorValuesRef,
-  maType
+  latestIndicatorValuesRef
 ) {
-  const rows = Array.isArray(response?.data) ? response.data : [];
+  if (!response?.data?.length) return;
 
-  const mapData = (key) =>
-    rows
-      .filter((d) => d[key] != null && d.time != null)
-      .map((d) => ({
-        time: Number(d.time),
-        value: Number(d[key]),
-      }))
-      .sort((a, b) => a.time - b.time);
+  const obvGroup = indicatorSeriesRef.current?.OBV;
+  if (!obvGroup) return;
 
-  const obvData = mapData("value");
-  const maData = mapData("smoothingMA");
-  const bbUpper = mapData("bbUpper");
-  const bbLower = mapData("bbLower");
+  const obv = response.data
+    .filter((d) => d.obv != null && d.time != null)
+    .map((d) => ({ time: Number(d.time), value: Number(d.obv) }));
 
-  const series = indicatorSeriesRef.current?.OBV;
-  if (!series) return;
+  const smoothingMA = response.data
+    .filter((d) => d.smoothingMA != null && d.time != null)
+    .map((d) => ({ time: Number(d.time), value: Number(d.smoothingMA) }));
 
-  /* ================= OBV ================= */
-  series.obv?.setData(obvData);
+  const bbUpper = response.data
+    .filter((d) => d.bbUpper != null && d.time != null)
+    .map((d) => ({ time: Number(d.time), value: Number(d.bbUpper) }));
 
-  /* ================= MA ================= */
-  if (maType !== "none") {
-    series.smoothingMA?.setData(maData);
-  } else {
-    series.smoothingMA?.setData([]);
-  }
+  const bbLower = response.data
+    .filter((d) => d.bbLower != null && d.time != null)
+    .map((d) => ({ time: Number(d.time), value: Number(d.bbLower) }));
 
-  /* ================= BB ================= */
-  if (maType === "SMA + Bollinger Bands") {
-    series.bbUpper?.setData(bbUpper);
-    series.bbLower?.setData(bbLower);
-
-    /* 🔥 FILL DATA (IMPORTANT) */
-    const fillData = bbUpper.map((u, i) => ({
-      time: u.time,
-      value: u.value,
-      lower: bbLower[i]?.value,
-    }));
-
-    series.bbFill?.setData(fillData);
-
-  } else {
-    series.bbUpper?.setData([]);
-    series.bbLower?.setData([]);
-    series.bbFill?.setData([]);
-  }
-
-  /* ================= VALUES ================= */
+  // update series
+  obvGroup.obv?.setData(obv);
+  obvGroup.smoothingMA?.setData(smoothingMA);
+  obvGroup.bbUpper?.setData(bbUpper);
+  obvGroup.bbLower?.setData(bbLower);
 
   latestIndicatorValuesRef.current.OBV = {
-    obv: obvData.at(-1)?.value,
-    smoothingMA:
-      maType !== "none" ? maData.at(-1)?.value : null,
-    bbUpper:
-      maType === "SMA + Bollinger Bands"
-        ? bbUpper.at(-1)?.value
-        : null,
-    bbLower:
-      maType === "SMA + Bollinger Bands"
-        ? bbLower.at(-1)?.value
-        : null,
-  };
-
-  /* ================= STORE ================= */
-
-  indicatorSeriesRef.current.OBV.result = {
-    data: {
-      obv: obvData,
-      smoothingMA: maType !== "none" ? maData : [],
-      bbUpper:
-        maType === "SMA + Bollinger Bands" ? bbUpper : [],
-      bbLower:
-        maType === "SMA + Bollinger Bands" ? bbLower : [],
-    },
+    obv: obv.at(-1)?.value ?? null,
+    smoothingMA: smoothingMA.at(-1)?.value ?? null,
+    bbUpper: bbUpper.at(-1)?.value ?? null,
+    bbLower: bbLower.at(-1)?.value ?? null,
   };
 }

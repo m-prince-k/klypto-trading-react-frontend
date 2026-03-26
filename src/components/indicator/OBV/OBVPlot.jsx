@@ -1,119 +1,190 @@
-import { useEffect } from "react";
-import { LineSeries, AreaSeries } from "lightweight-charts";
+import { useEffect, useRef } from "react";
+import { LineSeries } from "lightweight-charts";
 
 export default function OBVPlot({
   result,
   rows,
+  indicatorStyle,
   indicatorSeriesRef,
   addSeries,
-  indicatorStyle,
+  chart,
+  containerRef,
+  indicatorConfigs,
 }) {
+  const canvasRef = useRef(null);
 
+  /* ================= CREATE OBV ================= */
   useEffect(() => {
-    if (!result?.data?.obv?.length) return;
+    if (!result) return;
 
-    /* CLEAR OLD */
+    // Clear previous series
     if (indicatorSeriesRef.current?.OBV) {
       Object.values(indicatorSeriesRef.current.OBV).forEach((s) => {
-        try { s?.setData([]); } catch {}
+        if (s?.setData) {
+          try {
+            s.setData([]);
+          } catch {}
+        }
       });
       indicatorSeriesRef.current.OBV = null;
     }
 
-    const grouped = {};
+    const groupedSeries = {};
+    let bbUpperData = [];
+    let bbLowerData = [];
 
-    /* ================= OBV ================= */
-    const obvSeries = addSeries("price", LineSeries, {
-      color: indicatorStyle?.OBV?.obv?.color || "rgba(255,77,79,1)",
-      lineWidth: indicatorStyle?.OBV?.obv?.width || 2,
-    });
+    Object.entries(result?.data || {}).forEach(([lineName, lineData]) => {
+      const rowConfig = rows?.find((r) => r.key === lineName);
+      const styleConfig = indicatorStyle?.OBV?.[lineName];
 
-    obvSeries.setData(result.data.obv);
-    grouped.obv = obvSeries;
-
-    /* ================= MA ================= */
-    if (result.data.smoothingMA?.length) {
-      const maSeries = addSeries("price", LineSeries, {
-        color: indicatorStyle?.OBV?.smoothingMA?.color || "rgba(250,173,20,1)",
-        lineWidth: indicatorStyle?.OBV?.smoothingMA?.width || 2,
+      const series = addSeries("OBV", LineSeries, {
+        color: styleConfig?.color || rowConfig?.color || "#26a69a",
+        lineWidth: styleConfig?.width || 2,
+        lineStyle: styleConfig?.lineStyle,
+        visible: styleConfig?.visible ?? true,
+        priceLineVisible: false,
+        lastValueVisible: true,
       });
 
-      maSeries.setData(result.data.smoothingMA);
-      grouped.smoothingMA = maSeries;
-    }
+      if (!series) return;
 
-    /* ================= BB ================= */
-  /* ================= BB ================= */
-if (result.data.bbUpper?.length && result.data.bbLower?.length) {
+      series.setData(lineData);
 
-  const upperData = result.data.bbUpper;
-  const lowerData = result.data.bbLower;
+      groupedSeries[lineName] = series;
 
-  // ✅ Upper Line
-  const upperSeries = addSeries("price", LineSeries, {
-    color: "rgba(82,196,26,1)",
-    lineWidth: 1,
-  });
+      if (lineName === "bbUpper") bbUpperData = lineData;
+      if (lineName === "bbLower") bbLowerData = lineData;
+    });
 
-  // ✅ Lower Line
-  const lowerSeries = addSeries("price", LineSeries, {
-    color: "rgba(255,120,117,1)",
-    lineWidth: 1,
-  });
+    groupedSeries.bbUpperData = bbUpperData;
+    groupedSeries.bbLowerData = bbLowerData;
 
-  upperSeries.setData(upperData);
-  lowerSeries.setData(lowerData);
+    indicatorSeriesRef.current.OBV = groupedSeries;
 
-  grouped.bbUpper = upperSeries;
-  grouped.bbLower = lowerSeries;
-
-  /* ✅ CORRECT AREA FILL (NO OVERFLOW) */
-  const areaSeries = addSeries("price", AreaSeries, {
-    topColor: "rgba(82,196,26,0.2)",
-    bottomColor: "rgba(82,196,26,0.2)",
-    lineColor: "transparent",
-    baseLineVisible: false,
-  });
-
-  // 🔥 KEY FIX: midpoint use karo (center line)
-  const fillData = upperData.map((u, i) => {
-    const l = lowerData[i];
-    const mid = (u.value + l.value) / 2;
-
-    return {
-      time: u.time,
-      value: mid,
-    };
-  });
-
-  areaSeries.setData(fillData);
-
-  grouped.bbFill = areaSeries;
-}
-
-    indicatorSeriesRef.current.OBV = grouped;
-
+    drawOBVCloud();
   }, [result]);
 
+  /* ================= CANVAS INIT ================= */
+  useEffect(() => {
+    if (!containerRef || canvasRef.current) return;
 
+    const canvas = document.createElement("canvas");
+    canvas.style.position = "absolute";
+    canvas.style.pointerEvents = "none";
+    canvas.style.zIndex = 1;
+    containerRef.appendChild(canvas);
+
+    canvasRef.current = canvas;
+  }, [containerRef]);
+
+  /* ================= DRAW BB CLOUD ================= */
+  const drawOBVCloud = () => {
+    const obvGroup = indicatorSeriesRef.current?.OBV;
+    if (!obvGroup) return;
+
+    const bbUpper = obvGroup.bbUpperData || [];
+    const bbLower = obvGroup.bbLowerData || [];
+
+    if (!bbUpper.length || !bbLower.length) return;
+    if (!canvasRef.current || !chart) return;
+
+    const fill = indicatorStyle?.OBV?.bbFill;
+    const maType = indicatorConfigs?.OBV?.maType ?? "none";
+
+    if (!fill?.visible || maType !== "SMA") return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    const rect = containerRef.getBoundingClientRect();
+
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.beginPath();
+
+    // Draw upper
+    for (let i = 0; i < bbUpper.length; i++) {
+      const p = bbUpper[i];
+      const x = chart.timeScale().timeToCoordinate(p.time);
+      const y = obvGroup.bbUpper.priceToCoordinate(p.value);
+      if (x == null || y == null) continue;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+
+    // Draw lower
+    for (let i = bbLower.length - 1; i >= 0; i--) {
+      const p = bbLower[i];
+      const x = chart.timeScale().timeToCoordinate(p.time);
+      const y = obvGroup.bbLower.priceToCoordinate(p.value);
+      if (x == null || y == null) continue;
+      ctx.lineTo(x, y);
+    }
+
+    ctx.closePath();
+    ctx.fillStyle = fill?.topFillColor1 || "rgba(76,175,80,0.2)";
+    ctx.fill();
+  };
+
+  /* ================= REDRAW ON CHANGES ================= */
+  useEffect(() => {
+    if (!chart) return;
+
+    const redraw = () => drawOBVCloud();
+
+    const unsubscribeTime = chart.timeScale().subscribeVisibleLogicalRangeChange
+      ? chart.timeScale().subscribeVisibleLogicalRangeChange(redraw)
+      : null;
+
+    const unsubscribeCrosshair = chart.subscribeCrosshairMove
+      ? chart.subscribeCrosshairMove(redraw)
+      : null;
+
+    return () => {
+      if (unsubscribeTime) unsubscribeTime();
+      if (unsubscribeCrosshair) unsubscribeCrosshair();
+    };
+  }, [chart, indicatorStyle, indicatorConfigs]);
 
   /* ================= STYLE UPDATE ================= */
-
   useEffect(() => {
-    const g = indicatorSeriesRef.current?.OBV;
-    if (!g) return;
+    const obvGroup = indicatorSeriesRef.current?.OBV;
+    if (!obvGroup) return;
 
-    Object.keys(g).forEach((key) => {
+    Object.entries(obvGroup).forEach(([key, series]) => {
+      if (!series?.applyOptions) return;
+
       const style = indicatorStyle?.OBV?.[key];
+      if (!style) return;
 
-      g[key]?.applyOptions({
-        color: style?.color,
-        lineWidth: style?.width,
-        visible: style?.visible,
+      series.applyOptions({
+        color: style.color,
+        lineWidth: style.width,
+        lineStyle: style.lineStyle,
+        visible: style.visible,
       });
     });
 
-  }, [indicatorStyle]);
+    drawOBVCloud();
+  }, [indicatorStyle, result, indicatorConfigs]);
+
+  /* ================= CLEANUP ================= */
+  useEffect(() => {
+    return () => {
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        canvas.remove();
+      }
+      canvasRef.current = null;
+
+      if (indicatorSeriesRef.current?.OBV) {
+        indicatorSeriesRef.current.OBV = null;
+      }
+    };
+  }, []);
 
   return null;
 }

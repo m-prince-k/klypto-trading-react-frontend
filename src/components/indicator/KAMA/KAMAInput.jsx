@@ -3,38 +3,29 @@ export default function KAMAInput(
   indicatorSeriesRef,
   latestIndicatorValuesRef
 ) {
-
   const rows = Array.isArray(response?.data) ? response.data : [];
 
-  /* ================= KAMA ================= */
+  /* ================= FORMAT DATA ================= */
 
   const kamaData = rows
-    .filter((d) => d.value != null && d.time != null)
+    .filter((d) => d?.kama != null && d?.time != null)
     .map((d) => ({
       time: Number(d.time),
-      value: Number(d.value),
+      value: Number(d.kama),
     }))
     .sort((a, b) => a.time - b.time);
 
   const series = indicatorSeriesRef.current?.KAMA;
 
-  if (!series) return;
+  if (!series?.kama) return;
 
-  /* ================= UPDATE KAMA ================= */
+  /* ================= UPDATE SERIES ================= */
 
-  series.kama?.setData(kamaData);
+  series.kama.setData(kamaData);
 
   /* ================= HOVER VALUE ================= */
 
   latestIndicatorValuesRef.current.KAMA = {
     kama: kamaData[kamaData.length - 1]?.value,
-  };
-
-  /* ================= STORE RESULT ================= */
-
-  indicatorSeriesRef.current.KAMA.result = {
-    data: {
-      kama: kamaData,
-    },
   };
 }

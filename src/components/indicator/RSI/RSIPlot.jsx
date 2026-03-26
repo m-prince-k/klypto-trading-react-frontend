@@ -221,59 +221,56 @@ export default function RSIPlot({
     canvasRef.current = canvas;
   }, [panesContainerRef]);
 
-  /* ================= DRAW BB CLOUD ================= */
 
-  const drawBBCloud = () => {
-    const rsiGroup = indicatorSeriesRef.current?.RSI;
-    if (!rsiGroup) return;
+ /* ================= DRAW BB CLOUD ================= */
 
-    const upperSeries = rsiGroup.bbUpper;
-    const lowerSeries = rsiGroup.bbLower;
+const drawBBCloud = () => {
+  const rsiGroup = indicatorSeriesRef.current?.RSI;
+  if (!rsiGroup) return;
 
-    if (!upperSeries || !lowerSeries) return;
+  const upperData = rsiGroup.bbUpperData || [];
+  const lowerData = rsiGroup.bbLowerData || [];
 
-    const upperData = upperSeries.data() || [];
-    const lowerData = lowerSeries.data() || [];
+  if (!upperData.length || !lowerData.length) return;
+  if (!canvasRef.current || !chart) return;
 
-    if (!upperData.length || !lowerData.length) return;
+  const canvas = canvasRef.current;
+  const ctx = canvas.getContext("2d");
 
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
+  const rect = panesContainerRef.getBoundingClientRect();
+  canvas.width = rect.width;
+  canvas.height = rect.height;
 
-    const chartRect = panesContainerRef.getBoundingClientRect();
-    canvas.width = chartRect.width;
-    canvas.height = chartRect.height;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const fill = indicatorStyle?.RSI?.bbFill;
+  if (!fill?.visible) return;
 
-    const fill = indicatorStyle?.RSI?.bbFill;
-    if (!fill?.visible) return;
+  ctx.beginPath();
 
-    ctx.beginPath();
+  // Upper line
+  for (let i = 0; i < upperData.length; i++) {
+    const p = upperData[i];
+    const x = chart.timeScale().timeToCoordinate(p.time);
+    const y = rsiGroup.bbUpper.priceToCoordinate(p.value);
+    if (x == null || y == null) continue;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
 
-    // Draw upper line
-    upperData.forEach((p, i) => {
-      const x = chart.timeScale().timeToCoordinate(p.time);
-      const y = upperSeries.priceToCoordinate(p.value);
-      if (x == null || y == null) return;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
+  // Lower line in reverse
+  for (let i = lowerData.length - 1; i >= 0; i--) {
+    const p = lowerData[i];
+    const x = chart.timeScale().timeToCoordinate(p.time);
+    const y = rsiGroup.bbLower.priceToCoordinate(p.value);
+    if (x == null || y == null) continue;
+    ctx.lineTo(x, y);
+  }
 
-    // Draw lower line in reverse
-    for (let i = lowerData.length - 1; i >= 0; i--) {
-      const p = lowerData[i];
-      const x = chart.timeScale().timeToCoordinate(p.time);
-      const y = lowerSeries.priceToCoordinate(p.value);
-      if (x == null || y == null) continue;
-      ctx.lineTo(x, y);
-    }
-
-    ctx.closePath();
-
-    ctx.fillStyle = fill?.topFillColor1 || "rgba(38,166,154,0.3)";
-    ctx.fill();
-  };
+  ctx.closePath();
+  ctx.fillStyle = fill?.topFillColor1 || "rgba(38,166,154,0.3)";
+  ctx.fill();
+};
 
   useEffect(() => {
   if (!chart) return;

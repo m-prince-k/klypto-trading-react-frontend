@@ -1,37 +1,55 @@
-export default function DCInput(response, indicatorSeriesRef, latestIndicatorValuesRef) {
+export default function DCInput(
+  response,
+  indicatorSeriesRef,
+  latestIndicatorValuesRef
+) {
+
   const rows = Array.isArray(response?.data) ? response.data : [];
 
-  const dcData = rows
-    .filter(d => d.upper != null && d.basis != null && d.lower != null && d.time != null)
-    .map(d => ({
+  /* ================= FORMAT DATA ================= */
+
+  const upperData = rows
+    .filter((d) => d.upper != null && d.time != null)
+    .map((d) => ({
       time: Number(d.time),
-      upper: Number(d.upper),
-      basis: Number(d.basis),
-      lower: Number(d.lower),
-    }));
+      value: Number(d.upper),
+    }))
+    .sort((a, b) => a.time - b.time);
 
-  const series = indicatorSeriesRef.current?.DC;
-  if (!series) return;
+  const basisData = rows
+    .filter((d) => d.basis != null && d.time != null)
+    .map((d) => ({
+      time: Number(d.time),
+      value: Number(d.basis),
+    }))
+    .sort((a, b) => a.time - b.time);
 
-  const upper = dcData.map(d => ({ time: d.time, value: d.upper }));
-  const basis = dcData.map(d => ({ time: d.time, value: d.basis }));
-  const lower = dcData.map(d => ({ time: d.time, value: d.lower }));
+  const lowerData = rows
+    .filter((d) => d.lower != null && d.time != null)
+    .map((d) => ({
+      time: Number(d.time),
+      value: Number(d.lower),
+    }))
+    .sort((a, b) => a.time - b.time);
 
-  series.upper?.setData(upper);
-  series.basis?.setData(basis);
-  series.lower?.setData(lower);
-
-  /* ⭐ IMPORTANT: update data used by canvas cloud */
-  series._data = {
-    upper,
-    lower,
-  };
+  /* ================= HOVER VALUES ================= */
 
   latestIndicatorValuesRef.current.DC = {
-    upper: dcData[dcData.length - 1]?.upper ?? 0,
-    basis: dcData[dcData.length - 1]?.basis ?? 0,
-    lower: dcData[dcData.length - 1]?.lower ?? 0,
+    upper: upperData[upperData.length - 1]?.value,
+    basis: basisData[basisData.length - 1]?.value,
+    lower: lowerData[lowerData.length - 1]?.value,
   };
 
-  indicatorSeriesRef.current.DC.result = dcData;
+  /* ================= STORE RESULT ================= */
+
+  if (!indicatorSeriesRef.current.DC)
+    indicatorSeriesRef.current.DC = {};
+
+  indicatorSeriesRef.current.DC.result = {
+    data: {
+      upper: upperData,
+      basis: basisData,
+      lower: lowerData,
+    },
+  };
 }

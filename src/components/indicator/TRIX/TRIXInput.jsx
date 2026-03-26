@@ -32,5 +32,4 @@ export default function TRIXInput(
     trix: trixData[trixData.length - 1]?.value ?? null,
   };
 
-  console.log(":white_check_mark: TRIX updated after input change");
 }

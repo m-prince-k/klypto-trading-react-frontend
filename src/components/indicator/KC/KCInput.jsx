@@ -1,10 +1,10 @@
-export default function KCInput(
+export default function DCInput(
   response,
   indicatorSeriesRef,
   latestIndicatorValuesRef
 ) {
 
-  const group = indicatorSeriesRef.current?.KC;
+  const group = indicatorSeriesRef.current?.DC;
   if (!group) return;
 
   const upper =
@@ -23,21 +23,30 @@ export default function KCInput(
         value: Number(d.lower),
       })) ?? [];
 
-  const middle =
+  const basis =
     response?.data
-      ?.filter((d) => d.middle != null && d.time != null)
+      ?.filter((d) => d.basis != null && d.time != null)
       .map((d) => ({
         time: Number(d.time),
-        value: Number(d.middle),
+        value: Number(d.basis),
       })) ?? [];
+
+  /* ================= UPDATE SERIES ================= */
 
   group.upper?.setData(upper);
   group.lower?.setData(lower);
-  group.middle?.setData(middle);
+  group.basis?.setData(basis);
 
-  latestIndicatorValuesRef.current.KC = {
+  /* ================= STORE CLOUD DATA ================= */
+
+  group.upperData = upper;
+  group.lowerData = lower;
+
+  /* ================= CROSSHAIR VALUES ================= */
+
+  latestIndicatorValuesRef.current.DC = {
     upper: upper[upper.length - 1]?.value ?? null,
     lower: lower[lower.length - 1]?.value ?? null,
-    middle: middle[middle.length - 1]?.value ?? null,
+    basis: basis[basis.length - 1]?.value ?? null,
   };
 }

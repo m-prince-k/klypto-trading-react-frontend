@@ -12,96 +12,63 @@ export default function EMAPlot({
   indicatorConfigs,
 }) {
 
-  const seriesRef = useRef({});
   const canvasRef = useRef(null);
 
-  const bandDataRef = useRef({
-    upper: [],
-    lower: [],
-  });
-
-  const maType = indicatorConfigs?.EMA?.maType;
-
-  const clean = (d) =>
-    Array.isArray(d) ? d.filter((x) => x?.time && x?.value != null) : [];
-
-  /* ---------------- CREATE SERIES ---------------- */
+  /* ================= CREATE EMA ================= */
 
   useEffect(() => {
 
-    if (!chart || seriesRef.current.ema) return;
+    if (!result) return;
 
-    const s = {};
+    if (indicatorSeriesRef.current?.EMA) {
+      Object.values(indicatorSeriesRef.current.EMA).forEach((s) => {
+        if (s?.setData) {
+          try { s.setData([]); } catch {}
+        }
+      });
+      indicatorSeriesRef.current.EMA = null;
+    }
 
-    Object.entries(indicatorStyle?.EMA || {}).forEach(([key]) => {
+    const groupedSeries = {};
 
-      if (["bbFill"].includes(key)) return;
+    let upperData = [];
+    let lowerData = [];
 
-      s[key] = addSeries("EMA", LineSeries, indicatorStyle.EMA[key]);
+    Object.entries(result?.data || {}).forEach(([lineName, lineData]) => {
+
+      const rowConfig = rows?.find((r) => r.key === lineName);
+      const styleConfig = indicatorStyle?.EMA?.[lineName];
+
+      const series = addSeries("EMA", LineSeries, {
+        color: styleConfig?.color || rowConfig?.color || "#42a5f5",
+        lineWidth: styleConfig?.width || 2,
+        lineStyle: styleConfig?.lineStyle,
+        visible: styleConfig?.visible ?? true,
+        priceLineVisible: false,
+        lastValueVisible: lineName === "ema" || lineName === "smoothingMA",
+      });
+
+      if (!series) return;
+
+      series.setData(lineData);
+
+      groupedSeries[lineName] = series;
+
+      if (lineName === "bbUpper") upperData = lineData;
+      if (lineName === "bbLower") lowerData = lineData;
 
     });
 
-    seriesRef.current = s;
-    indicatorSeriesRef.current.EMA = s;
+    groupedSeries.bbUpperData = upperData;
+    groupedSeries.bbLowerData = lowerData;
 
-  }, [chart]);
-
-
-
-  /* ---------------- UPDATE DATA ---------------- */
-
-  useEffect(() => {
-
-    if (!result?.data) return;
-
-    const d = result.data;
-
-    const ema = clean(d.ema);
-    const smoothingMA = clean(d.smoothingMA);
-    const upper = clean(d.bbUpper);
-    const lower = clean(d.bbLower);
-
-    bandDataRef.current = { upper, lower };
-
-    seriesRef.current.ema?.setData(ema);
-    seriesRef.current.smoothingMA?.setData(smoothingMA);
-
-    seriesRef.current.bbUpper?.setData(upper);
-    seriesRef.current.bbLower?.setData(lower);
-
-    drawCloud();
+    indicatorSeriesRef.current.EMA = groupedSeries;
 
   }, [result]);
 
 
 
-  /* ---------------- STYLE UPDATE ---------------- */
-
-  useEffect(() => {
-
-    const group = seriesRef.current;
-
-    Object.entries(group).forEach(([key, s]) => {
-
-      const style = indicatorStyle?.EMA?.[key];
-      if (!style) return;
-
-      s.applyOptions({
-        color: style.color,
-        lineWidth: style.width,
-        lineStyle: style.lineStyle,
-        visible: style.visible,
-      });
-
-    });
-
-    drawCloud();
-
-  }, [indicatorStyle]);
-
-
-
-  /* ---------------- CANVAS INIT ---------------- */
+  /* ================= CANVAS INIT ================= */
 
   useEffect(() => {
 
@@ -123,53 +90,18 @@ export default function EMAPlot({
 
 
 
-  /* ---------------- DRAW BAND ---------------- */
-
-  const drawBand = (ctx, upper, lower, color, series) => {
-
-    if (!upper.length || !lower.length) return;
-
-    const len = Math.min(upper.length, lower.length);
-
-    ctx.beginPath();
-    ctx.fillStyle = color;
-
-    for (let i = 0; i < len; i++) {
-
-      const p = upper[i];
-
-      const x = chart.timeScale().timeToCoordinate(p.time);
-      const y = series.priceToCoordinate(p.value);
-
-      if (x == null || y == null) continue;
-
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-
-    for (let i = len - 1; i >= 0; i--) {
-
-      const p = lower[i];
-
-      const x = chart.timeScale().timeToCoordinate(p.time);
-      const y = series.priceToCoordinate(p.value);
-
-      if (x == null || y == null) continue;
-
-      ctx.lineTo(x, y);
-    }
-
-    ctx.closePath();
-    ctx.fill();
-  };
-
-
-
-  /* ---------------- DRAW CLOUD ---------------- */
+  /* ================= DRAW CLOUD ================= */
 
   const drawCloud = () => {
 
-    if (!canvasRef.current || !chart || !containerRef) return;
+    const emaGroup = indicatorSeriesRef.current?.EMA;
+    if (!emaGroup) return;
+
+    const upper = emaGroup.bbUpperData || [];
+    const lower = emaGroup.bbLowerData || [];
+
+    if (!upper.length || !lower.length) return;
+    if (!canvasRef.current || !chart) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
@@ -181,24 +113,56 @@ export default function EMAPlot({
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (maType !== "EMA + Bollinger Bands") return;
+    const maType = indicatorConfigs?.EMA?.maType;
+
+    if (maType !== "SMA + Bollinger Bands") return;
 
     const fill = indicatorStyle?.EMA?.bbFill;
 
     if (!fill?.visible) return;
 
-    drawBand(
-      ctx,
-      bandDataRef.current.upper,
-      bandDataRef.current.lower,
-      fill.topFillColor1 || "rgba(76,175,80,0.2)",
-      seriesRef.current.bbUpper
-    );
+    ctx.beginPath();
+
+    /* upper band */
+
+    for (let i = 0; i < upper.length; i++) {
+
+      const p = upper[i];
+
+      const x = chart.timeScale().timeToCoordinate(p.time);
+      const y = emaGroup.bbUpper.priceToCoordinate(p.value);
+
+      if (x == null || y == null) continue;
+
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+
+    }
+
+    /* lower band reverse */
+
+    for (let i = lower.length - 1; i >= 0; i--) {
+
+      const p = lower[i];
+
+      const x = chart.timeScale().timeToCoordinate(p.time);
+      const y = emaGroup.bbLower.priceToCoordinate(p.value);
+
+      if (x == null || y == null) continue;
+
+      ctx.lineTo(x, y);
+
+    }
+
+    ctx.closePath();
+
+    ctx.fillStyle = fill?.topFillColor1 || "rgba(76,175,80,0.2)";
+    ctx.fill();
   };
 
 
 
-  /* ---------------- REDRAW EVENTS ---------------- */
+  /* ================= REDRAW EVENTS ================= */
 
   useEffect(() => {
 
@@ -212,13 +176,58 @@ export default function EMAPlot({
     drawCloud();
 
     return () => {
-
       chart.timeScale().unsubscribeVisibleTimeRangeChange(redraw);
       chart.unsubscribeCrosshairMove(redraw);
-
     };
 
   }, [chart, indicatorConfigs, indicatorStyle, result]);
+
+
+
+  /* ================= STYLE UPDATE ================= */
+
+  useEffect(() => {
+
+    const emaGroup = indicatorSeriesRef.current?.EMA;
+    if (!emaGroup) return;
+
+    Object.entries(emaGroup).forEach(([key, series]) => {
+
+      if (!series?.applyOptions) return;
+
+      const style = indicatorStyle?.EMA?.[key];
+      if (!style) return;
+
+      series.applyOptions({
+        color: style.color,
+        lineWidth: style.width,
+        lineStyle: style.lineStyle,
+        visible: style.visible,
+      });
+
+    });
+
+    drawCloud();
+
+  }, [indicatorStyle, result]);
+
+  useEffect(() => {
+    return () => {
+      const canvas = canvasRef.current;
+
+      if (canvas) {
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        canvas.remove();
+      }
+
+      canvasRef.current = null;
+
+      if (indicatorSeriesRef.current?.EMA) {
+        indicatorSeriesRef.current.EMA = null;
+      }
+    };
+  }, []);
 
   return null;
 }

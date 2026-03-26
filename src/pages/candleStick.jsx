@@ -299,7 +299,7 @@ export default function Candlestick() {
     },
     OBV: {
       maType: "none",
-      maLlength: 14,
+      maLength: 14,
       bbStdDev: 2,
     },
     KVO: {
@@ -477,27 +477,32 @@ export default function Candlestick() {
     OBV: {
       obv: {
         color: "rgba(156,39,176,1)",
-        width: 2,
+        width: 1,
         lineStyle: 0,
         visible: true,
       },
       smoothingMA: {
         color: "rgba(255,193,7,1)",
-        width: 2,
+        width: 1,
         lineStyle: 0,
         visible: true,
       },
       bbUpper: {
         color: "rgba(0,200,83,1)",
         width: 1,
-        lineStyle: 2,
+        lineStyle: 0,
         visible: true,
       },
       bbLower: {
         color: "rgba(255,82,82,1)",
         width: 1,
-        lineStyle: 2,
+        lineStyle: 0,
         visible: true,
+      },
+      bbFill: {
+        visible: true,
+        topFillColor1: "rgba(76,175,80,0.2)",
+        bottomFillColor1: "rgba(76,175,80,0.05)",
       },
     },
 
@@ -982,12 +987,21 @@ export default function Candlestick() {
         topFillColor2: "rgba(41, 98, 255, 0.08)",
       },
     },
+    AWO: {
+      awoBars: {
+        visible: true,
+        palette: {
+          up: "rgba(38,166,154,0.6)",
+          down: "rgba(239,83,80,0.6)",
+        },
+      },
+    },
     VOL: {
       volumeBars: {
         visible: true,
         palette: {
-          up: "rgba(38,166,154,0.6)", // Growing volume
-          down: "rgba(239,83,80,0.6)", // Falling volume
+          up: "rgba(38,166,154,0.6)",
+          down: "rgba(239,83,80,0.6)",
         },
       },
       volumeMA: {
@@ -1019,38 +1033,38 @@ export default function Candlestick() {
     PVO: {
       histogram: {
         visible: true,
-        color0: "rgba(0, 150, 136, 1)", // dark green
-        color1: "rgba(178, 223, 219, 1)", // light green
-        color2: "rgba(255, 205, 210, 1)", // light red
-        color3: "rgba(244, 67, 54, 1)", // dark red
+        palette: {
+          color0: "rgba(0, 150, 136, 1)",
+          color1: "rgba(178, 223, 219, 1)",
+          color2: "rgba(244, 67, 54, 1)",
+          color3: "rgba(239, 83, 80, 1)",
+        },
       },
 
       pvo: {
         visible: true,
-        color: "rgba(33, 150, 243, 1)", // blue
+        color: "rgba(33, 150, 243, 1)",
+        width: 1,
         lineStyle: 0,
-        lineWidth: 2,
       },
-
       signal: {
         visible: true,
-        color: "rgba(255, 152, 0, 1)", // orange
+        color: "rgba(255, 152, 0, 1)",
+        width: 1,
         lineStyle: 0,
-        lineWidth: 2,
       },
-
       zero: {
         visible: true,
         value: 0,
         color: "rgba(120, 120, 120, 0.6)",
+        width: 1,
         lineStyle: 2,
-        lineWidth: 1,
       },
     },
     AD: {
       ad: {
         color: "rgba(156,39,176,1)",
-        width: 2,
+        width: 1,
         lineStyle: 0,
         visible: true,
       },
@@ -1074,10 +1088,10 @@ export default function Candlestick() {
         width: 1,
         lineStyle: 0, // solid
       },
-      bg: {
+      bbFill: {
         visible: true,
-        topFillColor1: "rgba(38,166,154,0.1)", // color under bullish trend
-        topFillColor2: "rgba(239,83,80,0.1)", // color under bearish trend
+        topFillColor1: "rgba(76,175,80,0.2)",
+        bottomFillColor1: "rgba(76,175,80,0.05)",
       },
     },
     KC: {
@@ -1546,6 +1560,8 @@ export default function Candlestick() {
         return "BBW";
       case "KVO":
         return "KVO";
+      case "AWO":
+        return "AWO";
     }
   }
 
@@ -1719,8 +1735,9 @@ export default function Candlestick() {
   const renderValue = (indicator, value) => {
     if (value == null) return "--";
 
-    /* ================= NUMBER VALUES ================= */
+    const showPercent = indicator === "AROON"; // Only show % for Aroon
 
+    /* ================= NUMBER VALUES ================= */
     if (typeof value === "number") {
       const style =
         indicatorStyle?.[indicator]?.sma ||
@@ -1731,11 +1748,15 @@ export default function Candlestick() {
 
       const color = style?.color || "#333";
 
-      return <span style={{ color }}>{Number(value).toFixed(2)}</span>;
+      return (
+        <span style={{ color }}>
+          {Number(value).toFixed(2)}
+          {showPercent ? "%" : ""}
+        </span>
+      );
     }
 
     /* ================= OBJECT VALUES ================= */
-
     if (typeof value === "object") {
       let keysToShow;
 
@@ -1743,27 +1764,45 @@ export default function Candlestick() {
         case "RSI":
           keysToShow = ["rsi", "smoothingMA", "bbUpper", "bbLower"];
           break;
-
+        case "MACD":
+          keysToShow = ["macd", "signal", "histogram"];
+          break;
         case "CCI":
           keysToShow = ["cciLine", "cciMa"];
           break;
-
+        case "TRIX":
+          keysToShow = ["trixLine"];
+          break;
+        case "CMF":
+          keysToShow = ["cmfLine"];
+          break;
+        case "MFI":
+          keysToShow = ["mfiLine"];
+          break;
+        case "KVO":
+          keysToShow = ["kvoLine", "signalLine"];
+          break;
+        case "STOCHRSI":
+          keysToShow = ["kLine", "dLine"];
+          break;
         case "EOM":
           keysToShow = ["eom"];
           break;
-
+        case "WPR":
+          keysToShow = ["r"];
+          break;
         case "ROC":
           keysToShow = ["roc"];
           break;
-
+        case "CHOP":
+          keysToShow = ["chopLine"];
+          break;
         case "MOM":
           keysToShow = ["mom"];
           break;
-
         case "UO":
           keysToShow = ["uo"];
           break;
-
         case "ICHIMOKU":
           keysToShow = [
             "conversionLine",
@@ -1774,6 +1813,12 @@ export default function Candlestick() {
             "kumoCloudUpper",
             "kumoCloudLower",
           ];
+          break;
+        case "AROON":
+          keysToShow = ["aroonUp", "aroonDown"];
+          break;
+        case "FT":
+          keysToShow = ["fisherLine", "triggerLine"];
           break;
 
         default:
@@ -1792,7 +1837,9 @@ export default function Candlestick() {
 
           return (
             <span key={key} style={{ marginRight: 8, color }}>
-              {Number.isFinite(val) ? Number(val).toFixed(2) : "--"}
+              {Number.isFinite(val)
+                ? `${Number(val).toFixed(2)}${showPercent ? "%" : ""}`
+                : "--"}
             </span>
           );
         });
