@@ -71,8 +71,7 @@ import STOCHRSIInput from "./Stochastic RSI/StochRSIInput";
 import STOCHRSIPlot from "./Stochastic RSI/StochRSIPlot";
 import FTInput from "./FisherTransform/FisherTransformInput";
 import FTPlot from "./FisherTransform/FisherTransformPlot";
-import ZIGZAGPlot from "./ZIgZag/ZigZagPlot";
-import ZIGZAGInput from "./ZIgZag/ZigZagInput";
+
 import MACDPlot from "./MACD/MACDPlot";
 import MACDInput from "./MACD/MACDInput";
 import VWAPPlot from "./VWAP/VWAPPlot";
@@ -92,6 +91,10 @@ import CHOPPlot from "./CHOP/CHOPPlot";
 import ADPlot from "./AD/ADPlot";
 import AWOPlot from "./AwesomeOscillator/AwesomeOscillatorPlot";
 import AWOInput from "./AwesomeOscillator/AwsomeOscillatorInput";
+import STOCHPlot from "./Stochastic/StochasticPlot";
+import STOCHInput from "./Stochastic/StochasticInput";
+import ZIGZAGPlot from "./ZIgZag/ZigZagPlot"
+import ZIGZAGInput from "./ZIgZag/ZigZagInput"
 
 export const indicatorComponents = {
   VWAP: VWAPPlot,
@@ -140,11 +143,12 @@ export const indicatorComponents = {
   HV: HVPlot,
   CKS: CKSPlot,
   BBW: BBWPlot,
-  STOCH: STOCHRSIPlot,
+  STOCH: STOCHPlot,
   STDDEV: STDDEVPlot,
   KVO: KVOPlot,
   CHOP: CHOPPlot,
   AWO: AWOPlot,
+  VP: VPPlot,
 };
 
 export const indicatorInputs = {
@@ -171,7 +175,7 @@ export const indicatorInputs = {
   ATR: ATRInput,
   MFI: MFIInput,
   PSAR: PSARInput,
-  STOCH: STOCHRSIInput,
+  STOCH: STOCHInput,
   CHOP: CHOPInput,
   EOM: EOMInput,
   DC: DCInput,
@@ -196,10 +200,7 @@ export const indicatorInputs = {
   CKS: CKSInput,
   BBW: BBWInput,
   KVO: KVOInput,
-
-
   AD: ADInput,
-
   AWO: AWOInput,
 };
 

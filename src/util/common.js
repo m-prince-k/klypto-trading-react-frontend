@@ -606,34 +606,28 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
     case "PSAR":
       return [{ key: "parabolicSAR", label: "Parabolic SAR", type: "line" }];
 
-    case "SuperTrend":
+    case "SUPERTREND":
       return [
-        { key: "upTrend", label: "Up Trend", type: "line", color: "#26a69a" },
+        { key: "upTrend", label: "Up Trend", type: "line" },
         {
           key: "downTrend",
           label: "Down Trend",
           type: "line",
-          color: "#ef5350",
         },
         {
           key: "bodyMiddle",
           label: "Body Middle",
           type: "line",
-          color: "#ffffff",
         },
         {
           key: "upTrendBg",
           label: "Up Trend Background",
-          type: "area",
-          color0: "rgba(38,166,154,0.2)",
-          color1: "rgba(38,166,154,0.2)",
+          type: "fill",
         },
         {
           key: "downTrendBg",
           label: "Down Trend Background",
-          type: "area",
-          color0: "rgba(239,83,80,0.2)",
-          color1: "rgba(239,83,80,0.2)",
+          type: "fill",
         },
       ];
 
@@ -651,9 +645,22 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
         {
           key: "oscillator",
           label: "Oscillator",
-          type: "line",
+          type: "checkbox",
+          children: [
+            {
+              key: "up",
+              parent: "oscillator",
+              label: "Bullish Color",
+              type: "line",
+            },
+            {
+              key: "down",
+              parent: "oscillator",
+              label: "Bearish Color",
+              type: "line",
+            },
+          ],
         },
-
         {
           key: "center",
           label: "Center Line",
@@ -661,7 +668,6 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           showValue: true,
           value: 0,
         },
-
         {
           key: "upperLevel",
           label: "Upper Level",
@@ -676,21 +682,27 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           showValue: true,
           value: -90,
         },
-        /* FILL ABOVE CENTER */
         {
-          key: "oscillatorFillBull",
-          label: "Oscillator Fill (Bullish)",
-          type: "area",
-        },
-
-        /* FILL BELOW CENTER */
-
-        {
-          key: "oscillatorFillBear",
-          label: "Oscillator Fill (Bearish)",
-          type: "area",
+          key: "oscillatorFill",
+          label: "Oscillator Fill",
+          type: "checkbox",
+          children: [
+            {
+              key: "topFillColor1",
+              parent: "oscillatorFill", 
+              label: "Bullish Fill",
+              type: "fill",
+            },
+            {
+              key: "topFillColor2",
+              parent: "oscillatorFill", 
+              label: "Bearish Fill",
+              type: "fill",
+            },
+          ],
         },
       ];
+
     case "ADX":
       return [{ key: "adx", label: "ADX", type: "line" }];
 
@@ -758,7 +770,6 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           value: 20,
           visible: true,
         },
-
         {
           key: "bgFill",
           label: "Background Fill",
@@ -965,16 +976,6 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           key: "uoLine",
           label: "Ultimate Oscillator",
           type: "line",
-        },
-      ];
-    case "Awesome Oscillator":
-      return [
-        {
-          key: "ao",
-          label: "AO",
-          type: "fill",
-          color0: "rgba(38,166,154,0.05)",
-          color1: "rgba(38,166,154,0.05)",
         },
       ];
 
@@ -1582,18 +1583,37 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
     case "ZIGZAG":
       return [
         {
-          key: "zigzagLine",
-          label: "Lines",
+          key: "z",
+          label: "Zig Zag Line",
           type: "line",
           visible: true,
         },
+      ];
+
+    case "VP":
+      return [
         {
-          key: "paneLabels",
-          label: "Pane Labels",
-          type: "label",
-          color: "#000000",
-          backgroundColor: "rgba(41,98,255,0.15)",
-          visible: true,
+          key: "vp",
+          label: "Volume Profile",
+          type: "custom",
+        },
+        {
+          key: "poc",
+          label: "POC",
+          type: "line",
+          showValue: true,
+        },
+        {
+          key: "vah",
+          label: "VAH",
+          type: "line",
+          showValue: true,
+        },
+        {
+          key: "val",
+          label: "VAL",
+          type: "line",
+          showValue: true,
         },
       ];
 
@@ -1627,7 +1647,6 @@ export const PANE_INDICATORS = new Set([
   "CHOP",
   "STOCHRSI",
   "STOCH",
-  "Volume",
   "MOM",
   "PVO",
   "AD",
@@ -1635,7 +1654,7 @@ export const PANE_INDICATORS = new Set([
   "BBW",
   "CMF",
   "KVO",
-  "AWO"
+  "AWO",
 ]);
 
 export const RANGE_INTERVAL_MAPPING = {

@@ -60,7 +60,7 @@ export default function IndicatorBuildingListing({
         );
       }
 
-      console.log(response?.data?.data, "-----------------------09657898567_______________________")
+      // console.log(response?.data?.data, "-----------------------09657898567_______________________")
 
       setData(await response?.data?.data || []);
       setTotalRec(await response.data.totalPages || 0);

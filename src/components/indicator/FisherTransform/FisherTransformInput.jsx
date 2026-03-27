@@ -5,10 +5,8 @@ export default function FTInput(
 ) {
   // ---------------- SAFE DATA ----------------
   const rows =
-    Array.isArray(response?.data?.candles)
-      ? response.data.candles
-      : Array.isArray(response?.data?.series)
-      ? response.data.series
+    Array.isArray(response?.data)
+      ? response.data
       : [];
 
   if (!rows.length) {

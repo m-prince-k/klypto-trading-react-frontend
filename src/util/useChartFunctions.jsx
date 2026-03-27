@@ -339,18 +339,24 @@ export default function useChartFunctions({
           case "SUPERTREND": {
             const upTrend = result?.data?.upTrend ?? [];
             const downTrend = result?.data?.downTrend ?? [];
+            const bodyMiddle = result?.data?.bodyMiddle ?? [];
 
+            // store the series reference and rows
             indicatorSeriesRef.current.SUPERTREND = {
               result,
               rows,
             };
 
-            const last =
-              upTrend[upTrend.length - 1]?.value ??
-              downTrend[downTrend.length - 1]?.value;
+            // get the last available value for each line
+            const lastUp = upTrend[upTrend.length - 1]?.value ?? null;
+            const lastDown = downTrend[downTrend.length - 1]?.value ?? null;
+            const lastMiddle = bodyMiddle[bodyMiddle.length - 1]?.value ?? null;
 
+            // store latest values
             latestIndicatorValuesRef.current.SUPERTREND = {
-              supertrend: last,
+              upTrend: lastUp,
+              downTrend: lastDown,
+              bodyMiddle: lastMiddle,
             };
 
             break;
@@ -379,8 +385,6 @@ export default function useChartFunctions({
               result,
               rows,
             };
-
-            console.log(result, "ressssssssssss");
             latestIndicatorValuesRef.current.AO = {
               oscillator: osc[osc.length - 1]?.value,
             };
@@ -889,6 +893,23 @@ export default function useChartFunctions({
 
             break;
           }
+          case "VP":
+            return {
+              type: "multi",
+              data: {
+                vp:
+                  result?.volumeprofile
+                    ?.filter((d) => d.price != null && d.volume != null)
+                    .map((d) => ({
+                      price: Number(d.price),
+                      volume: Number(d.volume),
+                    })) ?? [],
+
+                poc: result?.volumePoc ?? null,
+                vah: result?.volumevah ?? null,
+                val: result?.volumeval ?? null,
+              },
+            };
 
           /* ================= DEFAULT ================= */
 
@@ -1043,6 +1064,39 @@ async function fetchDataForIndicators(
                   time: Number(d.time),
                   value: Number(d.lowestContraction),
                 }))) ?? [],
+          },
+        };
+
+      case "VP":
+        return {
+          type: "multi",
+          data: {
+            vp:
+              (await response?.volumeprofile
+                ?.filter((d) => d.price != null && d.volume != null)
+                .map((d) => ({
+                  price: Number(d.price),
+                  volume: Number(d.volume),
+                }))) ?? [],
+
+            poc:
+              response?.volumePoc != null ? Number(response.volumePoc) : null,
+
+            vah:
+              response?.volumevah != null ? Number(response.volumevah) : null,
+
+            val:
+              response?.volumeval != null ? Number(response.volumeval) : null,
+
+            minPrice:
+              response?.volumeminPrice != null
+                ? Number(response.volumeminPrice)
+                : null,
+
+            maxPrice:
+              response?.volumeMaxPrice != null
+                ? Number(response.volumeMaxPrice)
+                : null,
           },
         };
 
@@ -1348,24 +1402,21 @@ async function fetchDataForIndicators(
           data: {
             upTrend:
               response.data?.map((d) => ({
-                time: d.time,
+                time: Number(d.time),
                 value: d.upTrend ?? null,
               })) ?? [],
-
             downTrend:
               response.data?.map((d) => ({
-                time: d.time,
+                time: Number(d.time),
                 value: d.downTrend ?? null,
               })) ?? [],
-
             bodyMiddle:
               response.data?.map((d) => ({
-                time: d.time,
-                value: d.bodyMiddle,
+                time: Number(d.time),
+                value: d.bodyMiddle ?? null,
               })) ?? [],
           },
         };
-
       case "MOM":
         return {
           type: "multi",
@@ -2014,7 +2065,7 @@ async function fetchDataForIndicators(
 
       case "AWO":
         return {
-          type: "single", 
+          type: "single",
           data:
             response?.data
               ?.filter((d) => d.ao != null && d.time != null)

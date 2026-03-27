@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { LineSeries } from "lightweight-charts";
+import { LineSeries, BaselineSeries } from "lightweight-charts";
 
 export default function OBVPlot({
   result,
@@ -21,21 +21,26 @@ export default function OBVPlot({
     if (indicatorSeriesRef.current?.OBV) {
       Object.values(indicatorSeriesRef.current.OBV).forEach((s) => {
         if (s?.setData) {
-          try {
-            s.setData([]);
-          } catch {}
+          try { s.setData([]); } catch {}
         }
       });
       indicatorSeriesRef.current.OBV = null;
     }
 
     const groupedSeries = {};
+    let obvData = [];
     let bbUpperData = [];
     let bbLowerData = [];
+
+    const maType = indicatorConfigs?.OBV?.maType ?? "none";
+    const hasBB = result?.data?.bbUpper && result?.data?.bbLower;
 
     Object.entries(result?.data || {}).forEach(([lineName, lineData]) => {
       const rowConfig = rows?.find((r) => r.key === lineName);
       const styleConfig = indicatorStyle?.OBV?.[lineName];
+
+      // Only add BB lines if MA is SMA and Bollinger Bands exist
+      if ((lineName === "bbUpper" || lineName === "bbLower") && !(maType === "SMA" && hasBB)) return;
 
       const series = addSeries("OBV", LineSeries, {
         color: styleConfig?.color || rowConfig?.color || "#26a69a",
@@ -49,20 +54,21 @@ export default function OBVPlot({
       if (!series) return;
 
       series.setData(lineData);
-
       groupedSeries[lineName] = series;
 
+      if (lineName === "obv") obvData = lineData;
       if (lineName === "bbUpper") bbUpperData = lineData;
       if (lineName === "bbLower") bbLowerData = lineData;
     });
 
+    groupedSeries.obvData = obvData;
     groupedSeries.bbUpperData = bbUpperData;
     groupedSeries.bbLowerData = bbLowerData;
 
     indicatorSeriesRef.current.OBV = groupedSeries;
 
-    drawOBVCloud();
-  }, [result]);
+    drawBBCloud();
+  }, [result, indicatorConfigs]);
 
   /* ================= CANVAS INIT ================= */
   useEffect(() => {
@@ -78,20 +84,27 @@ export default function OBVPlot({
   }, [containerRef]);
 
   /* ================= DRAW BB CLOUD ================= */
-  const drawOBVCloud = () => {
+  const drawBBCloud = () => {
     const obvGroup = indicatorSeriesRef.current?.OBV;
     if (!obvGroup) return;
 
-    const bbUpper = obvGroup.bbUpperData || [];
-    const bbLower = obvGroup.bbLowerData || [];
+    const upperData = obvGroup.bbUpperData || [];
+    const lowerData = obvGroup.bbLowerData || [];
 
-    if (!bbUpper.length || !bbLower.length) return;
-    if (!canvasRef.current || !chart) return;
-
-    const fill = indicatorStyle?.OBV?.bbFill;
     const maType = indicatorConfigs?.OBV?.maType ?? "none";
+    const fill = indicatorStyle?.OBV?.bbFill;
+    const hasBB = upperData.length && lowerData.length;
 
-    if (!fill?.visible || maType !== "SMA") return;
+    if (!hasBB || !fill?.visible || maType !== "SMA") {
+      // Clear canvas if BB not applicable
+      if (canvasRef.current) {
+        const ctx = canvasRef.current.getContext("2d");
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      }
+      return;
+    }
+
+    if (!canvasRef.current || !chart) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
@@ -104,8 +117,8 @@ export default function OBVPlot({
     ctx.beginPath();
 
     // Draw upper
-    for (let i = 0; i < bbUpper.length; i++) {
-      const p = bbUpper[i];
+    for (let i = 0; i < upperData.length; i++) {
+      const p = upperData[i];
       const x = chart.timeScale().timeToCoordinate(p.time);
       const y = obvGroup.bbUpper.priceToCoordinate(p.value);
       if (x == null || y == null) continue;
@@ -113,9 +126,9 @@ export default function OBVPlot({
       else ctx.lineTo(x, y);
     }
 
-    // Draw lower
-    for (let i = bbLower.length - 1; i >= 0; i--) {
-      const p = bbLower[i];
+    // Draw lower in reverse
+    for (let i = lowerData.length - 1; i >= 0; i--) {
+      const p = lowerData[i];
       const x = chart.timeScale().timeToCoordinate(p.time);
       const y = obvGroup.bbLower.priceToCoordinate(p.value);
       if (x == null || y == null) continue;
@@ -131,7 +144,7 @@ export default function OBVPlot({
   useEffect(() => {
     if (!chart) return;
 
-    const redraw = () => drawOBVCloud();
+    const redraw = () => drawBBCloud();
 
     const unsubscribeTime = chart.timeScale().subscribeVisibleLogicalRangeChange
       ? chart.timeScale().subscribeVisibleLogicalRangeChange(redraw)
@@ -152,11 +165,15 @@ export default function OBVPlot({
     const obvGroup = indicatorSeriesRef.current?.OBV;
     if (!obvGroup) return;
 
+    const maType = indicatorConfigs?.OBV?.maType ?? "none";
+    const hasBB = obvGroup.bbUpperData?.length && obvGroup.bbLowerData?.length;
+
     Object.entries(obvGroup).forEach(([key, series]) => {
       if (!series?.applyOptions) return;
-
       const style = indicatorStyle?.OBV?.[key];
       if (!style) return;
+
+      if ((key === "bbUpper" || key === "bbLower") && !(maType === "SMA + Bollinger Bands" && hasBB)) return;
 
       series.applyOptions({
         color: style.color,
@@ -166,20 +183,18 @@ export default function OBVPlot({
       });
     });
 
-    drawOBVCloud();
+    drawBBCloud();
   }, [indicatorStyle, result, indicatorConfigs]);
 
   /* ================= CLEANUP ================= */
   useEffect(() => {
     return () => {
-      const canvas = canvasRef.current;
-      if (canvas) {
-        const ctx = canvas.getContext("2d");
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        canvas.remove();
+      if (canvasRef.current) {
+        const ctx = canvasRef.current.getContext("2d");
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        canvasRef.current.remove();
+        canvasRef.current = null;
       }
-      canvasRef.current = null;
-
       if (indicatorSeriesRef.current?.OBV) {
         indicatorSeriesRef.current.OBV = null;
       }

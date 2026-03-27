@@ -23,7 +23,7 @@ export default function IndicatorStyle({
     setIndicatorStyle((prev) => {
       const indicator = prev[normalizedType] || {};
 
-      // ---------------- HISTOGRAM / VOLUME / AWO PALETTE ----------------
+      // ---------------- HISTOGRAM / VOLUME / AWO / AO PALETTE ----------------
       if (
         (section === "histogram" &&
           [
@@ -37,7 +37,11 @@ export default function IndicatorStyle({
             "color3",
           ].includes(key)) ||
         (section === "volumeBars" && ["up", "down"].includes(key)) ||
-        (section === "awoBars" && ["up", "down"].includes(key)) // <-- add AWO
+        (section === "awoBars" && ["up", "down"].includes(key)) ||
+        // ✅ AO oscillator palette
+        (section === "oscillator" && ["up", "down"].includes(key)) ||
+        // ✅ AO fill palette
+        (section === "fill" && ["topFillColor1", "topFillColor2"].includes(key))
       ) {
         return {
           ...prev,
@@ -82,19 +86,25 @@ export default function IndicatorStyle({
 
   /* ================= FILL / COLOR PREVIEW ================= */
   const getFillPreview = (row, selectedStyle) => {
-    // HISTOGRAM CHILDREN (MACD + PVO + AWO)
+    // HISTOGRAM + VOLUME + AWO + AO (PALETTE CHILDREN)
     if (
       (row.parent === "histogram" &&
         selectedStyle?.histogram?.palette?.[row.key]) ||
       (row.parent === "volumeBars" &&
         selectedStyle?.volumeBars?.palette?.[row.key]) ||
-      (row.parent === "awoBars" && selectedStyle?.awoBars?.palette?.[row.key]) // <-- add AWO
+      (row.parent === "awoBars" &&
+        selectedStyle?.awoBars?.palette?.[row.key]) ||
+      // ✅ AO oscillator palette preview
+      (row.parent === "oscillator" &&
+        selectedStyle?.oscillator?.palette?.[row.key]) ||
+      // ✅ AO fill palette preview
+      (row.parent === "fill" && selectedStyle?.fill?.palette?.[row.key])
     ) {
       const section = row.parent;
       return selectedStyle?.[section]?.palette?.[row.key] || "#888";
     }
 
-    // NORMAL STYLE
+    // ---------------- NORMAL STYLE ----------------
     const style = {
       ...row,
       ...(selectedStyle?.[row.key] || {}),

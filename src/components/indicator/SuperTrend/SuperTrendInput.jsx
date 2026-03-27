@@ -2,61 +2,130 @@ export default function SuperTrendInput(
   response,
   indicatorSeriesRef,
   latestIndicatorValuesRef
-){
-
+) {
   const rows = Array.isArray(response?.data) ? response.data : [];
 
-  const upTrendData = [];
-  const downTrendData = [];
-  const bodyMiddleData = [];
+  if (!rows.length) {
+    console.warn("SuperTrendInput: no rows");
 
-  rows.forEach((d)=>{
+    const emptyResult = {
+      type: "multi",
+      data: {
+        upTrend: [],
+        downTrend: [],
+        bodyMiddle: [],
+      },
+      _v: Date.now(),
+    };
 
-    if(!d.time) return;
+    if (indicatorSeriesRef?.current) {
+      indicatorSeriesRef.current.SUPERTREND_DATA = emptyResult.data;
+    }
+
+    return emptyResult;
+  }
+
+  const upTrend = [];
+  const downTrend = [];
+  const bodyMiddle = [];
+
+  for (let i = 0; i < rows.length; i++) {
+    const d = rows[i];
+    if (!d?.time) continue;
 
     const time = Number(d.time);
 
-    /* uptrend */
+    // ✅ upTrend
+    upTrend.push({
+      time,
+      value:
+        d.upTrend !== null && d.upTrend !== undefined && !isNaN(d.upTrend)
+          ? Number(d.upTrend)
+          : null,
+    });
 
-    if(d.upTrend != null){
-      upTrendData.push({ time, value:Number(d.upTrend) });
-    } else {
-      upTrendData.push({ time }); // whitespace
-    }
+    // ✅ downTrend
+    downTrend.push({
+      time,
+      value:
+        d.downTrend !== null && d.downTrend !== undefined && !isNaN(d.downTrend)
+          ? Number(d.downTrend)
+          : null,
+    });
 
-    /* downtrend */
-
-    if(d.downTrend != null){
-      downTrendData.push({ time, value:Number(d.downTrend) });
-    } else {
-      downTrendData.push({ time }); // whitespace
-    }
-
-    /* body middle */
-
-    if(d.bodyMiddle != null){
-      bodyMiddleData.push({
+    // ✅ bodyMiddle (only valid values)
+    if (
+      d.bodyMiddle !== null &&
+      d.bodyMiddle !== undefined &&
+      !isNaN(d.bodyMiddle)
+    ) {
+      bodyMiddle.push({
         time,
-        value:Number(d.bodyMiddle)
+        value: Number(d.bodyMiddle),
       });
     }
+  }
 
-  });
-
-  const series = indicatorSeriesRef.current?.SuperTrend;
-  if(!series) return;
-
-  series.upTrend?.setData(upTrendData);
-  series.downTrend?.setData(downTrendData);
-  series.bodyMiddle?.setData(bodyMiddleData);
-
-  series.upTrendBg?.setData(upTrendData);
-  series.downTrendBg?.setData(downTrendData);
-
-  const last = rows[rows.length-1];
-
-  latestIndicatorValuesRef.current.SuperTrend={
-    supertrend:last?.supertrend
+  // ✅ ALWAYS NEW OBJECT REFERENCES
+  const result = {
+    type: "multi",
+    data: {
+      upTrend: upTrend.map((x) => ({ ...x })),
+      downTrend: downTrend.map((x) => ({ ...x })),
+      bodyMiddle: bodyMiddle.map((x) => ({ ...x })),
+    },
+    _v: Date.now(),
   };
 
+  // ✅ INIT REF SAFELY
+  if (!indicatorSeriesRef.current) {
+    indicatorSeriesRef.current = {};
+  }
+
+  // ✅ STORE RAW DATA
+  indicatorSeriesRef.current.SUPERTREND_DATA = result.data;
+
+  // ✅ 🔥 IMPORTANT: FORCE CHART UPDATE (if series exist)
+  const series = indicatorSeriesRef.current;
+
+  try {
+    if (series.upTrendSeries?.setData) {
+      series.upTrendSeries.setData(result.data.upTrend);
+    }
+
+    if (series.downTrendSeries?.setData) {
+      series.downTrendSeries.setData(result.data.downTrend);
+    }
+
+    if (series.bodyMiddleSeries?.setData) {
+      series.bodyMiddleSeries.setData(result.data.bodyMiddle);
+    }
+  } catch (err) {
+    console.error("SuperTrendInput: chart update failed", err);
+  }
+
+  // ✅ Latest values
+  const last = rows[rows.length - 1];
+
+  if (!latestIndicatorValuesRef.current) {
+    latestIndicatorValuesRef.current = {};
+  }
+
+  latestIndicatorValuesRef.current.SUPERTREND = {
+    supertrend:
+      last?.supertrend !== undefined ? Number(last.supertrend) : null,
+    upTrend: last?.upTrend !== undefined ? Number(last.upTrend) : null,
+    downTrend: last?.downTrend !== undefined ? Number(last.downTrend) : null,
+    bodyMiddle:
+      last?.bodyMiddle !== undefined ? Number(last.bodyMiddle) : null,
+  };
+
+  // ✅ DEBUG LOG (optional)
+  console.log("SuperTrend updated:", {
+    points: rows.length,
+    last: latestIndicatorValuesRef.current.SUPERTREND,
+    version: result._v,
+  });
+
+  return result;
 }

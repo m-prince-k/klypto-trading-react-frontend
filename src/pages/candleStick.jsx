@@ -341,13 +341,8 @@ export default function Candlestick() {
       band3: { enabled: false, multiplier: 3 },
     },
     ZIGZAG: {
-      priceDeviation: 5,
-      pivotLegs: 10,
-      lineColor: "#2962ff",
-      extendToLastBar: true,
-      displayReversalPrice: false,
-      displayCumulativeVolume: false,
-      reversalPriceChangeMode: "absolute",
+      deviation: 5,
+      depth: 10,
     },
   });
 
@@ -598,6 +593,15 @@ export default function Candlestick() {
         topFillColor2: "rgba(38,166,154,0.05)",
       },
     },
+    ZIGZAG: {
+      z: {
+        color: "rgba(38,166,154,1)",
+        width: 2,
+        lineStyle: 0,
+        opacity: 100,
+        visible: true,
+      },
+    },
     EMA: {
       ema: {
         color: "rgba(0,0,0,1)",
@@ -686,20 +690,20 @@ export default function Candlestick() {
         opacity: 100,
       },
       bodyMiddle: {
-        color: "rgba(255,255,255,1)",
+        color: "rgba(100, 16, 236,1)",
         width: 1,
-        lineStyle: 2,
-        visible: false,
-        opacity: 0.6,
+        lineStyle: 0,
+        visible: true,
+        opacity: 100,
       },
       upTrendBg: {
-        color0: "rgba(38,166,154,0.2)",
-        color1: "rgba(38,166,154,0.05)",
+        topFillColor1: "rgba(38,166,154,0.2)",
+        topFillColor2: "rgba(38,166,154,0.05)",
         visible: true,
       },
       downTrendBg: {
-        color0: "rgba(239,83,80,0.2)",
-        color1: "rgba(239,83,80,0.05)",
+        topFillColor1: "rgba(239,83,80,0.2)",
+        topFillColor2: "rgba(239,83,80,0.05)",
         visible: true,
       },
     },
@@ -722,8 +726,10 @@ export default function Candlestick() {
     AO: {
       oscillator: {
         visible: true,
-        color0: "rgba(38,166,154,1)",
-        color1: "rgba(239,83,80,1)",
+        palette: {
+          up: "rgba(38,166,154,1)", // bullish
+          down: "rgba(239,83,80,1)", // bearish
+        },
         width: 1,
         lineStyle: 0,
         opacity: 100,
@@ -739,7 +745,7 @@ export default function Candlestick() {
       upperLevel: {
         visible: true,
         value: 90,
-        color: "rgba(255,152,0,1)",
+        color: "rgba(158,158,158,1)",
         width: 1,
         lineStyle: 2,
         opacity: 100,
@@ -747,18 +753,18 @@ export default function Candlestick() {
       lowerLevel: {
         visible: true,
         value: -90,
-        color: "rgba(3,169,244,1)",
+        color: "rgba(158,158,158,1)",
         width: 1,
         lineStyle: 2,
         opacity: 100,
       },
-      oscillatorFillBull: {
+
+      oscillatorFill: {
         visible: true,
-        color0: "rgba(38,166,154,0.25)",
-      },
-      oscillatorFillBear: {
-        visible: true,
-        color0: "rgba(239,83,80,0.25)",
+        palette: {
+          topFillColor1: "rgba(38,166,154,0.25)",
+          topFillColor2: "rgba(239,83,80,0.25)",
+        },
       },
     },
     ADX: {
@@ -1452,6 +1458,13 @@ export default function Candlestick() {
         value: -1.5,
       },
     },
+    VP: {
+      enabled: true,
+      width: 120, // width of profile on right
+      color: "rgba(33,150,243,1)",
+      pocColor: "rgba(239,83,80,1)",
+      vaColor: "rgba(38,166,154,1)",
+    },
   };
 
   const [indicatorStyle, setIndicatorStyle] = useState(indicatorStyleDefault);
@@ -1820,6 +1833,9 @@ export default function Candlestick() {
         case "FT":
           keysToShow = ["fisherLine", "triggerLine"];
           break;
+          case "STOCH":
+          keysToShow = ["k", "d"];
+          break;
 
         default:
           keysToShow = Object.keys(value);
@@ -1866,6 +1882,7 @@ export default function Candlestick() {
           addSeries={addSeries}
           chart={chartRef.current}
           containerRef={containerRef.current}
+          container={containerRef}
           panesContainerRef={paneContainerRef.current}
           indicatorConfigs={indicatorConfigs}
           pane={seriesRef.current}
@@ -2459,8 +2476,6 @@ export default function Candlestick() {
               indicatorSeriesRef={indicatorSeriesRef}
               selectedCurrency={selectedCurrency}
               timeframeValue={timeframeValue}
-              chartRef={chartRef}
-              addSeries={addSeries}
               latestIndicatorValuesRef={latestIndicatorValuesRef}
             />
           </div>

@@ -1,52 +1,107 @@
 export default function STOCHRSIInput(
   response,
   indicatorSeriesRef,
-  latestIndicatorValuesRef,
+  latestIndicatorValuesRef
 ) {
   const rows = Array.isArray(response?.data?.candles)
     ? response.data.candles
     : [];
 
-  console.log("STOCHRSI rows:", rows);
+  if (!rows.length) {
+    console.warn("STOCHRSI: no data");
+
+    const emptyResult = {
+      data: {
+        kData: [],
+        dData: [],
+      },
+      _v: Date.now(),
+    };
+
+    if (indicatorSeriesRef?.current) {
+      indicatorSeriesRef.current.STOCHRSIData = emptyResult;
+    }
+
+    return emptyResult;
+  }
 
   const kData = [];
   const dData = [];
 
-  rows.forEach((d) => {
-    if (!d?.time) return;
+  for (let i = 0; i < rows.length; i++) {
+    const d = rows[i];
+    if (!d?.time) continue;
 
     const time = Number(d.time);
 
-    if (d.stochRsiK != null) {
+    // ✅ K line
+    if (
+      d.stochRsiK !== null &&
+      d.stochRsiK !== undefined &&
+      !isNaN(d.stochRsiK)
+    ) {
       kData.push({
         time,
         value: Number(d.stochRsiK),
       });
     }
 
-    if (d.stochRsiD != null) {
+    // ✅ D line
+    if (
+      d.stochRsiD !== null &&
+      d.stochRsiD !== undefined &&
+      !isNaN(d.stochRsiD)
+    ) {
       dData.push({
         time,
         value: Number(d.stochRsiD),
       });
     }
-  });
-
-  console.log("STOCHRSI K DATA:", kData.length);
-  console.log("STOCHRSI D DATA:", dData.length);
-
-  /* ---------------- SERIES ---------------- */
-
-  const kSeries = indicatorSeriesRef.current?.STOCHRSI?.kLine;
-  const dSeries = indicatorSeriesRef.current?.STOCHRSI?.dLine;
-
-  if (kSeries) {
-    kSeries.setData(kData);
   }
 
-  if (dSeries) {
-    dSeries.setData(dData);
+  // ✅ FORCE NEW REFERENCES (IMPORTANT)
+  const result = {
+    data: {
+      kData: kData.map((x) => ({ ...x })),
+      dData: dData.map((x) => ({ ...x })),
+    },
+    _v: Date.now(), // 🔥 forces update tracking
+  };
+
+  /* ---------------- INIT REF ---------------- */
+
+  if (!indicatorSeriesRef.current) {
+    indicatorSeriesRef.current = {};
   }
+
+  if (!indicatorSeriesRef.current.STOCHRSI) {
+    indicatorSeriesRef.current.STOCHRSI = {};
+  }
+
+  /* ---------------- SERIES UPDATE ---------------- */
+
+  const kSeries = indicatorSeriesRef.current.STOCHRSI.kLine;
+  const dSeries = indicatorSeriesRef.current.STOCHRSI.dLine;
+
+  try {
+    if (kSeries?.setData) {
+      kSeries.setData(result.data.kData);
+    } else {
+      console.warn("STOCHRSI: kLine series missing");
+    }
+
+    if (dSeries?.setData) {
+      dSeries.setData(result.data.dData);
+    } else {
+      console.warn("STOCHRSI: dLine series missing");
+    }
+  } catch (err) {
+    console.error("STOCHRSI: chart update failed", err);
+  }
+
+  /* ---------------- STORE RAW ---------------- */
+
+  indicatorSeriesRef.current.STOCHRSIData = result.data;
 
   /* ---------------- LATEST VALUES ---------------- */
 
@@ -55,30 +110,19 @@ export default function STOCHRSIInput(
   }
 
   latestIndicatorValuesRef.current.STOCHRSI = {
-    kLine: kData.at(-1)?.value ?? null,
-    dLine: dData.at(-1)?.value ?? null,
+    kLine: result.data.kData.at(-1)?.value ?? null,
+    dLine: result.data.dData.at(-1)?.value ?? null,
   };
 
-  /* ---------------- RESULT OBJECT ---------------- */
+  /* ---------------- DEBUG ---------------- */
 
-  const result = {
-    data: {
-      kData,
-      dData,
-    },
-  };
+  console.log("STOCHRSI updated:", {
+    rows: rows.length,
+    kPoints: result.data.kData.length,
+    dPoints: result.data.dData.length,
+    last: latestIndicatorValuesRef.current.STOCHRSI,
+    version: result._v,
+  });
 
-  /* ---------------- STORE RESULT ---------------- */
-
-  if (!indicatorSeriesRef.current) {
-    indicatorSeriesRef.current = {};
-  }
-
-  indicatorSeriesRef.current.STOCHRSIData = result;
-
-  /* ---------------- RETURN RESULT ---------------- */
-
-  return {
-    ...result,
-  };
+  return result;
 }

@@ -3,164 +3,142 @@ import { LineSeries, BaselineSeries } from "lightweight-charts";
 
 export default function AroonOscillatorPlot({
   result,
-  rows,
   indicatorStyle,
   indicatorSeriesRef,
-  addSeries
+  addSeries,
+  chart
 }) {
 
-  /* ================= CREATE INDICATOR ================= */
+  /* ================= CREATE ================= */
 
   useEffect(() => {
-
     if (!result) return;
 
     if (indicatorSeriesRef.current?.AO) {
       Object.values(indicatorSeriesRef.current.AO).forEach((s)=>{
-        if (s?.setData) {
-          try { s.setData([]) } catch {}
-        }
+        try { chart?.removeSeries(s) } catch {}
       });
       indicatorSeriesRef.current.AO = null;
     }
 
-    const groupedSeries = {};
-    const oscData = result.data ?? [];
-
+    const grouped = {};
     const style = indicatorStyle?.AO;
+    const data = result?.data ?? [];
 
-    const center = style?.center?.value ?? 0;
-    const upper = style?.upperLevel?.value ?? 90;
-    const lower = style?.lowerLevel?.value ?? -90;
+    /* ================= OSC ================= */
 
-    /* ================= OSCILLATOR ================= */
+    const osc = addSeries("AO", BaselineSeries, {
+      baseValue: { type: "price", price: style?.center?.value ?? 0 },
 
-    const oscSeries = addSeries("AO", BaselineSeries,{
-      baseValue: { type: "price", price: center },
+      topLineColor: style?.oscillator?.palette?.up,
+      bottomLineColor: style?.oscillator?.palette?.down,
 
-      topLineColor: style?.oscillator?.color0,
-      bottomLineColor: style?.oscillator?.color1,
+      topFillColor1: style?.oscillatorFill?.palette?.topFillColor1,
+      topFillColor2: style?.oscillatorFill?.palette?.topFillColor1,
 
-      topFillColor1: style?.oscillatorFillBull?.color0,
-      topFillColor2: style?.oscillatorFillBull?.color0,
-
-      bottomFillColor1: style?.oscillatorFillBear?.color0,
-      bottomFillColor2: style?.oscillatorFillBear?.color0,
+      bottomFillColor1: style?.oscillatorFill?.palette?.topFillColor2,
+      bottomFillColor2: style?.oscillatorFill?.palette?.topFillColor2,
 
       lineWidth: style?.oscillator?.width || 2,
-      visible: style?.oscillator?.visible ?? true,
-
-      lastValueVisible: true
+      lineStyle: style?.oscillator?.lineStyle ?? 0,
     });
 
-    oscSeries.setData(oscData);
+    osc.setData(data);
+    grouped.oscillator = osc;
 
-    groupedSeries.oscillator = oscSeries;
+    /* ================= LEVELS ================= */
 
-    /* ================= LEVEL LINES ================= */
+    const make = (v) => data.map(p => ({ time: p.time, value: v }));
 
-    const makeLevelData = (value) =>
-      oscData.map((p)=>({time:p.time,value}));
+    const center = addSeries("AO", LineSeries, {});
+    const upper = addSeries("AO", LineSeries, {});
+    const lower = addSeries("AO", LineSeries, {});
 
-    const upperSeries = addSeries("AO",LineSeries,{
-      color: style?.upperLevel?.color,
-      lineWidth: style?.upperLevel?.width,
-      lineStyle: style?.upperLevel?.lineStyle ?? 0,
-      visible: style?.upperLevel?.visible
-    });
+    center.setData(make(style?.center?.value ?? 0));
+    upper.setData(make(style?.upperLevel?.value ?? 90));
+    lower.setData(make(style?.lowerLevel?.value ?? -90));
 
-    const centerSeries = addSeries("AO",LineSeries,{
-      color: style?.center?.color,
-      lineWidth: style?.center?.width,
-      lineStyle: style?.center?.lineStyle ?? 0,
-      visible: style?.center?.visible
-    });
+    grouped.center = center;
+    grouped.upperLevel = upper;
+    grouped.lowerLevel = lower;
 
-    const lowerSeries = addSeries("AO",LineSeries,{
-      color: style?.lowerLevel?.color,
-      lineWidth: style?.lowerLevel?.width,
-      lineStyle: style?.lowerLevel?.lineStyle ?? 0,
-      visible: style?.lowerLevel?.visible
-    });
+    grouped.data = data;
 
-    upperSeries.setData(makeLevelData(upper));
-    centerSeries.setData(makeLevelData(center));
-    lowerSeries.setData(makeLevelData(lower));
-
-    groupedSeries.upperLevel = upperSeries;
-    groupedSeries.center = centerSeries;
-    groupedSeries.lowerLevel = lowerSeries;
-
-    /* store osc data for style updates */
-    groupedSeries.oscData = oscData;
-
-    indicatorSeriesRef.current.AO = groupedSeries;
+    indicatorSeriesRef.current.AO = grouped;
 
   }, [result]);
 
 
-  /* ================= STYLE UPDATE ================= */
+  /* ================= UPDATE ================= */
 
-  useEffect(()=>{
+  useEffect(() => {
 
-    const group = indicatorSeriesRef.current?.AO;
-    if (!group) return;
+    const g = indicatorSeriesRef.current?.AO;
+    if (!g) return;
 
     const style = indicatorStyle?.AO;
-    const oscData = group.oscData ?? [];
+    const data = g.data ?? [];
 
-    const makeLevelData = (value) =>
-      oscData.map((p)=>({time:p.time,value}));
+    const make = (v) => data.map(p => ({ time: p.time, value: v }));
 
-    /* OSCILLATOR */
+    /* ================= OSC ================= */
 
-    group.oscillator?.applyOptions({
-      baseValue: { type: "price", price: style?.center?.value ?? 0 },
+    g.oscillator.applyOptions({
 
-      topLineColor: style?.oscillator?.color0,
-      bottomLineColor: style?.oscillator?.color1,
+      // ✅ VISIBILITY FIX
+      visible: style?.oscillator?.visible ?? true,
 
-      topFillColor1: style?.oscillatorFillBull?.color0,
-      topFillColor2: style?.oscillatorFillBull?.color0,
-
-      bottomFillColor1: style?.oscillatorFillBear?.color0,
-      bottomFillColor2: style?.oscillatorFillBear?.color0,
-
+      // ✅ LINE STYLE FIX
       lineWidth: style?.oscillator?.width,
-      visible: style?.oscillator?.visible
+      lineStyle: style?.oscillator?.lineStyle,
+
+      // ✅ COLOR FIX
+      topLineColor: style?.oscillator?.palette?.up,
+      bottomLineColor: style?.oscillator?.palette?.down,
+
+      // ✅ FILL FIX
+      topFillColor1: style?.oscillatorFill?.visible
+        ? style?.oscillatorFill?.palette?.topFillColor1
+        : "rgba(0,0,0,0)",
+
+      topFillColor2: style?.oscillatorFill?.visible
+        ? style?.oscillatorFill?.palette?.topFillColor1
+        : "rgba(0,0,0,0)",
+
+      bottomFillColor1: style?.oscillatorFill?.visible
+        ? style?.oscillatorFill?.palette?.topFillColor2
+        : "rgba(0,0,0,0)",
+
+      bottomFillColor2: style?.oscillatorFill?.visible
+        ? style?.oscillatorFill?.palette?.topFillColor2
+        : "rgba(0,0,0,0)",
     });
 
-    /* CENTER */
+    /* ================= LEVELS ================= */
 
-    group.center?.applyOptions({
-      color: style?.center?.color,
-      lineWidth: style?.center?.width,
-      visible: style?.center?.visible
-    });
+    const updateLine = (series, cfg, value) => {
+      if (!series) return;
 
-    group.center?.setData(makeLevelData(style?.center?.value ?? 0));
+      series.applyOptions({
+        visible: cfg?.visible ?? true,
+        color: cfg?.color,
+        lineWidth: cfg?.width,
+        lineStyle: cfg?.lineStyle,
+      });
 
-    /* UPPER */
+      series.setData(make(value));
+    };
 
-    group.upperLevel?.applyOptions({
-      color: style?.upperLevel?.color,
-      lineWidth: style?.upperLevel?.width,
-      visible: style?.upperLevel?.visible
-    });
+    updateLine(g.center, style?.center, style?.center?.value ?? 0);
+    updateLine(g.upperLevel, style?.upperLevel, style?.upperLevel?.value ?? 90);
+    updateLine(g.lowerLevel, style?.lowerLevel, style?.lowerLevel?.value ?? -90);
 
-    group.upperLevel?.setData(makeLevelData(style?.upperLevel?.value ?? 90));
+  }, [
+    result,
 
-    /* LOWER */
-
-    group.lowerLevel?.applyOptions({
-      color: style?.lowerLevel?.color,
-      lineWidth: style?.lowerLevel?.width,
-      visible: style?.lowerLevel?.visible
-    });
-
-    group.lowerLevel?.setData(makeLevelData(style?.lowerLevel?.value ?? -90));
-
-  }, [indicatorStyle]);
+    // ✅ CRITICAL: full AO dependency
+    indicatorStyle?.AO
+  ]);
 
   return null;
 }
