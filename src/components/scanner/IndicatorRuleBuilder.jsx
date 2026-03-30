@@ -294,17 +294,16 @@ export default function IndicatorRuleBuilder({
       // if(){
 
       // }
-          const daysAgoOptions = Array.from({ length: 3 }, (_, i) => {
-      const day = i + 1;
-      return {
-        label: `${day} day ago`,
-        value: `${day}d_ago`,
-      };
-    });
+      const daysAgoOptions = Array.from({ length: 3 }, (_, i) => {
+        const day = i + 1;
+        return {
+          label: `${day} day ago`,
+          value: `${day}d_ago`,
+        };
+      });
 
-    const finalOptions = [...flattened, ...daysAgoOptions];
-setTimeframeOptions(finalOptions);
-
+      const finalOptions = [...flattened, ...daysAgoOptions];
+      setTimeframeOptions(finalOptions);
     } catch (err) {
       console.error(err);
       setTimeframeOptions([{ label: "Select Timeframe", value: "" }]); // safety
