@@ -818,7 +818,6 @@ export default function useChartFunctions({
 
             break;
           }
-
           case "BB": {
             const upperData = result?.data?.upper ?? [];
             const lowerData = result?.data?.lower ?? [];
@@ -852,7 +851,6 @@ export default function useChartFunctions({
 
             break;
           }
-
           case "KVO": {
             const kvoData = result?.data?.kvo ?? [];
             const signalData = result?.data?.signal ?? [];
@@ -952,7 +950,7 @@ async function fetchDataForIndicators(
     console.log("Raw indicator data for", normalizedType, ":", response);
 
     // store last request key
-    // indicatorMetaRef.current[normalizedType] = key;
+    indicatorMetaRef.current[normalizedType] = key;
 
     const mapLine = (arr, field) =>
       arr

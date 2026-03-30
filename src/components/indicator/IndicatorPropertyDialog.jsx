@@ -180,22 +180,21 @@ export default function IndicatorPropertyDialog({
     marginRight: "1rem",
   };
 
-  const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
-  const currentConfig = indicatorConfigs[normalizedType];
+  const currentConfig = indicatorConfigs[activeBarIndicator];
   const [indicatorLoading, setIndicatorLoading] = useState(false);
 
   const updateProperty = (key, value) => {
     setIndicatorConfigs((prev) => ({
       ...prev,
-      [normalizedType]: {
-        ...prev[normalizedType],
+      [activeBarIndicator]: {
+        ...prev[activeBarIndicator],
         [key]: value,
       },
     }));
   };
 
   const handleBlur = (key, value) => {
-    const defaults = indicatorConfigs[normalizedType] || {};
+    const defaults = indicatorConfigs[activeBarIndicator] || {};
     const defaultValue = defaults[key];
 
     let val = value;
@@ -216,10 +215,10 @@ export default function IndicatorPropertyDialog({
   const updateNestedDoubleProperty = (band, key, value) => {
     setIndicatorConfigs((prev) => ({
       ...prev,
-      [normalizedType]: {
-        ...prev[normalizedType],
+      [activeBarIndicator]: {
+        ...prev[activeBarIndicator],
         [band]: {
-          ...prev[normalizedType][band],
+          ...prev[activeBarIndicator][band],
           [key]: value,
         },
       },
@@ -230,11 +229,11 @@ export default function IndicatorPropertyDialog({
      OK BUTTON
   ========================== */
   const handleIndicatorPropertyChange = async () => {
-    const config = indicatorConfigs?.[normalizedType] || {};
+    const config = indicatorConfigs?.[activeBarIndicator] || {};
     const { maType } = config;
 
     const payload = {
-      type: normalizedType,
+      type: activeBarIndicator,
       ...config,
     };
 
@@ -253,7 +252,7 @@ export default function IndicatorPropertyDialog({
       console.log("Indicator updated:", response);
 
       updateIndicatorFromInput(
-        normalizedType,
+        activeBarIndicator,
         response,
         indicatorSeriesRef,
         latestIndicatorValuesRef,
@@ -290,7 +289,7 @@ export default function IndicatorPropertyDialog({
   ========================== */
 
   function renderIndicatorSetting() {
-    switch (normalizedType) {
+    switch (activeBarIndicator) {
       case "SMA":
       case "EMA":
         return (

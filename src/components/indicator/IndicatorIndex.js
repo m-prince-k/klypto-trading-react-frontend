@@ -120,7 +120,6 @@ export const indicatorComponents = {
   ATR: ATRPlot,
   MFI: MFIPlot,
   PSAR: PSARPlot,
-  EOM: EMAPlot,
   DC: DCPlot,
   KC: KCPlot,
   EOM: EOMPlot,

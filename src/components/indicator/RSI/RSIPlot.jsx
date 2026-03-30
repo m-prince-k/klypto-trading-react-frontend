@@ -9,7 +9,7 @@ export default function RSIPlot({
   addSeries,
   indicatorConfigs,
   chart,
-  panesContainerRef,
+  panesRef,
 }) {
   const canvasRef = useRef(null);
 
@@ -23,7 +23,7 @@ export default function RSIPlot({
         if (s?.setData) {
           try {
             s.setData([]);
-          } catch {}
+          } catch { }
         }
       });
 
@@ -43,8 +43,6 @@ export default function RSIPlot({
     const bandFill = indicatorStyle?.RSI?.bandFill;
     const obFill = indicatorStyle?.RSI?.obFill;
     const osFill = indicatorStyle?.RSI?.osFill;
-
-    /* ================= MAIN LINES ================= */
 
     Object.entries(result?.data).forEach(([lineName, lineData]) => {
       const rowConfig = rows?.find((r) => r.key === lineName);
@@ -76,8 +74,6 @@ export default function RSIPlot({
         bbLowerData = lineData;
       }
     });
-
-    /* ================= LEVEL LINES ================= */
 
     const makeLevelData = (value) =>
       rsiData.map((p) => ({
@@ -120,8 +116,6 @@ export default function RSIPlot({
     groupedSeries.middle = middleLine;
     groupedSeries.lower = lowerLine;
 
-    /* ================= BAND BACKGROUND ================= */
-
     const bandData = rsiData?.map((p) => ({
       time: p.time,
       value: upper,
@@ -142,8 +136,6 @@ export default function RSIPlot({
 
     bandBackgroundSeries.setData(bandData);
 
-    /* ================= OVERBOUGHT ================= */
-
     const overboughtSeries = addSeries("RSI", BaselineSeries, {
       baseValue: { type: "price", price: upper },
       topFillColor1: obFill?.topFillColor1,
@@ -156,8 +148,6 @@ export default function RSIPlot({
       priceLineVisible: false,
       lastValueVisible: false,
     });
-
-    /* ================= OVERSOLD ================= */
 
     const oversoldSeries = addSeries("RSI", BaselineSeries, {
       baseValue: { type: "price", price: lower },
@@ -204,7 +194,12 @@ export default function RSIPlot({
   /* ================= CANVAS INIT ================= */
 
   useEffect(() => {
-    if (!panesContainerRef || canvasRef.current) return;
+    if (!panesRef || canvasRef.current) return;
+
+    const pane = panesRef.current?.RSI;
+    const paneDiv = pane?.div;
+
+    if (!paneDiv) return;
 
     const canvas = document.createElement("canvas");
 
@@ -212,87 +207,101 @@ export default function RSIPlot({
     canvas.style.pointerEvents = "none";
     canvas.style.zIndex = 1;
 
-    /* attach canvas to RSI pane instead of main chart */
-    const paneContainer =
-      panesContainerRef.querySelector(`[data-pane="RSI"]`) || panesContainerRef;
-
-    paneContainer.appendChild(canvas);
-
+    paneDiv.appendChild(canvas);
     canvasRef.current = canvas;
-  }, [panesContainerRef]);
 
+    // ✅ IMPORTANT
+    setTimeout(() => {
+      drawBBCloud();
+    }, 0);
 
- /* ================= DRAW BB CLOUD ================= */
+  }, [panesRef]);
 
-const drawBBCloud = () => {
-  const rsiGroup = indicatorSeriesRef.current?.RSI;
-  if (!rsiGroup) return;
+  /* ================= DRAW BB CLOUD ================= */
 
-  const upperData = rsiGroup.bbUpperData || [];
-  const lowerData = rsiGroup.bbLowerData || [];
+  const drawBBCloud = () => {
+    const rsiGroup = indicatorSeriesRef.current?.RSI;
+    if (!rsiGroup) return;
 
-  if (!upperData.length || !lowerData.length) return;
-  if (!canvasRef.current || !chart) return;
+    const upperData = rsiGroup.bbUpperData || [];
+    const lowerData = rsiGroup.bbLowerData || [];
 
-  const canvas = canvasRef.current;
-  const ctx = canvas.getContext("2d");
+    if (!upperData.length || !lowerData.length) return;
 
-  const rect = panesContainerRef.getBoundingClientRect();
-  canvas.width = rect.width;
-  canvas.height = rect.height;
+    const pane = panesRef.current?.RSI;
+    const paneDiv = pane?.div;
+    const paneChart = pane?.chart;
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!canvasRef.current) {
+      console.log("❌ canvas missing");
+      return;
+    }
+    if (!paneDiv) {
+      console.log("❌ paneDiv missing");
+      return;
+    }
+    if (!paneChart) {
+      console.log("❌ paneChart missing");
+      return;
+    }
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
 
-  const fill = indicatorStyle?.RSI?.bbFill;
-  if (!fill?.visible) return;
+    const rect = paneDiv.getBoundingClientRect(); // ✅ FIX
+    canvas.width = rect.width;
+    canvas.height = rect.height;
 
-  ctx.beginPath();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Upper line
-  for (let i = 0; i < upperData.length; i++) {
-    const p = upperData[i];
-    const x = chart.timeScale().timeToCoordinate(p.time);
-    const y = rsiGroup.bbUpper.priceToCoordinate(p.value);
-    if (x == null || y == null) continue;
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  }
+    const fill = indicatorStyle?.RSI?.bbFill;
+    if (!fill?.visible) return;
 
-  // Lower line in reverse
-  for (let i = lowerData.length - 1; i >= 0; i--) {
-    const p = lowerData[i];
-    const x = chart.timeScale().timeToCoordinate(p.time);
-    const y = rsiGroup.bbLower.priceToCoordinate(p.value);
-    if (x == null || y == null) continue;
-    ctx.lineTo(x, y);
-  }
+    ctx.beginPath();
 
-  ctx.closePath();
-  ctx.fillStyle = fill?.topFillColor1 || "rgba(38,166,154,0.3)";
-  ctx.fill();
-};
+    for (let i = 0; i < upperData.length; i++) {
+      const p = upperData[i];
+      const x = paneChart.timeScale().timeToCoordinate(p.time); // ✅ FIX
+      const y = rsiGroup.bbUpper.priceToCoordinate(p.value);
+      if (x == null || y == null) continue;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+
+    for (let i = lowerData.length - 1; i >= 0; i--) {
+      const p = lowerData[i];
+      const x = paneChart.timeScale().timeToCoordinate(p.time); // ✅ FIX
+      const y = rsiGroup.bbLower.priceToCoordinate(p.value);
+      if (x == null || y == null) continue;
+      ctx.lineTo(x, y);
+    }
+
+    ctx.closePath();
+    ctx.fillStyle = fill?.topFillColor1 || "rgba(38,166,154,0.3)";
+    ctx.fill();
+  };
 
   useEffect(() => {
-  if (!chart) return;
+    const pane = panesRef.current?.RSI;
+    const paneChart = pane?.chart;
 
-  const redraw = () => drawBBCloud();
+    if (!paneChart) return;
 
-  // Subscribe to time scale changes
-  const unsubscribeTime = chart.timeScale().subscribeVisibleLogicalRangeChange
-    ? chart.timeScale().subscribeVisibleLogicalRangeChange(redraw)
-    : null;
+    const redraw = () => drawBBCloud();
 
-  // Subscribe to crosshair move if needed
-  const unsubscribeCrosshair = chart.subscribeCrosshairMove
-    ? chart.subscribeCrosshairMove(redraw)
-    : null;
+    const unsubscribeTime = paneChart.timeScale().subscribeVisibleLogicalRangeChange
+      ? paneChart.timeScale().subscribeVisibleLogicalRangeChange(redraw)
+      : null;
 
-  // Cleanup
-  return () => {
-    if (unsubscribeTime) unsubscribeTime();
-    if (unsubscribeCrosshair) unsubscribeCrosshair();
-  };
-}, [chart, indicatorStyle]);
+    const unsubscribeCrosshair = paneChart.subscribeCrosshairMove
+      ? paneChart.subscribeCrosshairMove(redraw)
+      : null;
+
+    return () => {
+      if (unsubscribeTime) unsubscribeTime();
+      if (unsubscribeCrosshair) unsubscribeCrosshair();
+    };
+  }, [panesRef, indicatorStyle]);
+
   /* ================= STYLE UPDATE ================= */
 
   useEffect(() => {
@@ -345,7 +354,6 @@ const drawBBCloud = () => {
       lineWidth: indicatorStyle?.RSI?.bbLower?.width,
       visible: indicatorStyle?.RSI?.bbLower?.visible,
     });
-    /* ================= BAND FILL UPDATE ================= */
 
     if (rsiGroup.bandBackground) {
       rsiGroup.bandBackground.applyOptions({
@@ -355,8 +363,6 @@ const drawBBCloud = () => {
       });
     }
 
-    /* ================= OVERBOUGHT FILL UPDATE ================= */
-
     if (rsiGroup.overboughtFill) {
       rsiGroup.overboughtFill.applyOptions({
         topFillColor1: obFill?.topFillColor1,
@@ -364,8 +370,6 @@ const drawBBCloud = () => {
         visible: obFill?.visible ?? true,
       });
     }
-
-    /* ================= OVERSOLD FILL UPDATE ================= */
 
     if (rsiGroup.oversoldFill) {
       rsiGroup.oversoldFill.applyOptions({
@@ -377,6 +381,29 @@ const drawBBCloud = () => {
 
     drawBBCloud();
   }, [indicatorStyle, result]);
+
+
+  useEffect(() => {
+    const pane = panesRef.current?.RSI;
+    const paneChart = pane?.chart;
+
+    if (!paneChart) return;
+
+    const redraw = () => drawBBCloud();
+
+    // 🔥 THIS is what actually fixes it
+    paneChart.timeScale().subscribeVisibleTimeRangeChange(redraw);
+
+    // also keep existing ones
+    paneChart.timeScale().subscribeVisibleLogicalRangeChange(redraw);
+    paneChart.subscribeCrosshairMove(redraw);
+
+    return () => {
+      paneChart.timeScale().unsubscribeVisibleTimeRangeChange(redraw);
+      paneChart.timeScale().unsubscribeVisibleLogicalRangeChange(redraw);
+      paneChart.unsubscribeCrosshairMove(redraw);
+    };
+  }, [panesRef]);
 
   return null;
 }
