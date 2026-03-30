@@ -6,35 +6,27 @@ export default function DEMAInput(
 
   const rows = Array.isArray(response?.data) ? response.data : [];
 
-  /* ================= DEMA ================= */
+  /* ================= FORMAT DATA ================= */
 
   const demaData = rows
-    .filter((d) => d.value != null && d.time != null)
+    .filter((d) => d?.dema != null && d?.time != null)
     .map((d) => ({
       time: Number(d.time),
-      value: Number(d.value),
+      value: Number(d.dema),
     }))
     .sort((a, b) => a.time - b.time);
 
   const series = indicatorSeriesRef.current?.DEMA;
 
-  if (!series) return;
+  if (!series?.dema) return;
 
-  /* ================= UPDATE DEMA ================= */
+  /* ================= UPDATE SERIES ================= */
 
-  series.dema?.setData(demaData);
+  series.dema.setData(demaData);
 
-  /* ================= HOVER VALUE ================= */
+  /* ================= STORE HOVER VALUE ================= */
 
   latestIndicatorValuesRef.current.DEMA = {
     dema: demaData[demaData.length - 1]?.value,
-  };
-
-  /* ================= STORE RESULT ================= */
-
-  indicatorSeriesRef.current.DEMA.result = {
-    data: {
-      dema: demaData,
-    },
   };
 }

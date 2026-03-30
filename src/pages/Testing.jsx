@@ -1,185 +1,254 @@
-import React, { useEffect, useRef, useState } from "react";
-import { createChart, CandlestickSeries, LineSeries } from "lightweight-charts";
+import React, { useState, useMemo } from "react";
+import ReactPaginate from "react-paginate";
 
-export default function BollingerCloudChart() {
+/* ================= DATA ================= */
 
-    const containerRef = useRef(null);
-    const [cloudColor, setCloudColor] = useState("#3B82F6");
+const dataSource = {
+  "1d": [
+    {
+      symbol: "BTCUSDT",
+      base: "BTC",
+      time: 1618531200,
+      open: 63158.74,
+      high: 63520.61,
+      low: 60000,
+      close: 61334.8,
+      volume: 91764.13,
+      rsi: 56.84,
+      status: true,
+    },
+    {
+      symbol: "BTCUSDT",
+      base: "BTC",
+      time: 1618617600,
+      open: 61334.81,
+      high: 62506.05,
+      low: 59580.91,
+      close: 60006.66,
+      volume: 58912.25,
+      rsi: 52.38,
+      status: true,
+    }
+  ],
 
-    function hexToRGBA(hex, a) {
-        const r = parseInt(hex.slice(1, 3), 16);
-        const g = parseInt(hex.slice(3, 5), 16);
-        const b = parseInt(hex.slice(5, 7), 16);
-        return `rgba(${r},${g},${b},${a})`;
-    }
+  "6h": [
+    {
+      symbol: "BTCUSDT",
+      base: "BTC",
+      time: 1617364800,
+      open: 59542.78,
+      high: 59624.86,
+      low: 58827.66,
+      close: 59180.02,
+      volume: 11557.49,
+      ema: 58982.35,
+      status: true,
+    },
+    {
+      symbol: "BTCUSDT",
+      base: "BTC",
+      time: 1617386400,
+      open: 59180.02,
+      high: 59280.45,
+      low: 58428.57,
+      close: 58950.01,
+      volume: 9445.69,
+      ema: 58975.88,
+      status: true,
+    }
+  ]
+};
 
-    useEffect(() => {
+/* ================= SYMBOL LIST (🔥 ADD THIS) ================= */
 
-        const width = 900;
-        const height = 500;
+const symbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT"];
 
-        const chart = createChart(containerRef.current, {
-            width,
-            height
-        });
+/* ================= COMPONENT ================= */
 
-        const candleSeries = chart.addSeries(CandlestickSeries);
+export default function OHLCVTable() {
+  const [timeframe, setTimeframe] = useState("1d");
+  const [limit, setLimit] = useState(5);
+  const [page, setPage] = useState(0);
 
-        // dummy candles
-        const candles = [];
-        let price = 100;
-        const start = new Date(2024, 2, 1);
+  const timeframes = Object.keys(dataSource);
 
-        for (let i = 0; i < 120; i++) {
+  /* ================= MERGE + MULTI SYMBOL ================= */
 
-            price += (Math.random() - 0.5) * 5;
+  const mergedData = useMemo(() => {
+    let finalData = [];
 
-            const d = new Date(start);
-            d.setDate(start.getDate() + i);
+    const process = (arr, tf) =>
+      arr.flatMap((item) =>
+        symbols.map((sym) => ({
+          ...item,
+          symbol: sym, // 🔥 override symbol
+          base: sym.replace("USDT", ""),
+          timeframe: tf,
+        }))
+      );
 
-            const yyyy = d.getFullYear();
-            const mm = String(d.getMonth() + 1).padStart(2, "0");
-            const dd = String(d.getDate()).padStart(2, "0");
+    if (timeframe === "ALL") {
+      timeframes.forEach((tf) => {
+        finalData = [...finalData, ...process(dataSource[tf], tf)];
+      });
+    } else {
+      finalData = process(dataSource[timeframe], timeframe);
+    }
 
-            candles.push({
-                time: `${yyyy}-${mm}-${dd}`,
-                open: price - 2,
-                high: price + 3,
-                low: price - 3,
-                close: price
-            });
-        }
+    return finalData.sort((a, b) => b.time - a.time);
+  }, [timeframe]);
 
-        candleSeries.setData(candles);
+  /* ================= PAGINATION ================= */
 
-        const closeData = candles.map(c => ({ time: c.time, value: c.close }));
+  const totalRecords = mergedData.length;
+  const totalPages = Math.ceil(totalRecords / limit);
 
-        // bollinger calc
-        function Bollinger(data, p = 20) {
+  const paginatedData = useMemo(() => {
+    const start = page * limit;
+    return mergedData.slice(start, start + limit);
+  }, [mergedData, page, limit]);
 
-            const upper = [];
-            const lower = [];
+  /* ================= DYNAMIC COLUMNS ================= */
 
-            for (let i = p; i < data.length; i++) {
+  const columns = useMemo(() => {
+    const allKeys = new Set();
 
-                let sum = 0;
-                for (let j = 0; j < p; j++) sum += data[i - j].value;
+    mergedData.forEach((row) => {
+      Object.keys(row).forEach((key) => allKeys.add(key));
+    });
 
-                const mean = sum / p;
+    return Array.from(allKeys);
+  }, [mergedData]);
 
-                let v = 0;
-                for (let j = 0; j < p; j++)
-                    v += Math.pow(data[i - j].value - mean, 2);
+  /* ================= UI ================= */
 
-                const std = Math.sqrt(v / p);
+  return (
+    <div style={{ padding: "20px", fontFamily: "Arial" }}>
 
-                upper.push({ time: data[i].time, value: mean + std * 2 });
-                lower.push({ time: data[i].time, value: mean - std * 2 });
+      <style>{`
+        .table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+        .table th, .table td {
+          border: 1px solid #ddd;
+          padding: 8px;
+          text-align: center;
+        }
+        .table th {
+          background: #f5f5f5;
+        }
+        .controls {
+          display: flex;
+          gap: 10px;
+          margin-bottom: 15px;
+        }
+        .pagination {
+          display: flex;
+          list-style: none;
+          gap: 5px;
+          padding: 0;
+        }
+        .page-link {
+          padding: 6px 12px;
+          border: 1px solid #ccc;
+          cursor: pointer;
+          background: white;
+        }
+        .active .page-link {
+          background: #007bff;
+          color: white;
+        }
+        .disabled .page-link {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+      `}</style>
 
-            }
+      <h2>OHLCV Data (Chartink Style)</h2>
 
-            return { upper, lower };
-        }
+      {/* CONTROLS */}
+      <div className="controls">
+        <select
+          value={timeframe}
+          onChange={(e) => {
+            setTimeframe(e.target.value);
+            setPage(0);
+          }}
+        >
+          <option value="ALL">ALL</option>
+          {timeframes.map((tf) => (
+            <option key={tf} value={tf}>
+              {tf}
+            </option>
+          ))}
+        </select>
 
-        const { upper, lower } = Bollinger(closeData);
+        <select
+          value={limit}
+          onChange={(e) => {
+            setLimit(Number(e.target.value));
+            setPage(0);
+          }}
+        >
+          <option value={5}>5</option>
+          <option value={10}>10</option>
+          <option value={20}>20</option>
+        </select>
+      </div>
 
-        // lines
-        const upperLine = chart.addSeries(LineSeries, { color: "#22C55E", lineWidth: 2 });
-        const lowerLine = chart.addSeries(LineSeries, { color: "#EF4444", lineWidth: 2 });
+      {/* TABLE */}
+      <table className="table">
+        <thead>
+          <tr>
+            {columns.map((col) => (
+              <th key={col}>{col.toUpperCase()}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {paginatedData.map((row, i) => (
+            <tr
+              key={i}
+              style={{
+                color: row.close > row.open ? "green" : "red",
+              }}
+            >
+              {columns.map((col) => (
+                <td key={col}>
+                  {col === "time"
+                    ? new Date(row[col] * 1000).toLocaleString()
+                    : row[col] !== undefined && row[col] !== null
+                    ? typeof row[col] === "number"
+                      ? row[col].toFixed(2)
+                      : row[col].toString()
+                    : "-"}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
 
-        upperLine.setData(upper);
-        lowerLine.setData(lower);
+      {/* INFO */}
+      <div style={{ marginTop: "10px" }}>
+        Page <b>{page + 1}</b> of <b>{totalPages}</b> | Total:{" "}
+        <b>{totalRecords}</b>
+      </div>
 
-        // cloud canvas
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-
-        canvas.style.position = "absolute";
-        canvas.style.left = "0";
-        canvas.style.top = "0";
-        canvas.style.pointerEvents = "none";
-        canvas.style.zIndex = "1";
-
-        containerRef.current.appendChild(canvas);
-
-        const ctx = canvas.getContext("2d");
-
-        function drawCloud() {
-
-            ctx.clearRect(0, 0, width, height);
-
-            ctx.beginPath();
-
-            // upper
-            upper.forEach((p, i) => {
-
-                const x = chart.timeScale().timeToCoordinate(p.time);
-                const y = upperLine.priceToCoordinate(p.value);
-
-                if (x === null || y === null) return;
-
-                if (i === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
-
-            });
-
-            // lower reverse
-            for (let i = lower.length - 1; i >= 0; i--) {
-
-                const p = lower[i];
-
-                const x = chart.timeScale().timeToCoordinate(p.time);
-                const y = lowerLine.priceToCoordinate(p.value);
-
-                if (x === null || y === null) continue;
-
-                ctx.lineTo(x, y);
-
-            }
-
-            ctx.closePath();
-
-            ctx.fillStyle = hexToRGBA(cloudColor, 0.35);
-            ctx.fill();
-
-        }
-
-        // redraw on zoom/scroll
-        chart.timeScale().subscribeVisibleLogicalRangeChange(drawCloud);
-        chart.subscribeCrosshairMove(drawCloud);
-
-        setTimeout(drawCloud, 200);
-
-        return () => chart.remove();
-
-    }, [cloudColor]);
-
-
-
-    return (
-
-        <div>
-
-            <h3>Bollinger Cloud</h3>
-
-            <input
-                type="color"
-                value={cloudColor}
-                onChange={(e) => setCloudColor(e.target.value)}
-            />
-
-            <div
-                ref={containerRef}
-                style={{
-                    position: "relative",
-                    width: "900px",
-                    height: "500px"
-                }}
-            ></div>
-
-        </div>
-
-    );
-
+      {/* PAGINATION */}
+      <ReactPaginate
+        previousLabel={"Prev"}
+        nextLabel={"Next"}
+        breakLabel={"..."}
+        pageCount={totalPages}
+        onPageChange={(e) => setPage(e.selected)}
+        forcePage={page}
+        containerClassName={"pagination"}
+        pageLinkClassName={"page-link"}
+        activeClassName={"active"}
+        disabledClassName={"disabled"}
+      />
+    </div>
+  );
 }

@@ -11,160 +11,88 @@ export default function SMAPlot({
   containerRef,
   indicatorConfigs,
 }) {
-
-  const seriesRef = useRef({});
   const canvasRef = useRef(null);
 
-  const bandDataRef = useRef({
-    upper: [],
-    lower: [],
-  });
-
-  const maType = indicatorConfigs?.SMA?.maType;
-
-  const clean = (d) =>
-    Array.isArray(d) ? d.filter((x) => x?.time && x?.value != null) : [];
-
-  /* ---------------- CREATE SERIES ---------------- */
+  /* ================= CREATE SMA ================= */
 
   useEffect(() => {
+    if (!result) return;
 
-    if (!chart || seriesRef.current.sma) return;
-
-    const s = {};
-
-    Object.entries(indicatorStyle?.SMA || {}).forEach(([key]) => {
-
-      if (["bbFill"].includes(key)) return;
-
-      s[key] = addSeries("SMA", LineSeries, indicatorStyle.SMA[key]);
-
-    });
-
-    seriesRef.current = s;
-    indicatorSeriesRef.current.SMA = s;
-
-  }, [chart]);
-
-
-  /* ---------------- UPDATE DATA ---------------- */
-
-  useEffect(() => {
-
-    if (!result?.data) return;
-
-    const d = result.data;
-
-    const sma = clean(d.sma);
-    const smoothingMA = clean(d.smoothingMA);
-    const upper = clean(d.bbUpper);
-    const lower = clean(d.bbLower);
-
-    bandDataRef.current = { upper, lower };
-
-    seriesRef.current.sma?.setData(sma);
-    seriesRef.current.smoothingMA?.setData(smoothingMA);
-
-    seriesRef.current.bbUpper?.setData(upper);
-    seriesRef.current.bbLower?.setData(lower);
-
-    drawCloud();
-
-  }, [result]);
-
-
-  /* ---------------- STYLE UPDATE ---------------- */
-
-  useEffect(() => {
-
-    const group = seriesRef.current;
-
-    Object.entries(group).forEach(([key, s]) => {
-
-      const style = indicatorStyle?.SMA?.[key];
-      if (!style) return;
-
-      s.applyOptions({
-        color: style.color,
-        lineWidth: style.width,
-        lineStyle: style.lineStyle,
-        visible: style.visible,
+    if (indicatorSeriesRef.current?.SMA) {
+      Object.values(indicatorSeriesRef.current.SMA).forEach((s) => {
+        if (s?.setData) {
+          try {
+            s.setData([]);
+          } catch {}
+        }
       });
 
+      indicatorSeriesRef.current.SMA = null;
+    }
+
+    const groupedSeries = {};
+
+    let upperData = [];
+    let lowerData = [];
+
+    /* ================= MAIN LINES ================= */
+
+    Object.entries(result?.data || {}).forEach(([lineName, lineData]) => {
+      const rowConfig = rows?.find((r) => r.key === lineName);
+      const styleConfig = indicatorStyle?.SMA?.[lineName];
+
+      const series = addSeries("SMA", LineSeries, {
+        color: styleConfig?.color || rowConfig?.color || "#26a69a",
+        lineWidth: styleConfig?.width || 2,
+        lineStyle: styleConfig?.lineStyle,
+        visible: styleConfig?.visible ?? true,
+        priceLineVisible: false,
+        lastValueVisible: lineName === "sma" || lineName === "smoothingMA",
+      });
+
+      if (!series) return;
+
+      series.setData(lineData);
+
+      groupedSeries[lineName] = series;
+
+      if (lineName === "bbUpper") upperData = lineData;
+      if (lineName === "bbLower") lowerData = lineData;
     });
 
-    drawCloud();
+    groupedSeries.bbUpperData = upperData;
+    groupedSeries.bbLowerData = lowerData;
 
-  }, [indicatorStyle]);
+    indicatorSeriesRef.current.SMA = groupedSeries;
+  }, [result]);
 
-
-  /* ---------------- CANVAS INIT ---------------- */
+  /* ================= CANVAS INIT ================= */
 
   useEffect(() => {
-
     if (!containerRef || canvasRef.current) return;
 
     const canvas = document.createElement("canvas");
 
     canvas.style.position = "absolute";
-    canvas.style.left = "0px";
-    canvas.style.top = "0px";
     canvas.style.pointerEvents = "none";
     canvas.style.zIndex = 1;
 
     containerRef.appendChild(canvas);
 
     canvasRef.current = canvas;
-
   }, [containerRef]);
 
+  /* ================= DRAW BB CLOUD ================= */
 
-  /* ---------------- DRAW BAND ---------------- */
+  const drawBBCloud = () => {
+    const smaGroup = indicatorSeriesRef.current?.SMA;
+    if (!smaGroup) return;
 
-  const drawBand = (ctx, upper, lower, color, series) => {
+    const upper = smaGroup.bbUpperData || [];
+    const lower = smaGroup.bbLowerData || [];
 
     if (!upper.length || !lower.length) return;
-
-    const len = Math.min(upper.length, lower.length);
-
-    ctx.beginPath();
-    ctx.fillStyle = color;
-
-    for (let i = 0; i < len; i++) {
-
-      const p = upper[i];
-
-      const x = chart.timeScale().timeToCoordinate(p.time);
-      const y = series.priceToCoordinate(p.value);
-
-      if (x == null || y == null) continue;
-
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-
-    for (let i = len - 1; i >= 0; i--) {
-
-      const p = lower[i];
-
-      const x = chart.timeScale().timeToCoordinate(p.time);
-      const y = series.priceToCoordinate(p.value);
-
-      if (x == null || y == null) continue;
-
-      ctx.lineTo(x, y);
-    }
-
-    ctx.closePath();
-    ctx.fill();
-  };
-
-
-  /* ---------------- DRAW CLOUD ---------------- */
-
-  const drawCloud = () => {
-
-    if (!canvasRef.current || !chart || !containerRef) return;
+    if (!canvasRef.current || !chart) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
@@ -176,43 +104,101 @@ export default function SMAPlot({
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (maType !== "SMA + Bollinger Bands") return;
-
     const fill = indicatorStyle?.SMA?.bbFill;
 
     if (!fill?.visible) return;
 
-    drawBand(
-      ctx,
-      bandDataRef.current.upper,
-      bandDataRef.current.lower,
-      fill.topFillColor1 || "rgba(76,175,80,0.2)",
-      seriesRef.current.bbUpper
-    );
+    ctx.beginPath();
+
+    for (let i = 0; i < upper.length; i++) {
+      const p = upper[i];
+
+      const x = chart.timeScale().timeToCoordinate(p.time);
+      const y = smaGroup.bbUpper.priceToCoordinate(p.value);
+
+      if (x == null || y == null) continue;
+
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+
+    for (let i = lower.length - 1; i >= 0; i--) {
+      const p = lower[i];
+
+      const x = chart.timeScale().timeToCoordinate(p.time);
+      const y = smaGroup.bbLower.priceToCoordinate(p.value);
+
+      if (x == null || y == null) continue;
+
+      ctx.lineTo(x, y);
+    }
+
+    ctx.closePath();
+
+    ctx.fillStyle = fill?.topFillColor1 || "rgba(76,175,80,0.2)";
+    ctx.fill();
   };
 
-
-  /* ---------------- REDRAW EVENTS ---------------- */
+  /* ================= REDRAW EVENTS ================= */
 
   useEffect(() => {
-
     if (!chart) return;
 
-    const redraw = () => drawCloud();
+    const redraw = () => drawBBCloud();
 
-    chart.timeScale().subscribeVisibleTimeRangeChange(redraw);
-    chart.subscribeCrosshairMove(redraw);
+    const unsubscribeTime = chart.timeScale().subscribeVisibleLogicalRangeChange
+      ? chart.timeScale().subscribeVisibleLogicalRangeChange(redraw)
+      : null;
 
-    drawCloud();
+    const unsubscribeCrosshair = chart.subscribeCrosshairMove
+      ? chart.subscribeCrosshairMove(redraw)
+      : null;
 
     return () => {
-
-      chart.timeScale().unsubscribeVisibleTimeRangeChange(redraw);
-      chart.unsubscribeCrosshairMove(redraw);
-
+      if (unsubscribeTime) unsubscribeTime();
+      if (unsubscribeCrosshair) unsubscribeCrosshair();
     };
+  }, [chart, indicatorStyle]);
 
-  }, [chart, indicatorConfigs, indicatorStyle, result]);
+  /* ================= STYLE UPDATE ================= */
+
+  useEffect(() => {
+    const smaGroup = indicatorSeriesRef.current?.SMA;
+    if (!smaGroup) return;
+
+    Object.entries(smaGroup).forEach(([key, series]) => {
+      if (!series?.applyOptions) return;
+
+      const style = indicatorStyle?.SMA?.[key];
+      if (!style) return;
+
+      series.applyOptions({
+        color: style.color,
+        lineWidth: style.width,
+        lineStyle: style.lineStyle,
+        visible: style.visible,
+      });
+    });
+
+    drawBBCloud();
+  }, [indicatorStyle, result]);
+  useEffect(() => {
+    return () => {
+      const canvas = canvasRef.current;
+
+      if (canvas) {
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        canvas.remove();
+      }
+
+      canvasRef.current = null;
+
+      if (indicatorSeriesRef.current?.SMA) {
+        indicatorSeriesRef.current.SMA = null;
+      }
+    };
+  }, []);
 
   return null;
 }

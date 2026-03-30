@@ -18,12 +18,21 @@ import {
   Button,
   Badge,
   Stack,
-  CardHeader,
+  Modal,
 } from "react-bootstrap";
 import { IoClose } from "react-icons/io5";
 import IndicatorBuildingListing from "./IndicatorBuilderListing";
 
-export default function IndicatorRuleBuilder({ onClose, onOpen }) {
+export default function IndicatorRuleBuilder({
+  onClose,
+  onOpen,
+  rules,
+  setRules,
+  runScanTrigger,
+  setRunScanTrigger,
+  setListingTimeframe,
+  listingTimeframe,
+}) {
   const [timeframeOptions, setTimeframeOptions] = useState([]);
   const [scannerOptions, setScannerOptions] = useState([]);
   const [indicators, setIndicators] = useState([]);
@@ -34,6 +43,10 @@ export default function IndicatorRuleBuilder({ onClose, onOpen }) {
   const [error, setError] = useState(null);
   const [selectedCurrencies, setSelectedCurrencies] = useState([]);
 
+  const [showTimeframeModal, setShowTimeframeModal] = useState(false);
+  const [availableTimeframes, setAvailableTimeframes] = useState([]);
+  const [selectedTF, setSelectedTF] = useState("");
+
   const openModal = (type) => {
     setModalType(type);
     setIsModalOpen(true);
@@ -42,6 +55,11 @@ export default function IndicatorRuleBuilder({ onClose, onOpen }) {
   const closeModal = () => {
     setIsModalOpen(false);
     setModalType(null);
+  };
+
+  const getUniqueTimeframes = () => {
+    const tfs = rules.map((r) => r.timeframe);
+    return [...new Set(tfs)];
   };
 
   async function fetchCurrencies() {
@@ -74,16 +92,16 @@ export default function IndicatorRuleBuilder({ onClose, onOpen }) {
 
   const copyToClipboard = (filter) => {
     let values = {
-      id:filter.id,
-      indicator:filter.indicator,
-      disabled:filter.disabled,
-      operator:filter.operator,
-      period:filter.period,
-      scanner:filter.scanner,
-      timeframe:filter.timeframe,
-      value:filter.value
-    }
-    console.log(values,"---------------------->>>>>>")
+      id: filter.id,
+      indicator: filter.indicator,
+      disabled: filter.disabled,
+      operator: filter.operator,
+      period: filter.period,
+      scanner: filter.scanner,
+      timeframe: filter.timeframe,
+      value: filter.value,
+    };
+    console.log(values, "---------------------->>>>>>");
     navigator.clipboard.writeText(JSON.stringify(values));
     alert("Copied: " + filter.indicator);
   };
@@ -92,20 +110,16 @@ export default function IndicatorRuleBuilder({ onClose, onOpen }) {
     const newFilter = {
       ...filter,
       id: Date.now(),
-      name: filter.indicator + " (copy)"
+      name: filter.indicator + " (copy)",
     };
     setRules((prev) => [...prev, newFilter]);
   };
 
-
-const toggleDisable = (id) => {
+  const toggleDisable = (id) => {
     setRules((prev) =>
-      prev.map((f) =>
-        f.id === id ? { ...f, disabled: !f.disabled } : f
-      )
+      prev.map((f) => (f.id === id ? { ...f, disabled: !f.disabled } : f)),
     );
   };
-
 
   /* Fetch once on mount OR when symbol changes */
   useEffect(() => {
@@ -117,9 +131,6 @@ const toggleDisable = (id) => {
   // console.log(input, "userinputttttttt")
   const [conditions, setConditions] = useState();
 
-  /* ================= RULES (NO DEFAULT RULE) ================= */
-  const [rules, setRules] = useState([]);
-
   /* ================= CLICK LOCK ================= */
   const clickLockRef = useRef(false);
 
@@ -130,7 +141,6 @@ const toggleDisable = (id) => {
     ">=": ">=",
     "<=": "<=",
     "=": "=",
-
     "greater than": ">",
     "is greater than": ">",
     "less than": "<",
@@ -152,7 +162,7 @@ const toggleDisable = (id) => {
       .trim();
 
     /* ✅ Split logical operators */
-    const parts = clean.split(/\s+(?:and|or|also|\&\&|\|\|)\s+/i);
+    const parts = clean.split(/\s+(?:and|or|also|&|\|)\s+/i);
 
     const results = [];
 
@@ -193,7 +203,7 @@ const toggleDisable = (id) => {
   function newRule() {
     return {
       id: Date.now(),
-      timeframe: "Daily",
+      timeframe: "1d",
       indicator: "RSI",
       period: 14,
       operator: ">",
@@ -211,7 +221,6 @@ const toggleDisable = (id) => {
     // Append to the conditions array
     setConditions(trimmedInput);
 
-    // console.log(trimmedInput, "conditionsssssssss");
     const parsedConditions = parseNaturalConditions(input);
 
     if (!parsedConditions) {
@@ -224,24 +233,25 @@ const toggleDisable = (id) => {
 
       return {
         id: Date.now() + Math.random(), // ensure uniqueness
-        timeframe: "Daily",
+        timeframe: "1d",
         indicator: parsed.indicator,
         period: selected?.period ?? 14,
         operator: parsed.operator,
         scanner: "",
         value: parsed.value,
-        disabled: false
+        disabled: false,
       };
     });
 
-    setRules((prev) => [...prev, ...generatedRules.map(rule => ({
-      ...rule,
-      disabled: false
-    }))]);
+    setRules((prev) => [
+      ...prev,
+      ...generatedRules.map((rule) => ({
+        ...rule,
+        disabled: false,
+      })),
+    ]);
     setInput("");
   };
-
-
 
   /* ================= APPEND EMPTY RULE (+ BUTTON) ================= */
   function appendRule() {
@@ -265,30 +275,6 @@ const toggleDisable = (id) => {
     );
   }
 
-  async function buildQueryPayload() {
-    console.log(rules, "--------------------------------->>>>>>>>>>>>>>");
-    let payload = { rules };
-
-    // let payload =  {
-    //   rules: rules.map((rule) => ({
-    //     timeframe: rule.timeframe,
-    //     indicator: rule.indicator,
-    //     period: Number(rule.period),
-    //     operator: rule.operator,
-    //     scanner: rule.scanner,
-    //     value: Number(rule.value),
-    //   })),
-
-    // };
-
-    try {
-      const data = await apiService.post(`scannerIndicator`, payload);
-      return data;
-    } catch (error) {
-      throw new Error(error);
-    }
-  }
-
   /* ================= API CALLS ================= */
 
   async function fetchTimeframe() {
@@ -299,13 +285,26 @@ const toggleDisable = (id) => {
       const data = await response?.data;
 
       const flattened = [
-        { label: "Daily", value: "1d" }, // ✅ ADD THIS
         ...(data.minutes || []),
         ...(data.hours || []),
         ...(data.days || []),
+        ...(data.weeks || []),
       ];
 
-      setTimeframeOptions(flattened);
+      // if(){
+
+      // }
+          const daysAgoOptions = Array.from({ length: 3 }, (_, i) => {
+      const day = i + 1;
+      return {
+        label: `${day} day ago`,
+        value: `${day}d_ago`,
+      };
+    });
+
+    const finalOptions = [...flattened, ...daysAgoOptions];
+setTimeframeOptions(finalOptions);
+
     } catch (err) {
       console.error(err);
       setTimeframeOptions([{ label: "Select Timeframe", value: "" }]); // safety
@@ -319,11 +318,12 @@ const toggleDisable = (id) => {
       const response = await apiService.post("/api/getIndicators");
       const raw = await response.data;
 
+      console.log(raw, "indicatorsssssssssss");
       const formatted = [
         { label: "Add Indicator", value: "" },
         ...(raw ?? []).map((item) => ({
-          label: item.label,
-          value: item.label.toUpperCase(),
+          label: item.slug,
+          value: item.slug.toLowerCase(),
           period: item.value,
         })),
       ];
@@ -339,7 +339,6 @@ const toggleDisable = (id) => {
     try {
       const response = await apiService.post("/api/scanner");
       const raw = await response?.data;
-      // console.log(raw, "resssssssssssss")
 
       const formatted = [
         { label: "Select Scanner", value: "" }, // ⭐ DEFAULT OPTION
@@ -371,7 +370,7 @@ const toggleDisable = (id) => {
 
   return (
     <Container
-      className="p-0"
+      className="p-0 overflow-y-auto"
       style={{
         zIndex: 1050,
         height: "100vh",
@@ -541,7 +540,7 @@ const toggleDisable = (id) => {
               />
 
               <button
-              title="copy to clipboard"
+                title="copy to clipboard"
                 onClick={() => copyToClipboard(rule)}
                 className="hover:text-blue-500"
               >
@@ -550,34 +549,26 @@ const toggleDisable = (id) => {
 
               {/* DUPLICATE */}
               <button
-              title="duplicate filter"
+                title="duplicate filter"
                 onClick={() => duplicateFilter(rule)}
                 className="hover:text-green-500"
               >
                 <Files size={18} />
               </button>
 
-
               <button
-              title="disabled"
+                title="disabled"
                 onClick={() => toggleDisable(rule.id)}
                 className="hover:text-yellow-500"
               >
-                <Ban size={18} /> 
+                <Ban size={18} />
               </button>
-
 
               <button
                 title="Delete"
                 variant="light"
                 onClick={() => removeRule(rule?.id)}
                 className="hover:text-red-500"
-              // style={{
-              //   width: "24px",
-              //   height: "24px",
-              //   fontSize: "18px",
-              //   lineHeight: 1,
-              // }}
               >
                 <Trash2 size={18} />
               </button>
@@ -608,9 +599,10 @@ const toggleDisable = (id) => {
 
           {/* ACTION BUTTONS */}
           <Stack direction="horizontal" gap={3} className="pt-3 flex-wrap">
-            <Button size="18"
+            <Button
+              size="18"
               onClick={() => {
-                const payload = buildQueryPayload();
+                setRunScanTrigger((prev) => !prev);
                 onClose();
               }}
               title="Execute the scan with current rules"
@@ -676,10 +668,6 @@ const toggleDisable = (id) => {
           timeframeOptions={timeframeOptions}
         />
       )}
-      {/* Listing */}
-      <IndicatorBuildingListing
-       
-        />
     </Container>
   );
 }

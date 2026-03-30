@@ -6,10 +6,13 @@ export default function RSIInput(
 ) {
   const rows = Array.isArray(response?.data) ? response.data : [];
 
+  const series = indicatorSeriesRef.current?.RSI;
+  if (!series) return;
+
   /* ================= RSI ================= */
 
   const rsiData = rows
-    .filter((d) => d.rsi != null && d.time != null)
+    .filter((d) => d?.rsi != null && d?.time != null)
     .map((d) => ({
       time: Number(d.time),
       value: Number(d.rsi),
@@ -19,7 +22,7 @@ export default function RSIInput(
   /* ================= SMOOTHING MA ================= */
 
   const smoothingData = rows
-    .filter((d) => d.smoothingMA != null && d.time != null)
+    .filter((d) => d?.smoothingMA != null && d?.time != null)
     .map((d) => ({
       time: Number(d.time),
       value: Number(d.smoothingMA),
@@ -29,26 +32,22 @@ export default function RSIInput(
   /* ================= BB UPPER ================= */
 
   const bbUpperData = rows
-    .filter((d) => d.bbUpperBand != null && d.time != null)
+    .filter((d) => d?.bbUpper != null && d?.time != null)
     .map((d) => ({
       time: Number(d.time),
-      value: Number(d.bbUpperBand),
+      value: Number(d.bbUpper),
     }))
     .sort((a, b) => a.time - b.time);
 
   /* ================= BB LOWER ================= */
 
   const bbLowerData = rows
-    .filter((d) => d.bbLowerBand != null && d.time != null)
+    .filter((d) => d?.bbLower != null && d?.time != null)
     .map((d) => ({
       time: Number(d.time),
-      value: Number(d.bbLowerBand),
+      value: Number(d.bbLower),
     }))
     .sort((a, b) => a.time - b.time);
-
-  const series = indicatorSeriesRef.current?.RSI;
-
-  if (!series) return;
 
   /* ================= UPDATE RSI ================= */
 
@@ -56,51 +55,55 @@ export default function RSIInput(
 
   /* ================= UPDATE MA ================= */
 
-  series.smoothingMA?.setData(smoothingData);
-
+  if (maType !== "none") {
+    series.smoothingMA?.setData(smoothingData);
+  } else {
+    series.smoothingMA?.setData([]);
+  }
 
   /* ================= BOLLINGER BANDS ================= */
-   console.log(maType, "typjndvukhdbvjab")
 
   if (maType === "SMA + Bollinger Bands") {
-    series.bbUpperBand?.setData(bbUpperData);
-    series.bbLowerBand?.setData(bbLowerData);
+    series.bbUpper?.setData(bbUpperData);
+    series.bbLower?.setData(bbLowerData);
 
-    latestIndicatorValuesRef.current.RSI.bbUpperBand =
-      bbUpperData[bbUpperData.length - 1]?.value;
+    series.bbUpperData = bbUpperData;
+    series.bbLowerData = bbLowerData;
 
-    latestIndicatorValuesRef.current.RSI.bbLowerBand =
-      bbLowerData[bbLowerData.length - 1]?.value;
+    latestIndicatorValuesRef.current.RSI.bbUpper =
+      bbUpperData[bbUpperData.length - 1]?.value ?? null;
+
+    latestIndicatorValuesRef.current.RSI.bbLower =
+      bbLowerData[bbLowerData.length - 1]?.value ?? null;
   } else {
     /* clear BB if MA type changed */
 
-    series.bbUpperBand?.setData([]);
-    series.bbLowerBand?.setData([]);
+    series.bbUpper?.setData([]);
+    series.bbLower?.setData([]);
 
-    latestIndicatorValuesRef.current.RSI.bbUpperBand = null;
-    latestIndicatorValuesRef.current.RSI.bbLowerBand = null;
+    series.bbUpperData = [];
+    series.bbLowerData = [];
+
+    latestIndicatorValuesRef.current.RSI.bbUpper = null;
+    latestIndicatorValuesRef.current.RSI.bbLower = null;
   }
 
   /* ================= UPDATE HOVER VALUES ================= */
-console.log("RSI MA TYPE:", maType);
+
   latestIndicatorValuesRef.current.RSI.rsi =
-    rsiData[rsiData.length - 1]?.value;
+    rsiData[rsiData.length - 1]?.value ?? null;
 
   latestIndicatorValuesRef.current.RSI.smoothingMA =
-    smoothingData[smoothingData.length - 1]?.value;
+    smoothingData[smoothingData.length - 1]?.value ?? null;
 
   /* ================= STORE RESULT ================= */
 
   indicatorSeriesRef.current.RSI.result = {
     data: {
       rsi: rsiData,
-      smoothingMA: smoothingData,
-      bbUpperBand:
-        maType === "SMA + Bollinger Bands" ? bbUpperData : [],
-      bbLowerBand:
-        maType === "SMA + Bollinger Bands" ? bbLowerData : [],
+      smoothingMA: maType !== "none" ? smoothingData : [],
+      bbUpper: maType === "SMA + Bollinger Bands" ? bbUpperData : [],
+      bbLower: maType === "SMA + Bollinger Bands" ? bbLowerData : [],
     },
   };
-
-  
 }

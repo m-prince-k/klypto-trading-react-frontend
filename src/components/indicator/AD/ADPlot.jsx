@@ -11,10 +11,6 @@ export default function ADPlot({
     // ✅ Get AD data
     const adData = result?.data ?? [];
 
-    if (!Array.isArray(adData) || !adData.length) {
-      console.log("❌ AD data missing", result);
-      return;
-    }
 
     // 🔥 Remove previous series
     if (indicatorSeriesRef.current?.AD?.ad) {

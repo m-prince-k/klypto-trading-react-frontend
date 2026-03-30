@@ -3,15 +3,11 @@ import { getRowsByIndicator } from "./common";
 import { useRef } from "react";
 
 export default function useChartFunctions({
-  chartRef,
-  addSeries,
   indicatorSeriesRef,
-  indicatorStyle,
   latestIndicatorValuesRef,
   indicatorConfigs,
   setIndicatorLoading,
 }) {
-  const indicatorMetaRef = useRef({});
 
   /* ================= FETCH INDICATOR API ================= */
 
@@ -45,19 +41,15 @@ export default function useChartFunctions({
           indicator,
           timeframeValue,
           setIndicatorLoading,
-          indicatorMetaRef,
         );
 
         if (!result) continue;
 
-        const normalizedType = indicator.replace(/[\s/%]+/g, "");
-        const config = indicatorConfigs?.[normalizedType] || {};
+        const config = indicatorConfigs?.[indicator] || {};
         const { maType } = config;
         const rows = getRowsByIndicator(indicator, maType, indicatorConfigs);
 
-        switch (normalizedType) {
-          /* ================= RSI ================= */
-
+        switch (indicator) {
           case "RSI": {
             const rsiData = result?.data?.rsi ?? [];
             const smoothingData = result?.data?.smoothingMA ?? [];
@@ -220,7 +212,6 @@ export default function useChartFunctions({
               bbUpper: bbUpper[bbUpper.length - 1]?.value,
               bbLower: bbLower[bbLower.length - 1]?.value,
             };
-
             break;
           }
 
@@ -340,18 +331,24 @@ export default function useChartFunctions({
           case "SUPERTREND": {
             const upTrend = result?.data?.upTrend ?? [];
             const downTrend = result?.data?.downTrend ?? [];
+            const bodyMiddle = result?.data?.bodyMiddle ?? [];
 
+            // store the series reference and rows
             indicatorSeriesRef.current.SUPERTREND = {
               result,
               rows,
             };
 
-            const last =
-              upTrend[upTrend.length - 1]?.value ??
-              downTrend[downTrend.length - 1]?.value;
+            // get the last available value for each line
+            const lastUp = upTrend[upTrend.length - 1]?.value ?? null;
+            const lastDown = downTrend[downTrend.length - 1]?.value ?? null;
+            const lastMiddle = bodyMiddle[bodyMiddle.length - 1]?.value ?? null;
 
+            // store latest values
             latestIndicatorValuesRef.current.SUPERTREND = {
-              supertrend: last,
+              upTrend: lastUp,
+              downTrend: lastDown,
+              bodyMiddle: lastMiddle,
             };
 
             break;
@@ -380,8 +377,6 @@ export default function useChartFunctions({
               result,
               rows,
             };
-
-            console.log(result, "ressssssssssss");
             latestIndicatorValuesRef.current.AO = {
               oscillator: osc[osc.length - 1]?.value,
             };
@@ -562,6 +557,24 @@ export default function useChartFunctions({
 
             break;
           }
+          case "DC": {
+            const upperData = result?.data?.upper ?? [];
+            const lowerData = result?.data?.lower ?? [];
+            const basisData = result?.data?.basis ?? [];
+
+            indicatorSeriesRef.current.DC = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.DC = {
+              upper: upperData[upperData.length - 1]?.value ?? null,
+              lower: lowerData[lowerData.length - 1]?.value ?? null,
+              basis: basisData[basisData.length - 1]?.value ?? null,
+            };
+
+            break;
+          }
 
           case "PVO": {
             const pvoData = result?.data?.pvo ?? [];
@@ -667,22 +680,6 @@ export default function useChartFunctions({
 
             break;
           }
-          case "STOCHRSI": {
-            const kData = result?.data?.kLine ?? [];
-            const dData = result?.data?.dLine ?? [];
-
-            indicatorSeriesRef.current.STOCHRSI = {
-              result,
-              rows,
-            };
-
-            latestIndicatorValuesRef.current.STOCHRSI = {
-              kLine: kData[kData.length - 1]?.value ?? null,
-              dLine: dData[dData.length - 1]?.value ?? null,
-            };
-
-            break;
-          }
 
           case "TRIX": {
             const trixData = result?.data?.trix ?? [];
@@ -784,6 +781,21 @@ export default function useChartFunctions({
 
             break;
           }
+          case "CHOP": {
+            const chopData = result?.data?.chopLine ?? [];
+
+            indicatorSeriesRef.current.CHOP = {
+              result,
+              rows,
+            };
+
+            console.log(result, "ressssss");
+            latestIndicatorValuesRef.current.CHOP = {
+              chop: chopData[chopData.length - 1]?.value ?? null,
+            };
+
+            break;
+          }
           case "STDDEV": {
             const stddevData = result?.data ?? [];
 
@@ -798,7 +810,6 @@ export default function useChartFunctions({
 
             break;
           }
-
           case "BB": {
             const upperData = result?.data?.upper ?? [];
             const lowerData = result?.data?.lower ?? [];
@@ -832,7 +843,6 @@ export default function useChartFunctions({
 
             break;
           }
-
           case "KVO": {
             const kvoData = result?.data?.kvo ?? [];
             const signalData = result?.data?.signal ?? [];
@@ -849,6 +859,47 @@ export default function useChartFunctions({
 
             break;
           }
+          case "AWO": {
+            const rows = result?.data?.series ?? [];
+
+            const awoData = rows
+              .filter((d) => d.ao != null && d.time != null)
+              .map((d) => ({
+                time: Number(d.time),
+                value: Number(d.ao),
+                color: d.color, // optional if backend provides it
+                changeToGreen: d.changeToGreen,
+                changeToRed: d.changeToRed,
+              }));
+
+            indicatorSeriesRef.current.AWO = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current.AWO = {
+              awo: awoData.length ? awoData[awoData.length - 1].value : null,
+            };
+
+            break;
+          }
+          case "VP":
+            return {
+              type: "multi",
+              data: {
+                vp:
+                  result?.volumeprofile
+                    ?.filter((d) => d.price != null && d.volume != null)
+                    .map((d) => ({
+                      price: Number(d.price),
+                      volume: Number(d.volume),
+                    })) ?? [],
+
+                poc: result?.volumePoc ?? null,
+                vah: result?.volumevah ?? null,
+                val: result?.volumeval ?? null,
+              },
+            };
 
           /* ================= DEFAULT ================= */
 
@@ -870,28 +921,16 @@ async function fetchDataForIndicators(
   type,
   timeframeValue,
   setIndicatorLoading,
-  indicatorMetaRef,
 ) {
   try {
-    const normalizedType = type?.replace(/[\s/%]+/g, "") || "";
-
-    const key = `${normalizedType}_${selectedCurrency}_${timeframeValue}`;
-
-    if (indicatorMetaRef.current[normalizedType] === key) {
-      console.log(`${normalizedType} already loaded for this symbol/timeframe`);
-      return;
-    }
 
     setIndicatorLoading(true);
 
     const response = await apiService.post(
-      `/api/indicatorDetails?symbol=${selectedCurrency}&interval=${timeframeValue}&type=${normalizedType}`,
+      `/api/indicatorDetails?symbol=${selectedCurrency}&interval=${timeframeValue}&type=${type}`,
     );
 
-    console.log("Raw indicator data for", normalizedType, ":", response);
-
-    // store last request key
-    // indicatorMetaRef.current[normalizedType] = key;
+    console.log("Raw indicator data for", type, ":", response);
 
     const mapLine = (arr, field) =>
       arr
@@ -903,7 +942,7 @@ async function fetchDataForIndicators(
 
     console.log("mapped conversion", response.data, "conversionLine");
 
-    switch (normalizedType) {
+    switch (type) {
       /* ---------------- SINGLE VALUE ---------------- */
 
       case "VWAP": {
@@ -1003,6 +1042,39 @@ async function fetchDataForIndicators(
                   time: Number(d.time),
                   value: Number(d.lowestContraction),
                 }))) ?? [],
+          },
+        };
+
+      case "VP":
+        return {
+          type: "multi",
+          data: {
+            vp:
+              (await response?.volumeprofile
+                ?.filter((d) => d.price != null && d.volume != null)
+                .map((d) => ({
+                  price: Number(d.price),
+                  volume: Number(d.volume),
+                }))) ?? [],
+
+            poc:
+              response?.volumePoc != null ? Number(response.volumePoc) : null,
+
+            vah:
+              response?.volumevah != null ? Number(response.volumevah) : null,
+
+            val:
+              response?.volumeval != null ? Number(response.volumeval) : null,
+
+            minPrice:
+              response?.volumeminPrice != null
+                ? Number(response.volumeminPrice)
+                : null,
+
+            maxPrice:
+              response?.volumeMaxPrice != null
+                ? Number(response.volumeMaxPrice)
+                : null,
           },
         };
 
@@ -1164,20 +1236,6 @@ async function fetchDataForIndicators(
           },
         };
 
-      case "CMF":
-        return {
-          type: "single",
-          data: {
-            cmf:
-              (await response?.data
-                ?.filter((d) => d.value != null && d.time != null)
-                .map((d) => ({
-                  time: Number(d.time),
-                  value: Number(d.value),
-                }))) ?? [],
-          },
-        };
-
       case "CCI": {
         const rows = Array.isArray(response?.data) ? response.data : [];
 
@@ -1278,28 +1336,6 @@ async function fetchDataForIndicators(
           },
         };
 
-      case "STOCHRSI":
-        return {
-          type: "multi",
-          data: {
-            kLine:
-              response.data.candles
-                ?.filter((d) => d.k != null && d.time != null)
-                .map((d) => ({
-                  time: d.time,
-                  value: d.k,
-                })) ?? [],
-
-            dLine:
-              response.data.candles
-                ?.filter((d) => d.d != null && d.time != null)
-                .map((d) => ({
-                  time: d.time,
-                  value: d.d,
-                })) ?? [],
-          },
-        };
-
       case "TEMA":
         return {
           type: "multi",
@@ -1344,24 +1380,21 @@ async function fetchDataForIndicators(
           data: {
             upTrend:
               response.data?.map((d) => ({
-                time: d.time,
+                time: Number(d.time),
                 value: d.upTrend ?? null,
               })) ?? [],
-
             downTrend:
               response.data?.map((d) => ({
-                time: d.time,
+                time: Number(d.time),
                 value: d.downTrend ?? null,
               })) ?? [],
-
             bodyMiddle:
               response.data?.map((d) => ({
-                time: d.time,
-                value: d.bodyMiddle,
+                time: Number(d.time),
+                value: d.bodyMiddle ?? null,
               })) ?? [],
           },
         };
-
       case "MOM":
         return {
           type: "multi",
@@ -1766,18 +1799,6 @@ async function fetchDataForIndicators(
         };
       }
 
-      case "EOM":
-        return {
-          type: "single",
-          data:
-            response.data
-              ?.filter((d) => d.eom != null && d.time != null)
-              .map((d) => ({
-                time: d.time,
-                value: d.eom,
-              })) ?? [],
-        };
-
       case "AD":
         return {
           type: "single",
@@ -2018,6 +2039,18 @@ async function fetchDataForIndicators(
                   value: Number(d.middle),
                 }))) ?? [],
           },
+        };
+
+      case "AWO":
+        return {
+          type: "single",
+          data:
+            response?.data
+              ?.filter((d) => d.ao != null && d.time != null)
+              .map((d) => ({
+                time: Number(d.time),
+                value: Number(d.ao),
+              })) ?? [],
         };
 
       default:

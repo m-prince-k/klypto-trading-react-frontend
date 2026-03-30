@@ -3,70 +3,84 @@ import { LineSeries, HistogramSeries } from "lightweight-charts";
 
 export default function MACDPlot({
   result,
-  rows,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
 }) {
+
+  /* ================= CREATE SERIES ================= */
+
   useEffect(() => {
     if (!result?.data) return;
 
-    /* -------- REMOVE OLD -------- */
+    /* ---------- REMOVE OLD SERIES ---------- */
 
     if (indicatorSeriesRef.current?.MACD) {
       Object.values(indicatorSeriesRef.current.MACD).forEach((s) => {
-        if (s?.setData) {
-          try {
-            s.setData([]);
-          } catch {}
-        }
+        try {
+          s?.setData?.([]);
+        } catch {}
       });
 
       indicatorSeriesRef.current.MACD = null;
     }
 
     const groupedSeries = {};
+
     let macdData = [];
+    let histogramRaw = [];
 
     Object.entries(result.data).forEach(([lineName, lineData]) => {
       if (!Array.isArray(lineData)) return;
 
       const style = indicatorStyle?.MACD?.[lineName];
-      let series;
 
       /* ================= HISTOGRAM ================= */
 
       if (lineName === "histogram") {
-        series = addSeries("MACD", HistogramSeries, {
-          visible: style?.visible ?? true,
+        const series = addSeries("MACD", HistogramSeries, {
+          visible: indicatorStyle?.MACD?.histogram?.visible ?? true,
           priceLineVisible: false,
           lastValueVisible: true,
         });
 
-        const formatted = lineData
+        histogramRaw = lineData
           .filter((d) => d?.time != null && d?.value != null)
-          .map((d) => {
-            const v = Number(d.value);
+          .map((d) => ({
+            time: d.time,
+            value: Number(d.value),
+          }));
 
-            let color;
+        const palette = indicatorStyle?.MACD?.histogram?.palette || {};
 
-            if (v >= 0) {
-              color = style?.palette?.[0] || style?.upColor;
-            } else {
-              color = style?.palette?.[2] || style?.downColor;
-            }
+        const colored = histogramRaw.map((d, i, arr) => {
+          const v = d.value;
+          const prev = arr[i - 1]?.value;
 
-            return {
-              time: d.time,
-              value: v,
-              color,
-            };
-          });
+          let color;
 
-        series.setData(formatted);
-      } else {
-        /* ================= LINE SERIES ================= */
-        series = addSeries("MACD", LineSeries, {
+          if (v >= 0) {
+            color = i === 0 || v >= prev ? palette?.["pf"] : palette?.["pr"];
+          } else {
+            color = i === 0 || v >= prev ? palette?.["nf"] : palette?.["nr"];
+          }
+
+          return {
+            ...d,
+            color,
+          };
+        });
+
+        series.setData(colored);
+
+        groupedSeries.histogram = series;
+        groupedSeries.histogramRaw = histogramRaw;
+      }
+
+      /* ================= MACD + SIGNAL ================= */
+
+      else {
+        const series = addSeries("MACD", LineSeries, {
           color: style?.color,
           lineWidth: style?.width ?? 2,
           lineStyle: style?.lineStyle ?? 0,
@@ -85,24 +99,25 @@ export default function MACDPlot({
         series.setData(cleanData);
 
         if (lineName === "macd") macdData = cleanData;
-      }
 
-      if (series) groupedSeries[lineName] = series;
+        groupedSeries[lineName] = series;
+      }
     });
 
     /* ================= ZERO LINE ================= */
 
+    const zeroStyle = indicatorStyle?.MACD?.zeroLine;
+
     const zeroLine = addSeries("MACD", LineSeries, {
-      color: indicatorStyle?.MACD?.zeroLine?.color,
-      lineWidth: indicatorStyle?.MACD?.zeroLine?.width ?? 1,
-      lineStyle: indicatorStyle?.MACD?.zeroLine?.lineStyle ?? 2,
-      visible: indicatorStyle?.MACD?.zeroLine?.visible ?? true,
-      value: indicatorStyle?.MACD?.zeroLine?.value ?? 0,
+      color: zeroStyle?.color,
+      lineWidth: zeroStyle?.width ?? 1,
+      lineStyle: zeroStyle?.lineStyle ?? 2,
+      visible: zeroStyle?.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: false,
     });
 
-    const zeroValue = indicatorStyle?.MACD?.zeroLine?.value ?? 0;
+    const zeroValue = zeroStyle?.value ?? 0;
 
     const zeroData = macdData.map((p) => ({
       time: p.time,
@@ -115,49 +130,101 @@ export default function MACDPlot({
     groupedSeries.macdData = macdData;
 
     indicatorSeriesRef.current.MACD = groupedSeries;
+
   }, [result]);
 
-  /* ================= STYLE UPDATE ================= */
+
+
+  /* ================= STYLE / PALETTE UPDATE ================= */
 
   useEffect(() => {
+
     const macdGroup = indicatorSeriesRef.current?.MACD;
     if (!macdGroup) return;
 
+    const style = indicatorStyle?.MACD;
     const macdData = macdGroup.macdData ?? [];
+    const histogramRaw = macdGroup.histogramRaw ?? [];
 
-    const zeroValue = indicatorStyle?.MACD?.zeroLine?.value ?? 0;
+    /* ---------- UPDATE MACD + SIGNAL ---------- */
+
+    ["macd", "signal"].forEach((key) => {
+
+      const series = macdGroup[key];
+      const s = style?.[key];
+
+      if (!series || !s) return;
+
+      series.applyOptions({
+        color: s.color,
+        lineWidth: s.width,
+        lineStyle: s.lineStyle,
+        visible: s.visible,
+      });
+
+    });
+
+
+    /* ---------- UPDATE ZERO LINE ---------- */
+
+    const zeroStyle = style?.zeroLine;
+    const zeroValue = zeroStyle?.value ?? 0;
 
     macdGroup.zeroLine?.applyOptions({
-      color: indicatorStyle?.MACD?.zeroLine?.color,
-      lineWidth: indicatorStyle?.MACD?.zeroLine?.width,
-      lineStyle: indicatorStyle?.MACD?.zeroLine?.lineStyle,
-      visible: indicatorStyle?.MACD?.zeroLine?.visible,
-      value: indicatorStyle?.MACD?.zeroLine?.value,
+      color: zeroStyle?.color,
+      lineWidth: zeroStyle?.width,
+      lineStyle: zeroStyle?.lineStyle,
+      visible: zeroStyle?.visible,
     });
 
     macdGroup.zeroLine?.setData(
       macdData.map((p) => ({
         time: p.time,
         value: zeroValue,
-      })),
+      }))
     );
 
-    Object.entries(macdGroup).forEach(([key, series]) => {
-      if (!series) return;
-      if (key === "histogram" || key === "macdData" || key === "zeroLine")
-        return;
 
-      const style = indicatorStyle?.MACD?.[key];
-      if (!style) return;
+    /* ---------- UPDATE HISTOGRAM ---------- */
 
-      series.applyOptions({
-        color: style.color,
-        lineWidth: style.width,
-        lineStyle: style.lineStyle,
-        visible: style.visible,
+    const histogramSeries = macdGroup.histogram;
+    const palette = style?.histogram?.palette;
+    const histogramVisible = style?.histogram?.visible ?? true;
+
+    if (histogramSeries) {
+      histogramSeries.applyOptions({
+        visible: histogramVisible,
       });
-    });
+    }
+
+    if (histogramSeries && histogramRaw.length) {
+
+      const recolored = histogramRaw.map((d, i, arr) => {
+
+        const v = d.value;
+        const prev = arr[i - 1]?.value;
+
+        let color;
+
+        if (v >= 0) {
+          color = i === 0 || v >= prev ? palette?.["pf"] : palette?.["pr"];
+        } else {
+          color = i === 0 || v >= prev ? palette?.["nf"] : palette?.["nr"];
+        }
+
+        return {
+          ...d,
+          color,
+        };
+
+      });
+
+      histogramSeries.setData(recolored);
+
+    }
+
   }, [indicatorStyle]);
+
 
   return null;
 }

@@ -428,6 +428,1128 @@ export function handleCopy(rows = null) {
   alert("Copied to clipboard ✔");
 }
 
+
+export let indicatorStyleDefault = {
+    RSI: {
+      rsi: {
+        color: "rgba(38,166,154,1)",
+        width: 2,
+        visible: true,
+      },
+      smoothingMA: {
+        color: "rgba(255,193,7,1)",
+        width: 2,
+        visible: true,
+      },
+      bbUpper: {
+        color: "rgba(255,152,0,1)",
+        width: 1,
+        visible: true,
+      },
+      bbLower: {
+        color: "rgba(255,152,0,1)",
+        width: 1,
+        visible: true,
+      },
+      bandFill: {
+        visible: true,
+        topFillColor1: "rgba(140,120,255,0.05)",
+        topFillColor2: "rgba(140,120,255,0.05)",
+      },
+
+      obFill: {
+        visible: true,
+        topFillColor1: "rgba(38,166,106,0.1)",
+        topFillColor2: "rgba(38,166,106,0.2)",
+      },
+
+      osFill: {
+        visible: true,
+        bottomFillColor1: "rgba(239,83,80,0.1)",
+        bottomFillColor2: "rgba(239,83,80,0.4)",
+      },
+
+      bbFill: {
+        visible: true,
+        topFillColor1: "rgba(76,175,80,0.2)",
+        bottomFillColor1: "rgba(76,175,80,0.05)",
+      },
+    },
+    KVO: {
+      kvoLine: {
+        color: "rgba(33,150,243,1)", // blue
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+      signalLine: {
+        color: "rgba(255,152,0,1)", // orange
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+    },
+    SMA: {
+      sma: {
+        color: "rgba(0, 140, 255, 1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+      smoothingMA: {
+        visible: true,
+        color: "rgba(255,202,28,1)",
+        width: 1,
+        lineStyle: 0,
+      },
+      bbUpper: {
+        visible: true,
+        color: "rgba(239,83,80,1)",
+        width: 1,
+        lineStyle: 0,
+      },
+      bbLower: {
+        visible: true,
+        color: "rgba(38,166,154,1)",
+        width: 1,
+        lineStyle: 0,
+      },
+      bbFill: {
+        visible: true,
+        topFillColor1: "rgba(76,175,80,0.2)",
+        bottomFillColor1: "rgba(76,175,80,0.05)",
+      },
+    },
+
+    BBW: {
+      bbwLine: {
+        color: "rgba(33,150,243,1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+      highest: {
+        color: "rgba(244,67,54,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+      },
+
+      lowest: {
+        color: "rgba(0,200,83,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+      },
+    },
+
+    STDDEV: {
+      stddev: {
+        color: "rgba(33,150,243,1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+    },
+
+    OBV: {
+      obv: {
+        color: "rgba(156,39,176,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+      smoothingMA: {
+        color: "rgba(255,193,7,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+      bbUpper: {
+        color: "rgba(0,200,83,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+      bbLower: {
+        color: "rgba(255,82,82,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+      bbFill: {
+        visible: true,
+        topFillColor1: "rgba(76,175,80,0.2)",
+        bottomFillColor1: "rgba(76,175,80,0.05)",
+      },
+    },
+
+    ICHIMOKU: {
+      conversionLine: {
+        color: "rgba(41,98,255,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+      baseLine: {
+        color: "rgba(255,109,0,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+      leadLine1: {
+        color: "rgba(63,81,181,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+      leadLine2: {
+        color: "rgba(216,27,96,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+      laggingSpan: {
+        color: "rgba(156,39,176,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+      kumoCloudUpper: {
+        color: "rgba(130, 132, 141,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+      kumoCloudLower: {
+        color: "rgba(130, 132, 141,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+      cloudFillBullish: {
+        color: "rgba(67,160,71,0.35)",
+        opacity: 35,
+        visible: true,
+      },
+      cloudFillBearish: {
+        color: "rgba(244,67,54,0.35)",
+        opacity: 35,
+        visible: true,
+      },
+    },
+    CHOP: {
+      chopLine: {
+        visible: true,
+        color: "rgba(33,150,243,1)",
+        width: 1,
+        lineStyle: 0,
+      },
+
+      upper: {
+        value: 61.8,
+        visible: true,
+        color: "rgba(239,83,80,1)",
+        width: 1,
+        lineStyle: 2,
+      },
+
+      middle: {
+        value: 50,
+        visible: true,
+        color: "rgba(38,166,154,1)",
+        width: 1,
+        lineStyle: 2,
+      },
+
+      lower: {
+        value: 38.2,
+        visible: true,
+        color: "rgba(38,166,154,1)",
+        width: 1,
+        lineStyle: 2,
+      },
+
+      bg: {
+        visible: true,
+        topFillColor1: "rgba(38,166,154,0.15)",
+        topFillColor2: "rgba(38,166,154,0.05)",
+      },
+    },
+    ZIGZAG: {
+      z: {
+        color: "rgba(38,166,154,1)",
+        width: 2,
+        lineStyle: 0,
+        opacity: 100,
+        visible: true,
+      },
+    },
+    EMA: {
+      ema: {
+        color: "rgba(0,0,0,1)",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+        visible: true,
+      },
+      smoothingMA: {
+        visible: true,
+        color: "rgba(255, 202, 28,1)",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+      },
+      bbUpper: {
+        visible: true,
+        color: "rgba(239,83,80,1)",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+      },
+
+      bbLower: {
+        visible: true,
+        color: "rgba(38,166,154,1)",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+      },
+      bbFill: {
+        visible: true,
+        topFillColor1: "rgba(76,175,80,0.2)",
+        bottomFillColor1: "rgba(76,175,80,0.05)",
+      },
+    },
+    WMA: {
+      wma: {
+        color: "rgba(0,0,0,1)",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+        visible: true,
+      },
+    },
+    HMA: {
+      hma: {
+        visible: true,
+        color: "rgba(0,0,0)",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+      },
+    },
+    DEMA: {
+      dema: {
+        color: "rgba(0,0,0,1)",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+        visible: true,
+      },
+    },
+    TEMA: {
+      tema: {
+        color: "rgba(0,0,0,1)",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+        visible: true,
+      },
+    },
+    SUPERTREND: {
+      upTrend: {
+        color: "rgba(38,166,154,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+        opacity: 100,
+      },
+      downTrend: {
+        color: "rgba(239,83,80,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+        opacity: 100,
+      },
+      bodyMiddle: {
+        color: "rgba(100, 16, 236,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+        opacity: 100,
+      },
+      upTrendBg: {
+        topFillColor1: "rgba(38,166,154,0.2)",
+        topFillColor2: "rgba(38,166,154,0.05)",
+        visible: true,
+      },
+      downTrendBg: {
+        topFillColor1: "rgba(239,83,80,0.2)",
+        topFillColor2: "rgba(239,83,80,0.05)",
+        visible: true,
+      },
+    },
+    AROON: {
+      aroonUp: {
+        color: "rgba(38,166,154,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+        opacity: 100,
+      },
+      aroonDown: {
+        color: "rgba(239,83,80,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+        opacity: 100,
+      },
+    },
+    AO: {
+      oscillator: {
+        visible: true,
+        palette: {
+          up: "rgba(38,166,154,1)", // bullish
+          down: "rgba(239,83,80,1)", // bearish
+        },
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+      },
+      center: {
+        visible: true,
+        value: 0,
+        color: "rgba(158,158,158,1)",
+        width: 1,
+        lineStyle: 2,
+        opacity: 100,
+      },
+      upperLevel: {
+        visible: true,
+        value: 90,
+        color: "rgba(158,158,158,1)",
+        width: 1,
+        lineStyle: 2,
+        opacity: 100,
+      },
+      lowerLevel: {
+        visible: true,
+        value: -90,
+        color: "rgba(158,158,158,1)",
+        width: 1,
+        lineStyle: 2,
+        opacity: 100,
+      },
+
+      oscillatorFill: {
+        visible: true,
+        palette: {
+          topFillColor1: "rgba(38,166,154,0.25)",
+          topFillColor2: "rgba(239,83,80,0.25)",
+        },
+      },
+    },
+    ADX: {
+      adx: {
+        color: "rgba(250, 35, 6, 1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+        opacity: 100,
+      },
+    },
+    CCI: {
+      cciLine: {
+        color: "rgba(38,166,154,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+        opacity: 100,
+      },
+
+      cciMa: {
+        color: "rgba(255,152,0,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+        opacity: 100,
+      },
+
+      upperBand: {
+        color: "rgba(38,166,154,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: 100,
+      },
+
+      middleBand: {
+        color: "rgba(158,158,158,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: 0,
+      },
+
+      lowerBand: {
+        color: "rgba(38,166,154,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: -100,
+      },
+
+      bgFill: {
+        topFillColor1: "rgba(38,166,154,0.05)",
+        topFillColor2: "rgba(38,166,154,0.05)",
+        visible: true,
+      },
+
+      bbUpper: {
+        color: "rgba(33,150,243,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+
+      bbLower: {
+        color: "rgba(33,150,243,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+
+      bbFill: {
+        topFillColor1: "rgba(33,150,243,0.15)",
+        topFillColor2: "rgba(33,150,243,0.05)",
+        visible: true,
+      },
+    },
+    MOM: {
+      momentum: {
+        visible: true,
+        color: "rgba(33, 150, 243, 1)",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+      },
+    },
+    ROC: {
+      roc: {
+        color: "rgba(33,150,243,1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+        opacity: 100,
+      },
+      zeroLine: {
+        color: "rgba(158,158,158,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: 0,
+      },
+    },
+    WPR: {
+      r: {
+        visible: true,
+        color: "rgba(38,166,154,1)",
+        width: 2,
+        lineStyle: 0,
+        opacity: 100,
+      },
+
+      upperBand: {
+        visible: true,
+        color: "rgba(239,83,80,1)",
+        width: 1,
+        lineStyle: 2,
+        value: -20,
+      },
+      middleBand: {
+        visible: true,
+        color: "rgba(158,158,158,1)",
+        width: 1,
+        lineStyle: 2,
+        value: -50,
+      },
+      lowerBand: {
+        visible: true,
+        color: "rgba(38,166,154,1)",
+        width: 1,
+        lineStyle: 2,
+        value: -80,
+      },
+      bg: {
+        visible: true,
+        topFillColor1: "rgba(38,166,154,0.08)",
+        topFillColor2: "rgba(38,166,154,0.02)",
+      },
+    },
+    ATR: {
+      atr: {
+        visible: true,
+        color: "rgba(0, 0, 0,1)",
+        width: 2,
+        lineStyle: 0,
+        opacity: 100,
+      },
+    },
+    STOCH: {
+      k: {
+        visible: true,
+        color: "rgba(38,166,154,1)",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+      },
+      d: {
+        visible: true,
+        color: "rgba(255,152,0,1)",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+      },
+      upperBand: {
+        value: 80,
+        visible: true,
+        color: "rgba(120,123,134,0.6)",
+        width: 1,
+        lineStyle: 2,
+      },
+      middleBand: {
+        value: 50,
+        visible: true,
+        color: "rgba(120,123,134,0.5)",
+        width: 1,
+        lineStyle: 2,
+      },
+      lowerBand: {
+        value: 20,
+        visible: true,
+        color: "rgba(120,123,134,0.6)",
+        width: 1,
+        lineStyle: 2,
+      },
+      bgFill: {
+        visible: true,
+        topFillColor1: "rgba(41,98,255,0.12)",
+        topFillColor2: "rgba(41,98,255,0.05)",
+      },
+    },
+    MFI: {
+      mfiLine: {
+        color: "rgba(41, 98, 255, 1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+        opacity: 1,
+      },
+
+      upperBand: {
+        value: 80,
+        color: "rgba(120, 123, 134, 0.8)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+      },
+
+      middleBand: {
+        value: 50,
+        color: "rgba(120, 123, 134, 0.6)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+      },
+
+      lowerBand: {
+        value: 20,
+        color: "rgba(120, 123, 134, 0.8)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+      },
+      bgFill: {
+        visible: true,
+        topFillColor1: "rgba(41, 98, 255, 0.25)",
+        topFillColor2: "rgba(41, 98, 255, 0.08)",
+      },
+    },
+    AWO: {
+      awoBars: {
+        visible: true,
+        palette: {
+          up: "rgba(38,166,154,0.6)",
+          down: "rgba(239,83,80,0.6)",
+        },
+      },
+    },
+    VOL: {
+      volumeBars: {
+        visible: true,
+        palette: {
+          up: "rgba(38,166,154,0.6)",
+          down: "rgba(239,83,80,0.6)",
+        },
+      },
+      volumeMA: {
+        color: "rgba(255,193,7,1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+    },
+    VP: {
+      volume: {
+        color: "rgba(38,166,154,1)",
+        visible: true,
+      },
+      volumeMA: {
+        color: "rgba(255,193,7,1)",
+        width: 2,
+        visible: true,
+      },
+    },
+    PSAR: {
+      psar: {
+        visible: true,
+        color: "rgba(41, 98, 255, 1)",
+        width: 1,
+        opacity: 100,
+      },
+    },
+    PVO: {
+      histogram: {
+        visible: true,
+        palette: {
+          color0: "rgba(0, 150, 136, 1)",
+          color1: "rgba(178, 223, 219, 1)",
+          color2: "rgba(244, 67, 54, 1)",
+          color3: "rgba(239, 83, 80, 1)",
+        },
+      },
+
+      pvo: {
+        visible: true,
+        color: "rgba(33, 150, 243, 1)",
+        width: 1,
+        lineStyle: 0,
+      },
+      signal: {
+        visible: true,
+        color: "rgba(255, 152, 0, 1)",
+        width: 1,
+        lineStyle: 0,
+      },
+      zero: {
+        visible: true,
+        value: 0,
+        color: "rgba(120, 120, 120, 0.6)",
+        width: 1,
+        lineStyle: 2,
+      },
+    },
+    AD: {
+      ad: {
+        color: "rgba(156,39,176,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+    },
+    DC: {
+      upper: {
+        visible: true,
+        color: "rgba(239,83,80,1)", // red
+        width: 1,
+        lineStyle: 0, // solid
+      },
+      basis: {
+        visible: true,
+        color: "rgba(38,166,154,1)", // teal
+        width: 1,
+        lineStyle: 0, // solid
+      },
+      lower: {
+        visible: true,
+        color: "rgba(38,166,154,1)", // teal
+        width: 1,
+        lineStyle: 0, // solid
+      },
+      bbFill: {
+        visible: true,
+        topFillColor1: "rgba(76,175,80,0.2)",
+        bottomFillColor1: "rgba(76,175,80,0.05)",
+      },
+    },
+    KC: {
+      upper: {
+        color: "rgba(33,150,243,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+      middle: {
+        color: "rgba(33,150,243,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+      lower: {
+        color: "rgba(33,150,243,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+      bbFill: {
+        visible: true,
+        topFillColor1: "rgba(76,175,80,0.2)",
+        bottomFillColor1: "rgba(76,175,80,0.05)",
+      },
+    },
+
+    EOM: {
+      eom: {
+        color: "rgba(38, 166, 154, 1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+    },
+    BB: {
+      upper: {
+        color: "rgba(33,150,243,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+      lower: {
+        color: "rgba(244,67,54,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+      basis: {
+        color: "rgba(6, 150, 14, 1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+      bbFill: {
+        visible: true,
+        topFillColor1: "rgba(76,175,80,0.2)",
+        bottomFillColor1: "rgba(76,175,80,0.05)",
+      },
+    },
+    UO: {
+      uoLine: {
+        color: "rgba(33,150,243,1)", // blue
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+    },
+    PVI: {
+      pvi: {
+        color: "rgba(41,98,255,1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+      pviEma: {
+        color: "rgb(153, 166, 38)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+    },
+    MACD: {
+      macd: {
+        visible: true,
+        color: "rgba(33,150,243,1)",
+        width: 1,
+        lineStyle: 0,
+      },
+
+      signal: {
+        visible: true,
+        color: "rgba(255,193,7,1)",
+        width: 1,
+        lineStyle: 0,
+      },
+
+      histogram: {
+        visible: true,
+        palette: {
+          pr: "rgba(38,166,154,1)",
+          pf: "rgba(129,199,132,1)",
+          nf: "rgba(239,83,80,1)",
+          nr: "rgba(255,138,128,1)",
+        },
+      },
+
+      zeroLine: {
+        visible: true,
+        color: "rgba(150,150,150,0.5)",
+        width: 1,
+        value: 0,
+        lineStyle: 2,
+      },
+    },
+    VWAP: {
+      vwap: {
+        color: "rgba(255, 193, 7, 1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+
+      upperBand1: {
+        color: "rgba(33,150,243,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+
+      lowerBand1: {
+        color: "rgba(33,150,243,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+
+      bandFill1: {
+        color: "rgba(33,150,243,0.15)",
+        visible: true,
+      },
+
+      upperBand2: {
+        color: "rgba(156,39,176,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+
+      lowerBand2: {
+        color: "rgba(156,39,176,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+
+      bandFill2: {
+        color: "rgba(156,39,176,0.12)",
+        visible: true,
+      },
+
+      upperBand3: {
+        color: "rgba(244,67,54,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+
+      lowerBand3: {
+        color: "rgba(244,67,54,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+
+      bandFill3: {
+        color: "rgba(244,67,54,0.10)",
+        visible: true,
+      },
+    },
+    CKS: {
+      long: {
+        color: "rgba(33,150,243,1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+      short: {
+        color: "rgba(244,67,54,1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+    },
+    HV: {
+      hv: {
+        visible: true,
+        color: "rgba(255,152,0,1)",
+        width: 2,
+        lineStyle: 0,
+      },
+    },
+    CMF: {
+      cmfLine: {
+        color: "rgba(255,193,7,1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+      zeroLine: {
+        color: "rgba(158,158,158,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: 0,
+      },
+    },
+    NVI: {
+      nvi: {
+        color: "rgba(41,98,255,1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+      nviEma: {
+        color: "rgba(38,166,154,1)",
+        width: 1,
+        lineStyle: 0,
+        visible: true,
+      },
+    },
+    STOCHRSI: {
+      kLine: {
+        visible: true,
+        color: "rgba(38,166,154,1)",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+      },
+      dLine: {
+        visible: true,
+        color: "rgba(255,152,0,1)",
+        width: 1,
+        lineStyle: 0,
+        opacity: 100,
+      },
+
+      upperBand: {
+        value: 80,
+        visible: true,
+        color: "rgba(120,123,134,0.6)",
+        width: 1,
+        lineStyle: 2,
+      },
+
+      middleBand: {
+        value: 50,
+        visible: true,
+        color: "rgba(120,123,134,0.5)",
+        width: 1,
+        lineStyle: 2,
+      },
+
+      lowerBand: {
+        value: 20,
+        visible: true,
+        color: "rgba(120,123,134,0.6)",
+        width: 1,
+        lineStyle: 2,
+      },
+
+      bgFill: {
+        visible: true,
+        topFillColor1: "rgba(41,98,255,0.12)",
+        topFillColor2: "rgba(41,98,255,0.05)",
+      },
+    },
+    CMO: {
+      cmoLine: {
+        color: "rgba(38,166,154,1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+      zeroLine: {
+        value: 0,
+        color: "rgba(158,158,158,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+      },
+    },
+    TRIX: {
+      trixLine: {
+        color: "rgba(33,150,243,1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+
+      zeroLine: {
+        value: 0,
+        color: "rgba(158,158,158,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+      },
+    },
+    FT: {
+      fisherLine: {
+        color: "rgba(38,166,154,1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+      triggerLine: {
+        color: "rgba(255,152,0,1)",
+        width: 2,
+        lineStyle: 0,
+        visible: true,
+      },
+      level1_5: {
+        color: "rgba(239,83,80,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: 1.5,
+      },
+      level0_75: {
+        color: "rgba(255,183,77,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: 0.75,
+      },
+      level0: {
+        color: "rgba(158,158,158,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: 0,
+      },
+
+      level_minus0_75: {
+        color: "rgba(129,199,132,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: -0.75,
+      },
+
+      level_minus1_5: {
+        color: "rgba(38,166,154,1)",
+        width: 1,
+        lineStyle: 2,
+        visible: true,
+        value: -1.5,
+      },
+    },
+    VP: {
+      enabled: true,
+      width: 120, // width of profile on right
+      color: "rgba(33,150,243,1)",
+      pocColor: "rgba(239,83,80,1)",
+      vaColor: "rgba(38,166,154,1)",
+    },
+  };
+
 export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
   switch (indicator) {
     case "SMA": {
@@ -544,13 +1666,13 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
       if (maType === "SMA + Bollinger Bands") {
         rows.push(
           {
-            key: "bbUpperBand",
+            key: "bbUpper",
             label: "BB Upper Band",
             type: "line",
             width: 1,
           },
           {
-            key: "bbLowerBand",
+            key: "bbLower",
             label: "BB Lower Band",
             type: "line",
             width: 1,
@@ -606,34 +1728,28 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
     case "PSAR":
       return [{ key: "parabolicSAR", label: "Parabolic SAR", type: "line" }];
 
-    case "SuperTrend":
+    case "SUPERTREND":
       return [
-        { key: "upTrend", label: "Up Trend", type: "line", color: "#26a69a" },
+        { key: "upTrend", label: "Up Trend", type: "line" },
         {
           key: "downTrend",
           label: "Down Trend",
           type: "line",
-          color: "#ef5350",
         },
         {
           key: "bodyMiddle",
           label: "Body Middle",
           type: "line",
-          color: "#ffffff",
         },
         {
           key: "upTrendBg",
           label: "Up Trend Background",
-          type: "area",
-          color0: "rgba(38,166,154,0.2)",
-          color1: "rgba(38,166,154,0.2)",
+          type: "fill",
         },
         {
           key: "downTrendBg",
           label: "Down Trend Background",
-          type: "area",
-          color0: "rgba(239,83,80,0.2)",
-          color1: "rgba(239,83,80,0.2)",
+          type: "fill",
         },
       ];
 
@@ -651,9 +1767,22 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
         {
           key: "oscillator",
           label: "Oscillator",
-          type: "line",
+          type: "checkbox",
+          children: [
+            {
+              key: "up",
+              parent: "oscillator",
+              label: "Bullish Color",
+              type: "line",
+            },
+            {
+              key: "down",
+              parent: "oscillator",
+              label: "Bearish Color",
+              type: "line",
+            },
+          ],
         },
-
         {
           key: "center",
           label: "Center Line",
@@ -661,7 +1790,6 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           showValue: true,
           value: 0,
         },
-
         {
           key: "upperLevel",
           label: "Upper Level",
@@ -676,21 +1804,27 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           showValue: true,
           value: -90,
         },
-        /* FILL ABOVE CENTER */
         {
-          key: "oscillatorFillBull",
-          label: "Oscillator Fill (Bullish)",
-          type: "area",
-        },
-
-        /* FILL BELOW CENTER */
-
-        {
-          key: "oscillatorFillBear",
-          label: "Oscillator Fill (Bearish)",
-          type: "area",
+          key: "oscillatorFill",
+          label: "Oscillator Fill",
+          type: "checkbox",
+          children: [
+            {
+              key: "topFillColor1",
+              parent: "oscillatorFill", 
+              label: "Bullish Fill",
+              type: "fill",
+            },
+            {
+              key: "topFillColor2",
+              parent: "oscillatorFill", 
+              label: "Bearish Fill",
+              type: "fill",
+            },
+          ],
         },
       ];
+
     case "ADX":
       return [{ key: "adx", label: "ADX", type: "line" }];
 
@@ -758,7 +1892,6 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           value: 20,
           visible: true,
         },
-
         {
           key: "bgFill",
           label: "Background Fill",
@@ -820,11 +1953,34 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           label: "Histogram",
           type: "histogram",
 
-          palette: [
-            { key: "0", label: "Color 0" },
-            { key: "1", label: "Color 1" },
-            { key: "2", label: "Color 2" },
-            { key: "3", label: "Color 3" },
+          children: [
+            {
+              key: "pr",
+              parent: "histogram",
+              label: "Positive Rising",
+              type: "fill",
+            },
+
+            {
+              key: "pf",
+              parent: "histogram",
+              label: "Positive Falling",
+              type: "fill",
+            },
+
+            {
+              key: "nf",
+              parent: "histogram",
+              label: "Negative Falling",
+              type: "fill",
+            },
+
+            {
+              key: "nr",
+              parent: "histogram",
+              label: "Negative Rising",
+              type: "fill",
+            },
           ],
         },
 
@@ -835,6 +1991,7 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           value: 0,
         },
       ];
+
     case "CCI": {
       const rows = [{ key: "cciLine", label: "CCI", type: "line" }];
 
@@ -941,16 +2098,6 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           key: "uoLine",
           label: "Ultimate Oscillator",
           type: "line",
-        },
-      ];
-    case "Awesome Oscillator":
-      return [
-        {
-          key: "ao",
-          label: "AO",
-          type: "fill",
-          color0: "rgba(38,166,154,0.05)",
-          color1: "rgba(38,166,154,0.05)",
         },
       ];
 
@@ -1128,7 +2275,7 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           type: "line",
         },
         {
-          key: "bg",
+          key: "bbFill",
           label: "Background ",
           type: "fill",
         },
@@ -1145,7 +2292,6 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           key: "upper",
           label: "Upper Band",
           type: "line",
-          color: "#ef5350",
           showValue: true,
           value: 61.8,
         },
@@ -1153,7 +2299,6 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           key: "middle",
           label: "Middle Band",
           type: "line",
-          color: "#26a69a",
           showValue: true,
           value: 50,
         },
@@ -1161,7 +2306,6 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           key: "lower",
           label: "Lower Band",
           type: "line",
-          color: "#26a69a",
           showValue: true,
           value: 38.2,
         },
@@ -1183,32 +2327,50 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
         },
       ];
 
+    case "AWO":
+      return [
+        {
+          key: "awoBars",
+          label: "AWO Bars",
+          type: "checkbox",
+          children: [
+            {
+              key: "up",
+              parent: "awoBars",
+              label: "Positive AO",
+              type: "fill",
+            },
+            {
+              key: "down",
+              parent: "awoBars",
+              label: "Negative AO",
+              type: "fill",
+            },
+          ],
+        },
+      ];
+
     case "VOL":
       return [
         {
           key: "volumeBars",
-          label: "Growing Volume",
-          type: "color",
-          field: "upColor",
-          visible: true,
-        },
-
-        {
-          key: "volumeBars",
-          label: "Falling Volume",
-          type: "color",
-          field: "downColor",
-          visible: true,
-        },
-
-        {
-          key: "volumeBars",
-          label: "Show Volume Bars",
+          label: "Volume Bars",
           type: "checkbox",
-          field: "visible",
-          value: true,
+          children: [
+            {
+              key: "up",
+              parent: "volumeBars",
+              label: "Growing Volume",
+              type: "fill",
+            },
+            {
+              key: "down",
+              parent: "volumeBars",
+              label: "Falling Volume",
+              type: "fill",
+            },
+          ],
         },
-
         {
           key: "volumeMA",
           label: "Volume MA",
@@ -1234,8 +2396,6 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           key: "obv",
           label: "On Balance Volume",
           type: "line",
-          color: "#ff4d4f",
-          width: 2,
         },
       ];
       if (maType !== "none") {
@@ -1243,27 +2403,19 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           key: "smoothingMA",
           label: "OBV MA",
           type: "line",
-          color: "#faad14",
-          width: 2,
         });
       }
-
-      /* 🔥 ADD BOLLINGER BANDS */
       if (maType === "SMA + Bollinger Bands") {
         rows.push(
           {
             key: "bbUpper",
             label: "BB Upper",
             type: "line",
-            color: "#52c41a",
-            width: 1,
           },
           {
             key: "bbLower",
             label: "BB Lower",
             type: "line",
-            color: "#ff7875",
-            width: 1,
           },
           {
             key: "bbFill",
@@ -1278,40 +2430,51 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
 
     case "PVO":
       return [
-        // Histogram (multi-state coloring)
+        // Histogram with multiple color states
         {
           key: "histogram",
           label: "Histogram",
           type: "histogram",
-
-          // 5 color states
-          color0: "#26a69a", // strong positive
-          color1: "#80cbc4", // weak positive
-          color2: "#b0bec5", // near zero
-          color3: "#ff8a80", // weak negative
-          color4: "#ef5350", // strong negative
-
-          visible: true,
+          children: [
+            {
+              key: "color0",
+              parent: "histogram",
+              label: "Positive Rising",
+              type: "fill",
+            },
+            {
+              key: "color1",
+              parent: "histogram",
+              label: "Positive Falling",
+              type: "fill",
+            },
+            {
+              key: "color2",
+              parent: "histogram",
+              label: "Negative Falling",
+              type: "fill",
+            },
+            {
+              key: "color3",
+              parent: "histogram",
+              label: "Negative Rising",
+              type: "fill",
+            },
+          ],
         },
 
         // PVO Line
         {
           key: "pvo",
-          label: "PVO",
+          label: "PVO Line",
           type: "line",
-          color: "#2962ff",
-          width: 2,
-          visible: true,
         },
 
         // Signal Line
         {
           key: "signal",
-          label: "Signal",
+          label: "Signal Line",
           type: "line",
-          color: "#ff6d00",
-          width: 2,
-          visible: true,
         },
 
         // Zero Line
@@ -1319,11 +2482,8 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           key: "zero",
           label: "Zero Line",
           type: "line",
-          value: 0, // fixed level
-          visible: true,
         },
       ];
-
     case "AD":
       return [
         {
@@ -1545,18 +2705,37 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
     case "ZIGZAG":
       return [
         {
-          key: "zigzagLine",
-          label: "Lines",
+          key: "z",
+          label: "Zig Zag Line",
           type: "line",
           visible: true,
         },
+      ];
+
+    case "VP":
+      return [
         {
-          key: "paneLabels",
-          label: "Pane Labels",
-          type: "label",
-          color: "#000000",
-          backgroundColor: "rgba(41,98,255,0.15)",
-          visible: true,
+          key: "vp",
+          label: "Volume Profile",
+          type: "custom",
+        },
+        {
+          key: "poc",
+          label: "POC",
+          type: "line",
+          showValue: true,
+        },
+        {
+          key: "vah",
+          label: "VAH",
+          type: "line",
+          showValue: true,
+        },
+        {
+          key: "val",
+          label: "VAL",
+          type: "line",
+          showValue: true,
         },
       ];
 
@@ -1590,7 +2769,6 @@ export const PANE_INDICATORS = new Set([
   "CHOP",
   "STOCHRSI",
   "STOCH",
-  "Volume",
   "MOM",
   "PVO",
   "AD",
@@ -1598,6 +2776,7 @@ export const PANE_INDICATORS = new Set([
   "BBW",
   "CMF",
   "KVO",
+  "AWO",
 ]);
 
 export const RANGE_INTERVAL_MAPPING = {

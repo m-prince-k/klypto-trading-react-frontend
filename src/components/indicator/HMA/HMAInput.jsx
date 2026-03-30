@@ -3,38 +3,29 @@ export default function HMAInput(
   indicatorSeriesRef,
   latestIndicatorValuesRef
 ) {
-
   const rows = Array.isArray(response?.data) ? response.data : [];
 
-  /* ================= HMA ================= */
+  /* ================= FORMAT DATA ================= */
 
   const hmaData = rows
-    .filter((d) => d.value != null && d.time != null)
+    .filter((d) => d?.hma != null && d?.time != null)
     .map((d) => ({
       time: Number(d.time),
-      value: Number(d.value),
+      value: Number(d.hma),
     }))
     .sort((a, b) => a.time - b.time);
 
   const series = indicatorSeriesRef.current?.HMA;
 
-  if (!series) return;
+  if (!series?.hma) return;
 
-  /* ================= UPDATE HMA ================= */
+  /* ================= UPDATE SERIES ================= */
 
-  series.hma?.setData(hmaData);
+  series.hma.setData(hmaData);
 
-  /* ================= UPDATE HOVER VALUES ================= */
+  /* ================= UPDATE HOVER VALUE ================= */
 
   latestIndicatorValuesRef.current.HMA = {
     hma: hmaData[hmaData.length - 1]?.value,
-  };
-
-  /* ================= STORE RESULT ================= */
-
-  indicatorSeriesRef.current.HMA.result = {
-    data: {
-      hma: hmaData,
-    },
   };
 }

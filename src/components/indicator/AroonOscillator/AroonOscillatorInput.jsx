@@ -11,13 +11,6 @@ export default function AroonOscillatorInput(
 
   console.log("AO RAW ROWS:", rows);
 
-  const series = indicatorSeriesRef.current?.AO;
-
-  if (!series) {
-    console.warn("AO series not initialized yet");
-    return;
-  }
-
   if (!rows.length) {
     console.warn("AO rows empty");
     return;
@@ -26,26 +19,26 @@ export default function AroonOscillatorInput(
   /* ================= CLEAN DATA ================= */
 
   const oscData = rows
-  .filter((d) => {
-    const valid =
-      d &&
-      d.time !== undefined &&
-      d.aroonOsc !== undefined &&
-      d.aroonOsc !== null &&
-      !isNaN(Number(d.aroonOsc));
+    .filter((d) => {
+      const valid =
+        d &&
+        d.time !== undefined &&
+        d.aroonOsc !== undefined &&
+        d.aroonOsc !== null &&
+        !isNaN(Number(d.aroonOsc));
 
-    if (!valid) {
-      console.warn("Invalid AO row removed:", d);
-    }
+      if (!valid) {
+        console.warn("Invalid AO row removed:", d);
+      }
 
-    return valid;
-  })
-  .map((d) => ({
-    time: Number(d.time),
-    value: Number(d.aroonOsc),
-  }))
-  .sort((a, b) => a.time - b.time);
-  
+      return valid;
+    })
+    .map((d) => ({
+      time: Number(d.time),
+      value: Number(d.aroonOsc),
+    }))
+    .sort((a, b) => a.time - b.time);
+
   console.log("AO CLEAN DATA:", oscData);
 
   if (!oscData.length) {
@@ -53,44 +46,51 @@ export default function AroonOscillatorInput(
     return;
   }
 
-  /* ================= UPDATE OSCILLATOR ================= */
+  /* ================= ALWAYS STORE DATA ================= */
 
-  try {
-    series.oscillator?.setData(oscData);
-    console.log("AO oscillator updated");
-  } catch (err) {
-    console.error("AO oscillator update error:", err);
+  // ✅ store globally so plot can pick it later
+  indicatorSeriesRef.current.AOData = oscData;
+
+  /* ================= TRY LIVE UPDATE (if series exists) ================= */
+
+  const series = indicatorSeriesRef.current?.AO;
+
+  if (series) {
+    try {
+      series.oscillator?.setData(oscData);
+      console.log("AO oscillator updated");
+    } catch (err) {
+      console.error("AO oscillator update error:", err);
+    }
+
+    /* ================= LEVEL VALUES ================= */
+
+    const upper = series.upperLevel?.options?.value ?? 90;
+    const center = series.center?.options?.value ?? 0;
+    const lower = series.lowerLevel?.options?.value ?? -90;
+
+    console.log("AO LEVELS:", { upper, center, lower });
+
+    const makeLevelData = (value) =>
+      oscData.map((p) => ({
+        time: p.time,
+        value,
+      }));
+
+    try {
+      series.upperLevel?.setData(makeLevelData(upper));
+      series.center?.setData(makeLevelData(center));
+      series.lowerLevel?.setData(makeLevelData(lower));
+
+      console.log("AO level lines updated");
+    } catch (err) {
+      console.error("AO level update error:", err);
+    }
+
+    series.oscData = oscData;
+  } else {
+    console.warn("AO series not ready yet (data stored)");
   }
-
-  /* ================= LEVEL VALUES ================= */
-
-  const upper = series.upperLevel?.options?.value ?? 90;
-  const center = series.center?.options?.value ?? 0;
-  const lower = series.lowerLevel?.options?.value ?? -90;
-
-  console.log("AO LEVELS:", { upper, center, lower });
-
-  const makeLevelData = (value) =>
-    oscData.map((p) => ({
-      time: p.time,
-      value,
-    }));
-
-  /* ================= UPDATE LEVEL LINES ================= */
-
-  try {
-    series.upperLevel?.setData(makeLevelData(upper));
-    series.center?.setData(makeLevelData(center));
-    series.lowerLevel?.setData(makeLevelData(lower));
-
-    console.log("AO level lines updated");
-  } catch (err) {
-    console.error("AO level update error:", err);
-  }
-
-  /* ================= STORE DATA ================= */
-
-  series.oscData = oscData;
 
   /* ================= HOVER VALUE ================= */
 
@@ -105,7 +105,7 @@ export default function AroonOscillatorInput(
 
   /* ================= STORE RESULT ================= */
 
-  series.result = {
+  indicatorSeriesRef.current.AOResult = {
     data: oscData,
   };
 

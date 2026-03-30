@@ -1,24 +1,43 @@
 export default function ADInput(
   response,
   indicatorSeriesRef,
-  latestIndicatorValuesRef,
+  latestIndicatorValuesRef
 ) {
+  /* :fire: SAFE DATA */
   const rows = Array.isArray(response?.data) ? response.data : [];
 
+  if (!rows.length) {
+    console.log(":x: AD rows empty");
+    return;
+  }
+
+  const group = indicatorSeriesRef.current?.AD;
+
+  if (!group || !group.ad) {
+    console.log(":x: AD series not ready");
+    return;
+  }
+
+  /* :fire: MAP DATA */
   const adData = rows
     .filter((d) => d.ad != null && d.time != null)
-    .map((d) => ({ time: Number(d.time), value: Number(d.ad) }));
+    .map((d) => ({
+      time: Number(d.time),
+      value: Number(d.ad),
+    }));
 
-  // Store in indicatorSeriesRef
-  indicatorSeriesRef.current.AD = {
-    result: response,
-    rows,
-  };
+  if (!adData.length) {
+    console.log(":x: AD mapped empty");
+    return;
+  }
 
-  // Store latest value
+  /* :fire: FORCE UPDATE (IMPORTANT) */
+  group.ad.setData([...adData]); // clone = force refresh
+
+  /* :fire: UPDATE LAST VALUE */
   latestIndicatorValuesRef.current.AD = {
-    value: adData.at(-1)?.value,
+    value: adData[adData.length - 1]?.value ?? null,
   };
 
-  return adData;
+  console.log(":white_check_mark: AD updated", adData.length);
 }

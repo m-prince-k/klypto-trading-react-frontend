@@ -226,7 +226,7 @@ export default function STOCHRSIPlot({
 
     stochGroup.bandBackground?.setData(bandData);
 
-  },[indicatorStyle]);
+  },[indicatorStyle, result]);
 
   return null;
 

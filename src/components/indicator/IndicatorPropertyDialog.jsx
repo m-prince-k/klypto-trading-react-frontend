@@ -3,7 +3,162 @@ import IndicatorStyle from "./IndicatorStyle";
 import apiService from "../../services/apiServices";
 import useChartFunctions from "../../util/useChartFunctions";
 import { updateIndicatorFromInput } from "./IndicatorIndex";
-import { useState } from "react";
+import React, { useEffect, useState } from "react";
+
+/* =========================
+   BASE SETTINGS COMPONENT
+========================== */
+const BaseSettings = React.memo(function BaseSettings({
+  currentConfig,
+  updateProperty,
+  showLength = true,
+  showSource = true,
+  showOffset = true,
+}) {
+  return (
+    <section className="mt-3 px-3">
+      {/* LENGTH */}
+      {showLength && (
+        <div className="mb-3">
+          <label className="form-label">Length</label>
+          <input
+            type="number"
+            className="form-control"
+            min="1"
+            value={currentConfig.length ?? ""}
+            onChange={(e) => {
+              const value =
+                e.target.value === ""
+                  ? ""
+                  : Math.max(1, Number(e.target.value));
+              updateProperty("length", value);
+            }}
+          />
+        </div>
+      )}
+
+      {/* SOURCE */}
+      {showSource && (
+        <div className="mb-3">
+          <label className="form-label">Source</label>
+          <select
+            className="form-select"
+            value={currentConfig.source ?? ""}
+            onChange={(e) => updateProperty("source", e.target.value)}
+          >
+            {["Close", "Open", "High", "Low", "HL2", "HLC3", "OHLC4"].map(
+              (opt) => (
+                <option key={opt} value={opt.toLowerCase()}>
+                  {opt}
+                </option>
+              ),
+            )}
+          </select>
+        </div>
+      )}
+
+      {/* OFFSET */}
+      {showOffset && (
+        <div className="mb-3">
+          <label className="form-label">Offset</label>
+          <input
+            type="number"
+            className="form-control"
+            min="0"
+            value={currentConfig.offset ?? ""}
+            onChange={(e) => {
+              const value =
+                e.target.value === ""
+                  ? ""
+                  : Math.max(0, Number(e.target.value));
+              updateProperty("offset", value);
+            }}
+          />
+        </div>
+      )}
+    </section>
+  );
+});
+
+/* =========================
+   SMOOTHING SECTION
+========================== */
+const SmoothingSection = React.memo(function SmoothingSection({
+  currentConfig,
+  updateProperty,
+}) {
+  if (!currentConfig) return null;
+
+  const smoothingTypes = [
+    "None",
+    "SMA",
+    "EMA",
+    "WMA",
+    "SMA + Bollinger Bands",
+    "VWMA",
+    "SMMA (RMA)",
+  ];
+
+  return (
+    <>
+      <hr />
+      <section className="px-3">
+        {/* TYPE */}
+        <div className="mb-3">
+          <label className="form-label">Type</label>
+          <select
+            className="form-select"
+            value={currentConfig.maType || "none"}
+            onChange={(e) => updateProperty("maType", e.target.value)}
+          >
+            {smoothingTypes.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* LENGTH */}
+        <div className="mb-3">
+          <label className="form-label">Length</label>
+          <input
+            type="number"
+            className="form-control"
+            min="1"
+            value={currentConfig.maLength}
+            onChange={(e) => {
+              const value =
+                e.target.value === ""
+                  ? ""
+                  : Math.max(1, Number(e.target.value));
+              updateProperty("maLength", value);
+            }}
+          />
+        </div>
+
+        {/* BB STD DEV */}
+        <div className="mb-3">
+          <label className="form-label">BB Std Dev</label>
+          <input
+            type="number"
+            className="form-control"
+            min="0"
+            disabled={currentConfig.maType !== "SMA + Bollinger Bands"}
+            value={currentConfig.bbStdDev}
+            onChange={(e) => {
+              const value =
+                e.target.value === ""
+                  ? ""
+                  : Math.max(0, Number(e.target.value));
+              updateProperty("bbStdDev", value);
+            }}
+          />
+        </div>
+      </section>
+    </>
+  );
+});
 
 export default function IndicatorPropertyDialog({
   setIndicatorProperty,
@@ -16,8 +171,6 @@ export default function IndicatorPropertyDialog({
   indicatorSeriesRef,
   selectedCurrency,
   timeframeValue,
-  chartRef,
-  addSeries,
   latestIndicatorValuesRef,
 }) {
   const labelStyle = {
@@ -27,68 +180,60 @@ export default function IndicatorPropertyDialog({
     marginRight: "1rem",
   };
 
-  const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
-  const currentConfig = indicatorConfigs[normalizedType];
+  const currentConfig = indicatorConfigs[activeBarIndicator];
   const [indicatorLoading, setIndicatorLoading] = useState(false);
 
   const updateProperty = (key, value) => {
     setIndicatorConfigs((prev) => ({
       ...prev,
-      [normalizedType]: {
-        ...prev[normalizedType],
+      [activeBarIndicator]: {
+        ...prev[activeBarIndicator],
         [key]: value,
       },
     }));
   };
 
-  const updateNestedProperty = (parentKey, childKey, value) => {
-    setIndicatorConfigs((prev) => ({
-      ...prev,
-      [activeBarIndicator]: {
-        ...prev[activeBarIndicator],
-        [parentKey]: {
-          ...prev[activeBarIndicator][parentKey],
-          [childKey]: value,
-        },
-      },
-    }));
+  const handleBlur = (key, value) => {
+    const defaults = indicatorConfigs[activeBarIndicator] || {};
+    const defaultValue = defaults[key];
+
+    let val = value;
+
+    if (val === "" || val === undefined || isNaN(val)) {
+      val = defaultValue ?? 0;
+    } else {
+      val = Number(val);
+    }
+
+    updateProperty(key, val);
   };
+
+  const handleChange = (key, value) => {
+  updateProperty(key, value === "" ? "" : Number(value));
+};
 
   const updateNestedDoubleProperty = (band, key, value) => {
     setIndicatorConfigs((prev) => ({
       ...prev,
-      [normalizedType]: {
-        ...prev[normalizedType],
+      [activeBarIndicator]: {
+        ...prev[activeBarIndicator],
         [band]: {
-          ...prev[normalizedType][band],
+          ...prev[activeBarIndicator][band],
           [key]: value,
         },
       },
     }));
   };
 
-  const updateSmoothing = (key, value) => {
-    setIndicatorConfigs((prev) => {
-      const currentIndicatorConfig = prev?.[normalizedType] || {};
-
-      return {
-        ...prev,
-        [normalizedType]: {
-          ...currentIndicatorConfig,
-          [key]: value,
-        },
-      };
-    });
-  };
   /* =========================
      OK BUTTON
   ========================== */
   const handleIndicatorPropertyChange = async () => {
-    const config = indicatorConfigs?.[normalizedType] || {};
+    const config = indicatorConfigs?.[activeBarIndicator] || {};
     const { maType } = config;
 
     const payload = {
-      type: normalizedType,
+      type: activeBarIndicator,
       ...config,
     };
 
@@ -107,7 +252,7 @@ export default function IndicatorPropertyDialog({
       console.log("Indicator updated:", response);
 
       updateIndicatorFromInput(
-        normalizedType,
+        activeBarIndicator,
         response,
         indicatorSeriesRef,
         latestIndicatorValuesRef,
@@ -140,239 +285,65 @@ export default function IndicatorPropertyDialog({
   };
 
   /* =========================
-   BASE SETTINGS COMPONENT
-========================== */
-  function BaseSettings({
-    showLength = true,
-    showSource = true,
-    showOffset = true,
-  }) {
-    return (
-      <section className="mt-3 px-3">
-        {/* LENGTH */}
-        {showLength && currentConfig?.length !== undefined && (
-          <div className="mb-3">
-            <label className="form-label">Length</label>
-            <input
-              type="number"
-              className="form-control"
-              min="1"
-              value={currentConfig.length}
-              onChange={(e) => {
-                const value =
-                  e.target.value === ""
-                    ? ""
-                    : Math.max(1, Number(e.target.value));
-                updateProperty("length", value);
-              }}
-            />
-          </div>
-        )}
-
-        {/* SOURCE */}
-        {showSource && currentConfig?.source !== undefined && (
-          <div className="mb-3">
-            <label className="form-label">Source</label>
-            <select
-              className="form-select"
-              value={currentConfig.source}
-              onChange={(e) => updateProperty("source", e.target.value)}
-            >
-              {["Close", "Open", "High", "Low", "HL2", "HLC3", "OHLC4"].map(
-                (opt) => (
-                  <option key={opt} value={opt.toLowerCase()}>
-                    {opt}
-                  </option>
-                ),
-              )}
-            </select>
-          </div>
-        )}
-
-        {/* OFFSET */}
-        {showOffset && currentConfig?.offset !== undefined && (
-          <div className="mb-3">
-            <label className="form-label">Offset</label>
-            <input
-              type="number"
-              className="form-control"
-              min="0"
-              value={currentConfig.offset}
-              onChange={(e) => {
-                const value =
-                  e.target.value === ""
-                    ? ""
-                    : Math.max(0, Number(e.target.value));
-                updateProperty("offset", value);
-              }}
-            />
-          </div>
-        )}
-      </section>
-    );
-  }
-
-  /* =========================
-   SMOOTHING SECTION
-========================== */
-  function SmoothingSection() {
-    if (!currentConfig) return null;
-
-    const smoothingTypes = [
-      "None",
-      "SMA",
-      "EMA",
-      "WMA",
-      "SMA + Bollinger Bands",
-      "VWMA",
-      "SMMA (RMA)",
-    ];
-
-    return (
-      <>
-        <hr />
-        <section className="px-3">
-          {/* TYPE */}
-          <div className="mb-3">
-            <label className="form-label">Type</label>
-            <select
-              className="form-select"
-              value={currentConfig.maType || "none"}
-              onChange={(e) => updateProperty("maType", e.target.value)}
-            >
-              {smoothingTypes.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* LENGTH */}
-          <div className="mb-3">
-            <label className="form-label">Length</label>
-            <input
-              type="number"
-              className="form-control"
-              min="1"
-              value={currentConfig.maLength}
-              onChange={(e) => {
-                const value =
-                  e.target.value === ""
-                    ? ""
-                    : Math.max(1, Number(e.target.value));
-                updateProperty("maLength", value);
-              }}
-            />
-          </div>
-
-          {/* BB STD DEV */}
-          <div className="mb-3">
-            <label className="form-label">BB Std Dev</label>
-            <input
-              type="number"
-              className="form-control"
-              min="0"
-              disabled={currentConfig.maType !== "SMA + Bollinger Bands"}
-              value={currentConfig.bbStdDev}
-              onChange={(e) => {
-                const value =
-                  e.target.value === ""
-                    ? ""
-                    : Math.max(0, Number(e.target.value));
-                updateProperty("bbStdDev", value);
-              }}
-            />
-          </div>
-        </section>
-      </>
-    );
-  }
-
-  /* =========================
-   RENDER PER INDICATOR
-========================== */
-  function renderIndicatorSetting() {
-    switch (normalizedType) {
-      case "SMA":
-      case "EMA":
-        return (
-          <>
-            <BaseSettings />
-            <SmoothingSection />
-          </>
-        );
-
-      case "WMA":
-        return <BaseSettings />;
-
-      case "HMA":
-      case "DEMA":
-        return <BaseSettings showOffset={false} />;
-
-      case "TEMA":
-      case "TRIX":
-      case "Fisher Transform":
-        return <BaseSettings showOffset={false} showSource={false} />;
-
-      case "KAMA":
-        return (
-          <>
-            <BaseSettings showOffset={false} showLength={false} />
-
-            <div className="mb-3">
-              <label className="form-label">ER Length</label>
-              <input
-                type="number"
-                className="form-control"
-                min="1"
-                value={currentConfig.ERlength}
-                onChange={(e) => {
-                  const value =
-                    e.target.value === ""
-                      ? ""
-                      : Math.max(1, Number(e.target.value));
-                  updateProperty("ERlength", value);
-                }}
-              />
-            </div>
-          </>
-        );
-
-      default:
-        return null;
-    }
-  }
-  /* =========================
      RENDER PER INDICATOR
   ========================== */
 
   function renderIndicatorSetting() {
-    switch (normalizedType) {
+    switch (activeBarIndicator) {
       case "SMA":
       case "EMA":
         return (
           <>
-            <BaseSettings />
-            <SmoothingSection />
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+            />
+
+            <SmoothingSection
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+            />
           </>
         );
       case "WMA":
-        return <BaseSettings />;
+        return (
+          <BaseSettings
+            currentConfig={currentConfig}
+            updateProperty={updateProperty}
+          />
+        );
 
       case "HMA":
       case "DEMA":
-        return <BaseSettings showOffset={false} />;
+        return (
+          <BaseSettings
+            currentConfig={currentConfig}
+            updateProperty={updateProperty}
+            showOffset={false}
+          />
+        );
 
       case "TEMA":
       case "TRIX":
       case "FT":
-        return <BaseSettings showOffset={false} showSource={false} />;
+        return (
+          <BaseSettings
+            currentConfig={currentConfig}
+            updateProperty={updateProperty}
+            showOffset={false}
+            showSource={false}
+          />
+        );
 
       case "KAMA":
         return (
           <>
-            <BaseSettings showOffset={false} showLength={false} />
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showOffset={false}
+              showLength={false}
+            />
 
             <div className="mb-3">
               <label className="form-label">ER Length</label>
@@ -512,7 +483,7 @@ export default function IndicatorPropertyDialog({
           </>
         );
 
-      case "SuperTrend":
+      case "SUPERTREND":
         return (
           <>
             <div className="mb-3">
@@ -542,10 +513,34 @@ export default function IndicatorPropertyDialog({
         );
 
       case "AROON":
-        return <BaseSettings showOffset={false} showSource={false} />;
+        return (
+          <BaseSettings
+            currentConfig={currentConfig}
+            updateProperty={updateProperty}
+            showOffset={false}
+            showSource={false}
+          />
+        );
 
       case "AO":
-        return <BaseSettings showOffset={false} showSource={false} />;
+        return (
+          <BaseSettings
+            currentConfig={currentConfig}
+            updateProperty={updateProperty}
+            showOffset={false}
+            showSource={false}
+          />
+        );
+
+      case "AD":
+        return (
+          <BaseSettings
+            currentConfig={currentConfig}
+            updateProperty={updateProperty}
+            showOffset={false}
+            showSource={false}
+          />
+        );
 
       case "ADX":
         return (
@@ -620,8 +615,15 @@ export default function IndicatorPropertyDialog({
       case "RSI":
         return (
           <>
-            <BaseSettings showOffset={false} />
-            <SmoothingSection />
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showOffset={false}
+            />
+            <SmoothingSection
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+            />
           </>
         );
 
@@ -669,11 +671,19 @@ export default function IndicatorPropertyDialog({
       case "STOCHRSI":
         return (
           <>
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showOffset={false}
+              showSource={false}
+            />
+
             <div className="mb-3">
               <label className="form-label">K</label>
               <input
                 type="number"
                 className="form-control"
+                min={1}
                 value={currentConfig.kSmoothing}
                 onChange={(e) =>
                   updateProperty("kSmoothing", Number(e.target.value))
@@ -686,20 +696,10 @@ export default function IndicatorPropertyDialog({
               <input
                 type="number"
                 className="form-control"
+                min={1}
                 value={currentConfig.dSmoothing}
                 onChange={(e) =>
                   updateProperty("dSmoothing", Number(e.target.value))
-                }
-              />
-            </div>
-            <div className="mb-3">
-              <label className="form-label">Stochastic Length</label>
-              <input
-                type="number"
-                className="form-control"
-                value={currentConfig.stochasticLength}
-                onChange={(e) =>
-                  updateProperty("stochasticLength", Number(e.target.value))
                 }
               />
             </div>
@@ -708,24 +708,28 @@ export default function IndicatorPropertyDialog({
               <input
                 type="number"
                 className="form-control"
-                value={currentConfig.rsiLength}
+                min={1}
+                value={currentConfig.lengthRSI}
                 onChange={(e) =>
-                  updateProperty("rsiLength", Number(e.target.value))
+                  updateProperty("lengthRSI", Number(e.target.value))
                 }
               />
             </div>
 
             <div className="mb-3">
-              <label className="form-label">RSI Source</label>
+              <label className="form-label"> RSI Source</label>
               <select
-                className="form-control"
-                value={currentConfig.rsiSource}
-                onChange={(e) => updateProperty("rsiSource", e.target.value)}
+                className="form-select"
+                value={currentConfig.source}
+                onChange={(e) => updateProperty("source", e.target.value)}
               >
-                <option value="Close">Close</option>
-                <option value="Open">Open</option>
-                <option value="High">High</option>
-                <option value="Low">Low</option>
+                {["Close", "Open", "High", "Low", "HL2", "HLC3", "OHLC4"].map(
+                  (opt) => (
+                    <option key={opt} value={opt.toLowerCase()}>
+                      {opt}
+                    </option>
+                  ),
+                )}
               </select>
             </div>
           </>
@@ -734,7 +738,12 @@ export default function IndicatorPropertyDialog({
       case "MACD":
         return (
           <>
-            <BaseSettings showLength={false} showOffset={false} />
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showLength={false}
+              showOffset={false}
+            />
             <div className="mb-3">
               <label className="form-label">Fast Length</label>
               <input
@@ -802,19 +811,44 @@ export default function IndicatorPropertyDialog({
       case "CCI": {
         return (
           <>
-            <BaseSettings showOffset={false} />
-            <SmoothingSection />
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showOffset={false}
+            />
+            <SmoothingSection
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+            />
           </>
         );
       }
       case "MOM": {
-        return <BaseSettings showOffset={false} />;
+        return (
+          <BaseSettings
+            currentConfig={currentConfig}
+            updateProperty={updateProperty}
+            showOffset={false}
+          />
+        );
       }
       case "ROC": {
-        return <BaseSettings showOffset={false} />;
+        return (
+          <BaseSettings
+            currentConfig={currentConfig}
+            updateProperty={updateProperty}
+            showOffset={false}
+          />
+        );
       }
       case "WPR": {
-        return <BaseSettings showOffset={false} />;
+        return (
+          <BaseSettings
+            currentConfig={currentConfig}
+            updateProperty={updateProperty}
+            showOffset={false}
+          />
+        );
       }
       case "UO":
         return (
@@ -858,13 +892,24 @@ export default function IndicatorPropertyDialog({
         );
 
       case "CMO": {
-        return <BaseSettings showOffset={false} />;
+        return (
+          <BaseSettings
+            currentConfig={currentConfig}
+            updateProperty={updateProperty}
+            showOffset={false}
+          />
+        );
       }
 
       case "ATR":
         return (
           <>
-            <BaseSettings showOffset={false} showSource={false} />
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showOffset={false}
+              showSource={false}
+            />
 
             <div className="mb-3">
               <label className="form-label">Smoothing</label>
@@ -884,7 +929,10 @@ export default function IndicatorPropertyDialog({
       case "BB":
         return (
           <>
-            <BaseSettings />
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+            />
             <div className="mb-3">
               <label className="form-label">Basic MA Type</label>
               <select
@@ -917,7 +965,11 @@ export default function IndicatorPropertyDialog({
       case "BBW":
         return (
           <>
-            <BaseSettings showOffset={false} />
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showOffset={false}
+            />
             <div className="mb-3">
               <label className="form-label">Standard Deviation</label>
               <input
@@ -964,14 +1016,23 @@ export default function IndicatorPropertyDialog({
       case "HV":
         return (
           <>
-            <BaseSettings showOffset={false} showSource={false} />
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showOffset={false}
+              showSource={false}
+            />
           </>
         );
 
       case "KC":
         return (
           <>
-            <BaseSettings showOffset={false} />
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showOffset={false}
+            />
             <div className="mb-3">
               <label className="form-label">Multiplier</label>
               <input
@@ -1027,19 +1088,31 @@ export default function IndicatorPropertyDialog({
       case "DC":
         return (
           <>
-            <BaseSettings showSource={false} />
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showSource={false}
+            />
           </>
         );
       case "CHOP":
         return (
           <>
-            <BaseSettings showSource={false} />
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showSource={false}
+            />
           </>
         );
       case "STDDEV":
         return (
           <>
-            <BaseSettings showOffset={false} />
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showOffset={false}
+            />
           </>
         );
 
@@ -1057,28 +1130,16 @@ export default function IndicatorPropertyDialog({
                 }
               />
             </div>
-
-            <div className="form-check mb-3">
-              <input
-                className="form-check-input"
-                type="checkbox"
-                id="colorByPrevious"
-                checked={currentConfig.colorByPrevious}
-                onChange={(e) =>
-                  updateProperty("colorByPrevious", e.target.checked)
-                }
-              />
-              <label className="form-check-label" htmlFor="colorByPrevious">
-                Color Based on Previous Bar
-              </label>
-            </div>
           </>
         );
 
       case "OBV":
         return (
           <>
-            <SmoothingSection />
+            <SmoothingSection
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+            />
           </>
         );
 
@@ -1191,21 +1252,36 @@ export default function IndicatorPropertyDialog({
       case "Chaikin Money Flow":
         return (
           <>
-            <BaseSettings showOffset={false} showSource={false} />
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showOffset={false}
+              showSource={false}
+            />
           </>
         );
 
       case "MFI":
         return (
           <>
-            <BaseSettings showOffset={false} showSource={false} />
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showOffset={false}
+              showSource={false}
+            />
           </>
         );
 
       case "EOM":
         return (
           <>
-            <BaseSettings showOffset={false} showSource={false} />
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showOffset={false}
+              showSource={false}
+            />
             <Form.Group
               as={Row}
               className="mb-3 align-items-center"
@@ -1332,7 +1408,12 @@ export default function IndicatorPropertyDialog({
         return (
           <>
             {/* Base Settings */}
-            <BaseSettings showOffset={false} showSource={false} />
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showOffset={false}
+              showSource={false}
+            />
           </>
         );
       case "NVI":
@@ -1395,7 +1476,11 @@ export default function IndicatorPropertyDialog({
               </Col>
             </Form.Group>
 
-            <BaseSettings showLength={false} />
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showLength={false}
+            />
 
             {/* ========================= */}
             {/* Band Settings */}
@@ -1546,9 +1631,9 @@ export default function IndicatorPropertyDialog({
                 <input
                   type="number"
                   className="form-control"
-                  value={indicatorConfigs.properties.priceDeviation}
+                  value={currentConfig.deviation}
                   onChange={(e) =>
-                    updateProperty("priceDeviation", Number(e.target.value))
+                    updateProperty("deviation", Number(e.target.value))
                   }
                 />
               </div>
@@ -1563,61 +1648,46 @@ export default function IndicatorPropertyDialog({
                 <input
                   type="number"
                   className="form-control"
-                  value={indicatorConfigs.properties.pivotLegs}
+                  value={currentConfig.depth}
                   onChange={(e) =>
-                    updateProperty("pivotLegs", Number(e.target.value))
+                    updateProperty("depth", Number(e.target.value))
                   }
                 />
               </div>
             </div>
 
-            {/* Line Color */}
-            <div className="row mb-3 align-items-center">
-              <div className="col-6">
-                <label className="form-label">Line Color</label>
-              </div>
-              <div className="col-6">
-                <input
-                  type="color"
-                  className="form-control form-control-color"
-                  value={indicatorConfigs.properties.lineColor}
-                  onChange={(e) => updateProperty("lineColor", e.target.value)}
-                />
-              </div>
-            </div>
-
             {/* Extend to Last Bar */}
-            <div className="form-check mb-2">
+            {/* <div className="form-check mb-2">
               <input
                 type="checkbox"
                 className="form-check-input"
-                checked={indicatorConfigs.properties.extendToLastBar}
+                checked={currentConfig.extendToLastBar}
                 onChange={(e) =>
                   updateProperty("extendToLastBar", e.target.checked)
                 }
               />
               <label className="form-check-label">Extend to Last Bar</label>
-            </div>
+            </div> */}
 
             {/* Display Reversal Price */}
-            <div className="form-check mb-2">
+            {/* <div className="form-check mb-2">
               <input
                 type="checkbox"
                 className="form-check-input"
-                checked={indicatorConfigs.properties.displayReversalPrice}
+                checked={currentConfig.displayReversalPrice}
                 onChange={(e) =>
                   updateProperty("displayReversalPrice", e.target.checked)
                 }
               />
               <label className="form-check-label">Display Reversal Price</label>
-            </div>
+            </div> */}
 
             {/* Display Cumulative Volume */}
-            <div className="form-check mb-2">
+            {/* <div className="form-check mb-2">
               <input
                 type="checkbox"
                 className="form-check-input"
-                checked={indicatorConfigs.properties.displayCumulativeVolume}
+                checked={currentConfig.displayCumulativeVolume}
                 onChange={(e) =>
                   updateProperty("displayCumulativeVolume", e.target.checked)
                 }
@@ -1625,10 +1695,10 @@ export default function IndicatorPropertyDialog({
               <label className="form-check-label">
                 Display Cumulative Volume
               </label>
-            </div>
+            </div> */}
 
             {/* Display Reversal Price Change Mode */}
-            <div className="row mb-3 align-items-center">
+            {/* <div className="row mb-3 align-items-center">
               <div className="col-6">
                 <label className="form-label">
                   Display Reversal Price Change
@@ -1637,7 +1707,7 @@ export default function IndicatorPropertyDialog({
               <div className="col-6">
                 <select
                   className="form-select"
-                  value={indicatorConfigs?.properties.reversalPriceChangeMode}
+                  value={currentConfig?.reversalPriceChangeMode}
                   onChange={(e) =>
                     updateProperty("reversalPriceChangeMode", e.target.value)
                   }
@@ -1646,7 +1716,7 @@ export default function IndicatorPropertyDialog({
                   <option value="percent">Percent</option>
                 </select>
               </div>
-            </div>
+            </div> */}
           </>
         );
 

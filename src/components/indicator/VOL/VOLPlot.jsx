@@ -6,86 +6,103 @@ export default function VOLPlot({
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
+  chart, // chart reference to attach series to bottom pane
 }) {
-  /* ================= CREATE ================= */
-
   useEffect(() => {
-    const volume = result?.data?.volume;
-    const volumeMA = result?.data?.volumeMA;
+    if (!result?.data) return;
 
-    if (!Array.isArray(volume) || volume.length === 0) {
-      console.log(":x: VOL data missing", result);
-      return;
-    } // :fire: REMOVE OLD
+    const volume = result.data.volume || [];
+    const volumeMA = result.data.volumeMA || [];
 
+    if (!Array.isArray(volume) || volume.length === 0) return;
+
+    // ---------- REMOVE OLD SERIES ----------
     if (indicatorSeriesRef.current?.VOL) {
       Object.values(indicatorSeriesRef.current.VOL).forEach((s) => {
         try {
-          s.setData([]);
+          s?.setData?.([]);
         } catch {}
       });
       indicatorSeriesRef.current.VOL = null;
-    } /* :fire: HISTOGRAM SERIES */
+    }
 
-    const volumeSeries = addSeries("VOL", HistogramSeries, {
-      priceLineVisible: false,
-    }); /* :fire: APPLY COLOR LOGIC (TradingView Style) */
+    const groupedSeries = {};
 
-    const coloredData = volume.map((d, i) => {
-      const prev = volume[i - 1];
+    // ---------- VOLUME BARS ----------
+    const volSeries = addSeries(
+      "VOL",
+      HistogramSeries,
+      {
+        priceLineVisible: false,
+        visible: indicatorStyle?.VOL?.volumeBars?.visible ?? true,
+        priceScaleId: "pane_volume", // make sure you create a bottom pane with this id
+      }
+    );
 
+    const coloredVolume = volume.map((d, i, arr) => {
+      const prev = arr[i - 1];
       const isGrowing = prev ? d.value >= prev.value : true;
 
       return {
         time: d.time,
         value: d.value,
         color: isGrowing
-          ? indicatorStyle?.VOL?.volumeBars?.upColor || "rgba(38,166,154,0.6)"
-          : indicatorStyle?.VOL?.volumeBars?.downColor || "rgba(239,83,80,0.6)",
+          ? indicatorStyle?.VOL?.volumeBars?.palette?.up
+          : indicatorStyle?.VOL?.volumeBars?.palette?.down,
       };
     });
 
-    volumeSeries.setData(coloredData); /* :fire: MA LINE */
+    volSeries.setData(coloredVolume);
 
-    const maSeries = addSeries("VOL", LineSeries, {
-      color: indicatorStyle?.VOL?.volumeMA?.color ?? "rgba(255,193,7,1)",
-      lineWidth: indicatorStyle?.VOL?.volumeMA?.width ?? 2,
-      lineStyle: indicatorStyle?.VOL?.volumeMA?.lineStyle ?? 0,
-      visible: indicatorStyle?.VOL?.volumeMA?.visible ?? true,
-      priceLineVisible: false,
-    });
+    // ---------- VOLUME MA LINE ----------
+    const maSeries = addSeries(
+      "VOL",
+      LineSeries,
+      {
+        color: indicatorStyle?.VOL?.volumeMA?.color ?? "rgba(255,193,7,1)",
+        lineWidth: indicatorStyle?.VOL?.volumeMA?.width ?? 2,
+        lineStyle: indicatorStyle?.VOL?.volumeMA?.lineStyle ?? 0,
+        visible: indicatorStyle?.VOL?.volumeMA?.visible ?? true,
+        priceLineVisible: false,
+        priceScaleId: "pane_volume",
+      }
+    );
 
-    maSeries.setData(volumeMA ?? []);
+    maSeries.setData(volumeMA);
 
-    indicatorSeriesRef.current.VOL = {
-      volume: volumeSeries,
-      volumeMA: maSeries,
-      rawData: volume,
-    };
-  }, [result]); /* ================= STYLE UPDATE ================= */
+    groupedSeries.volume = volSeries;
+    groupedSeries.volumeMA = maSeries;
+    groupedSeries.rawData = volume;
 
+    indicatorSeriesRef.current.VOL = groupedSeries;
+  }, [result]);
+
+  // ---------- STYLE / PALETTE UPDATE ----------
   useEffect(() => {
     const g = indicatorSeriesRef.current?.VOL;
     if (!g) return;
 
     const volume = g.rawData;
-    if (!volume) return; /* :fire: RE-COLOR ON STYLE CHANGE */
+    if (!volume) return;
 
-    const recolored = volume.map((d, i) => {
-      const prev = volume[i - 1];
+    const palette = indicatorStyle?.VOL?.volumeBars?.palette;
+    const volVisible = indicatorStyle?.VOL?.volumeBars?.visible ?? true;
+
+    // recolor volume bars
+    const recolored = volume.map((d, i, arr) => {
+      const prev = arr[i - 1];
       const isGrowing = prev ? d.value >= prev.value : true;
-
       return {
         time: d.time,
         value: d.value,
-        color: isGrowing
-          ? indicatorStyle?.VOL?.volumeBars?.upColor
-          : indicatorStyle?.VOL?.volumeBars?.downColor,
+        color: isGrowing ? palette?.up : palette?.down,
       };
     });
 
-    g.volume?.setData(recolored); /* :fire: MA STYLE UPDATE */
+    g.volume?.applyOptions({ visible: volVisible });
+    g.volume?.setData(recolored);
 
+    // update MA line style
     g.volumeMA?.applyOptions({
       color: indicatorStyle?.VOL?.volumeMA?.color,
       lineWidth: indicatorStyle?.VOL?.volumeMA?.width,

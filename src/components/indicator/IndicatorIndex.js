@@ -71,10 +71,9 @@ import STOCHRSIInput from "./Stochastic RSI/StochRSIInput";
 import STOCHRSIPlot from "./Stochastic RSI/StochRSIPlot";
 import FTInput from "./FisherTransform/FisherTransformInput";
 import FTPlot from "./FisherTransform/FisherTransformPlot";
-import ZIGZAGPlot from "./ZIgZag/ZigZagPlot";
-import ZIGZAGInput from "./ZIgZag/ZigZagInput";
+
 import MACDPlot from "./MACD/MACDPlot";
-import MACDInput from "./MACD/macd-inputs";
+import MACDInput from "./MACD/MACDInput";
 import VWAPPlot from "./VWAP/VWAPPlot";
 import VWAPInput from "./VWAP/VWAPInput";
 import KVOPlot from "./KlingerOscillator/KVOPlot";
@@ -87,7 +86,15 @@ import CKSInput from "./CKS/CKSInput";
 import CKSPlot from "./CKS/CKSPlot";
 import BBWInput from "./BBW/BBWInput";
 import BBWPlot from "./BBW/BBWPlot";
-import ADInput from "./STDDEV/STDDEVInput";
+import ADInput from "./AD/ADInput"
+import CHOPPlot from "./CHOP/CHOPPlot";
+import ADPlot from "./AD/ADPlot";
+import AWOPlot from "./AwesomeOscillator/AwesomeOscillatorPlot";
+import AWOInput from "./AwesomeOscillator/AwsomeOscillatorInput";
+import STOCHPlot from "./Stochastic/StochasticPlot";
+import STOCHInput from "./Stochastic/StochasticInput";
+import ZIGZAGPlot from "./ZIgZag/ZigZagPlot"
+import ZIGZAGInput from "./ZIgZag/ZigZagInput"
 
 export const indicatorComponents = {
   VWAP: VWAPPlot,
@@ -113,7 +120,6 @@ export const indicatorComponents = {
   ATR: ATRPlot,
   MFI: MFIPlot,
   PSAR: PSARPlot,
-  EOM: EMAPlot,
   DC: DCPlot,
   KC: KCPlot,
   EOM: EOMPlot,
@@ -129,16 +135,19 @@ export const indicatorComponents = {
   OBV: OBVPlot,
   VOL: VOLPlot,
   STDDEV: STDDEVPlot,
-  AD: ADXPlot,
+  AD: ADPlot,
   TRIX: TRIXPlot,
   VP: VPPlot,
   CMF: CMFPlot,
   HV: HVPlot,
   CKS: CKSPlot,
   BBW: BBWPlot,
-  STOCH: STOCHRSIPlot,
+  STOCH: STOCHPlot,
   STDDEV: STDDEVPlot,
   KVO: KVOPlot,
+  CHOP: CHOPPlot,
+  AWO: AWOPlot,
+  VP: VPPlot,
 };
 
 export const indicatorInputs = {
@@ -165,7 +174,7 @@ export const indicatorInputs = {
   ATR: ATRInput,
   MFI: MFIInput,
   PSAR: PSARInput,
-  STOCH: STOCHRSIInput,
+  STOCH: STOCHInput,
   CHOP: CHOPInput,
   EOM: EOMInput,
   DC: DCInput,
@@ -184,13 +193,14 @@ export const indicatorInputs = {
   OBV: OBVInput,
   VOL: VOLInput,
   STDDEV: STDDEVInput,
-  AD: ADInput,
   VP: VPInput,
   CMF: CMFInput,
   HV: HVInput,
   CKS: CKSInput,
   BBW: BBWInput,
   KVO: KVOInput,
+  AD: ADInput,
+  AWO: AWOInput,
 };
 
 export function updateIndicatorFromInput(

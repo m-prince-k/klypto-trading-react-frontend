@@ -1,33 +1,39 @@
 export default function VOLInput(
   response,
   indicatorSeriesRef,
-  latestIndicatorValuesRef,
+  latestIndicatorValuesRef
 ) {
   const rows = Array.isArray(response?.data) ? response.data : [];
-
-  const volumeSeries = indicatorSeriesRef.current?.VOL?.volume;
-  const maSeries = indicatorSeriesRef.current?.VOL?.volumeMA;
-
-  if (!volumeSeries) return;
 
   const volumeData = rows.map((d) => ({
     time: Number(d.time),
     value: Number(d.volume),
-    color: d.color || "#26A69A",
+    // color: d.color, // VOLPlot handles colors; just pass along if provided
   }));
 
-  const maData = rows
+  const volumeMAData = rows
     .filter((d) => d.volumeMA != null)
     .map((d) => ({
       time: Number(d.time),
       value: Number(d.volumeMA),
     }));
 
-  volumeSeries.setData(volumeData);
-  if (maSeries) maSeries.setData(maData);
+  const series = indicatorSeriesRef.current?.VOL;
+  if (!series) return; // series not yet created by VOLPlot
 
+  // ---------- UPDATE EXISTING SERIES ----------
+  series.volume?.setData(volumeData);
+  series.volumeMA?.setData(volumeMAData);
+
+  // save raw data for VOLPlot style updates
+  series.rawData = volumeData;
+
+  // ---------- UPDATE LATEST VALUES ----------
   latestIndicatorValuesRef.current.VOL = {
     volume: volumeData[volumeData.length - 1]?.value ?? null,
-    volumeMA: maData[maData.length - 1]?.value ?? null,
+    volumeMA: volumeMAData[volumeMAData.length - 1]?.value ?? null,
   };
+
+  // ---------- SAVE FOR RE-RENDERS ----------
+  series.result = { data: { volume: volumeData, volumeMA: volumeMAData } };
 }

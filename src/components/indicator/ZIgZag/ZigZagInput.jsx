@@ -1,36 +1,76 @@
 export default function ZIGZAGInput(
   response,
   indicatorSeriesRef,
-  latestIndicatorValuesRef
+  latestIndicatorValuesRef,
+  indicatorStyle // ✅ pass this from parent
 ) {
-
   const series = response?.data?.series ?? [];
   const pivots = response?.data?.pivots ?? [];
 
-  const zigzagSeries = indicatorSeriesRef.current?.ZIGZAG?.zigzagLine;
+  const zigzagSeries =
+    indicatorSeriesRef.current?.ZIGZAG?.zigzagLine;
 
+  // ❌ If series not ready, exit
   if (!zigzagSeries) return;
 
+  // ✅ SAFE STYLE (uses correct key "z")
+  const zigzagStyle = indicatorStyle?.ZIGZAG?.z || {};
+
+  const lineColor = zigzagStyle.color ?? "#2962ff";
+  const visible = zigzagStyle.visible ?? true;
+  const width = zigzagStyle.width ?? 2;
+
+  // 🔹 Prepare line data
   const lineData = series
-    .filter((d) => d.value != null && d.time != null)
+    .filter((d) => d?.value != null && d?.time != null)
     .map((d) => ({
       time: Number(d.time),
       value: Number(d.value),
     }));
 
-  zigzagSeries.setData(lineData);
+  // ✅ Update line
+  try {
+    zigzagSeries.setData(lineData);
+  } catch (e) {
+    console.warn("ZIGZAG setData error:", e);
+  }
 
-  const markers = pivots.map((p) => ({
-    time: p.time,
-    position: p.type === "high" ? "aboveBar" : "belowBar",
-    color: "#2962ff",
-    shape: "circle",
-    text: p.type === "high" ? "H" : "L",
-  }));
+  // ✅ APPLY STYLE HERE ALSO (important for live updates)
+  try {
+    zigzagSeries.applyOptions({
+      color: lineColor,
+      lineWidth: width,
+      visible: visible,
+    });
+  } catch (e) {
+    console.warn("ZIGZAG applyOptions error:", e);
+  }
 
-  zigzagSeries.setMarkers(markers);
+  // 🔹 Markers (pivot points)
+  const markers = pivots.map((p) => {
+    const isHigh = p.type === "high";
 
+    return {
+      time: Number(p.time),
+      position: isHigh ? "aboveBar" : "belowBar",
+      color: lineColor, // ✅ dynamic color from palette
+      shape: "circle",
+      text: isHigh ? "H" : "L",
+    };
+  });
+
+  // ✅ Update markers
+  try {
+    zigzagSeries.setMarkers(markers);
+  } catch (e) {
+    console.warn("ZIGZAG markers error:", e);
+  }
+
+  // 🔹 Store latest value (for tooltip / panel)
   latestIndicatorValuesRef.current.ZIGZAG = {
-    zigzagLine: lineData[lineData.length - 1]?.value ?? null,
+    zigzagLine:
+      lineData.length > 0
+        ? lineData[lineData.length - 1].value
+        : null,
   };
 }

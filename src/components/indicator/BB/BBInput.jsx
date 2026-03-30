@@ -1,9 +1,8 @@
 export default function BBInput(
   response,
   indicatorSeriesRef,
-  latestIndicatorValuesRef
+  latestIndicatorValuesRef,
 ) {
-
   const group = indicatorSeriesRef.current?.BB;
   if (!group) return;
 

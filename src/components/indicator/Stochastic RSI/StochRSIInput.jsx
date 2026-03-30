@@ -3,38 +3,126 @@ export default function STOCHRSIInput(
   indicatorSeriesRef,
   latestIndicatorValuesRef
 ) {
-
   const rows = Array.isArray(response?.data?.candles)
     ? response.data.candles
     : [];
 
-  console.log(rows, "STOCHRSI rows");
+  if (!rows.length) {
+    console.warn("STOCHRSI: no data");
 
-  const kSeries = indicatorSeriesRef.current?.STOCHRSI?.kLine;
-  const dSeries = indicatorSeriesRef.current?.STOCHRSI?.dLine;
+    const emptyResult = {
+      data: {
+        kData: [],
+        dData: [],
+      },
+      _v: Date.now(),
+    };
 
-  if (!kSeries && !dSeries) return;
+    if (indicatorSeriesRef?.current) {
+      indicatorSeriesRef.current.STOCHRSIData = emptyResult;
+    }
 
-  const kData = rows
-    .filter((d) => d.k != null && d.time != null)
-    .map((d) => ({
-      time: Number(d.time),
-      value: Number(d.k),
-    }));
+    return emptyResult;
+  }
 
-  const dData = rows
-    .filter((d) => d.d != null && d.time != null)
-    .map((d) => ({
-      time: Number(d.time),
-      value: Number(d.d),
-    }));
+  const kData = [];
+  const dData = [];
 
-  if (kSeries) kSeries.setData(kData);
-  if (dSeries) dSeries.setData(dData);
+  for (let i = 0; i < rows.length; i++) {
+    const d = rows[i];
+    if (!d?.time) continue;
 
-  latestIndicatorValuesRef.current.STOCHRSI = {
-    kLine: kData[kData.length - 1]?.value ?? null,
-    dLine: dData[dData.length - 1]?.value ?? null,
+    const time = Number(d.time);
+
+    // ✅ K line
+    if (
+      d.stochRsiK !== null &&
+      d.stochRsiK !== undefined &&
+      !isNaN(d.stochRsiK)
+    ) {
+      kData.push({
+        time,
+        value: Number(d.stochRsiK),
+      });
+    }
+
+    // ✅ D line
+    if (
+      d.stochRsiD !== null &&
+      d.stochRsiD !== undefined &&
+      !isNaN(d.stochRsiD)
+    ) {
+      dData.push({
+        time,
+        value: Number(d.stochRsiD),
+      });
+    }
+  }
+
+  // ✅ FORCE NEW REFERENCES (IMPORTANT)
+  const result = {
+    data: {
+      kData: kData.map((x) => ({ ...x })),
+      dData: dData.map((x) => ({ ...x })),
+    },
+    _v: Date.now(), // 🔥 forces update tracking
   };
 
+  /* ---------------- INIT REF ---------------- */
+
+  if (!indicatorSeriesRef.current) {
+    indicatorSeriesRef.current = {};
+  }
+
+  if (!indicatorSeriesRef.current.STOCHRSI) {
+    indicatorSeriesRef.current.STOCHRSI = {};
+  }
+
+  /* ---------------- SERIES UPDATE ---------------- */
+
+  const kSeries = indicatorSeriesRef.current.STOCHRSI.kLine;
+  const dSeries = indicatorSeriesRef.current.STOCHRSI.dLine;
+
+  try {
+    if (kSeries?.setData) {
+      kSeries.setData(result.data.kData);
+    } else {
+      console.warn("STOCHRSI: kLine series missing");
+    }
+
+    if (dSeries?.setData) {
+      dSeries.setData(result.data.dData);
+    } else {
+      console.warn("STOCHRSI: dLine series missing");
+    }
+  } catch (err) {
+    console.error("STOCHRSI: chart update failed", err);
+  }
+
+  /* ---------------- STORE RAW ---------------- */
+
+  indicatorSeriesRef.current.STOCHRSIData = result.data;
+
+  /* ---------------- LATEST VALUES ---------------- */
+
+  if (!latestIndicatorValuesRef.current) {
+    latestIndicatorValuesRef.current = {};
+  }
+
+  latestIndicatorValuesRef.current.STOCHRSI = {
+    kLine: result.data.kData.at(-1)?.value ?? null,
+    dLine: result.data.dData.at(-1)?.value ?? null,
+  };
+
+  /* ---------------- DEBUG ---------------- */
+
+  console.log("STOCHRSI updated:", {
+    rows: rows.length,
+    kPoints: result.data.kData.length,
+    dPoints: result.data.dData.length,
+    last: latestIndicatorValuesRef.current.STOCHRSI,
+    version: result._v,
+  });
+
+  return result;
 }

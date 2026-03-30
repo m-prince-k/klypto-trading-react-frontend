@@ -1,119 +1,205 @@
-import { useEffect } from "react";
-import { LineSeries, AreaSeries } from "lightweight-charts";
+import { useEffect, useRef } from "react";
+import { LineSeries, BaselineSeries } from "lightweight-charts";
 
 export default function OBVPlot({
   result,
   rows,
+  indicatorStyle,
   indicatorSeriesRef,
   addSeries,
-  indicatorStyle,
+  chart,
+  containerRef,
+  indicatorConfigs,
 }) {
+  const canvasRef = useRef(null);
 
+  /* ================= CREATE OBV ================= */
   useEffect(() => {
-    if (!result?.data?.obv?.length) return;
+    if (!result) return;
 
-    /* CLEAR OLD */
+    // Clear previous series
     if (indicatorSeriesRef.current?.OBV) {
       Object.values(indicatorSeriesRef.current.OBV).forEach((s) => {
-        try { s?.setData([]); } catch {}
+        if (s?.setData) {
+          try { s.setData([]); } catch {}
+        }
       });
       indicatorSeriesRef.current.OBV = null;
     }
 
-    const grouped = {};
+    const groupedSeries = {};
+    let obvData = [];
+    let bbUpperData = [];
+    let bbLowerData = [];
 
-    /* ================= OBV ================= */
-    const obvSeries = addSeries("price", LineSeries, {
-      color: indicatorStyle?.OBV?.obv?.color || "rgba(255,77,79,1)",
-      lineWidth: indicatorStyle?.OBV?.obv?.width || 2,
-    });
+    const maType = indicatorConfigs?.OBV?.maType ?? "none";
+    const hasBB = result?.data?.bbUpper && result?.data?.bbLower;
 
-    obvSeries.setData(result.data.obv);
-    grouped.obv = obvSeries;
+    Object.entries(result?.data || {}).forEach(([lineName, lineData]) => {
+      const rowConfig = rows?.find((r) => r.key === lineName);
+      const styleConfig = indicatorStyle?.OBV?.[lineName];
 
-    /* ================= MA ================= */
-    if (result.data.smoothingMA?.length) {
-      const maSeries = addSeries("price", LineSeries, {
-        color: indicatorStyle?.OBV?.smoothingMA?.color || "rgba(250,173,20,1)",
-        lineWidth: indicatorStyle?.OBV?.smoothingMA?.width || 2,
+      // Only add BB lines if MA is SMA and Bollinger Bands exist
+      if ((lineName === "bbUpper" || lineName === "bbLower") && !(maType === "SMA" && hasBB)) return;
+
+      const series = addSeries("OBV", LineSeries, {
+        color: styleConfig?.color || rowConfig?.color || "#26a69a",
+        lineWidth: styleConfig?.width || 2,
+        lineStyle: styleConfig?.lineStyle,
+        visible: styleConfig?.visible ?? true,
+        priceLineVisible: false,
+        lastValueVisible: true,
       });
 
-      maSeries.setData(result.data.smoothingMA);
-      grouped.smoothingMA = maSeries;
+      if (!series) return;
+
+      series.setData(lineData);
+      groupedSeries[lineName] = series;
+
+      if (lineName === "obv") obvData = lineData;
+      if (lineName === "bbUpper") bbUpperData = lineData;
+      if (lineName === "bbLower") bbLowerData = lineData;
+    });
+
+    groupedSeries.obvData = obvData;
+    groupedSeries.bbUpperData = bbUpperData;
+    groupedSeries.bbLowerData = bbLowerData;
+
+    indicatorSeriesRef.current.OBV = groupedSeries;
+
+    drawBBCloud();
+  }, [result, indicatorConfigs]);
+
+  /* ================= CANVAS INIT ================= */
+  useEffect(() => {
+    if (!containerRef || canvasRef.current) return;
+
+    const canvas = document.createElement("canvas");
+    canvas.style.position = "absolute";
+    canvas.style.pointerEvents = "none";
+    canvas.style.zIndex = 1;
+    containerRef.appendChild(canvas);
+
+    canvasRef.current = canvas;
+  }, [containerRef]);
+
+  /* ================= DRAW BB CLOUD ================= */
+  const drawBBCloud = () => {
+    const obvGroup = indicatorSeriesRef.current?.OBV;
+    if (!obvGroup) return;
+
+    const upperData = obvGroup.bbUpperData || [];
+    const lowerData = obvGroup.bbLowerData || [];
+
+    const maType = indicatorConfigs?.OBV?.maType ?? "none";
+    const fill = indicatorStyle?.OBV?.bbFill;
+    const hasBB = upperData.length && lowerData.length;
+
+    if (!hasBB || !fill?.visible || maType !== "SMA") {
+      // Clear canvas if BB not applicable
+      if (canvasRef.current) {
+        const ctx = canvasRef.current.getContext("2d");
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      }
+      return;
     }
 
-    /* ================= BB ================= */
-  /* ================= BB ================= */
-if (result.data.bbUpper?.length && result.data.bbLower?.length) {
+    if (!canvasRef.current || !chart) return;
 
-  const upperData = result.data.bbUpper;
-  const lowerData = result.data.bbLower;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    const rect = containerRef.getBoundingClientRect();
 
-  // ✅ Upper Line
-  const upperSeries = addSeries("price", LineSeries, {
-    color: "rgba(82,196,26,1)",
-    lineWidth: 1,
-  });
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // ✅ Lower Line
-  const lowerSeries = addSeries("price", LineSeries, {
-    color: "rgba(255,120,117,1)",
-    lineWidth: 1,
-  });
+    ctx.beginPath();
 
-  upperSeries.setData(upperData);
-  lowerSeries.setData(lowerData);
+    // Draw upper
+    for (let i = 0; i < upperData.length; i++) {
+      const p = upperData[i];
+      const x = chart.timeScale().timeToCoordinate(p.time);
+      const y = obvGroup.bbUpper.priceToCoordinate(p.value);
+      if (x == null || y == null) continue;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
 
-  grouped.bbUpper = upperSeries;
-  grouped.bbLower = lowerSeries;
+    // Draw lower in reverse
+    for (let i = lowerData.length - 1; i >= 0; i--) {
+      const p = lowerData[i];
+      const x = chart.timeScale().timeToCoordinate(p.time);
+      const y = obvGroup.bbLower.priceToCoordinate(p.value);
+      if (x == null || y == null) continue;
+      ctx.lineTo(x, y);
+    }
 
-  /* ✅ CORRECT AREA FILL (NO OVERFLOW) */
-  const areaSeries = addSeries("price", AreaSeries, {
-    topColor: "rgba(82,196,26,0.2)",
-    bottomColor: "rgba(82,196,26,0.2)",
-    lineColor: "transparent",
-    baseLineVisible: false,
-  });
+    ctx.closePath();
+    ctx.fillStyle = fill?.topFillColor1 || "rgba(76,175,80,0.2)";
+    ctx.fill();
+  };
 
-  // 🔥 KEY FIX: midpoint use karo (center line)
-  const fillData = upperData.map((u, i) => {
-    const l = lowerData[i];
-    const mid = (u.value + l.value) / 2;
+  /* ================= REDRAW ON CHANGES ================= */
+  useEffect(() => {
+    if (!chart) return;
 
-    return {
-      time: u.time,
-      value: mid,
+    const redraw = () => drawBBCloud();
+
+    const unsubscribeTime = chart.timeScale().subscribeVisibleLogicalRangeChange
+      ? chart.timeScale().subscribeVisibleLogicalRangeChange(redraw)
+      : null;
+
+    const unsubscribeCrosshair = chart.subscribeCrosshairMove
+      ? chart.subscribeCrosshairMove(redraw)
+      : null;
+
+    return () => {
+      if (unsubscribeTime) unsubscribeTime();
+      if (unsubscribeCrosshair) unsubscribeCrosshair();
     };
-  });
-
-  areaSeries.setData(fillData);
-
-  grouped.bbFill = areaSeries;
-}
-
-    indicatorSeriesRef.current.OBV = grouped;
-
-  }, [result]);
-
-
+  }, [chart, indicatorStyle, indicatorConfigs]);
 
   /* ================= STYLE UPDATE ================= */
-
   useEffect(() => {
-    const g = indicatorSeriesRef.current?.OBV;
-    if (!g) return;
+    const obvGroup = indicatorSeriesRef.current?.OBV;
+    if (!obvGroup) return;
 
-    Object.keys(g).forEach((key) => {
+    const maType = indicatorConfigs?.OBV?.maType ?? "none";
+    const hasBB = obvGroup.bbUpperData?.length && obvGroup.bbLowerData?.length;
+
+    Object.entries(obvGroup).forEach(([key, series]) => {
+      if (!series?.applyOptions) return;
       const style = indicatorStyle?.OBV?.[key];
+      if (!style) return;
 
-      g[key]?.applyOptions({
-        color: style?.color,
-        lineWidth: style?.width,
-        visible: style?.visible,
+      if ((key === "bbUpper" || key === "bbLower") && !(maType === "SMA + Bollinger Bands" && hasBB)) return;
+
+      series.applyOptions({
+        color: style.color,
+        lineWidth: style.width,
+        lineStyle: style.lineStyle,
+        visible: style.visible,
       });
     });
 
-  }, [indicatorStyle]);
+    drawBBCloud();
+  }, [indicatorStyle, result, indicatorConfigs]);
+
+  /* ================= CLEANUP ================= */
+  useEffect(() => {
+    return () => {
+      if (canvasRef.current) {
+        const ctx = canvasRef.current.getContext("2d");
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        canvasRef.current.remove();
+        canvasRef.current = null;
+      }
+      if (indicatorSeriesRef.current?.OBV) {
+        indicatorSeriesRef.current.OBV = null;
+      }
+    };
+  }, []);
 
   return null;
 }

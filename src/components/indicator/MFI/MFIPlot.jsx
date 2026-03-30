@@ -7,16 +7,16 @@ export default function MFIPlot({
   indicatorSeriesRef,
   addSeries,
 }) {
-  /* ================= CREATE ================= */
-
+  /* ================= CREATE SERIES ================= */
   useEffect(() => {
     const raw = result?.data?.mfi;
 
     if (!Array.isArray(raw) || !raw.length) {
       console.log(":x: MFI data missing", result);
       return;
-    } // :fire: REMOVE OLD
+    }
 
+    // REMOVE OLD SERIES
     if (indicatorSeriesRef.current?.MFI) {
       Object.values(indicatorSeriesRef.current.MFI).forEach((s) => {
         try {
@@ -31,17 +31,18 @@ export default function MFIPlot({
       value: Number(d.value ?? d.mfi),
     }));
 
-    const style =
-      indicatorStyle?.MFI; /* ================= MFI LINE ================= */
+    const style = indicatorStyle?.MFI;
 
+    /* ================= MFI LINE ================= */
     const mfiSeries = addSeries("MFI", LineSeries, {
       color: style?.mfiLine?.color,
       lineWidth: style?.mfiLine?.width,
       lineStyle: style?.mfiLine?.lineStyle ?? 0,
       visible: style?.mfiLine?.visible,
       priceLineVisible: false,
-    }); /* ================= LEVEL LINES ================= */
+    });
 
+    /* ================= LEVEL LINES ================= */
     const makeLevel = (value) => mfiData.map((p) => ({ time: p.time, value }));
 
     const upperVal = style?.upperBand?.value ?? 80;
@@ -71,33 +72,25 @@ export default function MFIPlot({
 
     upperSeries.setData(makeLevel(upperVal));
     middleSeries.setData(makeLevel(middleVal));
-    lowerSeries.setData(
-      makeLevel(lowerVal),
-    ); /* ================= BACKGROUND ================= */
+    lowerSeries.setData(makeLevel(lowerVal));
 
+    /* ================= BACKGROUND FILL ================= */
     const bgSeries = addSeries("MFI", BaselineSeries, {
-      baseValue: { type: "price", price: lowerVal },
-
+      baseValue: { type: "price", price: lowerVal }, // fill starts from lowerBand
       topFillColor1: style?.bgFill?.topFillColor1,
       topFillColor2: style?.bgFill?.topFillColor2,
-
       bottomFillColor1: "rgba(0,0,0,0)",
       bottomFillColor2: "rgba(0,0,0,0)",
-
       topLineColor: "transparent",
       bottomLineColor: "transparent",
-
       visible: style?.bgFill?.visible,
       priceLineVisible: false,
     });
 
-    const bgData = mfiData.map((p) => ({
-      time: p.time,
-      value: upperVal,
-    }));
+    const bgData = mfiData.map((p) => ({ time: p.time, value: upperVal }));
+    bgSeries.setData(bgData);
 
-    bgSeries.setData(bgData); /* ================= SET DATA ================= */
-
+    /* ================= SET DATA ================= */
     mfiSeries.setData(mfiData);
 
     indicatorSeriesRef.current.MFI = {
@@ -110,8 +103,9 @@ export default function MFIPlot({
     };
 
     console.log(":white_check_mark: MFI plotted");
-  }, [result]); /* ================= STYLE UPDATE ================= */
+  }, [result]);
 
+  /* ================= STYLE / BAND UPDATE ================= */
   useEffect(() => {
     const g = indicatorSeriesRef.current?.MFI;
     if (!g) return;
@@ -119,25 +113,28 @@ export default function MFIPlot({
     const style = indicatorStyle?.MFI;
     if (!style) return;
 
-    const makeLevel = (value) =>
-      g.mfiData.map((p) => ({ time: p.time, value })); /* :fire: LINE */
+    const makeLevel = (value) => g.mfiData.map((p) => ({ time: p.time, value }));
 
+    const upperVal = style?.upperBand?.value ?? 80;
+    const middleVal = style?.middleBand?.value ?? 50;
+    const lowerVal = style?.lowerBand?.value ?? 20;
+
+    // MFI LINE
     g.mfiLine?.applyOptions({
       color: style?.mfiLine?.color,
       lineWidth: style?.mfiLine?.width,
       lineStyle: style?.mfiLine?.lineStyle ?? 0,
       visible: style?.mfiLine?.visible,
-    }); /* :fire: UPPER */
+    });
 
+    // LEVEL LINES
     g.upperBand?.applyOptions({
       color: style?.upperBand?.color,
       lineWidth: style?.upperBand?.width,
       lineStyle: style?.upperBand?.lineStyle ?? 2,
       visible: style?.upperBand?.visible,
     });
-    g.upperBand?.setData(
-      makeLevel(style?.upperBand?.value ?? 80),
-    ); /* :fire: MIDDLE */
+    g.upperBand?.setData(makeLevel(upperVal));
 
     g.middleBand?.applyOptions({
       color: style?.middleBand?.color,
@@ -145,9 +142,7 @@ export default function MFIPlot({
       lineStyle: style?.middleBand?.lineStyle ?? 2,
       visible: style?.middleBand?.visible,
     });
-    g.middleBand?.setData(
-      makeLevel(style?.middleBand?.value ?? 50),
-    ); /* :fire: LOWER */
+    g.middleBand?.setData(makeLevel(middleVal));
 
     g.lowerBand?.applyOptions({
       color: style?.lowerBand?.color,
@@ -155,15 +150,17 @@ export default function MFIPlot({
       lineStyle: style?.lowerBand?.lineStyle ?? 2,
       visible: style?.lowerBand?.visible,
     });
-    g.lowerBand?.setData(
-      makeLevel(style?.lowerBand?.value ?? 20),
-    ); /* :fire: BACKGROUND */
+    g.lowerBand?.setData(makeLevel(lowerVal));
 
+    // BACKGROUND FILL BETWEEN LOWER & UPPER
     g.bgFill?.applyOptions({
       visible: style?.bgFill?.visible,
       topFillColor1: style?.bgFill?.topFillColor1,
       topFillColor2: style?.bgFill?.topFillColor2,
+      baseValue: { type: "price", price: lowerVal }, // always start at lowerBand
     });
+    const bgData = g.mfiData.map((p) => ({ time: p.time, value: upperVal }));
+    g.bgFill?.setData(bgData);
   }, [indicatorStyle?.MFI]);
 
   return null;

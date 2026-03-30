@@ -1,27 +1,60 @@
-export default function CHOPInput(response, indicatorSeriesRef, latestIndicatorValuesRef) {
-  const rows = Array.isArray(response?.data) ? response.data : [];
+export default function CHOPInput(
+  response,
+  indicatorSeriesRef,
+  latestIndicatorValuesRef
+) {
 
-  const chopLineData = rows
-    .filter((d) => d.chop != null && d.time != null)
-    .map((d) => ({ time: Number(d.time), value: Number(d.chop) }));
+  const rows = response?.data ?? [];
 
-  const series = indicatorSeriesRef.current?.CHOP;
-  if (!series) return;
+  const group = indicatorSeriesRef.current?.CHOP;
+  if (!group) return;
 
-  // Only update the CHOP line data, DO NOT overwrite the whole result
-  series.chopLine?.setData(chopLineData);
+  const chopData = rows
+    .filter((d) => d?.chop != null && d?.time != null)
+    .map((d) => ({
+      time: Number(d.time),
+      value: Number(d.chop),
+    }));
 
-  // Store latest CHOP line value
+  if (!chopData.length) return;
+
+  /* UPDATE CHOP LINE */
+
+  group.chopLine?.setData(chopData);
+
+
+  /* UPDATE BANDS */
+
+  const upper = group?.upperValue ?? 61.8;
+  const middle = group?.middleValue ?? 50;
+  const lower = group?.lowerValue ?? 38.2;
+
+  const makeLevel = (v) =>
+    chopData.map((p) => ({
+      time: p.time,
+      value: v,
+    }));
+
+  group.upper?.setData(makeLevel(upper));
+  group.middle?.setData(makeLevel(middle));
+  group.lower?.setData(makeLevel(lower));
+
+
+  /* UPDATE BG FILL */
+
+  group.bg?.setData(makeLevel(upper));
+
+
+  /* UPDATE STORED DATA */
+
+  group.chopData = chopData;
+
+
+  /* UPDATE LATEST VALUE */
+
   latestIndicatorValuesRef.current.CHOP = {
-    chopLine: chopLineData[chopLineData.length - 1]?.value ?? 50,
+    chop: chopData[chopData.length - 1]?.value ?? null,
   };
 
-  // Update the internal result data for CHOP line only
-  if (!indicatorSeriesRef.current.CHOP.result) {
-    indicatorSeriesRef.current.CHOP.result = { data: { chopLine: [] } };
-  }
-  indicatorSeriesRef.current.CHOP.result.data.chopLine = chopLineData;
-
-  // Update chopData used by bands/bg fill
-  series.chopData = chopLineData;
+  console.log("✅ CHOP updated after input change");
 }
