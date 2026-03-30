@@ -1,217 +1,254 @@
-import React, { useEffect, useRef } from "react";
-import {
-  createChart,
-  CandlestickSeries,
-  LineSeries,
-  AreaSeries,
-} from "lightweight-charts";
+import React, { useState, useMemo } from "react";
+import ReactPaginate from "react-paginate";
 
-const SupertrendChart = () => {
-  const ref = useRef();
+/* ================= DATA ================= */
 
-  useEffect(() => {
-    const chart = createChart(ref.current, {
-      width: 1000,
-      height: 500,
-      layout: {
-        background: { color: "#0D1117" },
-        textColor: "#DDD",
-      },
-      grid: {
-        vertLines: { color: "#222" },
-        horzLines: { color: "#222" },
-      },
-    }); // :white_check_mark: CANDLE (TOP LAYER FEEL)
-
-    const candle = chart.addSeries(CandlestickSeries, {
-      upColor: "#00FF88",
-      downColor: "#FF4D4F",
-      borderUpColor: "#00FF88",
-      borderDownColor: "#FF4D4F",
-      wickUpColor: "#00FF88",
-      wickDownColor: "#FF4D4F",
-    });
-
-    const start = Math.floor(new Date("2024-01-01").getTime() / 1000);
-
-    const data = Array.from({ length: 150 }, (_, i) => {
-      const base = 100 + Math.sin(i / 6) * 15;
-      return {
-        time: start + i * 86400,
-        open: base + Math.random() * 5,
-        high: base + Math.random() * 10,
-        low: base - Math.random() * 10,
-        close: base + (Math.random() - 0.5) * 10,
-      };
-    });
-
-    candle.setData(data); // :fire: SUPER TREND
-
-    function supertrend(data, period = 10, multiplier = 3) {
-      let tr = [],
-        atr = [];
-
-      for (let i = 0; i < data.length; i++) {
-        if (i === 0) tr.push(data[i].high - data[i].low);
-        else {
-          const pc = data[i - 1].close;
-          tr.push(
-            Math.max(
-              data[i].high - data[i].low,
-              Math.abs(data[i].high - pc),
-              Math.abs(data[i].low - pc),
-            ),
-          );
-        }
-      }
-
-      for (let i = 0; i < tr.length; i++) {
-        if (i < period) atr.push(null);
-        else {
-          let sum = 0;
-          for (let j = i - period; j < i; j++) sum += tr[j];
-          atr.push(sum / period);
-        }
-      }
-
-      let res = [],
-        dir = 1,
-        prevU = 0,
-        prevL = 0;
-
-      for (let i = 0; i < data.length; i++) {
-        if (!atr[i]) {
-          res.push(null);
-          continue;
-        }
-
-        const hl2 = (data[i].high + data[i].low) / 2;
-        const upper = hl2 + multiplier * atr[i];
-        const lower = hl2 - multiplier * atr[i];
-
-        let fU = upper,
-          fL = lower;
-
-        if (i > 0) {
-          fU = upper < prevU || data[i - 1].close > prevU ? upper : prevU;
-          fL = lower > prevL || data[i - 1].close < prevL ? lower : prevL;
-        }
-
-        if (data[i].close > prevU) dir = 1;
-        else if (data[i].close < prevL) dir = -1;
-
-        const value = dir === 1 ? fL : fU;
-
-        res.push({
-          time: data[i].time,
-          value,
-          direction: dir,
-        });
-
-        prevU = fU;
-        prevL = fL;
-      }
-
-      return res.filter(Boolean);
+const dataSource = {
+  "1d": [
+    {
+      symbol: "BTCUSDT",
+      base: "BTC",
+      time: 1618531200,
+      open: 63158.74,
+      high: 63520.61,
+      low: 60000,
+      close: 61334.8,
+      volume: 91764.13,
+      rsi: 56.84,
+      status: true,
+    },
+    {
+      symbol: "BTCUSDT",
+      base: "BTC",
+      time: 1618617600,
+      open: 61334.81,
+      high: 62506.05,
+      low: 59580.91,
+      close: 60006.66,
+      volume: 58912.25,
+      rsi: 52.38,
+      status: true,
     }
+  ],
 
-    const st = supertrend(data); // :fire: SPLIT SEGMENTS (LINE BREAK)
-
-    let segments = [];
-    let current = [];
-
-    for (let i = 0; i < st.length; i++) {
-      if (!current.length) {
-        current.push(st[i]);
-        continue;
-      }
-
-      const prev = current[current.length - 1];
-
-      if (st[i].direction !== prev.direction) {
-        segments.push([...current]);
-        current = [];
-      }
-
-      current.push(st[i]);
+  "6h": [
+    {
+      symbol: "BTCUSDT",
+      base: "BTC",
+      time: 1617364800,
+      open: 59542.78,
+      high: 59624.86,
+      low: 58827.66,
+      close: 59180.02,
+      volume: 11557.49,
+      ema: 58982.35,
+      status: true,
+    },
+    {
+      symbol: "BTCUSDT",
+      base: "BTC",
+      time: 1617386400,
+      open: 59180.02,
+      high: 59280.45,
+      low: 58428.57,
+      close: 58950.01,
+      volume: 9445.69,
+      ema: 58975.88,
+      status: true,
     }
-
-    if (current.length) segments.push(current); // :fire: DRAW BAND + LINE
-
-    segments.forEach((seg) => {
-      const isBull = seg[0].direction === 1;
-
-      const candleMap = {};
-      data.forEach((c) => (candleMap[c.time] = c)); // :fire: Upper boundary (candle side)
-
-      const topData = seg
-        .map((d) => {
-          const c = candleMap[d.time];
-          if (!c) return null;
-
-          return {
-            time: d.time,
-            value: isBull ? d.value : c.high, // red = high
-          };
-        })
-        .filter(Boolean); // :fire: Lower boundary (line side)
-
-      const bottomData = seg
-        .map((d) => {
-          const c = candleMap[d.time];
-          if (!c) return null;
-
-          return {
-            time: d.time,
-            value: isBull ? c.low : d.value, // green = low
-          };
-        })
-        .filter(Boolean); // :white_check_mark: AREA (TRICK: stack illusion)
-
-      const area = chart.addSeries(AreaSeries, {
-        lineColor: "transparent",
-        topColor: isBull
-          ? "rgba(0, 247, 132, 100)" // :large_green_circle: dense green
-          : "rgba(248, 1, 6, 100)", // :red_circle: dense red
-        bottomColor: "transparent",
-      }); // :point_down: midpoint trick to keep inside
-
-      const areaData = seg
-        .map((d) => {
-          const c = candleMap[d.time];
-          if (!c) return null;
-
-          let top = isBull ? d.value : c.high;
-          let bottom = isBull ? c.low : d.value;
-
-          return {
-            time: d.time,
-            value: (top + bottom) / 2,
-          };
-        })
-        .filter(Boolean);
-
-      area.setData(areaData); // :white_check_mark: SUPER TREND LINE
-
-      const line = chart.addSeries(LineSeries, {
-        color: isBull ? "#00FF88" : "#FF4D4F",
-        lineWidth: 2,
-      });
-
-      line.setData(
-        seg.map((d) => ({
-          time: d.time,
-          value: d.value,
-        })),
-      );
-    });
-
-    chart.timeScale().fitContent();
-
-    return () => chart.remove();
-  }, []);
-
-  return <div ref={ref} />;
+  ]
 };
 
-export default SupertrendChart;
+/* ================= SYMBOL LIST (🔥 ADD THIS) ================= */
+
+const symbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT"];
+
+/* ================= COMPONENT ================= */
+
+export default function OHLCVTable() {
+  const [timeframe, setTimeframe] = useState("1d");
+  const [limit, setLimit] = useState(5);
+  const [page, setPage] = useState(0);
+
+  const timeframes = Object.keys(dataSource);
+
+  /* ================= MERGE + MULTI SYMBOL ================= */
+
+  const mergedData = useMemo(() => {
+    let finalData = [];
+
+    const process = (arr, tf) =>
+      arr.flatMap((item) =>
+        symbols.map((sym) => ({
+          ...item,
+          symbol: sym, // 🔥 override symbol
+          base: sym.replace("USDT", ""),
+          timeframe: tf,
+        }))
+      );
+
+    if (timeframe === "ALL") {
+      timeframes.forEach((tf) => {
+        finalData = [...finalData, ...process(dataSource[tf], tf)];
+      });
+    } else {
+      finalData = process(dataSource[timeframe], timeframe);
+    }
+
+    return finalData.sort((a, b) => b.time - a.time);
+  }, [timeframe]);
+
+  /* ================= PAGINATION ================= */
+
+  const totalRecords = mergedData.length;
+  const totalPages = Math.ceil(totalRecords / limit);
+
+  const paginatedData = useMemo(() => {
+    const start = page * limit;
+    return mergedData.slice(start, start + limit);
+  }, [mergedData, page, limit]);
+
+  /* ================= DYNAMIC COLUMNS ================= */
+
+  const columns = useMemo(() => {
+    const allKeys = new Set();
+
+    mergedData.forEach((row) => {
+      Object.keys(row).forEach((key) => allKeys.add(key));
+    });
+
+    return Array.from(allKeys);
+  }, [mergedData]);
+
+  /* ================= UI ================= */
+
+  return (
+    <div style={{ padding: "20px", fontFamily: "Arial" }}>
+
+      <style>{`
+        .table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+        .table th, .table td {
+          border: 1px solid #ddd;
+          padding: 8px;
+          text-align: center;
+        }
+        .table th {
+          background: #f5f5f5;
+        }
+        .controls {
+          display: flex;
+          gap: 10px;
+          margin-bottom: 15px;
+        }
+        .pagination {
+          display: flex;
+          list-style: none;
+          gap: 5px;
+          padding: 0;
+        }
+        .page-link {
+          padding: 6px 12px;
+          border: 1px solid #ccc;
+          cursor: pointer;
+          background: white;
+        }
+        .active .page-link {
+          background: #007bff;
+          color: white;
+        }
+        .disabled .page-link {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+      `}</style>
+
+      <h2>OHLCV Data (Chartink Style)</h2>
+
+      {/* CONTROLS */}
+      <div className="controls">
+        <select
+          value={timeframe}
+          onChange={(e) => {
+            setTimeframe(e.target.value);
+            setPage(0);
+          }}
+        >
+          <option value="ALL">ALL</option>
+          {timeframes.map((tf) => (
+            <option key={tf} value={tf}>
+              {tf}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={limit}
+          onChange={(e) => {
+            setLimit(Number(e.target.value));
+            setPage(0);
+          }}
+        >
+          <option value={5}>5</option>
+          <option value={10}>10</option>
+          <option value={20}>20</option>
+        </select>
+      </div>
+
+      {/* TABLE */}
+      <table className="table">
+        <thead>
+          <tr>
+            {columns.map((col) => (
+              <th key={col}>{col.toUpperCase()}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {paginatedData.map((row, i) => (
+            <tr
+              key={i}
+              style={{
+                color: row.close > row.open ? "green" : "red",
+              }}
+            >
+              {columns.map((col) => (
+                <td key={col}>
+                  {col === "time"
+                    ? new Date(row[col] * 1000).toLocaleString()
+                    : row[col] !== undefined && row[col] !== null
+                    ? typeof row[col] === "number"
+                      ? row[col].toFixed(2)
+                      : row[col].toString()
+                    : "-"}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {/* INFO */}
+      <div style={{ marginTop: "10px" }}>
+        Page <b>{page + 1}</b> of <b>{totalPages}</b> | Total:{" "}
+        <b>{totalRecords}</b>
+      </div>
+
+      {/* PAGINATION */}
+      <ReactPaginate
+        previousLabel={"Prev"}
+        nextLabel={"Next"}
+        breakLabel={"..."}
+        pageCount={totalPages}
+        onPageChange={(e) => setPage(e.selected)}
+        forcePage={page}
+        containerClassName={"pagination"}
+        pageLinkClassName={"page-link"}
+        activeClassName={"active"}
+        disabledClassName={"disabled"}
+      />
+    </div>
+  );
+}

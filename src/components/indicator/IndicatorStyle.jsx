@@ -41,7 +41,8 @@ export default function IndicatorStyle({
         // ✅ AO oscillator palette
         (section === "oscillator" && ["up", "down"].includes(key)) ||
         // ✅ AO fill palette
-        (section === "fill" && ["topFillColor1", "topFillColor2"].includes(key))
+        (section === "oscillatorFill" &&
+          ["topFillColor1", "topFillColor2"].includes(key))
       ) {
         return {
           ...prev,
@@ -98,7 +99,8 @@ export default function IndicatorStyle({
       (row.parent === "oscillator" &&
         selectedStyle?.oscillator?.palette?.[row.key]) ||
       // ✅ AO fill palette preview
-      (row.parent === "fill" && selectedStyle?.fill?.palette?.[row.key])
+      (row.parent === "oscillatorFill" &&
+        selectedStyle?.oscillatorFill?.palette?.[row.key])
     ) {
       const section = row.parent;
       return selectedStyle?.[section]?.palette?.[row.key] || "#888";

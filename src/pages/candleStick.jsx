@@ -69,6 +69,11 @@ export default function Candlestick() {
   const [indicatorVisibility, setIndicatorVisibility] = useState({});
   const [activeBarIndicator, setActiveBarIndicator] = useState("");
 
+  const [rules, setRules] = useState([]);
+  const [runScanTrigger, setRunScanTrigger] = useState(false);
+  const [listingTimeframe, setListingTimeframe] = useState("");
+  
+
   useEffect(() => {
     if (!selectedIndicator.length) return;
 
@@ -457,6 +462,8 @@ export default function Candlestick() {
         return "KVO";
       case "AWO":
         return "AWO";
+      default:
+        return type;
     }
   }
 
@@ -695,6 +702,9 @@ export default function Candlestick() {
           break;
         case "UO":
           keysToShow = ["uo"];
+          break;
+        case "AO":
+          keysToShow = ["oscillator"];
           break;
         case "ICHIMOKU":
           keysToShow = [
@@ -1335,6 +1345,13 @@ export default function Candlestick() {
               <IndicatorRuleBuilder
                 onOpen={() => setOpenForm(true)}
                 onClose={() => setOpenForm(false)}
+                rules={rules}
+                setRules={setRules}
+                setRunScanTrigger={setRunScanTrigger}
+                runScanTrigger={runScanTrigger}
+                setListingTimeframe={setListingTimeframe}
+                listingTimeframe={listingTimeframe}
+
               />
             </div>
             {openForm && (
@@ -1366,6 +1383,10 @@ export default function Candlestick() {
         <IndicatorBuildingListing
           selectedCurrency={selectedCurrency}
           timeframeValue={timeframeValue}
+          rules={rules}
+          runScanTrigger={runScanTrigger}
+          setRunScanTrigger={setRunScanTrigger}
+          listingTimeframe={listingTimeframe}
         />
       </div>
     </>
