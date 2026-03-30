@@ -1,5 +1,13 @@
 import "bootstrap/dist/css/bootstrap.min.css"; //this is for temp
-import { createChart, CandlestickSeries, LineSeries, BarSeries, AreaSeries, HistogramSeries, BaselineSeries} from "lightweight-charts";
+import {
+  createChart,
+  CandlestickSeries,
+  LineSeries,
+  BarSeries,
+  AreaSeries,
+  HistogramSeries,
+  BaselineSeries,
+} from "lightweight-charts";
 import IndicatorRuleBuilder from "../components/scanner/IndicatorRuleBuilder";
 import { LuCirclePlus, LuCircleMinus } from "react-icons/lu";
 import { RiResetRightLine } from "react-icons/ri";
@@ -42,6 +50,7 @@ export default function Candlestick() {
   const latestIndicatorValuesRef = useRef({});
   const panesRef = useRef({});
   const syncingRef = useRef(false);
+  const fetchedIndicatorsRef = useRef(new Set());
   const [openForm, setOpenForm] = useState(false);
   const [timeframeValue, setTimeframeValue] = useState("1m");
   const [selectedCurrency, setSelectedCurrency] = useState("BTCUSDT");
@@ -59,6 +68,20 @@ export default function Candlestick() {
   const [activeSourceIndicator, setActiveSourceIndicator] = useState(null);
   const [indicatorVisibility, setIndicatorVisibility] = useState({});
   const [activeBarIndicator, setActiveBarIndicator] = useState("");
+
+  useEffect(() => {
+    if (!selectedIndicator.length) return;
+
+    const newIndicators = selectedIndicator.filter(
+      (ind) => !fetchedIndicatorsRef.current.has(ind),
+    );
+
+    if (newIndicators.length === 0) return;
+
+    fetchIndicatorData(newIndicators, selectedCurrency, timeframeValue);
+
+    newIndicators.forEach((ind) => fetchedIndicatorsRef.current.add(ind));
+  }, [selectedIndicator, selectedCurrency, timeframeValue]);
 
   const toggleIndicatorVisibility = (indicator) => {
     const currentVisible = indicatorVisibility[indicator] ?? true;
@@ -490,6 +513,7 @@ export default function Candlestick() {
 
     delete indicatorSeriesRef.current[indicator];
     delete latestIndicatorValuesRef.current[indicator];
+    fetchedIndicatorsRef.current.delete(indicator);
 
     cleanupPane(paneKey);
 
@@ -566,42 +590,39 @@ export default function Candlestick() {
 
       if (alreadySelected) {
         const entry = indicatorSeriesRef.current[indicator];
-
-        if (!entry) {
-          return prev.filter((i) => i !== indicator);
-        }
-
         const paneKey = resolvePaneKey(indicator);
         const pane = panesRef.current[paneKey];
         const chart = pane?.chart ?? chartRef.current;
 
-        if (!chart) return prev;
+        if (entry && chart) {
+          const seriesList = Array.isArray(entry)
+            ? entry
+            : typeof entry === "object"
+              ? Object.values(entry)
+              : [entry];
 
-        const seriesList = Array.isArray(entry)
-          ? entry
-          : typeof entry === "object" && !entry.setData
-            ? Object.values(entry)
-            : [entry];
-
-        seriesList.forEach((series) => {
-          if (!series) return;
-
-          try {
-            chart.removeSeries(series);
-          } catch (e) {}
-        });
+          seriesList.forEach((series) => {
+            try {
+              chart.removeSeries(series);
+            } catch {}
+          });
+        }
 
         delete indicatorSeriesRef.current[indicator];
         delete latestIndicatorValuesRef.current[indicator];
+        fetchedIndicatorsRef.current.delete(indicator);
 
-        cleanupPane(paneKey);
+        const updated = prev.filter((i) => i !== indicator);
 
-        return prev.filter((i) => i !== indicator);
+        setTimeout(() => cleanupPane(paneKey), 0);
+
+        return updated;
       }
 
       return [...prev, indicator];
     });
   }, []);
+
   // RENDER INDICATOR VALUE
 
   const renderValue = (indicator, value) => {
@@ -692,7 +713,7 @@ export default function Candlestick() {
         case "FT":
           keysToShow = ["fisherLine", "triggerLine"];
           break;
-          case "STOCH":
+        case "STOCH":
           keysToShow = ["k", "d"];
           break;
 
@@ -970,11 +991,11 @@ export default function Candlestick() {
 
         chartRef.current.timeScale().fitContent();
 
-        await fetchIndicatorData(
-          selectedIndicator,
-          selectedCurrency,
-          timeframeValue,
-        );
+        // await fetchIndicatorData(
+        //   selectedIndicator,
+        //   selectedCurrency,
+        //   timeframeValue,
+        // );
       } catch (err) {
         console.error("Chart load error", err);
       }

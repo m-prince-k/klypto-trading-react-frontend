@@ -3,15 +3,11 @@ import { getRowsByIndicator } from "./common";
 import { useRef } from "react";
 
 export default function useChartFunctions({
-  chartRef,
-  addSeries,
   indicatorSeriesRef,
-  indicatorStyle,
   latestIndicatorValuesRef,
   indicatorConfigs,
   setIndicatorLoading,
 }) {
-  const indicatorMetaRef = useRef({});
 
   /* ================= FETCH INDICATOR API ================= */
 
@@ -45,19 +41,15 @@ export default function useChartFunctions({
           indicator,
           timeframeValue,
           setIndicatorLoading,
-          indicatorMetaRef,
         );
 
         if (!result) continue;
 
-        const normalizedType = indicator.replace(/[\s/%]+/g, "");
-        const config = indicatorConfigs?.[normalizedType] || {};
+        const config = indicatorConfigs?.[indicator] || {};
         const { maType } = config;
         const rows = getRowsByIndicator(indicator, maType, indicatorConfigs);
 
-        switch (normalizedType) {
-          /* ================= RSI ================= */
-
+        switch (indicator) {
           case "RSI": {
             const rsiData = result?.data?.rsi ?? [];
             const smoothingData = result?.data?.smoothingMA ?? [];
@@ -929,28 +921,16 @@ async function fetchDataForIndicators(
   type,
   timeframeValue,
   setIndicatorLoading,
-  indicatorMetaRef,
 ) {
   try {
-    const normalizedType = type?.replace(/[\s/%]+/g, "") || "";
-
-    const key = `${normalizedType}_${selectedCurrency}_${timeframeValue}`;
-
-    if (indicatorMetaRef.current[normalizedType] === key) {
-      console.log(`${normalizedType} already loaded for this symbol/timeframe`);
-      return;
-    }
 
     setIndicatorLoading(true);
 
     const response = await apiService.post(
-      `/api/indicatorDetails?symbol=${selectedCurrency}&interval=${timeframeValue}&type=${normalizedType}`,
+      `/api/indicatorDetails?symbol=${selectedCurrency}&interval=${timeframeValue}&type=${type}`,
     );
 
-    console.log("Raw indicator data for", normalizedType, ":", response);
-
-    // store last request key
-    indicatorMetaRef.current[normalizedType] = key;
+    console.log("Raw indicator data for", type, ":", response);
 
     const mapLine = (arr, field) =>
       arr
@@ -962,7 +942,7 @@ async function fetchDataForIndicators(
 
     console.log("mapped conversion", response.data, "conversionLine");
 
-    switch (normalizedType) {
+    switch (type) {
       /* ---------------- SINGLE VALUE ---------------- */
 
       case "VWAP": {
