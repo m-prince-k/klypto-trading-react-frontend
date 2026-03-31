@@ -238,6 +238,44 @@ export const chartOptions = [
   { value: "histogram", label: "Histogram", icon: FiBarChart2 },
 ];
 
+export const symbols = [
+  { label: "BTCUSDT", value: "BTCUSDT" },
+  { label: "ETHUSDT", value: "ETHUSDT" },
+  { label: "BNBUSDT", value: "BNBUSDT" },
+  { label: "SOLUSDT", value: "SOLUSDT" },
+  { label: "XRPUSDT", value: "XRPUSDT" },
+
+  { label: "ADAUSDT", value: "ADAUSDT" },
+  { label: "DOGEUSDT", value: "DOGEUSDT" },
+  { label: "DOTUSDT", value: "DOTUSDT" },
+  { label: "MATICUSDT", value: "MATICUSDT" },
+  { label: "LTCUSDT", value: "LTCUSDT" },
+
+  { label: "TRXUSDT", value: "TRXUSDT" },
+  { label: "AVAXUSDT", value: "AVAXUSDT" },
+  { label: "LINKUSDT", value: "LINKUSDT" },
+  { label: "ATOMUSDT", value: "ATOMUSDT" },
+  { label: "UNIUSDT", value: "UNIUSDT" },
+
+  { label: "ETCUSDT", value: "ETCUSDT" },
+  { label: "FILUSDT", value: "FILUSDT" },
+  { label: "ICPUSDT", value: "ICPUSDT" },
+  { label: "APTUSDT", value: "APTUSDT" },
+  { label: "ARBUSDT", value: "ARBUSDT" },
+
+  { label: "OPUSDT", value: "OPUSDT" },
+  { label: "NEARUSDT", value: "NEARUSDT" },
+  { label: "ALGOUSDT", value: "ALGOUSDT" },
+  { label: "SANDUSDT", value: "SANDUSDT" },
+  { label: "MANAUSDT", value: "MANAUSDT" },
+
+  { label: "AAVEUSDT", value: "AAVEUSDT" },
+  { label: "GRTUSDT", value: "GRTUSDT" },
+  { label: "SNXUSDT", value: "SNXUSDT" },
+  { label: "CRVUSDT", value: "CRVUSDT" },
+  { label: "EGLDUSDT", value: "EGLDUSDT" },
+];
+
 export const getSeriesColor = (series) => {
   if (!series || !series.options) return "#999";
 
@@ -352,6 +390,66 @@ export const convertToHeikinAshi = (data) => {
   });
 };
 
+export const timeframeMap = {
+  // ================= MINUTES =================
+  "1 minute ago": "1m_ago",
+  "one minute ago": "1m_ago",
+  "minute ago": "1m_ago",
+  "minutes ago": "1m_ago",
+
+  "2 minutes ago": "2m_ago",
+  "three minutes ago": "3m_ago",
+  "3 minutes ago": "3m_ago",
+  "5 minutes ago": "5m_ago",
+  "10 minutes ago": "10m_ago",
+  "15 minutes ago": "15m_ago",
+  "30 minutes ago": "30m_ago",
+
+  // ================= HOURS =================
+  "1 hour ago": "1h_ago",
+  "one hour ago": "1h_ago",
+  "hour ago": "1h_ago",
+  "hours ago": "1h_ago",
+
+  "2 hours ago": "2h_ago",
+  "3 hours ago": "3h_ago",
+  "4 hours ago": "4h_ago",
+  "6 hours ago": "6h_ago",
+  "8 hours ago": "8h_ago",
+  "12 hours ago": "12h_ago",
+
+  // ================= DAYS =================
+  "1 day ago": "1d_ago",
+  "one day ago": "1d_ago",
+  "day ago": "1d_ago",
+  "days ago": "1d_ago",
+
+  "2 days ago": "2d_ago",
+  "3 day ago": "3d_ago",
+  "3 days ago": "3d_ago",
+
+
+  // ================= WEEKS =================
+  "1 week ago": "1w_ago",
+  "one week ago": "1w_ago",
+  "week ago": "1w_ago",
+  "weeks ago": "1w_ago",
+
+  "2 weeks ago": "2w_ago",
+  "3 weeks ago": "3w_ago",
+  "4 weeks ago": "4w_ago",
+
+  // ================= MONTHS =================
+  "1 month ago": "1mth_ago",
+  "one month ago": "1mth_ago",
+  "month ago": "1mth_ago",
+  "months ago": "1mth_ago",
+
+  "2 months ago": "2mth_ago",
+  "3 months ago": "3mth_ago",
+  "6 months ago": "6mth_ago",
+  "12 months ago": "12mth_ago",
+};
 export const scanCategories = [
   { id: 1, key: "range_breakouts", label: "Range Breakouts scan" },
   { id: 2, key: "fundamental", label: "Fundamental Scans" },

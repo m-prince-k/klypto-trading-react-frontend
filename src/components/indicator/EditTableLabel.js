@@ -3,48 +3,75 @@ import { Form, Badge } from "react-bootstrap";
 
 export function EditableSelect({ value, options, onChange }) {
   const [editing, setEditing] = useState(false);
+  const [search, setSearch] = useState("");
   const ref = useRef();
 
   useEffect(() => {
-    if (editing && ref.current) ref.current.focus();
+    if (editing && ref.current) {
+      ref.current.focus();
+      setSearch(""); // reset search on open
+    }
   }, [editing]);
+
+  const selectedLabel = options.find((o) => o.value === value)?.label ?? value;
+
+  const filteredOptions = options.filter((opt) =>
+    opt.label.toLowerCase().includes(search.toLowerCase()),
+  );
 
   if (editing) {
     return (
-      <select
-        ref={ref}
-        value={value}
-        onChange={(e) => {
-          onChange(e.target.value);
-          setEditing(false);
-        }}
-        onBlur={() => setEditing(false)}
-        className="px-2 py-1 text-sm border border-slate-200 rounded-md bg-white"
-      >
-        {options.map((opt, index) => (
-          <option key={index} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
+      <div className="position-relative" style={{ minWidth: "140px" }}>
+        {/* 🔍 SEARCH INPUT */}
+        <input
+          ref={ref}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          onBlur={() => setTimeout(() => setEditing(false), 150)}
+          placeholder="Search..."
+          className="px-2 py-1 text-sm border border-slate-200 rounded-md w-100"
+        />
+
+        {/* 📋 DROPDOWN LIST */}
+        <div
+          className="position-absolute bg-white border rounded shadow-sm mt-1 w-100"
+          style={{ maxHeight: "150px", overflowY: "auto", zIndex: 1000 }}
+        >
+          {filteredOptions.length === 0 ? (
+            <div className="px-2 py-1 text-muted small">No results</div>
+          ) : (
+            filteredOptions.map((opt, index) => (
+              <div
+                key={index}
+                onMouseDown={() => {
+                  onChange(opt.value);
+                  setEditing(false);
+                }}
+                className="px-2 py-1 text-sm text-left hover-bg cursor-pointer"
+                style={{ cursor: "pointer" }}
+              >
+                {opt.label}
+              </div>
+            ))
+          )}
+        </div>
+      </div>
     );
   }
-
-  const label = options.find((o) => o.value === value)?.label ?? value;
 
   return (
     <span
       onClick={() => setEditing(true)}
       className="cursor-pointer text-sm px-2 py-1 rounded-md hover:bg-slate-100 transition"
     >
-      {label}
+      {selectedLabel || "Select"}
     </span>
   );
 }
 
 /* ---------------- Editable Number ---------------- */
 
-export function EditableNumber({ value, onChange, width = "w-20" }) {
+export function EditableNumber({ value, onChange, width = "w-14" }) {
   const [editing, setEditing] = useState(false);
   const ref = useRef();
 

@@ -22,6 +22,7 @@ import {
 } from "react-bootstrap";
 import { IoClose } from "react-icons/io5";
 import IndicatorBuildingListing from "./IndicatorBuilderListing";
+import { timeframeMap } from "../../util/common";
 
 export default function IndicatorRuleBuilder({
   onClose,
@@ -153,6 +154,7 @@ export default function IndicatorRuleBuilder({
     "is equal to": "=",
   };
 
+
   /* ================= PARSER ================= */
   function parseNaturalConditions(text) {
     if (!text || typeof text !== "string") return null;
@@ -169,7 +171,18 @@ export default function IndicatorRuleBuilder({
     const results = [];
 
     for (const segment of parts) {
-      const trimmed = segment.trim();
+      let trimmed = segment.trim();
+
+      /* ================= EXTRACT TIMEFRAME ================= */
+      let timeframe = "1d"; // default
+
+      for (const key in timeframeMap) {
+        if (trimmed.includes(key)) {
+          timeframe = timeframeMap[key];
+          trimmed = trimmed.replace(key, "").trim(); // remove from text
+          break;
+        }
+      }
 
       for (const phrase in operatorMap) {
         if (trimmed.includes(phrase)) {
@@ -188,6 +201,7 @@ export default function IndicatorRuleBuilder({
           const value = isNaN(rightRaw) ? rightRaw : Number(rightRaw);
 
           results.push({
+            timeframe,
             indicator: leftRaw.toUpperCase(),
             operator: operatorMap[phrase],
             value,
@@ -210,7 +224,7 @@ export default function IndicatorRuleBuilder({
       period: 14,
       operator: ">",
       compareTimeframe: "1d",
-      scanner: "",
+      scanner: "Number",
       compareLength: 0,
       value: 0,
     };
@@ -237,12 +251,12 @@ export default function IndicatorRuleBuilder({
 
       return {
         id: Date.now() + Math.random(), // ensure uniqueness
-        timeframe: "1d",
+        timeframe: parsed.timeframe || "1d",
         indicator: parsed.indicator,
         period: selected?.period ?? 14,
         operator: parsed.operator,
-        compareTimeframe: "1d",
-        scanner: "",
+        compareTimeframe: parsed.timeframe || "1d",
+        scanner: "Number",
         compareLength: 0,
         value: parsed.value,
         disabled: false,
@@ -342,13 +356,26 @@ export default function IndicatorRuleBuilder({
       const response = await apiService.post("/api/getTimeFrames");
       const data = await response?.data;
 
+      /* ================= LABEL OVERRIDE ================= */
+      const labelMap = {
+        "1 day": "Daily",
+      };
+
+      const transformOptions = (arr = []) =>
+        arr.map((item) => ({
+          ...item,
+          label: labelMap[item.label?.toLowerCase()] || item.label,
+        }));
+
+      /* ================= ORIGINAL FLATTEN ================= */
       const flattened = [
-        ...(data.minutes || []),
-        ...(data.hours || []),
-        ...(data.days || []),
-        ...(data.weeks || []),
+        ...transformOptions(data.minutes || []),
+        ...transformOptions(data.hours || []),
+        ...transformOptions(data.days || []),
+        ...transformOptions(data.weeks || []),
       ];
 
+      /* ================= YOUR EXISTING LOGIC ================= */
       const generateAgoOptions = (count, unit, short) => {
         const options = Array.from({ length: count }, (_, i) => {
           const num = i + 1;
@@ -424,12 +451,15 @@ export default function IndicatorRuleBuilder({
         { label: "Select Scanner", value: "" },
         ...(raw ?? []).map((item) => ({
           label: item.label,
-
-          // ✅ ALWAYS STRING (safe for select)
           value: item.label,
 
-          // ✅ store backend object here
-          meta: item.value ?? null,
+          // ✅ normalize everything into object
+          meta:
+            typeof item.value === "object" && item.value !== null
+              ? item.value
+              : typeof item.value === "number"
+                ? { length: item.value } // 👈 convert number → object
+                : null,
         })),
       ];
 
@@ -554,141 +584,188 @@ export default function IndicatorRuleBuilder({
           )}
 
           {/* RULES */}
-          {rules.map((rule, index) => (
-            <Stack
-              key={rule.id}
-              direction="horizontal"
-              gap={0}
-              className="flex-wrap align-items-center px-3 py-1"
-            >
-              <Badge
-                bg="light"
-                text="dark"
-                className="font-monospace"
-                style={{ width: "20px", textAlign: "center" }}
-              >
-                {index + 1}
-              </Badge>
-              <div
-                style={{ width: "1px", height: "16px", background: "#374151" }}
-              />
-              <EditableSelect
-                value={rule.timeframe}
-                options={timeframeOptions}
-                onChange={(v) => {
-                  const finalValue = handleTimeframeChange(v);
-                  if (finalValue) {
-                    updateField(rule.id, "timeframe", finalValue);
-                  }
-                }}
-              />
-              <EditableSelect
-                value={rule.indicator}
-                options={indicators}
-                onChange={(selectedValue) => {
-                  const selected = indicators.find(
-                    (opt) => opt.value === selectedValue,
-                  );
-                  updateField(rule.id, "indicator", selectedValue);
-                  if (selected?.period !== undefined) {
-                    updateField(rule.id, "period", selected.period);
-                  }
-                }}
-              />
-              <EditableNumber
-                value={rule.period}
-                onChange={(v) => updateField(rule.id, "period", Math.max(0, v))}
-              />
+          {rules.map((rule, index) => {
+            const selectedScanner = scannerOptions.find(
+              (opt) => opt.value === rule.scanner,
+            );
+
+            const hasParams =
+              selectedScanner?.meta &&
+              Object.keys(selectedScanner.meta).length > 0;
+            return (
               <Stack
+                key={rule.id}
                 direction="horizontal"
-                gap={2}
-                className="px-2 py-1 rounded-3"
+                gap={0}
+                className="flex-wrap align-items-center px-3 py-1"
               >
-                <EditableSelect
-                  value={rule.operator}
-                  options={OPERATORS}
-                  onChange={(v) => updateField(rule.id, "operator", v)}
+                <Badge
+                  bg="light"
+                  text="dark"
+                  className="font-monospace"
+                  style={{ width: "20px", textAlign: "center" }}
+                >
+                  {index + 1}
+                </Badge>
+                <div
+                  style={{
+                    width: "1px",
+                    height: "16px",
+                    background: "#374151",
+                  }}
                 />
-              </Stack>
-              {!scannerOptions?.some((opt) => opt.value === "number") && (
                 <EditableSelect
-                  value={rule.compareTimeframe}
+                  value={rule.timeframe}
                   options={timeframeOptions}
                   onChange={(v) => {
                     const finalValue = handleTimeframeChange(v);
                     if (finalValue) {
-                      updateField(rule.id, "compareTimeframe", finalValue);
+                      updateField(rule.id, "timeframe", finalValue);
                     }
                   }}
                 />
-              )}
-              <EditableSelect
-                value={rule.scanner}
-                options={scannerOptions}
-                onChange={(v) => {
-                  updateField(rule.id, "scanner", v);
-
-                  const selected = scannerOptions.find(
-                    (opt) => opt.value === v,
-                  );
-
-                  if (selected?.meta?.length !== undefined) {
-                    updateField(rule.id, "compareLength", selected.meta.length);
-                  }
-                }}
-              />
-              {/* 👇 show only if length exists */}
-              {(() => {
-                const selectedScanner = scannerOptions.find(
-                  (opt) => opt.value === rule.scanner,
-                );
-
-                return selectedScanner?.meta?.length !== undefined ? (
-                  <EditableNumber
-                    value={rule.compareLength}
-                    onChange={(v) =>
-                      updateField(rule.id, "compareLength", Math.max(0, v))
+                <EditableSelect
+                  value={rule.indicator}
+                  options={indicators}
+                  onChange={(selectedValue) => {
+                    const selected = indicators.find(
+                      (opt) => opt.value === selectedValue,
+                    );
+                    updateField(rule.id, "indicator", selectedValue);
+                    if (selected?.period !== undefined) {
+                      updateField(rule.id, "period", selected.period);
                     }
+                  }}
+                />
+                <EditableNumber
+                  value={rule.period}
+                  onChange={(v) =>
+                    updateField(rule.id, "period", Math.max(0, v))
+                  }
+                />
+                <Stack
+                  direction="horizontal"
+                  gap={2}
+                  className="px-2 py-1 rounded-3"
+                >
+                  <EditableSelect
+                    value={rule.operator}
+                    options={OPERATORS}
+                    onChange={(v) => updateField(rule.id, "operator", v)}
                   />
-                ) : null;
-              })()}
-              
-              <EditableNumber
-                value={rule.value}
-                onChange={(v) => updateField(rule.id, "value", v)}
-              />
-              <button
-                title="copy to clipboard"
-                onClick={() => copyToClipboard(rule)}
-                className="hover:text-blue-500"
-              >
-                <Copy size={18} />
-              </button>
-              {/* DUPLICATE */}
-              <button
-                title="duplicate filter"
-                onClick={() => duplicateFilter(rule)}
-                className="hover:text-green-500"
-              >
-                <Files size={18} />
-              </button>
-              <button
-                title="disabled"
-                onClick={() => toggleDisable(rule.id)}
-                className="hover:text-yellow-500"
-              >
-                <Ban size={18} />
-              </button>
-              <button
-                title="Delete"
-                variant="light"
-                onClick={() => removeRule(rule?.id)}
-                className="hover:text-red-500"
-              >
-                <Trash2 size={18} />
-              </button>
-            </Stack>
-          ))}
+                </Stack>
+                {hasParams && (
+                  <EditableSelect
+                    value={rule.compareTimeframe}
+                    options={timeframeOptions}
+                    onChange={(v) => {
+                      const finalValue = handleTimeframeChange(v);
+                      if (finalValue) {
+                        updateField(rule.id, "compareTimeframe", finalValue);
+                      }
+                    }}
+                  />
+                )}
+                <EditableSelect
+                  value={rule.scanner}
+                  options={scannerOptions}
+                  onChange={(v) => {
+                    updateField(rule.id, "scanner", v);
+
+                    const selected = scannerOptions.find(
+                      (opt) => opt.value === v,
+                    );
+
+                    if (selected?.meta) {
+                      const keys = Object.keys(selected.meta);
+
+                      // 👇 store all dynamic params in rule
+                      const params = {};
+                      keys.forEach((key) => {
+                        params[key] = selected.meta[key];
+                      });
+
+                      updateField(rule.id, "scannerParams", params);
+                    }
+                  }}
+                />
+                {/* 👇 show only if length exists */}
+
+                {hasParams && (
+                  <span>
+                    (
+                    {Object.entries(selectedScanner.meta).map(
+                      ([key], index, arr) => (
+                        <span key={key}>
+                          <EditableNumber
+                            value={rule.scannerParams?.[key] ?? ""}
+                            onChange={(v) =>
+                              setRules((prev) =>
+                                prev.map((r) =>
+                                  r.id === rule.id
+                                    ? {
+                                        ...r,
+                                        scannerParams: {
+                                          ...r.scannerParams,
+                                          [key]: Math.max(0, v),
+                                        },
+                                      }
+                                    : r,
+                                ),
+                              )
+                            }
+                          />
+                          {/* 👇 add comma except last */}
+                          {index < arr.length - 1 && ", "}
+                        </span>
+                      ),
+                    )}
+                    )
+                  </span>
+                )}
+
+                {!hasParams && (
+                  <EditableNumber
+                    value={rule.value}
+                    onChange={(v) => updateField(rule.id, "value", v)}
+                  />
+                )}
+
+                <div className="d-flex gap-1 ps-2 align-items-center">
+                  <button
+                    title="copy to clipboard"
+                    onClick={() => copyToClipboard(rule)}
+                    className="hover:text-blue-500"
+                  >
+                    <Copy size={18} />
+                  </button>
+                  {/* DUPLICATE */}
+                  <button
+                    title="duplicate filter"
+                    onClick={() => duplicateFilter(rule)}
+                    className="hover:text-green-500"
+                  >
+                    <Files size={18} />
+                  </button>
+                  <button
+                    title="disabled"
+                    onClick={() => toggleDisable(rule.id)}
+                    className="hover:text-yellow-500"
+                  >
+                    <Ban size={18} />
+                  </button>
+                  <button
+                    title="Delete"
+                    variant="light"
+                    onClick={() => removeRule(rule?.id)}
+                    className="hover:text-red-500"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              </Stack>
+            );
+          })}
 
           {/* ADD RULE */}
           <div>
@@ -721,20 +798,42 @@ export default function IndicatorRuleBuilder({
                 onClose();
               }}
               title="Execute the scan with current rules"
-              className="d-flex align-items-center gap-2 px-4 py-2 rounded-3 fw-semibold border-0"
+              className="d-flex align-items-center gap-2 px-4 py-2 fw-semibold border-0"
               style={{
-                background: "linear-gradient(to right, #9333ea, #4f46e5)",
+                background: "linear-gradient(135deg, #9333ea, #4f46e5)",
                 boxShadow: "0 4px 15px rgba(147,51,234,0.3)",
-                transition: "all 0.3s ease",
+                borderRadius: "12px",
+                fontSize: "0.875rem",
+                letterSpacing: "0.01em",
+                color: "#fff",
+                transition: "all 0.22s cubic-bezier(0.4, 0, 0.2, 1)",
               }}
-              onMouseEnter={(e) =>
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.boxShadow =
+                  "0 8px 22px rgba(147,51,234,0.45)";
+                e.currentTarget.style.background =
+                  "linear-gradient(135deg, #a855f7, #6366f1)";
+                e.currentTarget.querySelector("svg").style.transform =
+                  "scale(1.2) rotate(-10deg)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow =
+                  "0 4px 15px rgba(147,51,234,0.3)";
+                e.currentTarget.style.background =
+                  "linear-gradient(135deg, #9333ea, #4f46e5)";
+                e.currentTarget.querySelector("svg").style.transform =
+                  "scale(1) rotate(0deg)";
+              }}
+              onMouseDown={(e) =>
+                (e.currentTarget.style.transform = "scale(0.97)")
+              }
+              onMouseUp={(e) =>
                 (e.currentTarget.style.transform = "translateY(-2px)")
               }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.transform = "translateY(0)")
-              }
             >
-              <FaCirclePlay />
+              <FaCirclePlay style={{ transition: "transform 0.25s ease" }} />
               Run Scan
             </Button>
 
@@ -742,10 +841,43 @@ export default function IndicatorRuleBuilder({
               variant="outline-primary"
               title="Save this scan for future use"
               onClick={() => openModal("saveScan")}
-              className="d-flex align-items-center gap-2 px-4 py-2 rounded-3 fw-semibold"
-              style={{ borderColor: "#e9d5ff", color: "#9333ea" }}
+              className="d-flex align-items-center gap-2 px-4 py-2 fw-semibold"
+              style={{
+                borderColor: "#d8b4fe",
+                color: "#7c3aed",
+                background: "#faf5ff",
+                borderRadius: "12px",
+                borderWidth: "1.5px",
+                fontSize: "0.875rem",
+                letterSpacing: "0.01em",
+                boxShadow:
+                  "0 1px 3px rgba(124,58,237,0.08), inset 0 1px 0 rgba(255,255,255,0.9)",
+                transition: "all 0.22s cubic-bezier(0.4, 0, 0.2, 1)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "#a855f7";
+                e.currentTarget.style.color = "#6d28d9";
+                e.currentTarget.style.background = "#f3e8ff";
+                e.currentTarget.style.boxShadow =
+                  "0 4px 14px rgba(124,58,237,0.18), inset 0 1px 0 rgba(255,255,255,0.9)";
+                e.currentTarget.querySelector("svg").style.transform =
+                  "scale(1.15)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "#d8b4fe";
+                e.currentTarget.style.color = "#7c3aed";
+                e.currentTarget.style.background = "#faf5ff";
+                e.currentTarget.style.boxShadow =
+                  "0 1px 3px rgba(124,58,237,0.08), inset 0 1px 0 rgba(255,255,255,0.9)";
+                e.currentTarget.querySelector("svg").style.transform =
+                  "scale(1)";
+              }}
+              onMouseDown={(e) =>
+                (e.currentTarget.style.transform = "scale(0.97)")
+              }
+              onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
             >
-              <HiOutlineSave />
+              <HiOutlineSave style={{ transition: "transform 0.22s ease" }} />
               Save Scan
             </Button>
 
@@ -753,10 +885,43 @@ export default function IndicatorRuleBuilder({
               variant="outline-primary"
               title="View historical backtest results"
               onClick={() => openModal("backtestResult")}
-              className="d-flex align-items-center gap-2 px-4 py-2 rounded-3 fw-semibold"
-              style={{ borderColor: "#c7d2fe", color: "#4f46e5" }}
+              className="d-flex align-items-center gap-2 px-4 py-2 fw-semibold"
+              style={{
+                borderColor: "#c7d2fe",
+                color: "#4338ca",
+                background: "#f5f7ff",
+                borderRadius: "12px",
+                borderWidth: "1.5px",
+                fontSize: "0.875rem",
+                letterSpacing: "0.01em",
+                boxShadow:
+                  "0 1px 3px rgba(67,56,202,0.08), inset 0 1px 0 rgba(255,255,255,0.9)",
+                transition: "all 0.22s cubic-bezier(0.4, 0, 0.2, 1)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "#818cf8";
+                e.currentTarget.style.color = "#3730a3";
+                e.currentTarget.style.background = "#e0e7ff";
+                e.currentTarget.style.boxShadow =
+                  "0 4px 14px rgba(67,56,202,0.18), inset 0 1px 0 rgba(255,255,255,0.9)";
+                e.currentTarget.querySelector("svg").style.transform =
+                  "rotate(-180deg) scale(1.1)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "#c7d2fe";
+                e.currentTarget.style.color = "#4338ca";
+                e.currentTarget.style.background = "#f5f7ff";
+                e.currentTarget.style.boxShadow =
+                  "0 1px 3px rgba(67,56,202,0.08), inset 0 1px 0 rgba(255,255,255,0.9)";
+                e.currentTarget.querySelector("svg").style.transform =
+                  "rotate(0deg) scale(1)";
+              }}
+              onMouseDown={(e) =>
+                (e.currentTarget.style.transform = "scale(0.97)")
+              }
+              onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
             >
-              <RiLoopLeftLine />
+              <RiLoopLeftLine style={{ transition: "transform 0.35s ease" }} />
               Backtest Results
             </Button>
 
@@ -764,10 +929,43 @@ export default function IndicatorRuleBuilder({
               variant="outline-warning"
               title="Create alert based on these conditions"
               onClick={() => openModal("createAlert")}
-              className="d-flex align-items-center gap-2 px-4 py-2 rounded-3 fw-semibold"
-              style={{ borderColor: "#fde68a", color: "#d97706" }}
+              className="d-flex align-items-center gap-2 px-4 py-2 fw-semibold"
+              style={{
+                borderColor: "#fcd34d",
+                color: "#b45309",
+                background: "#fffbeb",
+                borderRadius: "12px",
+                borderWidth: "1.5px",
+                fontSize: "0.875rem",
+                letterSpacing: "0.01em",
+                boxShadow:
+                  "0 1px 3px rgba(180,83,9,0.08), inset 0 1px 0 rgba(255,255,255,0.9)",
+                transition: "all 0.22s cubic-bezier(0.4, 0, 0.2, 1)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "#f59e0b";
+                e.currentTarget.style.color = "#92400e";
+                e.currentTarget.style.background = "#fef3c7";
+                e.currentTarget.style.boxShadow =
+                  "0 4px 14px rgba(180,83,9,0.16), inset 0 1px 0 rgba(255,255,255,0.9)";
+                e.currentTarget.querySelector("svg").style.transform =
+                  "scale(1.2) rotate(-8deg)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "#fcd34d";
+                e.currentTarget.style.color = "#b45309";
+                e.currentTarget.style.background = "#fffbeb";
+                e.currentTarget.style.boxShadow =
+                  "0 1px 3px rgba(180,83,9,0.08), inset 0 1px 0 rgba(255,255,255,0.9)";
+                e.currentTarget.querySelector("svg").style.transform =
+                  "scale(1) rotate(0deg)";
+              }}
+              onMouseDown={(e) =>
+                (e.currentTarget.style.transform = "scale(0.97)")
+              }
+              onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
             >
-              <GoAlertFill />
+              <GoAlertFill style={{ transition: "transform 0.3s ease" }} />
               Create Alert
             </Button>
           </Stack>
@@ -777,10 +975,12 @@ export default function IndicatorRuleBuilder({
       {isModalOpen && (
         <IndicatorRuleModals
           type={modalType}
-          onClose={closeModal}
+          closeModal={closeModal}
           rules={rules}
           conditions={conditions}
           timeframeOptions={timeframeOptions}
+          setRunScanTrigger={setRunScanTrigger}
+          onClose={onClose}
         />
       )}
     </Container>

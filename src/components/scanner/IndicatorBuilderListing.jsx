@@ -9,11 +9,11 @@ import {
   handleCopy,
   handleCSVDownload,
   handleExcelDownload,
+  symbols,
 } from "../../util/common";
 import { comma } from "postcss/lib/list";
 
 /* ================= SYMBOL LIST ================= */
-// const symbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT"];
 
 export default function OHLCVTable({
   selectedCurrency,
@@ -45,23 +45,74 @@ export default function OHLCVTable({
     fetchData();
   }, [runScanTrigger, selectedCurrency, timeframeValue]);
 
+  const isAgoTimeframe = (tf = "") => {
+    const value = tf.toLowerCase();
+
+    console.log("Checking timeframe:", value);
+
+    return /(\d+)(d|w|m|y|mo|q)_ago/.test(value);
+  };
+
   const fetchData = async () => {
     setLoading(true);
-    const formattedRules = rules?.map((rule) => ({
-      indicator: rule.indicator.toLowerCase(),
-      operator: rule.operator,
-      value: rule.value,
-      timeframe: rule.timeframe,
-      length: rule.period,
-      compareTimeframe: rule.compareTimeframe,
-      compareLength: rule.compareLength,
-      compareIndicator: rule.scanner
-    }));
+
+    const extractAgoNumber = (tf = "") => {
+      const match = tf.toLowerCase().match(/^(\d+)(d|w|m|y|mo|q)_ago$/);
+      return match ? Number(match[1]) : null;
+    };
+    const convertTimeframe = (tf = "") => {
+      const match = tf.toLowerCase().match(/^(\d+)(d|w|m|y|mo|q)_ago$/);
+      if (match) {
+        return `${match[1]}${match[2]}`; // e.g. 3d_ago → 3d
+      }
+      return tf; // e.g. daily stays daily
+    };
+
+    const formattedRules = rules?.map((rule) => {
+      const isNumberRule = rule.scanner === "Number";
+      const compareParams = rule.scannerParams || {};
+
+      const basePayload = {
+        indicator: rule.indicator.toLowerCase(),
+        length: rule.period,
+        operator: rule.operator,
+        timeframe: convertTimeframe(rule.timeframe),
+      };
+
+      if (isNumberRule) {
+        const agoValue = extractAgoNumber(rule.timeframe);
+
+        return {
+          ...basePayload,
+          value: rule.value,
+          ...(agoValue !== null && { ago: agoValue }),
+        };
+      }
+
+      const agoValue = extractAgoNumber(rule.timeframe);
+      const compareAgoValue = extractAgoNumber(rule.compareTimeframe);
+
+      return {
+        ...basePayload,
+        ...(agoValue !== null && { ago: agoValue }),
+
+        compareIndicator: rule.scanner?.toLowerCase(),
+        compareTimeframe: convertTimeframe(rule.compareTimeframe),
+        compareLength: Object.keys(compareParams).length
+          ? compareParams
+          : undefined,
+        ...(compareAgoValue !== null && { compareAgo: compareAgoValue }),
+      };
+    });
+
+    console.log("Formatted Rules:", formattedRules);
+
     try {
       const response = await apiService.post(
         `/api/scannerDetail?symbol=${selectedCurrency}&interval=${timeframeValue}`,
         { rules: formattedRules },
       );
+
       setDataSource(response?.data || {});
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -70,6 +121,7 @@ export default function OHLCVTable({
       setLoading(false);
     }
   };
+
   const getBase = (symbol) => {
     if (symbol.endsWith("USDT")) return symbol.replace("USDT", "");
     if (symbol.endsWith("BTC")) return symbol.replace("BTC", "");
@@ -83,15 +135,23 @@ export default function OHLCVTable({
 
     console.log(selectedCurrencies, "curenciesssssssss");
 
+    const activeCurrencies =
+      selectedCurrencies && selectedCurrencies.length > 0
+        ? selectedCurrencies.map((sym) => sym.value)
+        : symbols;
+
     const process = (arr, tf) =>
       arr?.flatMap((item) =>
-        selectedCurrencies.map((sym) => {
+        activeCurrencies?.map((sym) => {
           const value = sym.value;
 
+          const { indicators, ...rest } = item;
+
           return {
-            ...item,
+            ...rest, // 👈 removes indicators completely
+            ...(indicators && typeof indicators === "object" ? indicators : {}),
             symbol: value,
-            base: getBase(value), // ✅ FIXED
+            base: getBase(value),
             timeframe: tf,
           };
         }),
@@ -368,7 +428,9 @@ export default function OHLCVTable({
                               ? row[col]
                                 ? "True"
                                 : "False"
-                              : row[col]}
+                              : typeof row[col] === "object"
+                                ? JSON.stringify(row[col]) // or "-"
+                                : row[col]}
                         </td>
                       ))}
                     </tr>

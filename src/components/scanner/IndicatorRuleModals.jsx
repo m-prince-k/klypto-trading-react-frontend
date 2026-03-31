@@ -9,11 +9,13 @@ import { scanCategories } from "../../util/common";
 
 export function IndicatorRuleModals({
   type,
-  onClose,
+ closeModal,
   categories,
   rules,
   conditions,
   timeframeOptions,
+  setRunScanTrigger,
+   onClose,
 }) {
   const renderContent = () => {
     switch (type) {
@@ -21,11 +23,11 @@ export function IndicatorRuleModals({
         return (
           <SaveScanContent
             categories={categories}
-            onClose={onClose}
+            closeModal={closeModal}
             rules={rules}
             onSubmit={(data) => {
               console.log("SAVE SCAN:", data);
-              onClose();
+              closeModal();
             }}
           />
         );
@@ -33,16 +35,18 @@ export function IndicatorRuleModals({
       case "backtestResult":
         return (
           <BacktestResultContent
-            onClose={onClose}
+            closeModal={closeModal}
             timeframeOptions={timeframeOptions}
             rules={rules}
+            setRunScanTrigger={setRunScanTrigger}
+            onClose={onClose}
           />
         );
 
       case "createAlert":
         return (
           <CreateAlertContent
-            onClose={onClose}
+            closeModal={closeModal}
             rules={rules}
             conditions={conditions}
           />
@@ -63,7 +67,7 @@ export function IndicatorRuleModals({
         bg-black/50 animate-in fade-in duration-200"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
-          onClose();
+          closeModal();
         }
       }}
     >
@@ -86,7 +90,7 @@ export function IndicatorRuleModals({
 /* SAVE SCAN CONTENT */
 /* ------------------------------------------------ */
 
-function SaveScanContent({ onSubmit, onClose, categories = [], rules = [] }) {
+function SaveScanContent({ onSubmit, closeModal, categories = [], rules = [] }) {
   const [errors, setErrors] = useState({});
   const [scannerPayload, setscannerPayload] = useState("");
   const [form, setForm] = useState({
@@ -160,7 +164,7 @@ function SaveScanContent({ onSubmit, onClose, categories = [], rules = [] }) {
 
       console.log("API RESPONSE:", response);
       toast?.success?.("Scanner saved successfully ✅");
-      onClose();
+      closeModal();
     } catch (error) {
       console.error("SAVE FAILED:", error);
 
@@ -177,7 +181,7 @@ function SaveScanContent({ onSubmit, onClose, categories = [], rules = [] }) {
         <h4 className=" font-semibold text-slate-800">Save Scan</h4>
 
         <button
-          onClick={onClose}
+          onClick={closeModal}
           className=" p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
         >
           <LuX size={18} />
@@ -269,7 +273,7 @@ function SaveScanContent({ onSubmit, onClose, categories = [], rules = [] }) {
           <div className="flex justify-end gap-3">
             <button
               type="button"
-              onClick={onClose}
+              onClick={closeModal}
               className="
           px-5 py-2.5 rounded-4 text-sm font-semibold
           bg-slate-100 text-slate-600
@@ -317,7 +321,13 @@ function SaveScanContent({ onSubmit, onClose, categories = [], rules = [] }) {
   );
 }
 
-function BacktestResultContent({ onClose, rules = [], timeframeOptions = [] }) {
+function BacktestResultContent({
+  closeModal,
+  rules = [],
+  timeframeOptions = [],
+  setRunScanTrigger,
+  onClose,
+}) {
   const [activeFrames, setActiveFrames] = useState([]);
 
   function resolveTimeframeLabel(value) {
@@ -344,7 +354,7 @@ function BacktestResultContent({ onClose, rules = [], timeframeOptions = [] }) {
         <h4 className=" font-semibold text-slate-800">Back Test Result</h4>
 
         <button
-          onClick={onClose}
+          onClick={closeModal}
           className="
             p-1.5 rounded-lg text-slate-400
             hover:bg-slate-100 hover:text-slate-600
@@ -421,7 +431,7 @@ function BacktestResultContent({ onClose, rules = [], timeframeOptions = [] }) {
                 color: "#475569",
                 border: "none",
               }}
-              onClick={onClose}
+              onClick={closeModal}
             >
               Cancel
             </Button>
@@ -430,7 +440,11 @@ function BacktestResultContent({ onClose, rules = [], timeframeOptions = [] }) {
               variant="primary"
               className="fw-semibold rounded-3 px-4 py-2"
               style={{ background: "#9333ea", borderColor: "#9333ea" }}
-              onClick={() => console.log(activeFrames)}
+              onClick={() => {
+                setRunScanTrigger(true);
+                closeModal();
+                onClose();
+              }}
             >
               Submit
             </Button>
@@ -445,7 +459,7 @@ function BacktestResultContent({ onClose, rules = [], timeframeOptions = [] }) {
 /* CREATE ALERT */
 /* ------------------------------------------------ */
 
-function CreateAlertContent({ onSubmit, onClose, rules, conditions }) {
+function CreateAlertContent({ onSubmit, closeModal, rules, conditions }) {
   const [mode, setMode] = useState("email");
 
   const [otpSent, setOtpSent] = useState(false);
@@ -548,7 +562,7 @@ function CreateAlertContent({ onSubmit, onClose, rules, conditions }) {
 
       if (response?.success) {
         toast.success("Alert created ✅");
-        onClose();
+        closeModal();
         onSubmit?.({ ...form, mode, rules });
       } else {
         toast.error(response?.message || "Failed to create alert");
@@ -594,7 +608,7 @@ function CreateAlertContent({ onSubmit, onClose, rules, conditions }) {
         <h6 className="font-semibold">
           {mode === "email" ? "Alert via Email" : "Alert via SMS"}
         </h6>
-        <button onClick={onClose}>
+        <button onClick={closeModal}>
           <LuX size={18} />
         </button>
       </div>
@@ -720,7 +734,7 @@ function CreateAlertContent({ onSubmit, onClose, rules, conditions }) {
 
         <div className="flex justify-end gap-3 pt-2">
           <button
-            onClick={onClose}
+            onClick={closeModal}
             className="px-5 rounded-3 py-2.5 bg-slate-200"
           >
             Cancel
