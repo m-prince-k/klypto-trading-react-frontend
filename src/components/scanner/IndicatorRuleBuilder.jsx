@@ -32,6 +32,8 @@ export default function IndicatorRuleBuilder({
   setRunScanTrigger,
   setListingTimeframe,
   listingTimeframe,
+  selectedCurrencies,
+  setSelectedCurrencies,
 }) {
   const [timeframeOptions, setTimeframeOptions] = useState([]);
   const [scannerOptions, setScannerOptions] = useState([]);
@@ -41,8 +43,6 @@ export default function IndicatorRuleBuilder({
   const [currencies, setCurrencies] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [selectedCurrencies, setSelectedCurrencies] = useState([]);
-
   const [showTimeframeModal, setShowTimeframeModal] = useState(false);
   const [availableTimeframes, setAvailableTimeframes] = useState([]);
   const [selectedTF, setSelectedTF] = useState("");
@@ -99,9 +99,11 @@ export default function IndicatorRuleBuilder({
       period: filter.period,
       scanner: filter.scanner,
       timeframe: filter.timeframe,
+      compareTimeframe: filter.compareTimeframe,
+      compareLength: filter.compareLength,
       value: filter.value,
     };
-    console.log(values, "---------------------->>>>>>");
+    // console.log(values, "---------------------->>>>>>");
     navigator.clipboard.writeText(JSON.stringify(values));
     alert("Copied: " + filter.indicator);
   };
@@ -207,7 +209,9 @@ export default function IndicatorRuleBuilder({
       indicator: "RSI",
       period: 14,
       operator: ">",
+      compareTimeframe: "1d",
       scanner: "",
+      compareLength: 0,
       value: 0,
     };
   }
@@ -237,7 +241,9 @@ export default function IndicatorRuleBuilder({
         indicator: parsed.indicator,
         period: selected?.period ?? 14,
         operator: parsed.operator,
+        compareTimeframe: "1d",
         scanner: "",
+        compareLength: 0,
         value: parsed.value,
         disabled: false,
       };
@@ -275,6 +281,58 @@ export default function IndicatorRuleBuilder({
     );
   }
 
+  const handleTimeframeChange = (value) => {
+    if (!value) return;
+
+    // ✅ ONLY run for "n" options
+    if (value.startsWith("n")) {
+      const short = value[1]; // d, w, m, q, y
+
+      const labelMap = {
+        d: "days",
+        w: "weeks",
+        m: "months",
+        q: "quarters",
+        y: "years",
+      };
+
+      const unit = labelMap[short];
+
+      const input = prompt(`Enter number of ${unit}:`);
+
+      if (!input || isNaN(input) || Number(input) <= 0) return;
+
+      const num = Number(input);
+
+      const newOption = {
+        label: `${num} ${unit} ago`,
+        value: `${num}${short}_ago`,
+      };
+
+      // ✅ Insert BEFORE "n option"
+      setTimeframeOptions((prev) => {
+        const exists = prev.some((opt) => opt.value === newOption.value);
+        if (exists) return prev;
+
+        const index = prev.findIndex((opt) => opt.value === value);
+
+        const updated = [...prev];
+        if (index !== -1) {
+          updated.splice(index, 0, newOption);
+        } else {
+          updated.push(newOption);
+        }
+
+        return updated;
+      });
+
+      return newOption.value;
+    }
+
+    // ✅ normal values (1d_ago, 2d_ago etc.)
+    return value;
+  };
+
   /* ================= API CALLS ================= */
 
   async function fetchTimeframe() {
@@ -291,18 +349,39 @@ export default function IndicatorRuleBuilder({
         ...(data.weeks || []),
       ];
 
-      // if(){
+      const generateAgoOptions = (count, unit, short) => {
+        const options = Array.from({ length: count }, (_, i) => {
+          const num = i + 1;
+          return {
+            label: `${num} ${unit}${num > 1 ? "s" : ""} ago`,
+            value: `${num}${short}_ago`,
+          };
+        });
 
-      // }
-      const daysAgoOptions = Array.from({ length: 3 }, (_, i) => {
-        const day = i + 1;
-        return {
-          label: `${day} day ago`,
-          value: `${day}d_ago`,
-        };
-      });
+        // 👇 add "n" option at the end
+        options.push({
+          label: `n ${unit}s ago`,
+          value: `n${short}_ago`,
+        });
 
-      const finalOptions = [...flattened, ...daysAgoOptions];
+        return options;
+      };
+
+      const daysAgoOptions = generateAgoOptions(3, "day", "d");
+      const weeksAgoOptions = generateAgoOptions(3, "week", "w");
+      const monthsAgoOptions = generateAgoOptions(3, "month", "m");
+      const quartersAgoOptions = generateAgoOptions(3, "quarter", "q");
+      const yearsAgoOptions = generateAgoOptions(3, "year", "y");
+
+      const finalOptions = [
+        ...flattened,
+        ...daysAgoOptions,
+        ...weeksAgoOptions,
+        ...monthsAgoOptions,
+        ...quartersAgoOptions,
+        ...yearsAgoOptions,
+      ];
+
       setTimeframeOptions(finalOptions);
     } catch (err) {
       console.error(err);
@@ -334,16 +413,23 @@ export default function IndicatorRuleBuilder({
     }
   }
 
+  // console.log(scannerOptions, "scannerOptionsscannerOptionsscannerOptions");
+
   async function fetchScanners() {
     try {
       const response = await apiService.post("/api/scanner");
       const raw = await response?.data;
 
       const formatted = [
-        { label: "Select Scanner", value: "" }, // ⭐ DEFAULT OPTION
+        { label: "Select Scanner", value: "" },
         ...(raw ?? []).map((item) => ({
-          label: item.label, // adjust if API differs
-          value: item.value ?? item.label, // safe fallback
+          label: item.label,
+
+          // ✅ ALWAYS STRING (safe for select)
+          value: item.label,
+
+          // ✅ store backend object here
+          meta: item.value ?? null,
         })),
       ];
 
@@ -351,9 +437,7 @@ export default function IndicatorRuleBuilder({
     } catch (err) {
       console.error("Scanner API Error:", err);
 
-      setScannerOptions([
-        { label: "Select Scanner", value: "" }, // ⭐ SAFETY DEFAULT
-      ]);
+      setScannerOptions([{ label: "Select Scanner", value: "" }]);
     } finally {
       setLoading(false);
     }
@@ -474,7 +558,7 @@ export default function IndicatorRuleBuilder({
             <Stack
               key={rule.id}
               direction="horizontal"
-              gap={2}
+              gap={0}
               className="flex-wrap align-items-center px-3 py-1"
             >
               <Badge
@@ -485,17 +569,19 @@ export default function IndicatorRuleBuilder({
               >
                 {index + 1}
               </Badge>
-
               <div
                 style={{ width: "1px", height: "16px", background: "#374151" }}
               />
-
               <EditableSelect
                 value={rule.timeframe}
                 options={timeframeOptions}
-                onChange={(v) => updateField(rule.id, "timeframe", v)}
+                onChange={(v) => {
+                  const finalValue = handleTimeframeChange(v);
+                  if (finalValue) {
+                    updateField(rule.id, "timeframe", finalValue);
+                  }
+                }}
               />
-
               <EditableSelect
                 value={rule.indicator}
                 options={indicators}
@@ -509,12 +595,10 @@ export default function IndicatorRuleBuilder({
                   }
                 }}
               />
-
               <EditableNumber
                 value={rule.period}
                 onChange={(v) => updateField(rule.id, "period", Math.max(0, v))}
               />
-
               <Stack
                 direction="horizontal"
                 gap={2}
@@ -526,18 +610,53 @@ export default function IndicatorRuleBuilder({
                   onChange={(v) => updateField(rule.id, "operator", v)}
                 />
               </Stack>
-
+              {!scannerOptions?.some((opt) => opt.value === "number") && (
+                <EditableSelect
+                  value={rule.compareTimeframe}
+                  options={timeframeOptions}
+                  onChange={(v) => {
+                    const finalValue = handleTimeframeChange(v);
+                    if (finalValue) {
+                      updateField(rule.id, "compareTimeframe", finalValue);
+                    }
+                  }}
+                />
+              )}
               <EditableSelect
                 value={rule.scanner}
                 options={scannerOptions}
-                onChange={(v) => updateField(rule.id, "scanner", v)}
-              />
+                onChange={(v) => {
+                  updateField(rule.id, "scanner", v);
 
+                  const selected = scannerOptions.find(
+                    (opt) => opt.value === v,
+                  );
+
+                  if (selected?.meta?.length !== undefined) {
+                    updateField(rule.id, "compareLength", selected.meta.length);
+                  }
+                }}
+              />
+              {/* 👇 show only if length exists */}
+              {(() => {
+                const selectedScanner = scannerOptions.find(
+                  (opt) => opt.value === rule.scanner,
+                );
+
+                return selectedScanner?.meta?.length !== undefined ? (
+                  <EditableNumber
+                    value={rule.compareLength}
+                    onChange={(v) =>
+                      updateField(rule.id, "compareLength", Math.max(0, v))
+                    }
+                  />
+                ) : null;
+              })()}
+              
               <EditableNumber
                 value={rule.value}
                 onChange={(v) => updateField(rule.id, "value", v)}
               />
-
               <button
                 title="copy to clipboard"
                 onClick={() => copyToClipboard(rule)}
@@ -545,7 +664,6 @@ export default function IndicatorRuleBuilder({
               >
                 <Copy size={18} />
               </button>
-
               {/* DUPLICATE */}
               <button
                 title="duplicate filter"
@@ -554,7 +672,6 @@ export default function IndicatorRuleBuilder({
               >
                 <Files size={18} />
               </button>
-
               <button
                 title="disabled"
                 onClick={() => toggleDisable(rule.id)}
@@ -562,7 +679,6 @@ export default function IndicatorRuleBuilder({
               >
                 <Ban size={18} />
               </button>
-
               <button
                 title="Delete"
                 variant="light"

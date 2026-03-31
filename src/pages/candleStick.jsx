@@ -72,6 +72,8 @@ export default function Candlestick() {
   const [rules, setRules] = useState([]);
   const [runScanTrigger, setRunScanTrigger] = useState(false);
   const [listingTimeframe, setListingTimeframe] = useState("");
+  const [selectedCurrencies, setSelectedCurrencies] = useState([]);
+  
   
 
   useEffect(() => {
@@ -1351,7 +1353,8 @@ export default function Candlestick() {
                 runScanTrigger={runScanTrigger}
                 setListingTimeframe={setListingTimeframe}
                 listingTimeframe={listingTimeframe}
-
+                selectedCurrencies={selectedCurrencies}
+                setSelectedCurrencies={setSelectedCurrencies}
               />
             </div>
             {openForm && (
@@ -1387,6 +1390,7 @@ export default function Candlestick() {
           runScanTrigger={runScanTrigger}
           setRunScanTrigger={setRunScanTrigger}
           listingTimeframe={listingTimeframe}
+          selectedCurrencies={selectedCurrencies}
         />
       </div>
     </>
