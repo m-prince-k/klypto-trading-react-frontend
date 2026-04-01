@@ -3,7 +3,6 @@ import { GoAlertFill } from "react-icons/go";
 import EditableMultiSelect, {
   EditableSelect,
   EditableNumber,
-  OPERATORS,
 } from "../indicator/EditTableLabel";
 import { Copy, Trash2, Ban, Files } from "lucide-react";
 import { HiOutlineSave } from "react-icons/hi";
@@ -11,6 +10,7 @@ import apiService from "../../services/apiServices";
 import { IndicatorRuleModals } from "./IndicatorRuleModals";
 import { FaCirclePlay, FaPlus } from "react-icons/fa6";
 import { RiLoopLeftLine } from "react-icons/ri";
+import { Dropdown } from "react-bootstrap";
 import {
   Container,
   Card,
@@ -22,7 +22,7 @@ import {
 } from "react-bootstrap";
 import { IoClose } from "react-icons/io5";
 import IndicatorBuildingListing from "./IndicatorBuilderListing";
-import { operatorMap, timeframeMap } from "../../util/common";
+import { operatorMap, timeframeMap, OPERATORS } from "../../util/common";
 
 export default function IndicatorRuleBuilder({
   onClose,
@@ -47,6 +47,7 @@ export default function IndicatorRuleBuilder({
   const [showTimeframeModal, setShowTimeframeModal] = useState(false);
   const [availableTimeframes, setAvailableTimeframes] = useState([]);
   const [selectedTF, setSelectedTF] = useState("");
+  const [logic, setLogic] = useState("AND");
 
   const openModal = (type) => {
     setModalType(type);
@@ -203,7 +204,7 @@ export default function IndicatorRuleBuilder({
       indicator: "Select Scanner",
       length: 0,
       value: 0,
-      operator: "Select Operator",
+      operator: "Select Operation",
       compareTimeframe: "1d",
       scanner: "Select Scanner",
       compareLength: 0,
@@ -417,14 +418,18 @@ export default function IndicatorRuleBuilder({
         { label: "Select Scanner", value: "" },
         ...(raw ?? []).map((item) => ({
           label: item.label,
-          value: item.label,
 
-          // ✅ normalize everything into object
+          // ✅ use slug as value (IMPORTANT)
+          value: item.slug,
+
+          // optional (keep full object if needed)
+          slug: item.slug,
+
           meta:
             typeof item.value === "object" && item.value !== null
               ? item.value
               : typeof item.value === "number"
-                ? { length: item.value } // 👈 convert number → object
+                ? { length: item.value }
                 : null,
         })),
       ];
@@ -529,6 +534,16 @@ export default function IndicatorRuleBuilder({
             gap={2}
             className="align-items-center flex-wrap"
           >
+            <Dropdown onSelect={(val) => setLogic(val)}>
+              <Dropdown.Toggle variant="light" size="sm">
+                {logic}
+              </Dropdown.Toggle>
+
+              <Dropdown.Menu>
+                <Dropdown.Item eventKey="AND">AND</Dropdown.Item>
+                <Dropdown.Item eventKey="OR">OR</Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown>
             <span className="text-secondary fw-medium small">
               Coins passes all of the below filters in
             </span>
@@ -578,31 +593,62 @@ export default function IndicatorRuleBuilder({
 
             const isIndicatorPriceField = PRICE_FIELDS.includes(rule.indicator);
             const isScannerPriceField = PRICE_FIELDS.includes(rule.scanner);
+
             return (
-              <Stack
+              <div
                 key={rule.id}
-                direction="horizontal"
-                gap={0}
-                className="flex-wrap align-items-center px-3 py-1"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: "4px",
+                  padding: "6px 10px",
+                  borderRadius: "6px",
+                  // background: "linear-gradient(135deg, #0f1923 0%, #111d2b 100%)",
+                  // border: "1px solid #1e2d3d",
+                  // boxShadow: "0 1px 3px rgba(0,0,0,0.4)",
+                  position: "relative",
+                  // transition: "border-color 0.2s",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.borderColor = "#2a4060")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.borderColor = "#1e2d3d")
+                }
               >
-                <Badge
-                  bg="light"
-                  text="dark"
-                  className="font-monospace"
-                  style={{ width: "20px", textAlign: "center" }}
+                {/* ── Row number pill ── */}
+                <span
+                  style={{
+                    minWidth: "22px",
+                    height: "22px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderRadius: "4px",
+                    background: "#bfc0c0",
+                    color: "#1a2840",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                    letterSpacing: "0.02em",
+                    flexShrink: 0,
+                  }}
                 >
                   {index + 1}
-                </Badge>
+                </span>
 
+                {/* ── Divider ── */}
                 <div
                   style={{
                     width: "1px",
-                    height: "16px",
-                    background: "#374151",
+                    height: "18px",
+                    background: "#1e3050",
+                    flexShrink: 0,
                   }}
                 />
 
-                {/* ================= LEFT SIDE ================= */}
+                {/* ═══════════ LEFT SIDE ═══════════ */}
 
                 {(indicatorHasParams || isIndicatorPriceField) && (
                   <EditableSelect
@@ -611,9 +657,8 @@ export default function IndicatorRuleBuilder({
                     onChange={(option) => {
                       const rawValue = option?.value || option;
                       const finalValue = handleTimeframeChange(rawValue);
-                      if (finalValue) {
+                      if (finalValue)
                         updateField(rule.id, "timeframe", finalValue);
-                      }
                     }}
                   />
                 )}
@@ -623,28 +668,41 @@ export default function IndicatorRuleBuilder({
                   options={scannerOptions}
                   onChange={(v) => {
                     updateField(rule.id, "indicator", v);
-
                     const selected = scannerOptions.find(
                       (opt) => opt.value === v,
                     );
-
                     if (selected?.meta) {
                       const params = {};
                       Object.keys(selected.meta).forEach((key) => {
                         params[key] = selected.meta[key];
                       });
-
                       updateField(rule.id, "indicatorParams", params);
                     }
                   }}
                 />
 
                 {indicatorHasParams && (
-                  <span>
-                    (
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "2px",
+                      color: "#4a7fa5",
+                      fontSize: "13px",
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >
+                    <span style={{ color: "#2a5070" }}>(</span>
                     {Object.entries(selectedIndicator.meta).map(
-                      ([key], index, arr) => (
-                        <span key={key}>
+                      ([key], i, arr) => (
+                        <span
+                          key={key}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "2px",
+                          }}
+                        >
                           <EditableNumber
                             value={rule.indicatorParams?.[key] ?? ""}
                             onChange={(v) =>
@@ -663,11 +721,13 @@ export default function IndicatorRuleBuilder({
                               )
                             }
                           />
-                          {index < arr.length - 1 && ", "}
+                          {i < arr.length - 1 && (
+                            <span style={{ color: "#2a5070" }}>,</span>
+                          )}
                         </span>
                       ),
                     )}
-                    )
+                    <span style={{ color: "#2a5070" }}>)</span>
                   </span>
                 )}
 
@@ -678,21 +738,18 @@ export default function IndicatorRuleBuilder({
                   />
                 )}
 
-                {/* ================= OPERATOR ================= */}
+                {/* ═══════════ OPERATOR ═══════════ */}
 
-                <Stack
-                  direction="horizontal"
-                  gap={2}
-                  className="px-2 py-1 rounded-3"
-                >
+                {/* Operator separator lines */}
+                <div style={{ color: "#431e66", fontWeight: 600 }}>
                   <EditableSelect
                     value={rule.operator}
                     options={OPERATORS}
                     onChange={(v) => updateField(rule.id, "operator", v)}
                   />
-                </Stack>
+                </div>
 
-                {/* ================= RIGHT SIDE ================= */}
+                {/* ═══════════ RIGHT SIDE ═══════════ */}
 
                 {(scannerHasParams || isScannerPriceField) && (
                   <EditableSelect
@@ -701,40 +758,54 @@ export default function IndicatorRuleBuilder({
                     onChange={(option) => {
                       const rawValue = option?.value || option;
                       const finalValue = handleTimeframeChange(rawValue);
-                      if (finalValue) {
+                      if (finalValue)
                         updateField(rule.id, "compareTimeframe", finalValue);
-                      }
                     }}
                   />
                 )}
 
-                <EditableSelect
-                  value={rule.scanner}
-                  options={scannerOptions}
-                  onChange={(v) => {
-                    updateField(rule.id, "scanner", v);
-
-                    const selected = scannerOptions.find(
-                      (opt) => opt.value === v,
-                    );
-
-                    if (selected?.meta) {
-                      const params = {};
-                      Object.keys(selected.meta).forEach((key) => {
-                        params[key] = selected.meta[key];
-                      });
-
-                      updateField(rule.id, "scannerParams", params);
-                    }
-                  }}
-                />
+                <div style={{ color: "#431e66", fontWeight: 600 }}>
+                  <EditableSelect
+                    value={rule.scanner}
+                    options={scannerOptions}
+                    onChange={(v) => {
+                      updateField(rule.id, "scanner", v);
+                      const selected = scannerOptions.find(
+                        (opt) => opt.value === v,
+                      );
+                      if (selected?.meta) {
+                        const params = {};
+                        Object.keys(selected.meta).forEach((key) => {
+                          params[key] = selected.meta[key];
+                        });
+                        updateField(rule.id, "scannerParams", params);
+                      }
+                    }}
+                  />
+                </div>
 
                 {scannerHasParams && (
-                  <span>
-                    (
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "2px",
+                      color: "#4a7fa5",
+                      fontSize: "13px",
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >
+                    <span style={{ color: "#2a5070" }}>(</span>
                     {Object.entries(selectedScanner.meta).map(
-                      ([key], index, arr) => (
-                        <span key={key}>
+                      ([key], i, arr) => (
+                        <span
+                          key={key}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "2px",
+                          }}
+                        >
                           <EditableNumber
                             value={rule.scannerParams?.[key] ?? ""}
                             onChange={(v) =>
@@ -753,11 +824,13 @@ export default function IndicatorRuleBuilder({
                               )
                             }
                           />
-                          {index < arr.length - 1 && ", "}
+                          {i < arr.length - 1 && (
+                            <span style={{ color: "#2a5070" }}>,</span>
+                          )}
                         </span>
                       ),
                     )}
-                    )
+                    <span style={{ color: "#2a5070" }}>)</span>
                   </span>
                 )}
 
@@ -768,42 +841,78 @@ export default function IndicatorRuleBuilder({
                   />
                 )}
 
-                {/* ================= ACTIONS ================= */}
+                {/* ═══════════ ACTIONS ═══════════ */}
 
-                <div className="d-flex gap-1 ps-2 align-items-center">
-                  <button
-                    title="copy to clipboard"
-                    onClick={() => copyToClipboard(rule)}
-                    className="hover:text-blue-500"
-                  >
-                    <Copy size={18} />
-                  </button>
-
-                  <button
-                    title="duplicate filter"
-                    onClick={() => duplicateFilter(rule)}
-                    className="hover:text-green-500"
-                  >
-                    <Files size={18} />
-                  </button>
-
-                  <button
-                    title="disabled"
-                    onClick={() => toggleDisable(rule.id)}
-                    className="hover:text-yellow-500"
-                  >
-                    <Ban size={18} />
-                  </button>
-
-                  <button
-                    title="Delete"
-                    onClick={() => removeRule(rule?.id)}
-                    className="hover:text-red-500"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "2px",
+                    marginLeft: "auto",
+                    paddingLeft: "8px",
+                    alignItems: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  {[
+                    {
+                      title: "Copy to clipboard",
+                      icon: <Copy size={14} />,
+                      onClick: () => copyToClipboard(rule),
+                      hoverColor: "#3b82f6",
+                    },
+                    {
+                      title: "Duplicate filter",
+                      icon: <Files size={14} />,
+                      onClick: () => duplicateFilter(rule),
+                      hoverColor: "#22c55e",
+                    },
+                    {
+                      title: "Toggle disable",
+                      icon: <Ban size={14} />,
+                      onClick: () => toggleDisable(rule.id),
+                      hoverColor: "#eab308",
+                    },
+                    {
+                      title: "Delete",
+                      icon: <Trash2 size={14} />,
+                      onClick: () => removeRule(rule?.id),
+                      hoverColor: "#ef4444",
+                    },
+                  ].map(({ title, icon, onClick, hoverColor }) => (
+                    <button
+                      key={title}
+                      title={title}
+                      onClick={onClick}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: "26px",
+                        height: "26px",
+                        borderRadius: "5px",
+                        border: "1px solid transparent",
+                        background: "transparent",
+                        color: "#3a5570",
+                        cursor: "pointer",
+                        transition: "all 0.15s ease",
+                        padding: 0,
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.color = hoverColor;
+                        e.currentTarget.style.background = hoverColor + "18";
+                        e.currentTarget.style.borderColor = hoverColor + "40";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.color = "#3a5570";
+                        e.currentTarget.style.background = "transparent";
+                        e.currentTarget.style.borderColor = "transparent";
+                      }}
+                    >
+                      {icon}
+                    </button>
+                  ))}
                 </div>
-              </Stack>
+              </div>
             );
           })}
 

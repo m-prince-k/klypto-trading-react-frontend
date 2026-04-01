@@ -12,6 +12,7 @@ import {
   symbols,
 } from "../../util/common";
 import { comma } from "postcss/lib/list";
+import { toast } from "react-toastify";
 
 /* ================= SYMBOL LIST ================= */
 
@@ -41,10 +42,9 @@ export default function OHLCVTable({
       ? Object.keys(dataSource)
       : [];
   }, [dataSource]);
-
   useEffect(() => {
     fetchData();
-  }, [runScanTrigger, selectedCurrency, timeframeValue]);
+  }, [runScanTrigger]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -53,6 +53,39 @@ export default function OHLCVTable({
       const match = tf.toLowerCase().match(/^(\d+)(d|w|m|y|mo|q)_ago$/);
       return match ? Number(match[1]) : null;
     };
+
+    /* ================= VALIDATION ================= */
+
+    let errorMessage = "";
+
+    const hasInvalidRule = rules?.some((rule, index) => {
+      if (!rule?.indicator || rule.indicator === "Select Scanner") {
+        errorMessage = `Rule ${index + 1}: Indicator not selected`;
+        return true;
+      }
+
+      if (!rule?.operator || rule.operator === "Select Operator") {
+        errorMessage = `Rule ${index + 1}: Operator not selected`;
+        return true;
+      }
+
+      if (!rule?.scanner || rule.scanner === "Select Scanner") {
+        errorMessage = `Rule ${index + 1}: Compare scanner not selected`;
+        return true;
+      }
+
+      return false;
+    });
+
+    if (hasInvalidRule) {
+      toast.error(errorMessage); // ✅ toast instead of alert
+      setLoading(false);
+
+      // ❌ DO NOT CLOSE MODAL
+      return;
+    }
+
+    /* ================= FORMATTING ================= */
 
     const formattedRules = rules?.map((rule) => {
       const isNumberRule = rule.scanner === "Number";
@@ -71,27 +104,27 @@ export default function OHLCVTable({
         rule?.compareValue !== null &&
         rule?.compareValue !== 0;
 
-      console.log(rule?.compareValue);
-
       const hasIndicatorParams = Object.keys(indicatorParams).length > 0;
       const hasCompareParams = Object.keys(compareParams).length > 0;
 
-      /* ================= BASE ================= */
       const payload = {
-        indicator: rule?.indicator?.toLowerCase(),
+        indicator: rule?.indicator,
         operator: rule?.operator,
       };
 
-      /* ================= MAIN SIDE ================= */
+      /* ================= MAIN ================= */
 
-      // ❗ CASE 1: VALUE → only value
       if (hasValue || hasCompareValue) {
         payload.value = rule.value || rule.compareValue;
-      }
+      } else if (hasIndicatorParams) {
+        payload.length = indicatorParams;
 
-      // ❗ CASE 2: PARAMS → length
-      else if (hasIndicatorParams) {
-        payload.length = indicatorParams.length;
+        if (agoValue !== null) {
+          payload.ago = agoValue;
+        } else {
+          payload.timeframe = rule?.timeframe;
+        }
+      } else {
         if (agoValue !== null) {
           payload.ago = agoValue;
         } else {
@@ -99,33 +132,23 @@ export default function OHLCVTable({
         }
       }
 
-      /* ================= NUMBER RULE (no compare) ================= */
-      if (isNumberRule) {
-        return payload;
-      }
+      if (isNumberRule) return payload;
 
-      /* ================= COMPARE SIDE ================= */
+      /* ================= COMPARE ================= */
 
-      payload.compareIndicator = rule?.scanner?.toLowerCase();
+      payload.compareIndicator = rule?.scanner;
 
-      // ❗ CASE 1: compareValue → only valueField
       if (hasCompareValue) {
         payload.value = rule.compareValue;
-      }
-
-      // ❗ CASE 2: compare params
-      else if (hasCompareParams) {
-        payload.compareLength = compareParams.length;
+      } else if (hasCompareParams) {
+        payload.compareLength = compareParams;
 
         if (compareAgoValue !== null) {
           payload.compareAgo = compareAgoValue;
         } else {
           payload.compareTimeframe = rule?.compareTimeframe;
         }
-      }
-
-      // ❗ CASE 3: only timeframe
-      else {
+      } else {
         if (compareAgoValue !== null) {
           payload.compareAgo = compareAgoValue;
         } else {
@@ -138,6 +161,8 @@ export default function OHLCVTable({
 
     console.log("Formatted Rules:", formattedRules);
 
+    /* ================= API ================= */
+
     try {
       const response = await apiService.post(
         `/api/scannerDetail?symbol=${selectedCurrency}&interval=${timeframeValue}&limit=1000`,
@@ -145,6 +170,11 @@ export default function OHLCVTable({
       );
 
       setDataSource(response?.data || {});
+
+      toast.success("Scan executed successfully ✅"); // ✅ success toast
+
+      // ✅ CLOSE MODAL ONLY ON SUCCESS
+      // setShowModal(false); ← uncomment if needed
     } catch (error) {
       console.error("Error fetching data:", error);
       setDataSource({});
@@ -152,7 +182,6 @@ export default function OHLCVTable({
       setLoading(false);
     }
   };
-
   const getBase = (symbol) => {
     if (symbol.endsWith("USDT")) return symbol.replace("USDT", "");
     if (symbol.endsWith("BTC")) return symbol.replace("BTC", "");

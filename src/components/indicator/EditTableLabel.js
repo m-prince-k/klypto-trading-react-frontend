@@ -272,13 +272,4 @@ export default function EditableMultiSelect({
     </div>
   );
 }
-export const OPERATORS = [
-  { label: "Greater Than (>)", value: ">" },
-  { label: "Less Than (<)", value: "<" },
-  { label: "Greater Than or Equal (≥)", value: ">=" },
-  { label: "Less Than or Equal (≤)", value: "<=" },
-  { label: "Equal (=)", value: "=" },
-  { label: "Not Equal (≠)", value: "!=" },
-  { label: "Crosses Above ⤴", value: "crosses_above" },
-  { label: "Crosses Below ⤵", value: "crosses_below" },
-];
+

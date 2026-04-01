@@ -329,7 +329,7 @@ export const chartSeriesStyles = {
 };
 
 export const OPERATORS = [
-  {label: "Add Operator", value: "" },
+  {label: "Select Operation", value: "" },
   { label: "Addition (+)", value: "+" },
   { label: "Subtraction (-)", value: "-" },
   { label: "Multiplication (×)", value: "*" },
