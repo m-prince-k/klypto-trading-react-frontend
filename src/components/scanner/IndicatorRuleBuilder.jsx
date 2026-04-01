@@ -22,7 +22,7 @@ import {
 } from "react-bootstrap";
 import { IoClose } from "react-icons/io5";
 import IndicatorBuildingListing from "./IndicatorBuilderListing";
-import { timeframeMap } from "../../util/common";
+import { operatorMap, timeframeMap } from "../../util/common";
 
 export default function IndicatorRuleBuilder({
   onClose,
@@ -56,11 +56,6 @@ export default function IndicatorRuleBuilder({
   const closeModal = () => {
     setIsModalOpen(false);
     setModalType(null);
-  };
-
-  const getUniqueTimeframes = () => {
-    const tfs = rules.map((r) => r.timeframe);
-    return [...new Set(tfs)];
   };
 
   async function fetchCurrencies() {
@@ -97,11 +92,12 @@ export default function IndicatorRuleBuilder({
       indicator: filter.indicator,
       disabled: filter.disabled,
       operator: filter.operator,
-      period: filter.period,
+      length: filter.length,
       scanner: filter.scanner,
       timeframe: filter.timeframe,
       compareTimeframe: filter.compareTimeframe,
       compareLength: filter.compareLength,
+      compareAgo: filter.compareAgo,
       value: filter.value,
     };
     // console.log(values, "---------------------->>>>>>");
@@ -138,22 +134,6 @@ export default function IndicatorRuleBuilder({
   const clickLockRef = useRef(false);
 
   /* ================= OPERATOR MAP ================= */
-  const operatorMap = {
-    ">": ">",
-    "<": "<",
-    ">=": ">=",
-    "<=": "<=",
-    "=": "=",
-    "greater than": ">",
-    "is greater than": ">",
-    "less than": "<",
-    "is less than": "<",
-    above: ">",
-    below: "<",
-    equals: "=",
-    "is equal to": "=",
-  };
-
 
   /* ================= PARSER ================= */
   function parseNaturalConditions(text) {
@@ -220,13 +200,14 @@ export default function IndicatorRuleBuilder({
     return {
       id: Date.now(),
       timeframe: "1d",
-      indicator: "RSI",
-      period: 14,
-      operator: ">",
-      compareTimeframe: "1d",
-      scanner: "Number",
-      compareLength: 0,
+      indicator: "Select Scanner",
+      length: 0,
       value: 0,
+      operator: "Select Operator",
+      compareTimeframe: "1d",
+      scanner: "Select Scanner",
+      compareLength: 0,
+      compareValue: 0,
     };
   }
 
@@ -250,15 +231,17 @@ export default function IndicatorRuleBuilder({
       const selected = indicators.find((opt) => opt.value === parsed.indicator);
 
       return {
-        id: Date.now() + Math.random(), // ensure uniqueness
+        id: Date.now() + Math.random(),
         timeframe: parsed.timeframe || "1d",
         indicator: parsed.indicator,
-        period: selected?.period ?? 14,
+        length: 0,
+        value: 0,
         operator: parsed.operator,
+        compareIndicator: parsed.indicator,
         compareTimeframe: parsed.timeframe || "1d",
         scanner: "Number",
         compareLength: 0,
-        value: parsed.value,
+        compareValue: parsed.value,
         disabled: false,
       };
     });
@@ -358,14 +341,19 @@ export default function IndicatorRuleBuilder({
 
       /* ================= LABEL OVERRIDE ================= */
       const labelMap = {
-        "1 day": "Daily",
+        "1 day": { label: "Daily", value: "1d" },
       };
 
       const transformOptions = (arr = []) =>
-        arr.map((item) => ({
-          ...item,
-          label: labelMap[item.label?.toLowerCase()] || item.label,
-        }));
+        arr.map((item) => {
+          const mapped = labelMap[item.label?.toLowerCase()];
+
+          return {
+            ...item,
+            label: mapped?.label || item.label,
+            value: mapped?.value || item.value,
+          };
+        });
 
       /* ================= ORIGINAL FLATTEN ================= */
       const flattened = [
@@ -374,6 +362,8 @@ export default function IndicatorRuleBuilder({
         ...transformOptions(data.days || []),
         ...transformOptions(data.weeks || []),
       ];
+
+      // console.log(flattened, "timeframeeeeeeeeeeeeee options");
 
       /* ================= YOUR EXISTING LOGIC ================= */
       const generateAgoOptions = (count, unit, short) => {
@@ -418,30 +408,6 @@ export default function IndicatorRuleBuilder({
     }
   }
 
-  async function fetchIndicators() {
-    try {
-      const response = await apiService.post("/api/getIndicators");
-      const raw = await response.data;
-
-      console.log(raw, "indicatorsssssssssss");
-      const formatted = [
-        { label: "Add Indicator", value: "" },
-        ...(raw ?? []).map((item) => ({
-          label: item.slug,
-          value: item.slug.toLowerCase(),
-          period: item.value,
-        })),
-      ];
-
-      setIndicators(formatted);
-    } catch (err) {
-      console.error("Indicator API Error:", err);
-      setIndicators([{ label: "Add Indicator", value: "" }]); // optional safety
-    }
-  }
-
-  // console.log(scannerOptions, "scannerOptionsscannerOptionsscannerOptions");
-
   async function fetchScanners() {
     try {
       const response = await apiService.post("/api/scanner");
@@ -475,7 +441,6 @@ export default function IndicatorRuleBuilder({
 
   useEffect(() => {
     fetchTimeframe();
-    fetchIndicators();
     fetchScanners();
   }, []);
 
@@ -585,13 +550,34 @@ export default function IndicatorRuleBuilder({
 
           {/* RULES */}
           {rules.map((rule, index) => {
+            const selectedIndicator = scannerOptions.find(
+              (opt) => opt.value === rule.indicator,
+            );
+
             const selectedScanner = scannerOptions.find(
               (opt) => opt.value === rule.scanner,
             );
 
-            const hasParams =
+            const indicatorHasParams =
+              selectedIndicator?.meta &&
+              Object.keys(selectedIndicator.meta).length > 0;
+
+            const scannerHasParams =
               selectedScanner?.meta &&
               Object.keys(selectedScanner.meta).length > 0;
+
+            const PRICE_FIELDS = [
+              "Open",
+              "High",
+              "Low",
+              "Close",
+              "Volume",
+              "% Change",
+              "VWAP",
+            ];
+
+            const isIndicatorPriceField = PRICE_FIELDS.includes(rule.indicator);
+            const isScannerPriceField = PRICE_FIELDS.includes(rule.scanner);
             return (
               <Stack
                 key={rule.id}
@@ -607,6 +593,7 @@ export default function IndicatorRuleBuilder({
                 >
                   {index + 1}
                 </Badge>
+
                 <div
                   style={{
                     width: "1px",
@@ -614,35 +601,85 @@ export default function IndicatorRuleBuilder({
                     background: "#374151",
                   }}
                 />
-                <EditableSelect
-                  value={rule.timeframe}
-                  options={timeframeOptions}
-                  onChange={(v) => {
-                    const finalValue = handleTimeframeChange(v);
-                    if (finalValue) {
-                      updateField(rule.id, "timeframe", finalValue);
-                    }
-                  }}
-                />
+
+                {/* ================= LEFT SIDE ================= */}
+
+                {(indicatorHasParams || isIndicatorPriceField) && (
+                  <EditableSelect
+                    value={rule.timeframe}
+                    options={timeframeOptions}
+                    onChange={(option) => {
+                      const rawValue = option?.value || option;
+                      const finalValue = handleTimeframeChange(rawValue);
+                      if (finalValue) {
+                        updateField(rule.id, "timeframe", finalValue);
+                      }
+                    }}
+                  />
+                )}
+
                 <EditableSelect
                   value={rule.indicator}
-                  options={indicators}
-                  onChange={(selectedValue) => {
-                    const selected = indicators.find(
-                      (opt) => opt.value === selectedValue,
+                  options={scannerOptions}
+                  onChange={(v) => {
+                    updateField(rule.id, "indicator", v);
+
+                    const selected = scannerOptions.find(
+                      (opt) => opt.value === v,
                     );
-                    updateField(rule.id, "indicator", selectedValue);
-                    if (selected?.period !== undefined) {
-                      updateField(rule.id, "period", selected.period);
+
+                    if (selected?.meta) {
+                      const params = {};
+                      Object.keys(selected.meta).forEach((key) => {
+                        params[key] = selected.meta[key];
+                      });
+
+                      updateField(rule.id, "indicatorParams", params);
                     }
                   }}
                 />
-                <EditableNumber
-                  value={rule.period}
-                  onChange={(v) =>
-                    updateField(rule.id, "period", Math.max(0, v))
-                  }
-                />
+
+                {indicatorHasParams && (
+                  <span>
+                    (
+                    {Object.entries(selectedIndicator.meta).map(
+                      ([key], index, arr) => (
+                        <span key={key}>
+                          <EditableNumber
+                            value={rule.indicatorParams?.[key] ?? ""}
+                            onChange={(v) =>
+                              setRules((prev) =>
+                                prev.map((r) =>
+                                  r.id === rule.id
+                                    ? {
+                                        ...r,
+                                        indicatorParams: {
+                                          ...r.indicatorParams,
+                                          [key]: Math.max(0, v),
+                                        },
+                                      }
+                                    : r,
+                                ),
+                              )
+                            }
+                          />
+                          {index < arr.length - 1 && ", "}
+                        </span>
+                      ),
+                    )}
+                    )
+                  </span>
+                )}
+
+                {!indicatorHasParams && !isIndicatorPriceField && (
+                  <EditableNumber
+                    value={rule.value}
+                    onChange={(v) => updateField(rule.id, "value", v)}
+                  />
+                )}
+
+                {/* ================= OPERATOR ================= */}
+
                 <Stack
                   direction="horizontal"
                   gap={2}
@@ -654,18 +691,23 @@ export default function IndicatorRuleBuilder({
                     onChange={(v) => updateField(rule.id, "operator", v)}
                   />
                 </Stack>
-                {hasParams && (
+
+                {/* ================= RIGHT SIDE ================= */}
+
+                {(scannerHasParams || isScannerPriceField) && (
                   <EditableSelect
                     value={rule.compareTimeframe}
                     options={timeframeOptions}
-                    onChange={(v) => {
-                      const finalValue = handleTimeframeChange(v);
+                    onChange={(option) => {
+                      const rawValue = option?.value || option;
+                      const finalValue = handleTimeframeChange(rawValue);
                       if (finalValue) {
                         updateField(rule.id, "compareTimeframe", finalValue);
                       }
                     }}
                   />
                 )}
+
                 <EditableSelect
                   value={rule.scanner}
                   options={scannerOptions}
@@ -677,11 +719,8 @@ export default function IndicatorRuleBuilder({
                     );
 
                     if (selected?.meta) {
-                      const keys = Object.keys(selected.meta);
-
-                      // 👇 store all dynamic params in rule
                       const params = {};
-                      keys.forEach((key) => {
+                      Object.keys(selected.meta).forEach((key) => {
                         params[key] = selected.meta[key];
                       });
 
@@ -689,9 +728,8 @@ export default function IndicatorRuleBuilder({
                     }
                   }}
                 />
-                {/* 👇 show only if length exists */}
 
-                {hasParams && (
+                {scannerHasParams && (
                   <span>
                     (
                     {Object.entries(selectedScanner.meta).map(
@@ -715,7 +753,6 @@ export default function IndicatorRuleBuilder({
                               )
                             }
                           />
-                          {/* 👇 add comma except last */}
                           {index < arr.length - 1 && ", "}
                         </span>
                       ),
@@ -724,12 +761,14 @@ export default function IndicatorRuleBuilder({
                   </span>
                 )}
 
-                {!hasParams && (
+                {!scannerHasParams && !isScannerPriceField && (
                   <EditableNumber
-                    value={rule.value}
-                    onChange={(v) => updateField(rule.id, "value", v)}
+                    value={rule.compareValue}
+                    onChange={(v) => updateField(rule.id, "compareValue", v)}
                   />
                 )}
+
+                {/* ================= ACTIONS ================= */}
 
                 <div className="d-flex gap-1 ps-2 align-items-center">
                   <button
@@ -739,7 +778,7 @@ export default function IndicatorRuleBuilder({
                   >
                     <Copy size={18} />
                   </button>
-                  {/* DUPLICATE */}
+
                   <button
                     title="duplicate filter"
                     onClick={() => duplicateFilter(rule)}
@@ -747,6 +786,7 @@ export default function IndicatorRuleBuilder({
                   >
                     <Files size={18} />
                   </button>
+
                   <button
                     title="disabled"
                     onClick={() => toggleDisable(rule.id)}
@@ -754,9 +794,9 @@ export default function IndicatorRuleBuilder({
                   >
                     <Ban size={18} />
                   </button>
+
                   <button
                     title="Delete"
-                    variant="light"
                     onClick={() => removeRule(rule?.id)}
                     className="hover:text-red-500"
                   >

@@ -263,17 +263,6 @@ export const symbols = [
   { label: "APTUSDT", value: "APTUSDT" },
   { label: "ARBUSDT", value: "ARBUSDT" },
 
-  { label: "OPUSDT", value: "OPUSDT" },
-  { label: "NEARUSDT", value: "NEARUSDT" },
-  { label: "ALGOUSDT", value: "ALGOUSDT" },
-  { label: "SANDUSDT", value: "SANDUSDT" },
-  { label: "MANAUSDT", value: "MANAUSDT" },
-
-  { label: "AAVEUSDT", value: "AAVEUSDT" },
-  { label: "GRTUSDT", value: "GRTUSDT" },
-  { label: "SNXUSDT", value: "SNXUSDT" },
-  { label: "CRVUSDT", value: "CRVUSDT" },
-  { label: "EGLDUSDT", value: "EGLDUSDT" },
 ];
 
 export const getSeriesColor = (series) => {
@@ -340,6 +329,11 @@ export const chartSeriesStyles = {
 };
 
 export const OPERATORS = [
+  {label: "Add Operator", value: "" },
+  { label: "Addition (+)", value: "+" },
+  { label: "Subtraction (-)", value: "-" },
+  { label: "Multiplication (×)", value: "*" },
+  { label: "Division (÷)", value: "/" },
   { label: "Greater Than (>)", value: ">" },
   { label: "Less Than (<)", value: "<" },
   { label: "Greater Than or Equal (≥)", value: ">=" },
@@ -348,9 +342,6 @@ export const OPERATORS = [
   { label: "Not Equal (≠)", value: "!=" },
   { label: "Crosses Above ⤴", value: "crosses_above" },
   { label: "Crosses Below ⤵", value: "crosses_below" },
-  { label: "Rising ↗", value: "rising" },
-  { label: "Falling ↘", value: "falling" },
-  { label: "Between ⇄", value: "between" },
 ];
 
 export const convertToHeikinAshi = (data) => {
@@ -450,6 +441,47 @@ export const timeframeMap = {
   "6 months ago": "6mth_ago",
   "12 months ago": "12mth_ago",
 };
+
+export const operatorMap = {
+  ">": ">",
+  "<": "<",
+  ">=": ">=",
+  "<=": "<=",
+  "=": "=",
+
+  "greater than": ">",
+  "is greater than": ">",
+  "less than": "<",
+  "is less than": "<",
+  above: ">",
+  below: "<",
+  equals: "=",
+  "is equal to": "=",
+
+  /* ================= ARITHMETIC ================= */
+  "+": "+",
+  "-": "-",
+  "*": "*",
+  "/": "/",
+
+  add: "+",
+  plus: "+",
+  "added to": "+",
+
+  subtract: "-",
+  minus: "-",
+  "less by": "-",
+
+  multiply: "*",
+  multiplied: "*",
+  "multiplied by": "*",
+  times: "*",
+
+  divide: "/",
+  divided: "/",
+  "divided by": "/",
+};
+
 export const scanCategories = [
   { id: 1, key: "range_breakouts", label: "Range Breakouts scan" },
   { id: 2, key: "fundamental", label: "Fundamental Scans" },

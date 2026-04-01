@@ -29,6 +29,7 @@ export default function OHLCVTable({
   const [loading, setLoading] = useState(false);
   const [dataSource, setDataSource] = useState({});
   const [search, setSearch] = useState("");
+  const [totalRecordsNo, setTotalRecordsNo] = useState(0);
 
   const [sortConfig, setSortConfig] = useState({
     key: null,
@@ -45,14 +46,6 @@ export default function OHLCVTable({
     fetchData();
   }, [runScanTrigger, selectedCurrency, timeframeValue]);
 
-  const isAgoTimeframe = (tf = "") => {
-    const value = tf.toLowerCase();
-
-    console.log("Checking timeframe:", value);
-
-    return /(\d+)(d|w|m|y|mo|q)_ago/.test(value);
-  };
-
   const fetchData = async () => {
     setLoading(true);
 
@@ -60,56 +53,94 @@ export default function OHLCVTable({
       const match = tf.toLowerCase().match(/^(\d+)(d|w|m|y|mo|q)_ago$/);
       return match ? Number(match[1]) : null;
     };
-    const convertTimeframe = (tf = "") => {
-      const match = tf.toLowerCase().match(/^(\d+)(d|w|m|y|mo|q)_ago$/);
-      if (match) {
-        return `${match[1]}${match[2]}`; // e.g. 3d_ago → 3d
-      }
-      return tf; // e.g. daily stays daily
-    };
 
     const formattedRules = rules?.map((rule) => {
       const isNumberRule = rule.scanner === "Number";
-      const compareParams = rule.scannerParams || {};
 
-      const basePayload = {
-        indicator: rule.indicator.toLowerCase(),
-        length: rule.period,
-        operator: rule.operator,
-        timeframe: convertTimeframe(rule.timeframe),
+      const compareParams = rule.scannerParams || {};
+      const indicatorParams = rule.indicatorParams || {};
+
+      const agoValue = extractAgoNumber(rule?.timeframe);
+      const compareAgoValue = extractAgoNumber(rule?.compareTimeframe);
+
+      const hasValue =
+        rule?.value !== undefined && rule?.value !== null && rule?.value !== 0;
+
+      const hasCompareValue =
+        rule?.compareValue !== undefined &&
+        rule?.compareValue !== null &&
+        rule?.compareValue !== 0;
+
+      console.log(rule?.compareValue);
+
+      const hasIndicatorParams = Object.keys(indicatorParams).length > 0;
+      const hasCompareParams = Object.keys(compareParams).length > 0;
+
+      /* ================= BASE ================= */
+      const payload = {
+        indicator: rule?.indicator?.toLowerCase(),
+        operator: rule?.operator,
       };
 
-      if (isNumberRule) {
-        const agoValue = extractAgoNumber(rule.timeframe);
+      /* ================= MAIN SIDE ================= */
 
-        return {
-          ...basePayload,
-          value: rule.value,
-          ...(agoValue !== null && { ago: agoValue }),
-        };
+      // ❗ CASE 1: VALUE → only value
+      if (hasValue || hasCompareValue) {
+        payload.value = rule.value || rule.compareValue;
       }
 
-      const agoValue = extractAgoNumber(rule.timeframe);
-      const compareAgoValue = extractAgoNumber(rule.compareTimeframe);
+      // ❗ CASE 2: PARAMS → length
+      else if (hasIndicatorParams) {
+        payload.length = indicatorParams.length;
+        if (agoValue !== null) {
+          payload.ago = agoValue;
+        } else {
+          payload.timeframe = rule?.timeframe;
+        }
+      }
 
-      return {
-        ...basePayload,
-        ...(agoValue !== null && { ago: agoValue }),
+      /* ================= NUMBER RULE (no compare) ================= */
+      if (isNumberRule) {
+        return payload;
+      }
 
-        compareIndicator: rule.scanner?.toLowerCase(),
-        compareTimeframe: convertTimeframe(rule.compareTimeframe),
-        compareLength: Object.keys(compareParams).length
-          ? compareParams
-          : undefined,
-        ...(compareAgoValue !== null && { compareAgo: compareAgoValue }),
-      };
+      /* ================= COMPARE SIDE ================= */
+
+      payload.compareIndicator = rule?.scanner?.toLowerCase();
+
+      // ❗ CASE 1: compareValue → only valueField
+      if (hasCompareValue) {
+        payload.value = rule.compareValue;
+      }
+
+      // ❗ CASE 2: compare params
+      else if (hasCompareParams) {
+        payload.compareLength = compareParams.length;
+
+        if (compareAgoValue !== null) {
+          payload.compareAgo = compareAgoValue;
+        } else {
+          payload.compareTimeframe = rule?.compareTimeframe;
+        }
+      }
+
+      // ❗ CASE 3: only timeframe
+      else {
+        if (compareAgoValue !== null) {
+          payload.compareAgo = compareAgoValue;
+        } else {
+          payload.compareTimeframe = rule?.compareTimeframe;
+        }
+      }
+
+      return payload;
     });
 
     console.log("Formatted Rules:", formattedRules);
 
     try {
       const response = await apiService.post(
-        `/api/scannerDetail?symbol=${selectedCurrency}&interval=${timeframeValue}`,
+        `/api/scannerDetail?symbol=${selectedCurrency}&interval=${timeframeValue}&limit=1000`,
         { rules: formattedRules },
       );
 
@@ -210,7 +241,7 @@ export default function OHLCVTable({
     });
   }, [filteredData, sortConfig]);
 
-  const totalRecords = sortedData?.length || 0;
+  const totalRecords = mergedData.length;
   const totalPages = Math.ceil(totalRecords / limit);
 
   const paginatedData = useMemo(() => {
@@ -242,10 +273,12 @@ export default function OHLCVTable({
     // ❌ remove unwanted
     allKeys.delete("status");
     allKeys.delete("sno");
+    allKeys.delete("date"); // ✅ ADD THIS
 
     // ✅ indicators = everything else
     const indicatorCols = Array.from(allKeys).filter(
-      (key) => !priorityOrder.includes(key) && key !== "timeframe",
+      (key) =>
+        !priorityOrder.includes(key) && key !== "timeframe" && key !== "date", // extra safety
     );
 
     return [...priorityOrder, ...indicatorCols, "timeframe"];
