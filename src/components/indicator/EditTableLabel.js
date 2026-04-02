@@ -71,7 +71,7 @@ export function EditableSelect({ value, options, onChange }) {
 
 /* ---------------- Editable Number ---------------- */
 
-export function EditableNumber({ value, onChange, width = "w-14" }) {
+export function EditableNumber({ value, onChange, width }) {
   const [editing, setEditing] = useState(false);
   const ref = useRef();
 
@@ -96,7 +96,7 @@ export function EditableNumber({ value, onChange, width = "w-14" }) {
             setEditing(false);
           }
         }}
-        className={`${width} px-2 py-1 text-sm border border-slate-200 rounded-md`}
+        className={`w-14 px-1 py-1 text-sm border border-slate-200 rounded-md`}
       />
     );
   }

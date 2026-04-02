@@ -11,6 +11,8 @@ import { IndicatorRuleModals } from "./IndicatorRuleModals";
 import { FaCirclePlay, FaPlus } from "react-icons/fa6";
 import { RiLoopLeftLine } from "react-icons/ri";
 import { Dropdown } from "react-bootstrap";
+import { SlCalculator } from "react-icons/sl";
+
 import {
   Container,
   Card,
@@ -21,7 +23,6 @@ import {
   Modal,
 } from "react-bootstrap";
 import { IoClose } from "react-icons/io5";
-import IndicatorBuildingListing from "./IndicatorBuilderListing";
 import { operatorMap, timeframeMap, OPERATORS } from "../../util/common";
 
 export default function IndicatorRuleBuilder({
@@ -79,9 +80,6 @@ export default function IndicatorRuleBuilder({
     } catch (err) {
       console.error("Currency API Error:", err);
       setError(err.message);
-
-      /* Always keep dropdown usable */
-      // setCurrencies([{ label: "Select Currency", value: "" }]);
     } finally {
       setLoading(false);
     }
@@ -137,60 +135,143 @@ export default function IndicatorRuleBuilder({
   /* ================= OPERATOR MAP ================= */
 
   /* ================= PARSER ================= */
-  function parseNaturalConditions(text) {
+  function parseNaturalConditions(text, scannerOptions = []) {
     if (!text || typeof text !== "string") return null;
 
-    /* ✅ Normalize safely */
     const clean = text
       .toLowerCase()
-      .replace(/^\s*(if|when|where)\s+/i, "") // remove starting keywords
+      .replace(/^\s*(if|when|where)\s+/i, "")
       .trim();
 
-    /* ✅ Split logical operators */
     const parts = clean.split(/\s+(?:and|or|also|&|\|)\s+/i);
 
     const results = [];
 
+    const extractTimeframe = (str) => {
+      for (const key in timeframeMap) {
+        if (str.includes(key)) {
+          return {
+            timeframe: timeframeMap[key],
+            rest: str.replace(key, "").trim(),
+          };
+        }
+      }
+      return { timeframe: "1d", rest: str };
+    };
+
+    const extractNumber = (str) => {
+      const match = str.match(/\d+(\.\d+)?/);
+      return match ? Number(match[0]) : null;
+    };
+
+    const findIndicator = (word) => {
+      if (!word) return null;
+
+      return scannerOptions.find(
+        (opt) =>
+          opt.label?.toLowerCase() === word || opt.slug?.toLowerCase() === word,
+      );
+    };
+
+    const getDefaultLength = (meta) => {
+      if (!meta) return 0;
+
+      if (typeof meta === "number") return meta;
+      if (typeof meta === "object") {
+        const firstKey = Object.keys(meta)[0];
+        return meta[firstKey] ?? 0;
+      }
+
+      return 0;
+    };
+
     for (const segment of parts) {
       let trimmed = segment.trim();
 
-      /* ================= EXTRACT TIMEFRAME ================= */
-      let timeframe = "1d"; // default
+      /* ================= OPERATOR ================= */
+      let operator = null;
+      let leftRaw = "";
+      let rightRaw = "";
 
-      for (const key in timeframeMap) {
-        if (trimmed.includes(key)) {
-          timeframe = timeframeMap[key];
-          trimmed = trimmed.replace(key, "").trim(); // remove from text
+      for (const phrase in operatorMap) {
+        if (trimmed.includes(phrase)) {
+          const split = trimmed.split(phrase);
+          if (split.length !== 2) continue;
+
+          operator = operatorMap[phrase];
+          leftRaw = split[0].replace(/\bis\b/g, "").trim();
+          rightRaw = split[1].trim();
           break;
         }
       }
 
-      for (const phrase in operatorMap) {
-        if (trimmed.includes(phrase)) {
-          const pieces = trimmed.split(phrase);
+      if (!operator) continue;
 
-          if (pieces.length !== 2) continue;
+      /* ================= LEFT ================= */
+      const leftTF = extractTimeframe(leftRaw);
+      let timeframe = leftTF.timeframe;
+      let leftRest = leftTF.rest;
 
-          /* ✅ Clean left side */
-          const leftRaw = pieces[0]
-            .replace(/\bis\b/g, "") // remove standalone "is"
-            .trim();
+      let indicator = "number";
+      let length = 0;
+      let value = 0;
 
-          /* ✅ Clean right side */
-          const rightRaw = pieces[1].trim();
+      const leftNum = extractNumber(leftRest);
+      const leftWord = leftRest.split(" ")[0];
 
-          const value = isNaN(rightRaw) ? rightRaw : Number(rightRaw);
+      const leftMatch = findIndicator(leftWord);
 
-          results.push({
-            timeframe,
-            indicator: leftRaw.toUpperCase(),
-            operator: operatorMap[phrase],
-            value,
-          });
+      if (leftMatch) {
+        indicator = leftMatch.slug || leftMatch.label.toLowerCase();
 
-          break; // stop checking phrases once matched
-        }
+        // 👉 default length from API
+        length = getDefaultLength(leftMatch.meta);
+
+        // 👉 override if user provided number
+        if (leftNum !== null) length = leftNum;
+      } else if (leftNum !== null) {
+        indicator = "number";
+        value = leftNum;
       }
+
+      /* ================= RIGHT ================= */
+      const rightTF = extractTimeframe(rightRaw);
+      let compareTimeframe = rightTF.timeframe;
+      let rightRest = rightTF.rest;
+
+      let scanner = "number";
+      let compareLength = 0;
+      let compareValue = 0;
+
+      const rightNum = extractNumber(rightRest);
+      const rightWord = rightRest.split(" ")[0];
+
+      const rightMatch = findIndicator(rightWord);
+
+      if (rightMatch) {
+        scanner = rightMatch.slug || rightMatch.label.toLowerCase();
+
+        compareLength = getDefaultLength(rightMatch.meta);
+
+        if (rightNum !== null) compareLength = rightNum;
+      } else if (rightNum !== null) {
+        scanner = "number";
+        compareValue = rightNum;
+      }
+
+      /* ================= FINAL ================= */
+      results.push({
+        id: Date.now() + Math.random(),
+        timeframe,
+        indicator,
+        length,
+        value,
+        operator,
+        compareTimeframe,
+        scanner,
+        compareLength,
+        compareValue,
+      });
     }
 
     return results.length ? results : null;
@@ -416,28 +497,31 @@ export default function IndicatorRuleBuilder({
 
       const formatted = [
         { label: "Select Scanner", value: "" },
-        ...(raw ?? []).map((item) => ({
-          label: item.label,
+        ...(raw ?? []).map((item) => {
+          const fallbackValue = item.slug || item.label; // ✅ fallback logic
 
-          // ✅ use slug as value (IMPORTANT)
-          value: item.slug,
+          return {
+            label: item.label,
 
-          // optional (keep full object if needed)
-          slug: item.slug,
+            // ✅ use slug if exists, else label
+            value: fallbackValue,
 
-          meta:
-            typeof item.value === "object" && item.value !== null
-              ? item.value
-              : typeof item.value === "number"
-                ? { length: item.value }
-                : null,
-        })),
+            // optional
+            slug: item.slug || null,
+
+            meta:
+              typeof item.value === "object" && item.value !== null
+                ? item.value
+                : typeof item.value === "number"
+                  ? { length: item.value }
+                  : null,
+          };
+        }),
       ];
 
       setScannerOptions(formatted);
     } catch (err) {
       console.error("Scanner API Error:", err);
-
       setScannerOptions([{ label: "Select Scanner", value: "" }]);
     } finally {
       setLoading(false);
@@ -449,6 +533,20 @@ export default function IndicatorRuleBuilder({
     fetchScanners();
   }, []);
 
+  const updateOperation = (ruleId, opId, field, value) => {
+    setRules((prev) =>
+      prev.map((r) =>
+        r.id === ruleId
+          ? {
+              ...r,
+              operations: r.operations.map((o) =>
+                o.id === opId ? { ...o, [field]: value } : o,
+              ),
+            }
+          : r,
+      ),
+    );
+  };
   /* ================= UI ================= */
 
   return (
@@ -601,14 +699,10 @@ export default function IndicatorRuleBuilder({
                   display: "flex",
                   alignItems: "center",
                   flexWrap: "wrap",
-                  gap: "4px",
-                  padding: "6px 10px",
+                  gap: "1px",
+                  padding: "2px",
                   borderRadius: "6px",
-                  // background: "linear-gradient(135deg, #0f1923 0%, #111d2b 100%)",
-                  // border: "1px solid #1e2d3d",
-                  // boxShadow: "0 1px 3px rgba(0,0,0,0.4)",
                   position: "relative",
-                  // transition: "border-color 0.2s",
                 }}
                 onMouseEnter={(e) =>
                   (e.currentTarget.style.borderColor = "#2a4060")
@@ -620,8 +714,8 @@ export default function IndicatorRuleBuilder({
                 {/* ── Row number pill ── */}
                 <span
                   style={{
-                    minWidth: "22px",
-                    height: "22px",
+                    minWidth: "20px",
+                    height: "20px",
                     display: "inline-flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -663,32 +757,32 @@ export default function IndicatorRuleBuilder({
                   />
                 )}
 
-                <EditableSelect
-                  value={rule.indicator}
-                  options={scannerOptions}
-                  onChange={(v) => {
-                    updateField(rule.id, "indicator", v);
-                    const selected = scannerOptions.find(
-                      (opt) => opt.value === v,
-                    );
-                    if (selected?.meta) {
-                      const params = {};
-                      Object.keys(selected.meta).forEach((key) => {
-                        params[key] = selected.meta[key];
-                      });
-                      updateField(rule.id, "indicatorParams", params);
-                    }
-                  }}
-                />
+                <div style={{ color: "#000", fontWeight: 500 }}>
+                  <EditableSelect
+                    value={rule.indicator}
+                    options={scannerOptions}
+                    onChange={(v) => {
+                      updateField(rule.id, "indicator", v);
+                      const selected = scannerOptions.find(
+                        (opt) => opt.value === v,
+                      );
+                      if (selected?.meta) {
+                        const params = {};
+                        Object.keys(selected.meta).forEach((key) => {
+                          params[key] = selected.meta[key];
+                        });
+                        updateField(rule.id, "indicatorParams", params);
+                      }
+                    }}
+                  />
+                </div>
 
                 {indicatorHasParams && (
                   <span
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
-                      gap: "2px",
                       color: "#4a7fa5",
-                      fontSize: "13px",
                       fontFamily: "'JetBrains Mono', monospace",
                     }}
                   >
@@ -700,7 +794,6 @@ export default function IndicatorRuleBuilder({
                           style={{
                             display: "inline-flex",
                             alignItems: "center",
-                            gap: "2px",
                           }}
                         >
                           <EditableNumber
@@ -741,7 +834,7 @@ export default function IndicatorRuleBuilder({
                 {/* ═══════════ OPERATOR ═══════════ */}
 
                 {/* Operator separator lines */}
-                <div style={{ color: "#431e66", fontWeight: 600 }}>
+                <div style={{ color: "#863ccc", fontWeight: 600 }}>
                   <EditableSelect
                     value={rule.operator}
                     options={OPERATORS}
@@ -764,7 +857,7 @@ export default function IndicatorRuleBuilder({
                   />
                 )}
 
-                <div style={{ color: "#431e66", fontWeight: 600 }}>
+                <div style={{ color: "#000", fontWeight: 500 }}>
                   <EditableSelect
                     value={rule.scanner}
                     options={scannerOptions}
@@ -789,9 +882,7 @@ export default function IndicatorRuleBuilder({
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
-                      gap: "2px",
                       color: "#4a7fa5",
-                      fontSize: "13px",
                       fontFamily: "'JetBrains Mono', monospace",
                     }}
                   >
@@ -803,7 +894,6 @@ export default function IndicatorRuleBuilder({
                           style={{
                             display: "inline-flex",
                             alignItems: "center",
-                            gap: "2px",
                           }}
                         >
                           <EditableNumber
@@ -841,14 +931,187 @@ export default function IndicatorRuleBuilder({
                   />
                 )}
 
-                {/* ═══════════ ACTIONS ═══════════ */}
+                {rule.operations?.map((op) => {
+                  const selectedScanner = scannerOptions.find(
+                    (opt) => opt.value === op.value,
+                  );
 
+                  const hasParams =
+                    selectedScanner?.meta &&
+                    Object.keys(selectedScanner.meta).length > 0;
+
+                  const isPriceField = PRICE_FIELDS.includes(op.value);
+
+                  return (
+                    <div
+                      key={op.id}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "1px",
+                      }}
+                    >
+                      {/* OPERATOR (reused) */}
+                      <div style={{ color: "#863ccc", fontWeight: 600 }}>
+                        <EditableSelect
+                          value={op.operator}
+                          options={OPERATORS}
+                          onChange={(v) => {
+                            setRules((prev) =>
+                              prev.map((r) =>
+                                r.id === rule.id
+                                  ? {
+                                      ...r,
+                                      operations: r.operations.map((o) =>
+                                        o.id === op.id
+                                          ? { ...o, operator: v }
+                                          : o,
+                                      ),
+                                    }
+                                  : r,
+                              ),
+                            );
+                          }}
+                        />
+                      </div>
+
+                      {/* 🔥 DIRECT SCANNER (NO TYPE SELECT) */}
+                      <>
+                        {(hasParams || isPriceField) && (
+                          <EditableSelect
+                            value={op.timeframe}
+                            options={timeframeOptions}
+                            onChange={(option) => {
+                              const raw = option?.value || option;
+                              const final = handleTimeframeChange(raw);
+                              if (final) {
+                                updateOperation(
+                                  rule.id,
+                                  op.id,
+                                  "timeframe",
+                                  final,
+                                );
+                              }
+                            }}
+                          />
+                        )}
+
+                        <div style={{ color: "#000", fontWeight: 500 }}>
+                          <EditableSelect
+                            value={op.value}
+                            options={scannerOptions}
+                            onChange={(v) => {
+                              const selected = scannerOptions.find(
+                                (opt) => opt.value === v,
+                              );
+
+                              let params = {};
+                              if (selected?.meta) {
+                                Object.keys(selected.meta).forEach((key) => {
+                                  params[key] = selected.meta[key];
+                                });
+                              }
+
+                              setRules((prev) =>
+                                prev.map((r) =>
+                                  r.id === rule.id
+                                    ? {
+                                        ...r,
+                                        operations: r.operations.map((o) =>
+                                          o.id === op.id
+                                            ? { ...o, value: v, params }
+                                            : o,
+                                        ),
+                                      }
+                                    : r,
+                                ),
+                              );
+                            }}
+                          />
+                        </div>
+
+                        {/* PARAMS UI (unchanged) */}
+                        {hasParams && (
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              color: "#4a7fa5",
+                              fontFamily: "'JetBrains Mono', monospace",
+                            }}
+                          >
+                            <span style={{ color: "#2a5070" }}>(</span>
+
+                            {Object.entries(selectedScanner.meta).map(
+                              ([key], i, arr) => (
+                                <span
+                                  key={key}
+                                  style={{ display: "inline-flex" }}
+                                >
+                                  <EditableNumber
+                                    value={op.params?.[key] ?? ""}
+                                    onChange={(v) =>
+                                      updateOperation(
+                                        rule.id,
+                                        op.id,
+                                        "params",
+                                        {
+                                          ...op.params,
+                                          [key]: Math.max(0, v),
+                                        },
+                                      )
+                                    }
+                                  />
+                                  {i < arr.length - 1 && (
+                                    <span style={{ color: "#2a5070" }}>,</span>
+                                  )}
+                                </span>
+                              ),
+                            )}
+
+                            <span style={{ color: "#2a5070" }}>)</span>
+                          </span>
+                        )}
+                      </>
+                    </div>
+                  );
+                })}
+                {/* ═══════════ ACTIONS ═══════════ */}
+                <span
+                  style={{
+                    cursor: "pointer",
+                    color: "#4a7fa5",
+                    fontWeight: 600,
+                    marginLeft: "6px",
+                    userSelect: "none",
+                  }}
+                  onClick={() => {
+                    setRules((prev) =>
+                      prev.map((r) =>
+                        r.id === rule.id
+                          ? {
+                              ...r,
+                              operations: [
+                                ...(r.operations || []),
+                                {
+                                  id: Date.now(),
+                                  operator: "+", // default
+                                  type: "number",
+                                  value: "",
+                                },
+                              ],
+                            }
+                          : r,
+                      ),
+                    );
+                  }}
+                >
+                  <SlCalculator />
+                </span>
                 <div
                   style={{
                     display: "flex",
                     gap: "2px",
-                    marginLeft: "auto",
-                    paddingLeft: "8px",
                     alignItems: "center",
                     flexShrink: 0,
                   }}

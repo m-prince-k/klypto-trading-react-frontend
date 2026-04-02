@@ -240,28 +240,28 @@ export const chartOptions = [
 
 export const symbols = [
   { label: "BTCUSDT", value: "BTCUSDT" },
-  { label: "ETHUSDT", value: "ETHUSDT" },
-  { label: "BNBUSDT", value: "BNBUSDT" },
-  { label: "SOLUSDT", value: "SOLUSDT" },
-  { label: "XRPUSDT", value: "XRPUSDT" },
+  // { label: "ETHUSDT", value: "ETHUSDT" },
+  // { label: "BNBUSDT", value: "BNBUSDT" },
+  // { label: "SOLUSDT", value: "SOLUSDT" },
+  // { label: "XRPUSDT", value: "XRPUSDT" },
 
-  { label: "ADAUSDT", value: "ADAUSDT" },
-  { label: "DOGEUSDT", value: "DOGEUSDT" },
-  { label: "DOTUSDT", value: "DOTUSDT" },
-  { label: "MATICUSDT", value: "MATICUSDT" },
-  { label: "LTCUSDT", value: "LTCUSDT" },
+  // { label: "ADAUSDT", value: "ADAUSDT" },
+  // { label: "DOGEUSDT", value: "DOGEUSDT" },
+  // { label: "DOTUSDT", value: "DOTUSDT" },
+  // { label: "MATICUSDT", value: "MATICUSDT" },
+  // { label: "LTCUSDT", value: "LTCUSDT" },
 
-  { label: "TRXUSDT", value: "TRXUSDT" },
-  { label: "AVAXUSDT", value: "AVAXUSDT" },
-  { label: "LINKUSDT", value: "LINKUSDT" },
-  { label: "ATOMUSDT", value: "ATOMUSDT" },
-  { label: "UNIUSDT", value: "UNIUSDT" },
+  // { label: "TRXUSDT", value: "TRXUSDT" },
+  // { label: "AVAXUSDT", value: "AVAXUSDT" },
+  // { label: "LINKUSDT", value: "LINKUSDT" },
+  // { label: "ATOMUSDT", value: "ATOMUSDT" },
+  // { label: "UNIUSDT", value: "UNIUSDT" },
 
-  { label: "ETCUSDT", value: "ETCUSDT" },
-  { label: "FILUSDT", value: "FILUSDT" },
-  { label: "ICPUSDT", value: "ICPUSDT" },
-  { label: "APTUSDT", value: "APTUSDT" },
-  { label: "ARBUSDT", value: "ARBUSDT" },
+  // { label: "ETCUSDT", value: "ETCUSDT" },
+  // { label: "FILUSDT", value: "FILUSDT" },
+  // { label: "ICPUSDT", value: "ICPUSDT" },
+  // { label: "APTUSDT", value: "APTUSDT" },
+  // { label: "ARBUSDT", value: "ARBUSDT" },
 
 ];
 
@@ -330,10 +330,10 @@ export const chartSeriesStyles = {
 
 export const OPERATORS = [
   {label: "Select Operation", value: "" },
-  { label: "Addition (+)", value: "+" },
-  { label: "Subtraction (-)", value: "-" },
-  { label: "Multiplication (×)", value: "*" },
-  { label: "Division (÷)", value: "/" },
+ { label: "+", value: "+" },
+  { label: "-", value: "-" },
+  { label: "*", value: "*" },
+  { label: "/", value: "/" },
   { label: "Greater Than (>)", value: ">" },
   { label: "Less Than (<)", value: "<" },
   { label: "Greater Than or Equal (≥)", value: ">=" },

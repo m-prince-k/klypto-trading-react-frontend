@@ -13,6 +13,7 @@ import {
 } from "../../util/common";
 import { comma } from "postcss/lib/list";
 import { toast } from "react-toastify";
+import axios from "axios";
 
 /* ================= SYMBOL LIST ================= */
 
@@ -25,12 +26,16 @@ export default function OHLCVTable({
   selectedCurrencies,
 }) {
   const [timeframe, setTimeframe] = useState("ALL"); // default ALL
-  const [limit, setLimit] = useState(5);
+  const [allCurrencies, setAllCurrencies] = useState([]);
+
+  const [limit, setLimit] = useState(10); // actual data limit
+  const [selectedLimit, setSelectedLimit] = useState(""); // dropdown UI
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
   const [dataSource, setDataSource] = useState({});
   const [search, setSearch] = useState("");
-  const [totalRecordsNo, setTotalRecordsNo] = useState(0);
+  const [days, setDays] = useState(1);
+  const [months, setMonths] = useState(null);
 
   const [sortConfig, setSortConfig] = useState({
     key: null,
@@ -42,9 +47,10 @@ export default function OHLCVTable({
       ? Object.keys(dataSource)
       : [];
   }, [dataSource]);
+
   useEffect(() => {
     fetchData();
-  }, [runScanTrigger]);
+  }, [runScanTrigger, selectedCurrency, timeframeValue, days, months]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -64,7 +70,7 @@ export default function OHLCVTable({
         return true;
       }
 
-      if (!rule?.operator || rule.operator === "Select Operator") {
+      if (!rule?.operator || rule.operator === "Select Operation") {
         errorMessage = `Rule ${index + 1}: Operator not selected`;
         return true;
       }
@@ -114,16 +120,16 @@ export default function OHLCVTable({
 
       /* ================= MAIN ================= */
 
+      if (agoValue !== null) {
+        payload.ago = agoValue;
+      } else {
+        payload.timeframe = rule?.timeframe;
+      }
+
       if (hasValue || hasCompareValue) {
         payload.value = rule.value || rule.compareValue;
       } else if (hasIndicatorParams) {
         payload.length = indicatorParams;
-
-        if (agoValue !== null) {
-          payload.ago = agoValue;
-        } else {
-          payload.timeframe = rule?.timeframe;
-        }
       } else {
         if (agoValue !== null) {
           payload.ago = agoValue;
@@ -138,22 +144,16 @@ export default function OHLCVTable({
 
       payload.compareIndicator = rule?.scanner;
 
+      if (compareAgoValue !== null) {
+        payload.compareAgo = compareAgoValue;
+      } else {
+        payload.compareTimeframe = rule?.compareTimeframe;
+      }
+
       if (hasCompareValue) {
         payload.value = rule.compareValue;
       } else if (hasCompareParams) {
         payload.compareLength = compareParams;
-
-        if (compareAgoValue !== null) {
-          payload.compareAgo = compareAgoValue;
-        } else {
-          payload.compareTimeframe = rule?.compareTimeframe;
-        }
-      } else {
-        if (compareAgoValue !== null) {
-          payload.compareAgo = compareAgoValue;
-        } else {
-          payload.compareTimeframe = rule?.compareTimeframe;
-        }
       }
 
       return payload;
@@ -164,30 +164,48 @@ export default function OHLCVTable({
     /* ================= API ================= */
 
     try {
+      const totalDays = days
+        ? days
+        : months
+          ? Math.round(months * 30) 
+          : "";
+
       const response = await apiService.post(
-        `/api/scannerDetail?symbol=${selectedCurrency}&interval=${timeframeValue}&limit=1000`,
+        `/api/scannerDetail?symbol=${selectedCurrency}&interval=${timeframeValue}&limit=1000&day=${totalDays}`,
         { rules: formattedRules },
       );
 
-      setDataSource(response?.data || {});
+      const result = response?.data || {};
 
-      toast.success("Scan executed successfully ✅"); // ✅ success toast
+      setDataSource(result);
 
-      // ✅ CLOSE MODAL ONLY ON SUCCESS
-      // setShowModal(false); ← uncomment if needed
+      // ✅ CHECK IF EMPTY
+      const isEmpty =
+        !result ||
+        (Array.isArray(result) && result.length === 0) ||
+        (typeof result === "object" && Object.keys(result).length === 0);
+
+      if (isEmpty) {
+        toast.error("No data found ❌");
+      } else {
+        toast.success("Scan executed successfully ✅");
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
       setDataSource({});
+      toast.error("Something went wrong ❌"); // optional but recommended
     } finally {
       setLoading(false);
     }
   };
+
   const getBase = (symbol) => {
     if (symbol.endsWith("USDT")) return symbol.replace("USDT", "");
     if (symbol.endsWith("BTC")) return symbol.replace("BTC", "");
     if (symbol.endsWith("ETH")) return symbol.replace("ETH", "");
     return symbol;
   };
+
   /* ================= MERGED DATA ================= */
   const mergedData = useMemo(() => {
     if (!dataSource || typeof dataSource !== "object") return [];
@@ -196,7 +214,7 @@ export default function OHLCVTable({
     console.log(selectedCurrencies, "curenciesssssssss");
 
     const activeCurrencies =
-      selectedCurrencies && selectedCurrencies.length > 0
+      selectedCurrencies && selectedCurrencies?.length > 0
         ? selectedCurrencies.map((sym) => sym.value)
         : symbols;
 
@@ -394,25 +412,87 @@ export default function OHLCVTable({
                 })}
               </Dropdown.Menu>
             </Dropdown>
+            <div className="d-flex gap-2">
+              {/* ================= DAYS ================= */}
+              <Dropdown
+                onToggle={(isOpen) => {
+                  if (isOpen && months !== null) {
+                    setMonths(null);
+                  }
+                }}
+                onSelect={(val) => {
+                  const num = Number(val);
+                  setDays(num === 0 ? null : num);
+                }}
+              >
+                <Dropdown.Toggle
+                  size="sm"
+                  variant="light"
+                  style={{
+                    opacity: months !== null ? 0.5 : 1,
+                    backgroundColor: months !== null ? "#e9ecef" : "",
+                    color: months !== null ? "#6c757d" : "",
+                    borderColor: months !== null ? "#dee2e6" : "",
+                    cursor: months !== null ? "not-allowed" : "pointer",
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  {days ? `${days} Day${days > 1 ? "s" : ""}` : "Select Days"}
+                </Dropdown.Toggle>
 
-            <Form.Select
-              size="sm"
-              value={limit}
-              onChange={(e) => setLimit(Number(e.target.value))}
-              style={{ maxWidth: 110 }}
-            >
-              <option value={5}>5 / page</option>
-              <option value={10}>10 / page</option>
-              <option value={20}>20 / page</option>
-              <option value={30}>30 / page</option>
-            </Form.Select>
+                <Dropdown.Menu
+                  style={{ maxHeight: "200px", overflowY: "auto" }}
+                >
+                  <Dropdown.Item eventKey={0}>Select Days</Dropdown.Item>
+                  {Array.from({ length: 30 }, (_, i) => i + 1).map((d) => (
+                    <Dropdown.Item key={d} eventKey={d}>
+                      {d}
+                    </Dropdown.Item>
+                  ))}
+                </Dropdown.Menu>
+              </Dropdown>
 
-            <small className="text-muted ms-auto">
-              Page <strong>{page + 1}</strong> of{" "}
-              <strong>{totalPages || 1}</strong>
-              &nbsp;&middot;&nbsp;
-              <strong>{totalRecords}</strong> total
-            </small>
+              {/* ================= MONTHS ================= */}
+              <Dropdown
+                onToggle={(isOpen) => {
+                  if (isOpen && days !== null) {
+                    setDays(null);
+                  }
+                }}
+                onSelect={(val) => {
+                  const num = Number(val);
+                  setMonths(num === 0 ? null : num);
+                }}
+              >
+                <Dropdown.Toggle
+                  size="sm"
+                  variant="light"
+                  style={{
+                    opacity: days !== null ? 0.5 : 1,
+                    backgroundColor: days !== null ? "#e9ecef" : "",
+                    color: days !== null ? "#6c757d" : "",
+                    borderColor: days !== null ? "#dee2e6" : "",
+                    cursor: days !== null ? "not-allowed" : "pointer",
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  {months
+                    ? `${months} Month${months > 1 ? "s" : ""}`
+                    : "Select Months"}
+                </Dropdown.Toggle>
+
+                <Dropdown.Menu
+                  style={{ maxHeight: "200px", overflowY: "auto" }}
+                >
+                  <Dropdown.Item eventKey={0}>Select Months</Dropdown.Item>
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                    <Dropdown.Item key={m} eventKey={m}>
+                      {m}
+                    </Dropdown.Item>
+                  ))}
+                </Dropdown.Menu>
+              </Dropdown>
+            </div>
           </div>
 
           {/* TABLE */}
@@ -502,6 +582,36 @@ export default function OHLCVTable({
             </Table>
           </div>
 
+          <div className="d-flex align-items-center gap-2 justify-content-end px-3 py-2">
+            <Form.Select
+              size="sm"
+              value={selectedLimit}
+              onChange={(e) => {
+                const val = e.target.value;
+
+                setSelectedLimit(val); // UI value
+                setLimit(Number(val)); // actual limit
+              }}
+              style={{ maxWidth: 150 }}
+            >
+              {/* Placeholder (disabled after selection) */}
+              <option value="" disabled={selectedLimit !== ""}>
+                Show Records
+              </option>
+
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </Form.Select>
+
+            <small className="text-muted ms-auto">
+              Page <strong>{page + 1}</strong> of{" "}
+              <strong>{totalPages || 1}</strong>
+              &nbsp;&middot;&nbsp;
+              <strong>{totalRecords}</strong> total
+            </small>
+          </div>
           {/* Pagination */}
           <div className="d-flex justify-content-end px-3 py-3 border-top bg-white rounded-bottom">
             <ReactPaginate
