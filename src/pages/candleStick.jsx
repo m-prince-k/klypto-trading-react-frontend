@@ -21,8 +21,7 @@ import {
   SINGLE_VALUE_CHARTS,
   chartSeriesStyles,
   convertToHeikinAshi,
-  PANE_INDICATORS,
-  indicatorStyleDefault,
+  getIndicatorChartProperties,
 } from "../util/common";
 import SourceCodePanel from "../components/indicator/SourceCodePanel";
 import ChartRightSidebar from "../components/chart/rightbar/ChartRightSidebar";
@@ -40,6 +39,12 @@ import useChartFunctions from "../util/useChartFunctions";
 import { indicatorComponents } from "../components/indicator/IndicatorIndex";
 import { Spinner } from "../components/tradingModals/Spinner";
 import IndicatorBar from "../components/indicator/IndicatorBar";
+import {
+  indicatorConfigDefault,
+  resolvePaneKey,
+  indicatorStyleDefault,
+  PANE_INDICATORS,
+} from "../util/indicatorFunctions";
 
 export default function Candlestick() {
   const chartRef = useRef();
@@ -49,8 +54,11 @@ export default function Candlestick() {
   const indicatorSeriesRef = useRef({});
   const latestIndicatorValuesRef = useRef({});
   const panesRef = useRef({});
+  const paneIndexRef = useRef({});
   const syncingRef = useRef(false);
   const fetchedIndicatorsRef = useRef(new Set());
+  const mainChartHeightRef = useRef(500);
+
   const [openForm, setOpenForm] = useState(false);
   const [timeframeValue, setTimeframeValue] = useState("1m");
   const [selectedCurrency, setSelectedCurrency] = useState("BTCUSDT");
@@ -63,31 +71,52 @@ export default function Candlestick() {
   const [showAlertForm, setShowAlertForm] = useState(false);
   const [indicatorProperty, setIndicatorProperty] = useState(false);
   const [indicatorLoading, setIndicatorLoading] = useState(false);
-  const mainChartHeightRef = useRef(500);
   const [showSourcePanel, setShowSourcePanel] = useState(false);
   const [activeSourceIndicator, setActiveSourceIndicator] = useState(null);
   const [indicatorVisibility, setIndicatorVisibility] = useState({});
   const [activeBarIndicator, setActiveBarIndicator] = useState("");
+  const prevTimeframeRef = useRef(timeframeValue);
+  const prevCurrencyRef = useRef(selectedCurrency);
 
   const [rules, setRules] = useState([]);
   const [runScanTrigger, setRunScanTrigger] = useState(false);
   const [listingTimeframe, setListingTimeframe] = useState("");
   const [selectedCurrencies, setSelectedCurrencies] = useState([]);
-  
-  
+  const [indicatorConfigs, setIndicatorConfigs] = useState(
+    indicatorConfigDefault,
+  );
+  const [indicatorStyle, setIndicatorStyle] = useState(indicatorStyleDefault);
+  const isUp = liveOhlcv?.close >= liveOhlcv?.open;
+  const valueColor = isUp ? "text-green-500" : "text-red-500";
 
   useEffect(() => {
     if (!selectedIndicator.length) return;
 
-    const newIndicators = selectedIndicator.filter(
-      (ind) => !fetchedIndicatorsRef.current.has(ind),
-    );
+    const isContextChange =
+      prevTimeframeRef.current !== timeframeValue ||
+      prevCurrencyRef.current !== selectedCurrency;
 
-    if (newIndicators.length === 0) return;
+    let indicatorsToFetch = selectedIndicator;
 
-    fetchIndicatorData(newIndicators, selectedCurrency, timeframeValue);
+    if (!isContextChange) {
+      // ✅ Only filter when indicator list changes
+      indicatorsToFetch = selectedIndicator.filter(
+        (ind) => !fetchedIndicatorsRef.current.has(ind),
+      );
 
-    newIndicators.forEach((ind) => fetchedIndicatorsRef.current.add(ind));
+      if (indicatorsToFetch.length === 0) return;
+    } else {
+      // 🔥 Reset on timeframe / currency change
+      fetchedIndicatorsRef.current.clear();
+    }
+
+    fetchIndicatorData(indicatorsToFetch, selectedCurrency, timeframeValue);
+
+    indicatorsToFetch.forEach((ind) => fetchedIndicatorsRef.current.add(ind));
+
+    // update previous values
+    prevTimeframeRef.current = timeframeValue;
+    prevCurrencyRef.current = selectedCurrency;
   }, [selectedIndicator, selectedCurrency, timeframeValue]);
 
   const toggleIndicatorVisibility = (indicator) => {
@@ -111,252 +140,21 @@ export default function Candlestick() {
       [indicator]: newVisibility,
     }));
   };
-  const paneIndexRef = useRef({});
 
   //  GET PANE INDEX
   const getPaneIndex = (indicator) => {
+    // ❗ overlay indicators → always main pane
     if (!PANE_INDICATORS.has(indicator)) return 0;
+
     if (paneIndexRef.current[indicator] !== undefined) {
       return paneIndexRef.current[indicator];
     }
+
     const nextPane = Object.keys(paneIndexRef.current).length + 1;
     paneIndexRef.current[indicator] = nextPane;
+
     return nextPane;
   };
-
-  const [indicatorConfigs, setIndicatorConfigs] = useState({
-    SMA: {
-      length: 9,
-      source: "close",
-      offset: 0,
-      maType: "none",
-      maLength: 14,
-      bbStdDev: 2,
-    },
-    EMA: {
-      length: 9,
-      source: "close",
-      offset: 0,
-      maType: "none",
-      maLength: 14,
-      bbStdDev: 2,
-    },
-    WMA: {
-      length: 9,
-      source: "close",
-      offset: 0,
-    },
-    HMA: {
-      length: 9,
-      source: "close",
-    },
-    DEMA: {
-      length: 9,
-      source: "close",
-    },
-    TEMA: {
-      length: 9,
-    },
-    AD: {
-      length: 14,
-    },
-    KAMA: {
-      ERlength: 10,
-      fastLength: 2,
-      slowLength: 30,
-      source: "close",
-    },
-    ICHIMOKU: {
-      conversionLength: 9,
-      baseLength: 26,
-      spanBLength: 52,
-      laggingSpan: 26,
-    },
-    PSAR: {
-      start: 0.02,
-      increment: 0.02,
-      maxValue: 0.02,
-    },
-    SUPERTREND: {
-      atrLength: 10,
-      factor: 3,
-    },
-    AROON: {
-      length: 14,
-    },
-    AO: {
-      length: 14,
-    },
-    ADX: {
-      smoothing: 14,
-      diLength: 14,
-    },
-    CKS: {
-      atrLength: 10,
-      atrCoefficient: 1,
-      stopLength: 9,
-    },
-    RSI: {
-      length: 14,
-      source: "close",
-      maType: "SMA",
-      maLength: 14,
-      bbStdDev: 2,
-    },
-    STOCH: {
-      kLength: 14,
-      kSmoothing: 1,
-      dSmoothing: 3,
-    },
-    STOCHRSI: {
-      lengthRSI: 14,
-      source: "close",
-      length: 14,
-      kSmoothing: 3,
-      dSmoothing: 3,
-    },
-    MACD: {
-      source: "close",
-      fastLength: 12,
-      slowLength: 26,
-      signalLength: 9,
-      oscillatorMAType: "EMA",
-      signalMAType: "EMA",
-    },
-    CCI: {
-      length: 20,
-      source: "hlc3",
-      maType: "SMA",
-      maLength: 14,
-      bbStdDev: 2,
-    },
-    MOM: {
-      length: 10,
-      source: "close",
-    },
-    ROC: {
-      length: 9,
-      source: "close",
-    },
-    WPR: {
-      length: 14,
-      source: "close",
-    },
-    UO: {
-      fastLength: 7,
-      middleLength: 14,
-      slowLength: 28,
-    },
-    CMO: {
-      length: 9,
-      source: "close",
-    },
-    TRIX: {
-      length: 18,
-    },
-    FT: {
-      length: 9,
-    },
-    ATR: {
-      length: 14,
-      smoothing: "RMA",
-    },
-
-    VP: {
-      maType: "SMA", // or "none"
-      maLength: 14,
-    },
-    BB: {
-      length: 20,
-      maType: "SMA",
-      stdDev: 2,
-      source: "close",
-      offset: 0,
-    },
-    BBW: {
-      length: 20,
-      stdDev: 2,
-      source: "close",
-      highestExpansionLength: 125,
-      lowestContractionLength: 125,
-    },
-    KC: {
-      length: 20,
-      source: "close",
-      multiplier: 2,
-      atrLength: 10,
-      bandsStyle: "Average True Range",
-      useEMA: true,
-    },
-    DC: {
-      length: 20,
-      offset: 0,
-    },
-    CHOP: {
-      length: 14,
-      offset: 0,
-    },
-    STDDEV: {
-      length: 20,
-      source: "close",
-    },
-    VOL: {
-      maLength: 20,
-      colorByPrevious: false,
-    },
-    HV: {
-      length: 10,
-    },
-    OBV: {
-      maType: "none",
-      maLength: 14,
-      bbStdDev: 2,
-    },
-    KVO: {
-      fastLength: 34,
-      slowLength: 55,
-      signalLength: 13,
-    },
-    PVO: {
-      fastLength: 12,
-      slowLength: 26,
-      signalLength: 9,
-      oscMaType: "EMA",
-      signalMaType: "EMA",
-    },
-    CMF: {
-      length: 20,
-    },
-    MFI: {
-      length: 14,
-    },
-    EOM: {
-      length: 14,
-      divisor: 10000,
-    },
-    NVI: {
-      emaLength: 255,
-    },
-    PVI: {
-      emaLength: 255,
-    },
-    VWAP: {
-      hideOnDailyOrAbove: true,
-      anchorPeriod: "daily",
-      source: "hlc3",
-      offset: 0,
-      bandMode: "STD",
-      band1: { enabled: true, multiplier: 1 },
-      band2: { enabled: false, multiplier: 2 },
-      band3: { enabled: false, multiplier: 3 },
-    },
-    ZIGZAG: {
-      deviation: 5,
-      depth: 10,
-    },
-  });
-
-  const [indicatorStyle, setIndicatorStyle] = useState(indicatorStyleDefault);
 
   const closeAlert = () => {
     setShowAlertForm(false);
@@ -367,14 +165,16 @@ export default function Candlestick() {
     if (!chartRef.current) return null;
 
     const paneIndex = getPaneIndex(indicator);
+
     const series = chartRef.current.addSeries(
       SeriesType,
       {
         ...options,
-        priceScaleId: `pane_${paneIndex}`,
+        ...(paneIndex !== 0 && { priceScaleId: `pane_${paneIndex}` }),
       },
       paneIndex,
     );
+
     return series;
   };
 
@@ -400,73 +200,6 @@ export default function Candlestick() {
       if (!range || syncingRef.current) return;
       syncCharts(chart, range);
     });
-  }
-  //  ✅ PANE MANAGEMENT
-  function resolvePaneKey(type) {
-    switch (type) {
-      case "RSI":
-        return "RSI";
-      case "MACD":
-        return "MACD";
-      case "ATR":
-        return "ATR";
-      case "AROON":
-        return "AROON";
-      case "ADX":
-        return "ADX";
-      case "CCI":
-        return "CCI";
-      case "ROC":
-        return "ROC";
-      case "MFI":
-        return "MFI";
-      case "WPR":
-        return "WPR";
-      case "AO":
-        return "AO";
-      case "CHOP":
-        return "CHOP";
-      case "FT":
-        return "FT";
-      case "EOM":
-        return "EOM";
-      case "MOM":
-        return "MOM";
-      case "UO":
-        return "UO";
-      case "PVI":
-        return "PVI";
-      case "NVI":
-        return "NVI";
-      case "STOCHRSI":
-        return "STOCHRSI";
-      case "STOCH":
-        return "STOCH";
-      case "CMO":
-        return "CMO";
-      case "HV":
-        return "HV";
-      case "PVO":
-        return "PVO";
-      case "OBV":
-        return "OBV";
-      case "STDDEV":
-        return "STDDEV";
-      case "AD":
-        return "AD";
-      case "TRIX":
-        return "TRIX";
-      case "VP":
-        return "VP";
-      case "BBW":
-        return "BBW";
-      case "KVO":
-        return "KVO";
-      case "AWO":
-        return "AWO";
-      default:
-        return type;
-    }
   }
 
   function cleanupPane(paneKey) {
@@ -499,10 +232,12 @@ export default function Candlestick() {
   const removeIndicator = useCallback((indicator) => {
     const entry = indicatorSeriesRef.current[indicator];
     if (!entry) return;
+
     const paneKey = resolvePaneKey(indicator);
     const pane = panesRef.current[paneKey];
     const chart = pane?.chart ?? chartRef.current;
     if (!chart) return;
+
     /* MULTI SERIES */
     if (entry && typeof entry === "object" && !entry.priceScale) {
       Object.values(entry).forEach((series) => {
@@ -524,14 +259,29 @@ export default function Candlestick() {
     delete latestIndicatorValuesRef.current[indicator];
     fetchedIndicatorsRef.current.delete(indicator);
 
+    /* ✅ ADD THIS BLOCK (IMPORTANT) */
+    setIndicatorConfigs((prev) => {
+      const updated = { ...prev };
+      delete updated[indicator]; // remove old config
+      return {
+        ...updated,
+        [indicator]: indicatorConfigDefault[indicator] || {},
+      };
+    });
+
+    setIndicatorStyle((prev) => {
+      const updated = { ...prev };
+      delete updated[indicator];
+      return {
+        ...updated,
+        [indicator]: indicatorStyleDefault[indicator] || {},
+      };
+    });
+
     cleanupPane(paneKey);
 
     setSelectedIndicator((prev) => prev.filter((i) => i !== indicator));
   }, []);
-
-  const isUp = liveOhlcv?.close >= liveOhlcv?.open;
-  const valueColor = isUp ? "text-green-500" : "text-red-500";
-
   // ----------Main chart------------
   useEffect(() => {
     if (!containerRef.current) return;
@@ -729,6 +479,9 @@ export default function Candlestick() {
           keysToShow = ["k", "d"];
           break;
 
+        case "SUPERTREND":
+          keysToShow = ["upTrend", "downTrend", "bodyMiddle"];
+
         default:
           keysToShow = Object.keys(value);
       }
@@ -758,27 +511,26 @@ export default function Candlestick() {
 
   const renderIndicators = () => {
     return selectedIndicator.map((indicator) => {
-      const normalizedType = indicator.replace(/[\s/%]+/g, "");
-      const Component = indicatorComponents[normalizedType];
+      const Component = indicatorComponents[indicator];
       if (!Component) return null;
 
-      const data = indicatorSeriesRef.current?.[normalizedType]; // can be undefined initially
+      const data = indicatorSeriesRef.current?.[indicator];
 
       return (
         <Component
-          key={normalizedType}
+          key={indicator}
           result={data?.result}
           rows={data?.rows}
           indicatorStyle={indicatorStyle}
           indicatorSeriesRef={indicatorSeriesRef}
           addSeries={addSeries}
-          chart={chartRef.current}
           containerRef={containerRef.current}
+          chart={chartRef.current}
           container={containerRef}
           panesRef={panesRef}
           indicatorConfigs={indicatorConfigs}
           pane={seriesRef.current}
-          timeframeValue={timeframeValue} // pass timeframe so useEffect can trigger update
+          timeframeValue={timeframeValue}
           selectedCurrency={selectedCurrency}
         />
       );
@@ -1002,12 +754,6 @@ export default function Candlestick() {
         }
 
         chartRef.current.timeScale().fitContent();
-
-        // await fetchIndicatorData(
-        //   selectedIndicator,
-        //   selectedCurrency,
-        //   timeframeValue,
-        // );
       } catch (err) {
         console.error("Chart load error", err);
       }
@@ -1077,7 +823,11 @@ export default function Candlestick() {
           <div
             className="row"
             ref={paneContainerRef}
-            style={{ position: "relative" }}
+            style={{
+              position: "relative",
+              width: getIndicatorChartProperties.width,
+              height: getIndicatorChartProperties.height,
+            }}
           >
             {/* <div className="col-md-1 p-0 m-0"> */}
             {/* <ChartLeftSidebar

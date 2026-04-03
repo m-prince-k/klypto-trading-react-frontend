@@ -11,20 +11,22 @@ export default function CCIPlot({
   containerRef,
   pane,
 }) {
-
   const cloudCanvasRef = useRef(null);
   const cloudCtxRef = useRef(null);
+
+ 
 
   /* ================= CREATE SERIES ================= */
 
   useEffect(() => {
-
     if (!result) return;
 
     if (indicatorSeriesRef.current?.CCI) {
       Object.values(indicatorSeriesRef.current.CCI).forEach((s) => {
         if (s?.setData) {
-          try { s.setData([]); } catch {}
+          try {
+            s.setData([]);
+          } catch {}
         }
       });
       indicatorSeriesRef.current.CCI = null;
@@ -41,8 +43,10 @@ export default function CCIPlot({
 
     /* ================= MAIN LINES ================= */
 
-    Object.entries(result.data).forEach(([lineName, lineData]) => {
+    let upperData = [];
+    let lowerData = [];
 
+    Object.entries(result.data).forEach(([lineName, lineData]) => {
       const styleConfig = indicatorStyle?.CCI?.[lineName];
 
       const series = addSeries("CCI", LineSeries, {
@@ -61,7 +65,8 @@ export default function CCIPlot({
       groupedSeries[lineName] = series;
 
       if (lineName === "cciLine") cciData = lineData;
-
+      if (lineName === "bbUpper") upperData = lineData;
+      if (lineName === "bbLower") lowerData = lineData;
     });
 
     /* ================= LEVEL BANDS ================= */
@@ -103,6 +108,8 @@ export default function CCIPlot({
     groupedSeries.upperBand = upperBand;
     groupedSeries.middleBand = middleBand;
     groupedSeries.lowerBand = lowerBand;
+    groupedSeries.bbUpperData = upperData;
+    groupedSeries.bbLowerData = lowerData;
 
     /* ================= BACKGROUND FILL ================= */
 
@@ -133,18 +140,16 @@ export default function CCIPlot({
       ...groupedSeries,
       result,
     };
-
   }, [result]);
-
 
   /* ================= CREATE CLOUD CANVAS ================= */
 
   useEffect(() => {
+    if (!containerRef) return;
 
-    if (!chart?.current || !chart) return;
     if (cloudCanvasRef.current) return;
 
-    const rect = chart.current.getBoundingClientRect();
+    const rect = containerRef.getBoundingClientRect();
 
     const canvas = document.createElement("canvas");
 
@@ -157,74 +162,62 @@ export default function CCIPlot({
     canvas.style.pointerEvents = "none";
     canvas.style.zIndex = "1";
 
-    chart.current.appendChild(canvas);
+    containerRef.appendChild(canvas);
 
     cloudCanvasRef.current = canvas;
     cloudCtxRef.current = canvas.getContext("2d");
-
   }, [chart]);
-
 
   /* ================= DRAW BOLLINGER CLOUD ================= */
 
   useEffect(() => {
-
-    const cciGroup = chart.current?.CCI;
-
-    const upperSeries = cciGroup?.bbUpper;
-    const lowerSeries = cciGroup?.bbLower;
-
-    const upperData = cciGroup?.result?.data?.bbUpper;
-    const lowerData = cciGroup?.result?.data?.bbLower;
-
-    const fillStyle = indicatorStyle?.CCI?.bbFill;
-
-    const ctx = cloudCtxRef.current;
-    const canvas = cloudCanvasRef.current;
-
-    if (!ctx || !canvas) return;
-    if (!upperSeries || !lowerSeries) return;
-    if (!upperData?.length || !lowerData?.length) return;
-    if (!fillStyle?.visible) return;
-
     const drawCloud = () => {
+      const cciGroup = indicatorSeriesRef.current?.CCI;
+
+      if (!cciGroup) return;
+
+      const upper = cciGroup.bbUpperData || [];
+      const lower = cciGroup.bbLowerData || [];
+
+      if (!upper.length || !lower.length) return;
+
+      const ctx = cloudCtxRef.current;
+      const canvas = cloudCanvasRef.current;
+
+      if (!ctx || !canvas) return;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       ctx.beginPath();
 
-      upperData.forEach((p, i) => {
+      for (let i = 0; i < upper.length; i++) {
+        const p = upper[i];
 
         const x = chart.timeScale().timeToCoordinate(p.time);
-        const y = upperSeries.priceToCoordinate(p.value);
+        const y = cciGroup.bbUpper.priceToCoordinate(p.value);
 
-        if (x === null || y === null) return;
+        if (x == null || y == null) continue;
 
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
+      }
 
-      });
-
-      for (let i = lowerData.length - 1; i >= 0; i--) {
-
-        const p = lowerData[i];
+      for (let i = lower.length - 1; i >= 0; i--) {
+        const p = lower[i];
 
         const x = chart.timeScale().timeToCoordinate(p.time);
-        const y = lowerSeries.priceToCoordinate(p.value);
+        const y = cciGroup.bbLower.priceToCoordinate(p.value);
 
-        if (x === null || y === null) continue;
+        if (x == null || y == null) continue;
 
         ctx.lineTo(x, y);
       }
 
       ctx.closePath();
 
-      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      const fill = indicatorStyle?.CCI?.bbFill;
 
-      gradient.addColorStop(0, fillStyle?.topFillColor1 || "rgba(33,150,243,0.2)");
-      gradient.addColorStop(1, fillStyle?.bottomFillColor1 || "rgba(33,150,243,0)");
-
-      ctx.fillStyle = gradient;
+      ctx.fillStyle = fill?.topFillColor1 || "rgba(33,150,243,0.2)";
       ctx.fill();
     };
 
@@ -237,21 +230,17 @@ export default function CCIPlot({
       chart.timeScale().unsubscribeVisibleLogicalRangeChange(drawCloud);
       chart.unsubscribeCrosshairMove(drawCloud);
     };
-
   }, [indicatorStyle?.CCI?.bbFill, result]);
-
 
   /* ================= STYLE UPDATE ================= */
 
   useEffect(() => {
-
     const cciGroup = indicatorSeriesRef.current?.CCI;
     if (!cciGroup) return;
 
     const styles = indicatorStyle?.CCI;
 
     ["cciLine", "cciMa", "bbUpper", "bbLower"].forEach((key) => {
-
       if (!cciGroup[key]) return;
 
       const s = styles?.[key];
@@ -262,9 +251,7 @@ export default function CCIPlot({
         lineStyle: s?.lineStyle ?? 0,
         visible: s?.visible,
       });
-
     });
-
   }, [indicatorStyle]);
 
   return null;

@@ -180,6 +180,22 @@ export default function BBPlot({
   }, [indicatorStyle, result]);
 
   
+  useEffect(() => {
+    return () => {
+      const canvas = canvasRef.current;
 
+      if (canvas) {
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        canvas.remove();
+      }
+
+      canvasRef.current = null;
+
+      if (indicatorSeriesRef.current?.BB) {
+        indicatorSeriesRef.current.BB = null;
+      }
+    };
+  }, []);
   return null;
 }

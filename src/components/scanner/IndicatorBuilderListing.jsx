@@ -193,7 +193,6 @@ export default function OHLCVTable({
     } catch (error) {
       console.error("Error fetching data:", error);
       setDataSource({});
-      toast.error("Something went wrong ❌"); // optional but recommended
     } finally {
       setLoading(false);
     }

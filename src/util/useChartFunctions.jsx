@@ -923,11 +923,12 @@ async function fetchDataForIndicators(
   setIndicatorLoading,
 ) {
   try {
+    
 
     setIndicatorLoading(true);
 
     const response = await apiService.post(
-      `/api/indicatorDetails?symbol=${selectedCurrency}&interval=${timeframeValue}&type=${type}`,
+      `/api/indicatorDetails?symbol=${selectedCurrency}&interval=${timeframeValue}&type=${type}&day=1`,
     );
 
     console.log("Raw indicator data for", type, ":", response);
@@ -1495,10 +1496,10 @@ async function fetchDataForIndicators(
           data: {
             adx:
               response.data
-                ?.filter((d) => d.adx != null && d.time != null)
+                ?.filter((d) => d.ADX != null && d.time != null)
                 .map((d) => ({
                   time: d.time,
-                  value: d.adx,
+                  value: d.ADX,
                 })) ?? [],
           },
         };
