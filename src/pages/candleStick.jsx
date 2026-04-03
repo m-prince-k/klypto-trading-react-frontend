@@ -1087,7 +1087,7 @@ export default function Candlestick() {
             <div
               className="position-fixed top-0 end-0 vh-100 bg-white shadow"
               style={{
-                width: "900px",
+                width: "1000px",
                 height: "100vh",
                 zIndex: 1050,
                 transform: openForm ? "translateX(0)" : "translateX(100%)",

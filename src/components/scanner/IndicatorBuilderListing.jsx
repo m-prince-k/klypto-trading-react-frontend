@@ -57,7 +57,21 @@ export default function OHLCVTable({
 
     const extractAgoNumber = (tf = "") => {
       const match = tf.toLowerCase().match(/^(\d+)(d|w|m|y|mo|q)_ago$/);
-      return match ? Number(match[1]) : null;
+      if (!match) return null;
+
+      const value = Number(match[1]);
+      const unit = match[2];
+
+      const conversion = {
+        d: 1,
+        w: 7,
+        m: 30,
+        mo: 30,
+        q: 90,
+        y: 365,
+      };
+
+      return value * (conversion[unit] || 1);
     };
 
     /* ================= VALIDATION ================= */
@@ -96,7 +110,7 @@ export default function OHLCVTable({
     const formattedRules = rules?.map((rule) => {
       const isNumberRule = rule.scanner === "Number";
 
-      const compareParams = rule.scannerParams || {};
+      const scannerParams = rule.scannerParams || {};
       const indicatorParams = rule.indicatorParams || {};
 
       const agoValue = extractAgoNumber(rule?.timeframe);
@@ -111,7 +125,7 @@ export default function OHLCVTable({
         rule?.compareValue !== 0;
 
       const hasIndicatorParams = Object.keys(indicatorParams).length > 0;
-      const hasCompareParams = Object.keys(compareParams).length > 0;
+      const hasScannerParams = Object.keys(scannerParams).length > 0;
 
       const payload = {
         indicator: rule?.indicator,
@@ -121,7 +135,7 @@ export default function OHLCVTable({
       /* ================= MAIN ================= */
 
       if (agoValue !== null) {
-        payload.ago = agoValue;
+        payload.offset = agoValue;
       } else {
         payload.timeframe = rule?.timeframe;
       }
@@ -132,7 +146,7 @@ export default function OHLCVTable({
         payload.length = indicatorParams;
       } else {
         if (agoValue !== null) {
-          payload.ago = agoValue;
+          payload.offset = agoValue;
         } else {
           payload.timeframe = rule?.timeframe;
         }
@@ -152,8 +166,8 @@ export default function OHLCVTable({
 
       if (hasCompareValue) {
         payload.value = rule.compareValue;
-      } else if (hasCompareParams) {
-        payload.compareLength = compareParams;
+      } else if (hasScannerParams) {
+        payload.compareLength = scannerParams;
       }
 
       return payload;
@@ -164,18 +178,15 @@ export default function OHLCVTable({
     /* ================= API ================= */
 
     try {
-      const totalDays = days
-        ? days
-        : months
-          ? Math.round(months * 30) 
-          : "";
+      const totalDays = days ? days : months ? Math.round(months * 30) : "";
 
       const response = await apiService.post(
         `/api/scannerDetail?symbol=${selectedCurrency}&interval=${timeframeValue}&limit=1000&day=${totalDays}`,
         { rules: formattedRules },
       );
 
-      const result = response?.data || {};
+      const result = (await response?.data) || {};
+      console.log("API Result:", result);
 
       setDataSource(result);
 
@@ -206,46 +217,98 @@ export default function OHLCVTable({
   };
 
   /* ================= MERGED DATA ================= */
+  // const mergedData = useMemo(() => {
+  //   if (!dataSource || typeof dataSource !== "object") return [];
+  //   let finalData = [];
+
+  //   console.log(selectedCurrencies, "curenciesssssssss");
+
+  //   const activeCurrencies =
+  //     selectedCurrencies && selectedCurrencies?.length > 0
+  //       ? selectedCurrencies.map((sym) => sym.value)
+  //       : symbols;
+
+  //   const process = (arr, tf) =>
+  //     arr?.flatMap((item) =>
+  //       activeCurrencies?.map((sym) => {
+  //         const value = sym.value;
+
+  //         const { indicators, ...rest } = item;
+
+  //         return {
+  //           ...rest, // 👈 removes indicators completely
+  //           ...(indicators && typeof indicators === "object" ? indicators : {}),
+  //           symbol: value,
+  //           base: getBase(value),
+  //           timeframe: tf,
+  //         };
+  //       }),
+  //     );
+
+  //   if (timeframe === "ALL") {
+  //     timeframes.forEach((tf) => {
+  //       if (dataSource[tf]) {
+  //         finalData = [...finalData, ...process(dataSource[tf], tf)];
+  //       }
+  //     });
+  //   } else {
+  //     finalData = process(dataSource[timeframe], timeframe) || [];
+  //   }
+
+  //   return finalData.sort((a, b) => b.time - a.time);
+  // }, [dataSource, timeframe, timeframes]);
+
   const mergedData = useMemo(() => {
     if (!dataSource || typeof dataSource !== "object") return [];
+
     let finalData = [];
 
-    console.log(selectedCurrencies, "curenciesssssssss");
+    // ✅ Normalize selected currencies
+    const normalizeSymbol = (val) => {
+      if (!val) return "";
+      if (typeof val === "string") return val;
+      if (val.value) return val.value;
+      if (val.symbol) return val.symbol;
+      return "";
+    };
 
     const activeCurrencies =
-      selectedCurrencies && selectedCurrencies?.length > 0
-        ? selectedCurrencies.map((sym) => sym.value)
-        : symbols;
+      selectedCurrencies && selectedCurrencies.length > 0
+        ? selectedCurrencies.map(normalizeSymbol)
+        : symbols?.map(normalizeSymbol);
 
-    const process = (arr, tf) =>
-      arr?.flatMap((item) =>
-        activeCurrencies?.map((sym) => {
-          const value = sym.value;
+    console.log("API symbols:", Object.keys(dataSource?.["1d"] || {}));
+    console.log("activeCurrencies:", activeCurrencies);
 
-          const { indicators, ...rest } = item;
+    // ✅ use Set for performance
+    const activeSet = new Set(activeCurrencies);
 
-          return {
-            ...rest, // 👈 removes indicators completely
+    Object.entries(dataSource).forEach(([tf, symbolsObj]) => {
+      if (!symbolsObj) return;
+
+      Object.entries(symbolsObj).forEach(([symbol, candles]) => {
+        // ✅ filter symbols
+        if (activeSet.size && !activeSet.has(symbol)) return;
+
+        candles?.forEach((candle) => {
+          const { indicators, ...rest } = candle || {};
+
+          finalData.push({
+            ...rest,
+
+            // ✅ merge indicators safely
             ...(indicators && typeof indicators === "object" ? indicators : {}),
-            symbol: value,
-            base: getBase(value),
-            timeframe: tf,
-          };
-        }),
-      );
 
-    if (timeframe === "ALL") {
-      timeframes.forEach((tf) => {
-        if (dataSource[tf]) {
-          finalData = [...finalData, ...process(dataSource[tf], tf)];
-        }
+            symbol, // "1INCHUSDT"
+            base: getBase(symbol), // "1INCH"
+            timeframe: tf, // "1d"
+          });
+        });
       });
-    } else {
-      finalData = process(dataSource[timeframe], timeframe) || [];
-    }
+    });
 
     return finalData.sort((a, b) => b.time - a.time);
-  }, [dataSource, timeframe, timeframes]);
+  }, [dataSource, selectedCurrencies, symbols]);
 
   /* ================= SEARCH ================= */
   const filteredData = useMemo(() => {
@@ -299,7 +362,7 @@ export default function OHLCVTable({
   const columns = useMemo(() => {
     if (!mergedData.length) return [];
 
-    const priorityOrder = [
+    const baseColumns = [
       "symbol",
       "base",
       "time",
@@ -310,24 +373,17 @@ export default function OHLCVTable({
       "volume",
     ];
 
-    // get all keys from data
-    const allKeys = new Set();
-    mergedData.forEach((row) => {
-      Object.keys(row || {}).forEach((key) => allKeys.add(key));
-    });
+    const ignore = new Set([...baseColumns, "timeframe"]);
 
-    // ❌ remove unwanted
-    allKeys.delete("status");
-    allKeys.delete("sno");
-    allKeys.delete("date"); // ✅ ADD THIS
-
-    // ✅ indicators = everything else
-    const indicatorCols = Array.from(allKeys).filter(
-      (key) =>
-        !priorityOrder.includes(key) && key !== "timeframe" && key !== "date", // extra safety
+    const indicatorCols = Array.from(
+      new Set(
+        mergedData.flatMap((row) =>
+          Object.keys(row).filter((key) => !ignore.has(key)),
+        ),
+      ),
     );
 
-    return [...priorityOrder, ...indicatorCols, "timeframe"];
+    return [...baseColumns, ...indicatorCols, "timeframe"];
   }, [mergedData]);
 
   const handleSort = (key) => {

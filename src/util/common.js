@@ -238,30 +238,58 @@ export const chartOptions = [
   { value: "histogram", label: "Histogram", icon: FiBarChart2 },
 ];
 
+  export const getTimeframeLabel = (tf) => {
+    if (!tf) return "Daily";
+
+    const value = tf.toLowerCase();
+
+    // 🔥 HANDLE "_ago" FORMAT FIRST
+    if (value.includes("_ago")) {
+      if (value.includes("m_ago")) return "Monthly";
+      if (value.includes("w_ago")) return "Weekly";
+      if (value.includes("d_ago")) return "Daily";
+      if (value.includes("q_ago")) return "Quarterly";
+      if (value.includes("y_ago")) return "Yearly";
+    }
+
+    // ⏱️ MINUTES / HOURS (ONLY if NOT _ago)
+    if (value.endsWith("m")) return tf; // 1m, 5m → keep same
+    if (value.endsWith("h")) return tf; // 1h, 2h → keep same
+
+    // 📅 NORMAL FORMAT
+    if (value.includes("mo")) return "Monthly";
+    if (value.includes("w")) return "Weekly";
+    if (value.includes("d")) return "Daily";
+    if (value.includes("q")) return "Quarterly";
+    if (value.includes("y")) return "Yearly";
+
+    return tf;
+  };
+
 export const symbols = [
   { label: "BTCUSDT", value: "BTCUSDT" },
-  // { label: "ETHUSDT", value: "ETHUSDT" },
-  // { label: "BNBUSDT", value: "BNBUSDT" },
-  // { label: "SOLUSDT", value: "SOLUSDT" },
-  // { label: "XRPUSDT", value: "XRPUSDT" },
+  { label: "ETHUSDT", value: "ETHUSDT" },
+  { label: "BNBUSDT", value: "BNBUSDT" },
+  { label: "SOLUSDT", value: "SOLUSDT" },
+  { label: "XRPUSDT", value: "XRPUSDT" },
 
-  // { label: "ADAUSDT", value: "ADAUSDT" },
-  // { label: "DOGEUSDT", value: "DOGEUSDT" },
-  // { label: "DOTUSDT", value: "DOTUSDT" },
-  // { label: "MATICUSDT", value: "MATICUSDT" },
-  // { label: "LTCUSDT", value: "LTCUSDT" },
+  { label: "ADAUSDT", value: "ADAUSDT" },
+  { label: "DOGEUSDT", value: "DOGEUSDT" },
+  { label: "DOTUSDT", value: "DOTUSDT" },
+  { label: "MATICUSDT", value: "MATICUSDT" },
+  { label: "LTCUSDT", value: "LTCUSDT" },
 
-  // { label: "TRXUSDT", value: "TRXUSDT" },
-  // { label: "AVAXUSDT", value: "AVAXUSDT" },
-  // { label: "LINKUSDT", value: "LINKUSDT" },
-  // { label: "ATOMUSDT", value: "ATOMUSDT" },
-  // { label: "UNIUSDT", value: "UNIUSDT" },
+  { label: "TRXUSDT", value: "TRXUSDT" },
+  { label: "AVAXUSDT", value: "AVAXUSDT" },
+  { label: "LINKUSDT", value: "LINKUSDT" },
+  { label: "ATOMUSDT", value: "ATOMUSDT" },
+  { label: "UNIUSDT", value: "UNIUSDT" },
 
-  // { label: "ETCUSDT", value: "ETCUSDT" },
-  // { label: "FILUSDT", value: "FILUSDT" },
-  // { label: "ICPUSDT", value: "ICPUSDT" },
-  // { label: "APTUSDT", value: "APTUSDT" },
-  // { label: "ARBUSDT", value: "ARBUSDT" },
+  { label: "ETCUSDT", value: "ETCUSDT" },
+  { label: "FILUSDT", value: "FILUSDT" },
+  { label: "ICPUSDT", value: "ICPUSDT" },
+  { label: "APTUSDT", value: "APTUSDT" },
+  { label: "ARBUSDT", value: "ARBUSDT" },
 
 ];
 

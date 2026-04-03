@@ -23,7 +23,7 @@ import {
   Modal,
 } from "react-bootstrap";
 import { IoClose } from "react-icons/io5";
-import { operatorMap, timeframeMap, OPERATORS } from "../../util/common";
+import { operatorMap, timeframeMap, OPERATORS, getTimeframeLabel } from "../../util/common";
 
 export default function IndicatorRuleBuilder({
   onClose,
@@ -547,6 +547,39 @@ export default function IndicatorRuleBuilder({
       ),
     );
   };
+  const getScannerMeta = (value) => {
+    const selected = scannerOptions.find((opt) => opt.value === value);
+
+    const hasParams = selected?.meta && Object.keys(selected.meta).length > 0;
+
+    const PRICE_FIELDS = [
+      "Open",
+      "High",
+      "Low",
+      "Close",
+      "Volume",
+      "% Change",
+      "VWAP",
+    ];
+
+    const isPriceField = PRICE_FIELDS.includes(value);
+
+    return { selected, hasParams, isPriceField };
+  };
+
+  const MA_INDICATORS = ["sma", "ema", "tema", "wma", "hma", "stddev"];
+
+  const PRICE_OPTIONS = [
+    { label: "Open", value: "Open" },
+    { label: "High", value: "High" },
+    { label: "Low", value: "Low" },
+    { label: "Close", value: "Close" },
+    { label: "Volume", value: "Volume" },
+  ];
+
+
+  const isMATypeFn = (value = "") =>
+    MA_INDICATORS.includes(value.toLowerCase());
   /* ================= UI ================= */
 
   return (
@@ -691,6 +724,9 @@ export default function IndicatorRuleBuilder({
 
             const isIndicatorPriceField = PRICE_FIELDS.includes(rule.indicator);
             const isScannerPriceField = PRICE_FIELDS.includes(rule.scanner);
+            const isMAType = MA_INDICATORS.includes(rule.indicator);
+            const isScannerMAType = MA_INDICATORS.includes(rule.scanner);
+            const isScanner2MAType = MA_INDICATORS.includes(rule.scanner2);
 
             return (
               <div
@@ -777,53 +813,105 @@ export default function IndicatorRuleBuilder({
                   />
                 </div>
 
-                {indicatorHasParams && (
-                  <span
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      color: "#4a7fa5",
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  >
-                    <span style={{ color: "#2a5070" }}>(</span>
-                    {Object.entries(selectedIndicator.meta).map(
-                      ([key], i, arr) => (
-                        <span
-                          key={key}
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                          }}
-                        >
-                          <EditableNumber
-                            value={rule.indicatorParams?.[key] ?? ""}
-                            onChange={(v) =>
-                              setRules((prev) =>
-                                prev.map((r) =>
-                                  r.id === rule.id
-                                    ? {
-                                        ...r,
-                                        indicatorParams: {
-                                          ...r.indicatorParams,
-                                          [key]: Math.max(0, v),
-                                        },
-                                      }
-                                    : r,
-                                ),
-                              )
-                            }
-                          />
-                          {i < arr.length - 1 && (
-                            <span style={{ color: "#2a5070" }}>,</span>
-                          )}
-                        </span>
-                      ),
-                    )}
-                    <span style={{ color: "#2a5070" }}>)</span>
-                  </span>
-                )}
+                {indicatorHasParams &&
+                  (isMAType ? (
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        color: "#4a7fa5",
+                        fontFamily: "'JetBrains Mono', monospace",
+                      }}
+                    >
+                      <span style={{ color: "#2a5070" }}>(</span>
 
+                      {/* ✅ DYNAMIC TIMEFRAME LABEL */}
+                      <span style={{ margin: "0 2px" }}>
+                        {getTimeframeLabel(rule.timeframe)}
+                      </span>
+
+                      {/* PRICE SELECT */}
+                      <EditableSelect
+                        value={rule.source || "Close"}
+                        options={PRICE_OPTIONS}
+                        onChange={(v) => updateField(rule.id, "source", v)}
+                      />
+
+                      {/* LENGTH */}
+                      <EditableNumber
+                        value={
+                          rule.indicatorParams?.length ??
+                          Object.values(selectedIndicator.meta)[0] ??
+                          20
+                        }
+                        onChange={(v) =>
+                          setRules((prev) =>
+                            prev.map((r) =>
+                              r.id === rule.id
+                                ? {
+                                    ...r,
+                                    indicatorParams: {
+                                      ...r.indicatorParams,
+                                      length: Math.max(0, v),
+                                    },
+                                  }
+                                : r,
+                            ),
+                          )
+                        }
+                      />
+
+                      <span style={{ color: "#2a5070" }}>)</span>
+                    </span>
+                  ) : (
+                    // 🔁 DEFAULT BLOCK (unchanged)
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        color: "#4a7fa5",
+                        fontFamily: "'JetBrains Mono', monospace",
+                      }}
+                    >
+                      <span style={{ color: "#2a5070" }}>(</span>
+
+                      {Object.entries(selectedIndicator.meta).map(
+                        ([key], i, arr) => (
+                          <span
+                            key={key}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                            }}
+                          >
+                            <EditableNumber
+                              value={rule.indicatorParams?.[key] ?? ""}
+                              onChange={(v) =>
+                                setRules((prev) =>
+                                  prev.map((r) =>
+                                    r.id === rule.id
+                                      ? {
+                                          ...r,
+                                          indicatorParams: {
+                                            ...r.indicatorParams,
+                                            [key]: Math.max(0, v),
+                                          },
+                                        }
+                                      : r,
+                                  ),
+                                )
+                              }
+                            />
+                            {i < arr.length - 1 && (
+                              <span style={{ color: "#2a5070" }}>,</span>
+                            )}
+                          </span>
+                        ),
+                      )}
+
+                      <span style={{ color: "#2a5070" }}>)</span>
+                    </span>
+                  ))}
                 {!indicatorHasParams && !isIndicatorPriceField && (
                   <EditableNumber
                     value={rule.value}
@@ -877,53 +965,107 @@ export default function IndicatorRuleBuilder({
                   />
                 </div>
 
-                {scannerHasParams && (
-                  <span
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      color: "#4a7fa5",
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  >
-                    <span style={{ color: "#2a5070" }}>(</span>
-                    {Object.entries(selectedScanner.meta).map(
-                      ([key], i, arr) => (
-                        <span
-                          key={key}
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                          }}
-                        >
-                          <EditableNumber
-                            value={rule.scannerParams?.[key] ?? ""}
-                            onChange={(v) =>
-                              setRules((prev) =>
-                                prev.map((r) =>
-                                  r.id === rule.id
-                                    ? {
-                                        ...r,
-                                        scannerParams: {
-                                          ...r.scannerParams,
-                                          [key]: Math.max(0, v),
-                                        },
-                                      }
-                                    : r,
-                                ),
-                              )
-                            }
-                          />
-                          {i < arr.length - 1 && (
-                            <span style={{ color: "#2a5070" }}>,</span>
-                          )}
-                        </span>
-                      ),
-                    )}
-                    <span style={{ color: "#2a5070" }}>)</span>
-                  </span>
-                )}
+                {scannerHasParams &&
+                  (isMATypeFn(rule.scanner) ? (
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        color: "#4a7fa5",
+                        fontFamily: "'JetBrains Mono', monospace",
+                      }}
+                    >
+                      <span style={{ color: "#2a5070" }}>(</span>
 
+                      {/* 🔥 TIMEFRAME LABEL */}
+                      <span style={{ margin: "0 2px" }}>
+                        {getTimeframeLabel(rule.compareTimeframe)}
+                      </span>
+
+                      {/* PRICE SELECT */}
+                      <EditableSelect
+                        value={rule.scannerSource || "Close"}
+                        options={PRICE_OPTIONS}
+                        onChange={(v) =>
+                          updateField(rule.id, "scannerSource", v)
+                        }
+                      />
+
+                      {/* LENGTH */}
+                      <EditableNumber
+                        value={
+                          rule.scannerParams?.length ??
+                          Object.values(selectedScanner.meta)[0] ??
+                          20
+                        }
+                        onChange={(v) =>
+                          setRules((prev) =>
+                            prev.map((r) =>
+                              r.id === rule.id
+                                ? {
+                                    ...r,
+                                    scannerParams: {
+                                      ...r.scannerParams,
+                                      length: Math.max(0, v),
+                                    },
+                                  }
+                                : r,
+                            ),
+                          )
+                        }
+                      />
+
+                      <span style={{ color: "#2a5070" }}>)</span>
+                    </span>
+                  ) : (
+                    // 🔁 DEFAULT (UNCHANGED)
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        color: "#4a7fa5",
+                        fontFamily: "'JetBrains Mono', monospace",
+                      }}
+                    >
+                      <span style={{ color: "#2a5070" }}>(</span>
+
+                      {Object.entries(selectedScanner.meta).map(
+                        ([key], i, arr) => (
+                          <span
+                            key={key}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                            }}
+                          >
+                            <EditableNumber
+                              value={rule.scannerParams?.[key] ?? ""}
+                              onChange={(v) =>
+                                setRules((prev) =>
+                                  prev.map((r) =>
+                                    r.id === rule.id
+                                      ? {
+                                          ...r,
+                                          scannerParams: {
+                                            ...r.scannerParams,
+                                            [key]: Math.max(0, v),
+                                          },
+                                        }
+                                      : r,
+                                  ),
+                                )
+                              }
+                            />
+                            {i < arr.length - 1 && (
+                              <span style={{ color: "#2a5070" }}>,</span>
+                            )}
+                          </span>
+                        ),
+                      )}
+
+                      <span style={{ color: "#2a5070" }}>)</span>
+                    </span>
+                  ))}
                 {!scannerHasParams && !isScannerPriceField && (
                   <EditableNumber
                     value={rule.compareValue}
@@ -931,79 +1073,56 @@ export default function IndicatorRuleBuilder({
                   />
                 )}
 
-                {rule.operations?.map((op) => {
-                  const selectedScanner = scannerOptions.find(
-                    (opt) => opt.value === op.value,
-                  );
+                {rule.scanner2 !== undefined &&
+                  (() => {
+                    const {
+                      selected: selectedScanner2,
+                      hasParams: scanner2HasParams,
+                      isPriceField: isScanner2PriceField,
+                    } = getScannerMeta(rule.scanner2);
 
-                  const hasParams =
-                    selectedScanner?.meta &&
-                    Object.keys(selectedScanner.meta).length > 0;
-
-                  const isPriceField = PRICE_FIELDS.includes(op.value);
-
-                  return (
-                    <div
-                      key={op.id}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "1px",
-                      }}
-                    >
-                      {/* OPERATOR (reused) */}
-                      <div style={{ color: "#863ccc", fontWeight: 600 }}>
-                        <EditableSelect
-                          value={op.operator}
-                          options={OPERATORS}
-                          onChange={(v) => {
-                            setRules((prev) =>
-                              prev.map((r) =>
-                                r.id === rule.id
-                                  ? {
-                                      ...r,
-                                      operations: r.operations.map((o) =>
-                                        o.id === op.id
-                                          ? { ...o, operator: v }
-                                          : o,
-                                      ),
-                                    }
-                                  : r,
-                              ),
-                            );
-                          }}
-                        />
-                      </div>
-
-                      {/* 🔥 DIRECT SCANNER (NO TYPE SELECT) */}
-                      <>
-                        {(hasParams || isPriceField) && (
+                    return (
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "4px",
+                        }}
+                      >
+                        {/* OPERATOR */}
+                        <div style={{ color: "#863ccc", fontWeight: 600 }}>
                           <EditableSelect
-                            value={op.timeframe}
+                            value={rule.operator2}
+                            options={OPERATORS}
+                            onChange={(v) =>
+                              updateField(rule.id, "operator2", v)
+                            }
+                          />
+                        </div>
+
+                        {/* TIMEFRAME (same logic as scanner) */}
+                        {(scanner2HasParams || isScanner2PriceField) && (
+                          <EditableSelect
+                            value={rule.timeframe2 || "1d"}
                             options={timeframeOptions}
                             onChange={(option) => {
                               const raw = option?.value || option;
                               const final = handleTimeframeChange(raw);
                               if (final) {
-                                updateOperation(
-                                  rule.id,
-                                  op.id,
-                                  "timeframe",
-                                  final,
-                                );
+                                updateField(rule.id, "timeframe2", final);
                               }
                             }}
                           />
                         )}
 
+                        {/* SCANNER */}
                         <div style={{ color: "#000", fontWeight: 500 }}>
                           <EditableSelect
-                            value={op.value}
+                            value={rule.scanner2}
                             options={scannerOptions}
                             onChange={(v) => {
-                              const selected = scannerOptions.find(
-                                (opt) => opt.value === v,
-                              );
+                              const { selected } = getScannerMeta(v);
 
                               let params = {};
                               if (selected?.meta) {
@@ -1017,11 +1136,10 @@ export default function IndicatorRuleBuilder({
                                   r.id === rule.id
                                     ? {
                                         ...r,
-                                        operations: r.operations.map((o) =>
-                                          o.id === op.id
-                                            ? { ...o, value: v, params }
-                                            : o,
-                                        ),
+                                        scanner2: v,
+                                        params2: params,
+                                        timeframe2: "1d", // ✅ default
+                                        value2: 20, // ✅ default
                                       }
                                     : r,
                                 ),
@@ -1030,84 +1148,154 @@ export default function IndicatorRuleBuilder({
                           />
                         </div>
 
-                        {/* PARAMS UI (unchanged) */}
-                        {hasParams && (
-                          <span
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              color: "#4a7fa5",
-                              fontFamily: "'JetBrains Mono', monospace",
-                            }}
-                          >
-                            <span style={{ color: "#2a5070" }}>(</span>
+                        {/* PARAMS (same as scanner) */}
+                        {scanner2HasParams &&
+                          (isMATypeFn(rule.scanner2) ? (
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                color: "#4a7fa5",
+                                fontFamily: "'JetBrains Mono', monospace",
+                              }}
+                            >
+                              <span style={{ color: "#2a5070" }}>(</span>
 
-                            {Object.entries(selectedScanner.meta).map(
-                              ([key], i, arr) => (
-                                <span
-                                  key={key}
-                                  style={{ display: "inline-flex" }}
-                                >
-                                  <EditableNumber
-                                    value={op.params?.[key] ?? ""}
-                                    onChange={(v) =>
-                                      updateOperation(
-                                        rule.id,
-                                        op.id,
-                                        "params",
-                                        {
-                                          ...op.params,
-                                          [key]: Math.max(0, v),
-                                        },
-                                      )
-                                    }
-                                  />
-                                  {i < arr.length - 1 && (
-                                    <span style={{ color: "#2a5070" }}>,</span>
-                                  )}
-                                </span>
-                              ),
-                            )}
+                              {/* 🔥 TIMEFRAME LABEL */}
+                              <span style={{ margin: "0 2px" }}>
+                                {getTimeframeLabel(rule.timeframe2)}
+                              </span>
 
-                            <span style={{ color: "#2a5070" }}>)</span>
-                          </span>
+                              {/* PRICE SELECT */}
+                              <EditableSelect
+                                value={rule.source2 || "Close"}
+                                options={PRICE_OPTIONS}
+                                onChange={(v) =>
+                                  setRules((prev) =>
+                                    prev.map((r) =>
+                                      r.id === rule.id
+                                        ? { ...r, source2: v }
+                                        : r,
+                                    ),
+                                  )
+                                }
+                              />
+
+                              {/* LENGTH */}
+                              <EditableNumber
+                                value={
+                                  rule.params2?.length ??
+                                  Object.values(selectedScanner2.meta)[0] ??
+                                  20
+                                }
+                                onChange={(v) =>
+                                  setRules((prev) =>
+                                    prev.map((r) =>
+                                      r.id === rule.id
+                                        ? {
+                                            ...r,
+                                            params2: {
+                                              ...r.params2,
+                                              length: Math.max(0, v),
+                                            },
+                                          }
+                                        : r,
+                                    ),
+                                  )
+                                }
+                              />
+
+                              <span style={{ color: "#2a5070" }}>)</span>
+                            </span>
+                          ) : (
+                            // 🔁 DEFAULT (UNCHANGED)
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                color: "#4a7fa5",
+                                fontFamily: "'JetBrains Mono', monospace",
+                              }}
+                            >
+                              <span style={{ color: "#2a5070" }}>(</span>
+
+                              {Object.entries(selectedScanner2.meta).map(
+                                ([key], i, arr) => (
+                                  <span
+                                    key={key}
+                                    style={{ display: "inline-flex" }}
+                                  >
+                                    <EditableNumber
+                                      value={rule.params2?.[key] ?? ""}
+                                      onChange={(v) =>
+                                        setRules((prev) =>
+                                          prev.map((r) =>
+                                            r.id === rule.id
+                                              ? {
+                                                  ...r,
+                                                  params2: {
+                                                    ...r.params2,
+                                                    [key]: Math.max(0, v),
+                                                  },
+                                                }
+                                              : r,
+                                          ),
+                                        )
+                                      }
+                                    />
+                                    {i < arr.length - 1 && (
+                                      <span style={{ color: "#2a5070" }}>
+                                        ,
+                                      </span>
+                                    )}
+                                  </span>
+                                ),
+                              )}
+
+                              <span style={{ color: "#2a5070" }}>)</span>
+                            </span>
+                          ))}
+                        {/* VALUE (same as scanner) */}
+                        {!scanner2HasParams && !isScanner2PriceField && (
+                          <EditableNumber
+                            value={rule.value2 ?? 0}
+                            onChange={(v) => updateField(rule.id, "value2", v)}
+                          />
                         )}
-                      </>
-                    </div>
-                  );
-                })}
-                {/* ═══════════ ACTIONS ═══════════ */}
-                <span
-                  style={{
-                    cursor: "pointer",
-                    color: "#4a7fa5",
-                    fontWeight: 600,
-                    marginLeft: "6px",
-                    userSelect: "none",
-                  }}
-                  onClick={() => {
-                    setRules((prev) =>
-                      prev.map((r) =>
-                        r.id === rule.id
-                          ? {
-                              ...r,
-                              operations: [
-                                ...(r.operations || []),
-                                {
-                                  id: Date.now(),
-                                  operator: "+", // default
-                                  type: "number",
-                                  value: "",
-                                },
-                              ],
-                            }
-                          : r,
-                      ),
+                      </div>
                     );
-                  }}
-                >
-                  <SlCalculator />
-                </span>
+                  })()}
+                {/* ═══════════ ACTIONS ═══════════ */}
+
+                {!rule.scanner2 && (
+                  <span
+                    style={{
+                      cursor: "pointer",
+                      color: "#4a7fa5",
+                      fontWeight: 600,
+                      marginLeft: "6px",
+                      userSelect: "none",
+                    }}
+                    onClick={() => {
+                      setRules((prev) =>
+                        prev.map((r) =>
+                          r.id === rule.id
+                            ? {
+                                ...r,
+                                scanner2: "Number",
+                                operator2: "Select Operation",
+                                timeframe2: "1d",
+                                params2: {},
+                                value2: 0,
+                              }
+                            : r,
+                        ),
+                      );
+                    }}
+                  >
+                    <SlCalculator />
+                  </span>
+                )}
                 <div
                   style={{
                     display: "flex",
