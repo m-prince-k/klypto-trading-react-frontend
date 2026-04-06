@@ -3,17 +3,20 @@ import ReactPaginate from "react-paginate";
 import apiService from "../../services/apiServices";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Dropdown, Badge } from "react-bootstrap";
-import { Container, Table, Spinner, Card, Form } from "react-bootstrap";
+import { Container, Table, Card, Form } from "react-bootstrap";
 import { FaSortUp, FaSortDown } from "react-icons/fa";
 import {
   handleCopy,
   handleCSVDownload,
   handleExcelDownload,
   symbols,
+  useDebounce,
 } from "../../util/common";
 import { comma } from "postcss/lib/list";
 import { toast } from "react-toastify";
 import axios from "axios";
+import { Spinner } from "../tradingModals/Spinner";
+import { Currency } from "lucide-react";
 
 /* ================= SYMBOL LIST ================= */
 
@@ -26,8 +29,6 @@ export default function OHLCVTable({
   selectedCurrencies,
 }) {
   const [timeframe, setTimeframe] = useState("ALL"); // default ALL
-  const [allCurrencies, setAllCurrencies] = useState([]);
-
   const [limit, setLimit] = useState(10); // actual data limit
   const [selectedLimit, setSelectedLimit] = useState(""); // dropdown UI
   const [page, setPage] = useState(0);
@@ -36,6 +37,7 @@ export default function OHLCVTable({
   const [search, setSearch] = useState("");
   const [days, setDays] = useState(1);
   const [months, setMonths] = useState(null);
+  const debouncedCurrencies = useDebounce(selectedCurrencies, 1000);
 
   const [sortConfig, setSortConfig] = useState({
     key: null,
@@ -50,29 +52,97 @@ export default function OHLCVTable({
 
   useEffect(() => {
     fetchData();
-  }, [runScanTrigger, selectedCurrency, timeframeValue, days, months]);
+  }, [
+    runScanTrigger,
+    selectedCurrency,
+    debouncedCurrencies,
+    timeframeValue,
+    days,
+    months,
+  ]);
+
+  const convertToDays = (tf = "") => {
+    const match = tf.toLowerCase().match(/^(\d+)(d|w|m|mo|q|y)_ago$/);
+    if (!match) return null;
+
+    const value = Number(match[1]);
+    const unit = match[2];
+
+    const map = {
+      d: 1,
+      w: 7,
+      m: 30,
+      mo: 30,
+      q: 90,
+      y: 365,
+    };
+
+    return value * (map[unit] || 1);
+  };
+
+  const MA_INDICATORS = ["sma", "ema", "tema", "wma", "hma", "stddev"];
+
+  const buildObject = ({
+    indicator,
+    timeframe,
+    params = {},
+    value,
+    source,
+    type,
+  }) => {
+    const offset = convertToDays(timeframe);
+
+    const indicatorKey = indicator?.toLowerCase();
+    const isMA = MA_INDICATORS.includes(indicatorKey);
+
+    // ✅ STRICT VALUE CHECK (NO LEAK)
+    const hasValue =
+      value !== undefined &&
+      value !== null &&
+      value !== "" &&
+      !(typeof value === "number" && isNaN(value));
+
+    // 🚀 ONLY use value if indicator is number OR explicitly entered
+    if (indicatorKey === "number" && hasValue) {
+      return {
+        indicator: "number",
+        value,
+      };
+    }
+
+    // 🚀 DO NOT allow accidental value override
+    if (hasValue && indicatorKey === "number") {
+      return {
+        indicator: indicatorKey,
+        value,
+      };
+    }
+
+    // 🚀 NORMAL FLOW (RSI, SMA etc)
+    const obj = {
+      indicator: indicatorKey,
+    };
+
+    if (offset !== null) {
+      obj.offset = offset;
+    } else if (timeframe) {
+      obj.timeframe = timeframe;
+    }
+
+    if (params && Object.keys(params).length > 0) {
+      obj.length = {
+        ...params,
+        ...(isMA ? { source: (source || "close").toLowerCase() } : {}),
+      };
+    } else {
+      obj.length = null;
+    }
+
+    return obj;
+  };
 
   const fetchData = async () => {
     setLoading(true);
-
-    const extractAgoNumber = (tf = "") => {
-      const match = tf.toLowerCase().match(/^(\d+)(d|w|m|y|mo|q)_ago$/);
-      if (!match) return null;
-
-      const value = Number(match[1]);
-      const unit = match[2];
-
-      const conversion = {
-        d: 1,
-        w: 7,
-        m: 30,
-        mo: 30,
-        q: 90,
-        y: 365,
-      };
-
-      return value * (conversion[unit] || 1);
-    };
 
     /* ================= VALIDATION ================= */
 
@@ -98,103 +168,84 @@ export default function OHLCVTable({
     });
 
     if (hasInvalidRule) {
-      toast.error(errorMessage); // ✅ toast instead of alert
+      toast.error(errorMessage);
       setLoading(false);
-
-      // ❌ DO NOT CLOSE MODAL
       return;
     }
-
+    const activeRules = rules.filter((r) => !r.disabled);
     /* ================= FORMATTING ================= */
 
-    const formattedRules = rules?.map((rule) => {
-      const isNumberRule = rule.scanner === "Number";
+    const formattedRules = activeRules.map((rule) => {
+      // ✅ helper to avoid repetition
+      const createObject = (config, condition = true) =>
+        condition ? buildObject(config) : null;
 
-      const scannerParams = rule.scannerParams || {};
-      const indicatorParams = rule.indicatorParams || {};
+      const object1 = createObject({
+        indicator: rule.indicator,
+        timeframe: rule.timeframe,
+        params: rule.indicatorParams,
+        value: rule.value,
+        source: rule.source,
+        type: "object1",
+      });
 
-      const agoValue = extractAgoNumber(rule?.timeframe);
-      const compareAgoValue = extractAgoNumber(rule?.compareTimeframe);
+      const object2 = createObject({
+        indicator: rule.scanner,
+        timeframe: rule.compareTimeframe,
+        params: rule.scannerParams,
+        value: rule.compareValue,
+        source: rule.scannerSource,
+        type: "object2",
+      });
 
-      const hasValue =
-        rule?.value !== undefined && rule?.value !== null && rule?.value !== 0;
+      const object3 = createObject(
+        {
+          indicator: rule.scanner2,
+          timeframe: rule.timeframe2,
+          params: rule.params2,
+          value: rule.value2,
+          source: rule.source2,
+          type: "object3",
+        },
+        rule.scanner2 !== undefined,
+      );
 
-      const hasCompareValue =
-        rule?.compareValue !== undefined &&
-        rule?.compareValue !== null &&
-        rule?.compareValue !== 0;
+      return {
+        object1,
+        operator1: rule.operator,
 
-      const hasIndicatorParams = Object.keys(indicatorParams).length > 0;
-      const hasScannerParams = Object.keys(scannerParams).length > 0;
-
-      const payload = {
-        indicator: rule?.indicator,
-        operator: rule?.operator,
+        ...(object2 && { object2 }),
+        ...(rule.operator2 && { operator2: rule.operator2 }),
+        ...(object3 && { object3 }),
       };
-
-      /* ================= MAIN ================= */
-
-      if (agoValue !== null) {
-        payload.offset = agoValue;
-      } else {
-        payload.timeframe = rule?.timeframe;
-      }
-
-      if (hasValue || hasCompareValue) {
-        payload.value = rule.value || rule.compareValue;
-      } else if (hasIndicatorParams) {
-        payload.length = indicatorParams;
-      } else {
-        if (agoValue !== null) {
-          payload.offset = agoValue;
-        } else {
-          payload.timeframe = rule?.timeframe;
-        }
-      }
-
-      if (isNumberRule) return payload;
-
-      /* ================= COMPARE ================= */
-
-      payload.compareIndicator = rule?.scanner;
-
-      if (compareAgoValue !== null) {
-        payload.compareAgo = compareAgoValue;
-      } else {
-        payload.compareTimeframe = rule?.compareTimeframe;
-      }
-
-      if (hasCompareValue) {
-        payload.value = rule.compareValue;
-      } else if (hasScannerParams) {
-        payload.compareLength = scannerParams;
-      }
-
-      return payload;
     });
 
-    console.log("Formatted Rules:", formattedRules);
+    console.log("✅ Final Payload:", formattedRules);
 
     /* ================= API ================= */
 
     try {
-      const totalDays = days ? days : months ? Math.round(months * 30) : "";
+      // ✅ cleaner calculation
+      const totalDays = days ? days : months ? Math.round(months * 30) : null;
 
-      const response = await apiService.post(
-        `/api/scannerDetail?symbol=${selectedCurrency}&interval=${timeframeValue}&limit=1000&day=${totalDays}`,
-        { rules: formattedRules },
+      if (!totalDays) return;
+
+      const { data: result = {} } = await apiService.post(
+        `/api/scannerDetail?&interval=${timeframeValue}&day=${totalDays}`,
+        {
+          currencies: (debouncedCurrencies || []).map((c) => c.value),
+          rules: formattedRules,
+        },
       );
 
-      const result = (await response?.data) || {};
       console.log("API Result:", result);
 
       setDataSource(result);
 
-      // ✅ CHECK IF EMPTY
       const isEmpty =
         !result ||
         (Array.isArray(result) && result.length === 0) ||
-        (typeof result === "object" && Object.keys(result).length === 0);
+        (typeof result === "object" && !Object.keys(result).length);
 
       if (isEmpty) {
         toast.error("No data found ❌");
@@ -209,107 +260,70 @@ export default function OHLCVTable({
     }
   };
 
-  const getBase = (symbol) => {
-    if (symbol.endsWith("USDT")) return symbol.replace("USDT", "");
-    if (symbol.endsWith("BTC")) return symbol.replace("BTC", "");
-    if (symbol.endsWith("ETH")) return symbol.replace("ETH", "");
-    return symbol;
+  const backendSymbols = Object.values(dataSource || {}).flatMap((tfObj) =>
+    Object.keys(tfObj || {}),
+  );
+  const getBaseFromSymbol = (symbol = "") => {
+    if (!symbol) return "";
+
+    // Common quote assets (can expand automatically later)
+    const commonQuotes = [
+      "USDT",
+      "BUSD",
+      "USDC",
+      "BTC",
+      "ETH",
+      "BNB",
+      "TRY",
+      "EUR",
+      "GBP",
+      "INR",
+      "AUD",
+    ];
+
+    // 🔍 Step 1: try matching known quotes
+    for (let quote of commonQuotes) {
+      if (symbol.endsWith(quote)) {
+        return symbol.slice(0, -quote.length);
+      }
+    }
+
+    // 🔥 Step 2: fallback (split last 3–5 chars as quote)
+    // works for most unknown pairs
+    return symbol.slice(0, symbol.length - 4);
   };
 
   /* ================= MERGED DATA ================= */
-  // const mergedData = useMemo(() => {
-  //   if (!dataSource || typeof dataSource !== "object") return [];
-  //   let finalData = [];
-
-  //   console.log(selectedCurrencies, "curenciesssssssss");
-
-  //   const activeCurrencies =
-  //     selectedCurrencies && selectedCurrencies?.length > 0
-  //       ? selectedCurrencies.map((sym) => sym.value)
-  //       : symbols;
-
-  //   const process = (arr, tf) =>
-  //     arr?.flatMap((item) =>
-  //       activeCurrencies?.map((sym) => {
-  //         const value = sym.value;
-
-  //         const { indicators, ...rest } = item;
-
-  //         return {
-  //           ...rest, // 👈 removes indicators completely
-  //           ...(indicators && typeof indicators === "object" ? indicators : {}),
-  //           symbol: value,
-  //           base: getBase(value),
-  //           timeframe: tf,
-  //         };
-  //       }),
-  //     );
-
-  //   if (timeframe === "ALL") {
-  //     timeframes.forEach((tf) => {
-  //       if (dataSource[tf]) {
-  //         finalData = [...finalData, ...process(dataSource[tf], tf)];
-  //       }
-  //     });
-  //   } else {
-  //     finalData = process(dataSource[timeframe], timeframe) || [];
-  //   }
-
-  //   return finalData.sort((a, b) => b.time - a.time);
-  // }, [dataSource, timeframe, timeframes]);
 
   const mergedData = useMemo(() => {
     if (!dataSource || typeof dataSource !== "object") return [];
 
     let finalData = [];
 
-    // ✅ Normalize selected currencies
-    const normalizeSymbol = (val) => {
-      if (!val) return "";
-      if (typeof val === "string") return val;
-      if (val.value) return val.value;
-      if (val.symbol) return val.symbol;
-      return "";
-    };
-
-    const activeCurrencies =
-      selectedCurrencies && selectedCurrencies.length > 0
-        ? selectedCurrencies.map(normalizeSymbol)
-        : symbols?.map(normalizeSymbol);
-
-    console.log("API symbols:", Object.keys(dataSource?.["1d"] || {}));
-    console.log("activeCurrencies:", activeCurrencies);
-
-    // ✅ use Set for performance
-    const activeSet = new Set(activeCurrencies);
-
     Object.entries(dataSource).forEach(([tf, symbolsObj]) => {
       if (!symbolsObj) return;
 
       Object.entries(symbolsObj).forEach(([symbol, candles]) => {
-        // ✅ filter symbols
-        if (activeSet.size && !activeSet.has(symbol)) return;
+        if (!Array.isArray(candles)) return;
 
-        candles?.forEach((candle) => {
+        candles.forEach((candle) => {
           const { indicators, ...rest } = candle || {};
+
+          const upperSymbol = symbol.toUpperCase();
 
           finalData.push({
             ...rest,
-
-            // ✅ merge indicators safely
             ...(indicators && typeof indicators === "object" ? indicators : {}),
-
-            symbol, // "1INCHUSDT"
-            base: getBase(symbol), // "1INCH"
-            timeframe: tf, // "1d"
+            symbol: upperSymbol,
+            base: getBaseFromSymbol(upperSymbol), // ✅ dynamic
+            timeframe: tf,
           });
         });
       });
     });
 
     return finalData.sort((a, b) => b.time - a.time);
-  }, [dataSource, selectedCurrencies, symbols]);
-
+  }, [dataSource]);
   /* ================= SEARCH ================= */
   const filteredData = useMemo(() => {
     if (!search.trim()) return mergedData;
@@ -373,12 +387,14 @@ export default function OHLCVTable({
       "volume",
     ];
 
-    const ignore = new Set([...baseColumns, "timeframe"]);
+    const ignore = new Set([...baseColumns, "timeframe", "datetime"]);
 
     const indicatorCols = Array.from(
       new Set(
         mergedData.flatMap((row) =>
-          Object.keys(row).filter((key) => !ignore.has(key)),
+          Object.keys(row).filter(
+            (key) => !ignore.has(key) && key.toLowerCase().startsWith(key),
+          ),
         ),
       ),
     );
@@ -572,21 +588,43 @@ export default function OHLCVTable({
                     <th
                       key={col}
                       onClick={() => handleSort(col)}
-                      style={{ cursor: "pointer", textAlign: "center" }} // optional fallback
+                      style={{ cursor: "pointer", textAlign: "center" }}
                     >
                       <div className="d-flex align-items-center justify-content-center w-100">
                         <span>{col.toUpperCase()}</span>
 
-                        {sortConfig.key === col &&
-                          (sortConfig.direction === "asc" ? (
-                            <FaSortUp
-                              style={{ marginLeft: 4, marginTop: -4 }}
-                            />
-                          ) : (
-                            <FaSortDown
-                              style={{ marginLeft: 4, marginBottom: -4 }}
-                            />
-                          ))}
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            marginLeft: 4,
+                            lineHeight: "8px",
+                          }}
+                        >
+                          {/* 🔼 ASC */}
+                          <FaSortUp
+                            style={{
+                              color:
+                                sortConfig.key === col &&
+                                sortConfig.direction === "asc"
+                                  ? "#000" // active
+                                  : "#ccc", // inactive grey
+                              marginBottom: "-4px",
+                            }}
+                          />
+
+                          {/* 🔽 DESC */}
+                          <FaSortDown
+                            style={{
+                              color:
+                                sortConfig.key === col &&
+                                sortConfig.direction === "desc"
+                                  ? "#000" // active
+                                  : "#ccc", // inactive grey
+                              marginTop: "-4px",
+                            }}
+                          />
+                        </div>
                       </div>
                     </th>
                   ))}
@@ -600,7 +638,7 @@ export default function OHLCVTable({
                       colSpan={columns.length + 1}
                       className="text-center py-5"
                     >
-                      <Spinner animation="border" size="sm" />
+                      <Spinner />
                     </td>
                   </tr>
                 ) : paginatedData.length === 0 ? (

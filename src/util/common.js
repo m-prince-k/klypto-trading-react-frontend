@@ -266,32 +266,31 @@ export const chartOptions = [
     return tf;
   };
 
-export const symbols = [
-  { label: "BTCUSDT", value: "BTCUSDT" },
-  { label: "ETHUSDT", value: "ETHUSDT" },
-  { label: "BNBUSDT", value: "BNBUSDT" },
-  { label: "SOLUSDT", value: "SOLUSDT" },
-  { label: "XRPUSDT", value: "XRPUSDT" },
+// export const symbols = [
+//   { label: "BTCUSDT", value: "BTCUSDT" },
+//   { label: "ETHUSDT", value: "ETHUSDT" },
+//   { label: "BNBUSDT", value: "BNBUSDT" },
+//   { label: "SOLUSDT", value: "SOLUSDT" },
+//   { label: "XRPUSDT", value: "XRPUSDT" },
 
-  { label: "ADAUSDT", value: "ADAUSDT" },
-  { label: "DOGEUSDT", value: "DOGEUSDT" },
-  { label: "DOTUSDT", value: "DOTUSDT" },
-  { label: "MATICUSDT", value: "MATICUSDT" },
-  { label: "LTCUSDT", value: "LTCUSDT" },
+//   { label: "ADAUSDT", value: "ADAUSDT" },
+//   { label: "DOGEUSDT", value: "DOGEUSDT" },
+//   { label: "DOTUSDT", value: "DOTUSDT" },
+//   { label: "MATICUSDT", value: "MATICUSDT" },
+//   { label: "LTCUSDT", value: "LTCUSDT" },
 
-  { label: "TRXUSDT", value: "TRXUSDT" },
-  { label: "AVAXUSDT", value: "AVAXUSDT" },
-  { label: "LINKUSDT", value: "LINKUSDT" },
-  { label: "ATOMUSDT", value: "ATOMUSDT" },
-  { label: "UNIUSDT", value: "UNIUSDT" },
+//   { label: "TRXUSDT", value: "TRXUSDT" },
+//   { label: "AVAXUSDT", value: "AVAXUSDT" },
+//   { label: "LINKUSDT", value: "LINKUSDT" },
+//   { label: "ATOMUSDT", value: "ATOMUSDT" },
+//   { label: "UNIUSDT", value: "UNIUSDT" },
 
-  { label: "ETCUSDT", value: "ETCUSDT" },
-  { label: "FILUSDT", value: "FILUSDT" },
-  { label: "ICPUSDT", value: "ICPUSDT" },
-  { label: "APTUSDT", value: "APTUSDT" },
-  { label: "ARBUSDT", value: "ARBUSDT" },
-
-];
+//   { label: "ETCUSDT", value: "ETCUSDT" },
+//   { label: "FILUSDT", value: "FILUSDT" },
+//   { label: "ICPUSDT", value: "ICPUSDT" },
+//   { label: "APTUSDT", value: "APTUSDT" },
+//   { label: "ARBUSDT", value: "ARBUSDT" },
+// ];
 
 export const getSeriesColor = (series) => {
   if (!series || !series.options) return "#999";
@@ -366,10 +365,10 @@ export const OPERATORS = [
   { label: "Less Than (<)", value: "<" },
   { label: "Greater Than or Equal (≥)", value: ">=" },
   { label: "Less Than or Equal (≤)", value: "<=" },
-  { label: "Equal (=)", value: "=" },
+  { label: "Equal (=)", value: "==" },
   { label: "Not Equal (≠)", value: "!=" },
-  { label: "Crosses Above ⤴", value: "crosses_above" },
-  { label: "Crosses Below ⤵", value: "crosses_below" },
+  { label: "Crosses Above ⤴", value: "cross_above" },
+  { label: "Crosses Below ⤵", value: "cross_below" },
 ];
 
 export const convertToHeikinAshi = (data) => {
