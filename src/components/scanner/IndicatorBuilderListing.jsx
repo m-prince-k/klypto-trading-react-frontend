@@ -27,9 +27,8 @@ export default function OHLCVTable({
   listingTimeframe,
   selectedCurrencies,
   setSelectedCurrencies,
-  currencies,
 }) {
-  const [timeframe, setTimeframe] = useState("ALL"); // default ALL
+  const [timeframe, setTimeframe] = useState(""); // default ALL
   const [limit, setLimit] = useState(10); // actual data limit
   const [selectedLimit, setSelectedLimit] = useState(""); // dropdown UI
   const [page, setPage] = useState(0);
@@ -37,6 +36,8 @@ export default function OHLCVTable({
   const [dataSource, setDataSource] = useState({});
   const [search, setSearch] = useState("");
   const [days, setDays] = useState(1);
+  const [currencies, setCurrencies] = useState([]);
+  const [error, setError] = useState(null);
   const [months, setMonths] = useState(null);
   const debouncedCurrencies = useDebounce(selectedCurrencies, 1000);
 
@@ -58,9 +59,39 @@ export default function OHLCVTable({
     selectedCurrency,
     debouncedCurrencies,
     timeframeValue,
+    listingTimeframe,
     days,
     months,
   ]);
+
+  async function fetchCurrencies() {
+    setLoading(true);
+    setError(null);
+
+    try {
+      let response = await apiService.post(`/api/getCurrencies`);
+      const raw = response?.data ?? [];
+
+      const formatted = [
+        // { label: "Select Currency", value: "" },
+        ...raw.map((item) => ({
+          label: item.label ?? item.name ?? item.symbol,
+          value: item.value ?? item.symbol ?? item.label,
+        })),
+      ];
+
+      setCurrencies(formatted);
+    } catch (err) {
+      console.error("Currency API Error:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchCurrencies();
+  }, []);
 
   const convertToDays = (tf = "") => {
     const match = tf.toLowerCase().match(/^(\d+)(d|w|m|mo|q|y)_ago$/);
@@ -325,11 +356,23 @@ export default function OHLCVTable({
 
     return finalData.sort((a, b) => b.time - a.time);
   }, [dataSource]);
+
   /* ================= SEARCH ================= */
   const filteredData = useMemo(() => {
-    if (!search.trim()) return mergedData;
+    let data = mergedData;
+
+    // ✅ treat "" as ALL
+    if (timeframe && timeframe !== "ALL") {
+      data = data.filter(
+        (row) => row.timeframe?.toLowerCase() === timeframe.toLowerCase(),
+      );
+    }
+
+    if (!search.trim()) return data;
+
     const q = search.trim().toLowerCase();
-    return mergedData.filter((row) =>
+
+    return data.filter((row) =>
       Object.values(row).some(
         (val) =>
           val !== null &&
@@ -337,8 +380,7 @@ export default function OHLCVTable({
           val.toString().toLowerCase().includes(q),
       ),
     );
-  }, [mergedData, search]);
-
+  }, [mergedData, search, timeframe]);
   /* ================= SORTING ================= */
   const sortedData = useMemo(() => {
     let data = [...filteredData].map((row, index) => ({
@@ -454,13 +496,12 @@ export default function OHLCVTable({
                 {timeframe === ""
                   ? "Select Timeframe"
                   : timeframe === "ALL"
-                    ? "All Timeframes"
+                    ? "All"
                     : timeframe}
               </Dropdown.Toggle>
 
               <Dropdown.Menu>
-                <Dropdown.Item eventKey="">Select Timeframe</Dropdown.Item>
-                <Dropdown.Item eventKey="ALL">All Timeframes</Dropdown.Item>
+                <Dropdown.Item eventKey="ALL">All </Dropdown.Item>
 
                 {timeframes.map((tf) => {
                   const indicatorsForTf = rules
@@ -484,6 +525,7 @@ export default function OHLCVTable({
                 })}
               </Dropdown.Menu>
             </Dropdown>
+
             <div className="d-flex gap-2">
               {/* ================= DAYS ================= */}
               <Dropdown
@@ -509,7 +551,7 @@ export default function OHLCVTable({
                     transition: "all 0.2s ease",
                   }}
                 >
-                  {days ? `${days} Day${days > 1 ? "s" : ""}` : "Select Days"}
+                  {days ? `${days} Day${days > 15 ? "s" : ""}` : "Select Days"}
                 </Dropdown.Toggle>
 
                 <Dropdown.Menu
