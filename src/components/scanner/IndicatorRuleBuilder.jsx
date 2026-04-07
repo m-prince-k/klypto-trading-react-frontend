@@ -131,7 +131,6 @@ export default function IndicatorRuleBuilder({
 
   /* ================= NATURAL LANGUAGE STATE ================= */
   const [input, setInput] = useState("");
-  // console.log(input, "userinputttttttt")
   const [conditions, setConditions] = useState();
 
   /* ================= CLICK LOCK ================= */

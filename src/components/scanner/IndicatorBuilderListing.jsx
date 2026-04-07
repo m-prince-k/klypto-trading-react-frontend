@@ -12,11 +12,10 @@ import {
   symbols,
   useDebounce,
 } from "../../util/common";
-import { comma } from "postcss/lib/list";
 import { toast } from "react-toastify";
 import axios from "axios";
 import { Spinner } from "../tradingModals/Spinner";
-import { Currency } from "lucide-react";
+import EditableMultiSelect from "../indicator/EditTableLabel";
 
 /* ================= SYMBOL LIST ================= */
 
@@ -27,6 +26,8 @@ export default function OHLCVTable({
   runScanTrigger,
   listingTimeframe,
   selectedCurrencies,
+  setSelectedCurrencies,
+  currencies,
 }) {
   const [timeframe, setTimeframe] = useState("ALL"); // default ALL
   const [limit, setLimit] = useState(10); // actual data limit
@@ -563,6 +564,14 @@ export default function OHLCVTable({
                   ))}
                 </Dropdown.Menu>
               </Dropdown>
+
+              {/* Currencies */}
+              <EditableMultiSelect
+                value={selectedCurrencies}
+                options={currencies}
+                onChange={setSelectedCurrencies}
+                placeholder="Select Currency"
+              />
             </div>
           </div>
 
