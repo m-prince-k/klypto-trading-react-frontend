@@ -12,7 +12,7 @@ export const Spinner = () => (
       {/* Center dot */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-violet-600 animate-pulse" />
     </div>
-    <span className="text-xs font-medium tracking-widest uppercase text-slate-400 animate-pulse">
+    <span className="text-xs font-medium -mt-10 tracking-widest uppercase text-slate-400 animate-pulse">
       Loading...
     </span>
   </div>

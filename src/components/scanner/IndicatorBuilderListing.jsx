@@ -21,8 +21,8 @@ import EditableMultiSelect from "../indicator/EditTableLabel";
 
 export default function OHLCVTable({
   selectedCurrency,
-  timeframeValue,
   rules,
+  // timeframeValue,
   runScanTrigger,
   listingTimeframe,
   selectedCurrencies,
@@ -40,7 +40,8 @@ export default function OHLCVTable({
   const [error, setError] = useState(null);
   const [months, setMonths] = useState(null);
   const debouncedCurrencies = useDebounce(selectedCurrencies, 1000);
-
+  const [fetchTimeframe, setFetchTimeframe] = useState([]);
+  const [timeframeValue, setTimeframeValue] = useState("1m");
   const [sortConfig, setSortConfig] = useState({
     key: null,
     direction: "asc",
@@ -64,7 +65,7 @@ export default function OHLCVTable({
     months,
   ]);
 
-  async function fetchCurrencies() {
+  async function fetchListingCurrencies() {
     setLoading(true);
     setError(null);
 
@@ -88,9 +89,30 @@ export default function OHLCVTable({
       setLoading(false);
     }
   }
+  async function fetchListingTimeframe() {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await apiService.post("/api/getTimeFrames");
+
+      const data = response?.data || {};
+
+      setFetchTimeframe(data); // ✅ correct state
+
+      // ❌ REMOVE THIS (no use)
+      // setTimeframeValue(timeframeValue);
+    } catch (err) {
+      console.error(err);
+      setError(err?.message || "Failed to fetch timeframes");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    fetchCurrencies();
+    fetchListingCurrencies();
+    fetchListingTimeframe();
   }, []);
 
   const convertToDays = (tf = "") => {
@@ -121,6 +143,7 @@ export default function OHLCVTable({
     value,
     source,
     type,
+    globalTimeframe,
   }) => {
     const offset = convertToDays(timeframe);
 
@@ -155,8 +178,11 @@ export default function OHLCVTable({
       indicator: indicatorKey,
     };
 
+    console.log(timeframeValue, "timeeeeeeeeeeeeeeeeeeeeeeee");
+
     if (offset !== null) {
       obj.offset = offset;
+      obj.timeframe = globalTimeframe; // ✅ use global
     } else if (timeframe) {
       obj.timeframe = timeframe;
     }
@@ -210,7 +236,9 @@ export default function OHLCVTable({
     const formattedRules = activeRules.map((rule) => {
       // ✅ helper to avoid repetition
       const createObject = (config, condition = true) =>
-        condition ? buildObject(config) : null;
+        condition
+          ? buildObject({ ...config, globalTimeframe: timeframeValue })
+          : null;
 
       const object1 = createObject({
         indicator: rule.indicator,
@@ -263,7 +291,7 @@ export default function OHLCVTable({
       if (!totalDays) return;
 
       const { data: result = {} } = await apiService.post(
-        `/api/scannerDetail?&interval=${timeframeValue}&day=${totalDays}`,
+        `/api/scannerDetail?&interval=1d&day=${totalDays}`,
         {
           currencies: (debouncedCurrencies || []).map((c) => c.value),
           rules: formattedRules,
@@ -292,9 +320,6 @@ export default function OHLCVTable({
     }
   };
 
-  const backendSymbols = Object.values(dataSource || {}).flatMap((tfObj) =>
-    Object.keys(tfObj || {}),
-  );
   const getBaseFromSymbol = (symbol = "") => {
     if (!symbol) return "";
 
@@ -354,7 +379,8 @@ export default function OHLCVTable({
       });
     });
 
-    return finalData.sort((a, b) => b.time - a.time);
+    // return finalData.sort((a, b) => b.time - a.time);
+    return finalData;
   }, [dataSource]);
 
   /* ================= SEARCH ================= */
@@ -381,31 +407,41 @@ export default function OHLCVTable({
       ),
     );
   }, [mergedData, search, timeframe]);
+
   /* ================= SORTING ================= */
+  // const sortedData = useMemo(() => {
+  //   let data = [...filteredData].map((row, index) => ({
+  //     ...row,
+  //     sno: index + 1,
+  //   }));
+
+  //   // if (!sortConfig.key) return data;
+
+  //   // return data.sort((a, b) => {
+  //   //   const aVal = a[sortConfig.key];
+  //   //   const bVal = b[sortConfig.key];
+
+  //   //   if (aVal == null) return 1;
+  //   //   if (bVal == null) return -1;
+
+  //   //   if (typeof aVal === "number" && typeof bVal === "number") {
+  //   //     return sortConfig.direction === "asc" ? aVal - bVal : bVal - aVal;
+  //   //   }
+
+  //   //   return sortConfig.direction === "asc"
+  //   //     ? aVal.toString().localeCompare(bVal.toString())
+  //   //     : bVal.toString().localeCompare(aVal.toString());
+  //   // });
+
+  //   return data; // ✅ no sorting at all
+  // }, [filteredData, sortConfig]);
+
   const sortedData = useMemo(() => {
-    let data = [...filteredData].map((row, index) => ({
+    return filteredData.map((row, index) => ({
       ...row,
       sno: index + 1,
     }));
-
-    if (!sortConfig.key) return data;
-
-    return data.sort((a, b) => {
-      const aVal = a[sortConfig.key];
-      const bVal = b[sortConfig.key];
-
-      if (aVal == null) return 1;
-      if (bVal == null) return -1;
-
-      if (typeof aVal === "number" && typeof bVal === "number") {
-        return sortConfig.direction === "asc" ? aVal - bVal : bVal - aVal;
-      }
-
-      return sortConfig.direction === "asc"
-        ? aVal.toString().localeCompare(bVal.toString())
-        : bVal.toString().localeCompare(aVal.toString());
-    });
-  }, [filteredData, sortConfig]);
+  }, [filteredData]);
 
   const totalRecords = mergedData.length;
   const totalPages = Math.ceil(totalRecords / limit);
@@ -422,7 +458,7 @@ export default function OHLCVTable({
     const baseColumns = [
       "symbol",
       "base",
-      "time",
+      "datetime",
       "open",
       "high",
       "low",
@@ -430,7 +466,7 @@ export default function OHLCVTable({
       "volume",
     ];
 
-    const ignore = new Set([...baseColumns, "timeframe", "datetime"]);
+    const ignore = new Set([...baseColumns, "timeframe", "time"]);
 
     const indicatorCols = Array.from(
       new Set(
@@ -492,29 +528,43 @@ export default function OHLCVTable({
             />
 
             <Dropdown onSelect={(val) => setTimeframe(val)}>
-              <Dropdown.Toggle size="sm" variant="light">
+              <Dropdown.Toggle
+                size="sm"
+                variant="light"
+                style={{
+                  height: 32,
+                  fontSize: 13,
+                }}
+              >
                 {timeframe === ""
-                  ? "Select Timeframe"
+                  ? "Timeframe"
                   : timeframe === "ALL"
                     ? "All"
                     : timeframe}
               </Dropdown.Toggle>
-
-              <Dropdown.Menu>
-                <Dropdown.Item eventKey="ALL">All </Dropdown.Item>
-
+              <Dropdown.Menu style={{ fontSize: 13, minWidth: 160 }}>
+                <Dropdown.Item eventKey="ALL">All</Dropdown.Item>
                 {timeframes.map((tf) => {
                   const indicatorsForTf = rules
                     ?.filter((r) => r.timeframe === tf)
                     ?.map((r) => r.indicator);
-
                   return (
                     <Dropdown.Item key={tf} eventKey={tf}>
-                      <div className="d-flex justify-content-between w-100">
+                      <div className="d-flex justify-content-between w-100 gap-2">
                         <span>{tf}</span>
                         <div className="d-flex gap-1">
                           {indicatorsForTf?.map((ind, i) => (
-                            <Badge bg="secondary" key={i}>
+                            <Badge
+                              key={i}
+                              bg=""
+                              style={{
+                                fontSize: 10,
+                                padding: "2px 5px",
+                                background: "var(--bs-secondary-bg)",
+                                color: "var(--bs-secondary-color)",
+                                border: "0.5px solid var(--bs-border-color)",
+                              }}
+                            >
                               {ind?.toUpperCase()}
                             </Badge>
                           ))}
@@ -526,204 +576,251 @@ export default function OHLCVTable({
               </Dropdown.Menu>
             </Dropdown>
 
-            <div className="d-flex gap-2">
-              {/* ================= DAYS ================= */}
-              <Dropdown
-                onToggle={(isOpen) => {
-                  if (isOpen && months !== null) {
-                    setMonths(null);
-                  }
-                }}
-                onSelect={(val) => {
-                  const num = Number(val);
-                  setDays(num === 0 ? null : num);
-                }}
-              >
-                <Dropdown.Toggle
-                  size="sm"
-                  variant="light"
-                  style={{
-                    opacity: months !== null ? 0.5 : 1,
-                    backgroundColor: months !== null ? "#e9ecef" : "",
-                    color: months !== null ? "#6c757d" : "",
-                    borderColor: months !== null ? "#dee2e6" : "",
-                    cursor: months !== null ? "not-allowed" : "pointer",
-                    transition: "all 0.2s ease",
-                  }}
-                >
-                  {days ? `${days} Day${days > 15 ? "s" : ""}` : "Select Days"}
-                </Dropdown.Toggle>
-
-                <Dropdown.Menu
-                  style={{ maxHeight: "200px", overflowY: "auto" }}
-                >
-                  <Dropdown.Item eventKey={0}>Select Days</Dropdown.Item>
-                  {Array.from({ length: 30 }, (_, i) => i + 1).map((d) => (
-                    <Dropdown.Item key={d} eventKey={d}>
-                      {d}
-                    </Dropdown.Item>
-                  ))}
-                </Dropdown.Menu>
-              </Dropdown>
-
-              {/* ================= MONTHS ================= */}
-              <Dropdown
-                onToggle={(isOpen) => {
-                  if (isOpen && days !== null) {
-                    setDays(null);
-                  }
-                }}
-                onSelect={(val) => {
-                  const num = Number(val);
-                  setMonths(num === 0 ? null : num);
+            {/* ================= DAYS ================= */}
+            <Dropdown
+              onToggle={(isOpen) => {
+                if (isOpen && months !== null) {
+                  setMonths(null);
+                }
+              }}
+              onSelect={(val) => {
+                const num = Number(val);
+                setDays(num === 0 ? null : num);
+              }}
+            >
+              <Dropdown.Toggle
+                size="sm"
+                variant="light"
+                style={{
+                  opacity: months !== null ? 0.5 : 1,
+                  backgroundColor: months !== null ? "#e9ecef" : "",
+                  color: months !== null ? "#6c757d" : "",
+                  borderColor: months !== null ? "#dee2e6" : "",
+                  cursor: months !== null ? "not-allowed" : "pointer",
+                  transition: "all 0.2s ease",
                 }}
               >
-                <Dropdown.Toggle
-                  size="sm"
-                  variant="light"
-                  style={{
-                    opacity: days !== null ? 0.5 : 1,
-                    backgroundColor: days !== null ? "#e9ecef" : "",
-                    color: days !== null ? "#6c757d" : "",
-                    borderColor: days !== null ? "#dee2e6" : "",
-                    cursor: days !== null ? "not-allowed" : "pointer",
-                    transition: "all 0.2s ease",
-                  }}
-                >
-                  {months
-                    ? `${months} Month${months > 1 ? "s" : ""}`
-                    : "Select Months"}
-                </Dropdown.Toggle>
+                {days ? `${days} Day${days > 15 ? "s" : ""}` : "Select Days"}
+              </Dropdown.Toggle>
 
-                <Dropdown.Menu
-                  style={{ maxHeight: "200px", overflowY: "auto" }}
-                >
-                  <Dropdown.Item eventKey={0}>Select Months</Dropdown.Item>
-                  {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                    <Dropdown.Item key={m} eventKey={m}>
-                      {m}
-                    </Dropdown.Item>
+              <Dropdown.Menu style={{ maxHeight: "200px", overflowY: "auto" }}>
+                <Dropdown.Item eventKey={0}>Select Days</Dropdown.Item>
+                {Array.from({ length: 30 }, (_, i) => i + 1).map((d) => (
+                  <Dropdown.Item key={d} eventKey={d}>
+                    {d}
+                  </Dropdown.Item>
+                ))}
+              </Dropdown.Menu>
+            </Dropdown>
+
+            {/* ================= MONTHS ================= */}
+            <Dropdown
+              onToggle={(isOpen) => {
+                if (isOpen && days !== null) {
+                  setDays(null);
+                }
+              }}
+              onSelect={(val) => {
+                const num = Number(val);
+                setMonths(num === 0 ? null : num);
+              }}
+            >
+              <Dropdown.Toggle
+                size="sm"
+                variant="light"
+                style={{
+                  opacity: days !== null ? 0.5 : 1,
+                  backgroundColor: days !== null ? "#e9ecef" : "",
+                  color: days !== null ? "#6c757d" : "",
+                  borderColor: days !== null ? "#dee2e6" : "",
+                  cursor: days !== null ? "not-allowed" : "pointer",
+                  transition: "all 0.2s ease",
+                }}
+              >
+                {months
+                  ? `${months} Month${months > 1 ? "s" : ""}`
+                  : "Select Months"}
+              </Dropdown.Toggle>
+
+              <Dropdown.Menu style={{ maxHeight: "200px", overflowY: "auto" }}>
+                <Dropdown.Item eventKey={0}>Select Months</Dropdown.Item>
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                  <Dropdown.Item key={m} eventKey={m}>
+                    {m}
+                  </Dropdown.Item>
+                ))}
+              </Dropdown.Menu>
+            </Dropdown>
+
+            {/* Currencies */}
+            <EditableMultiSelect
+              value={selectedCurrencies}
+              options={currencies}
+              onChange={setSelectedCurrencies}
+              placeholder="Select Currency"
+            />
+
+            {/* timeframe */}
+            <div title={timeframeValue}>
+              <select
+                value={timeframeValue || "1m"}
+                onChange={(e) => setTimeframeValue(e.target.value)}
+                className="form-select form-select-sm"
+                style={{ height: 35, width: 120 }}
+                onClick={() => {
+                  if (
+                    !fetchTimeframe ||
+                    Object.keys(fetchTimeframe).length === 0
+                  ) {
+                    fetchListingTimeframe(); // ✅ lazy fetch
+                  }
+                }}
+              >
+                {/* ✅ Default fallback */}
+                {!fetchTimeframe && <option value="1m">1 Minute</option>}
+
+                {/* ✅ Empty fallback */}
+                {fetchTimeframe && Object.keys(fetchTimeframe).length === 0 && (
+                  <option value="1m">1 Minute</option>
+                )}
+
+                {/* ✅ Actual data */}
+                {fetchTimeframe &&
+                  Object.entries(fetchTimeframe).map(([group, items]) => (
+                    <optgroup key={group} label={group?.toUpperCase()}>
+                      {Array.isArray(items) &&
+                        items.map((item, i) => (
+                          <option key={item?.value || i} value={item?.value}>
+                            {item?.label}
+                          </option>
+                        ))}
+                    </optgroup>
                   ))}
-                </Dropdown.Menu>
-              </Dropdown>
-
-              {/* Currencies */}
-              <EditableMultiSelect
-                value={selectedCurrencies}
-                options={currencies}
-                onChange={setSelectedCurrencies}
-                placeholder="Select Currency"
-              />
+              </select>
             </div>
           </div>
 
           {/* TABLE */}
-          <div className="table-responsive">
-            <Table
-              hover
-              className="mb-0 align-middle"
-              style={{ fontSize: "0.875rem" }}
-            >
-              <thead style={{ background: "#212529", color: "#fff" }}>
-                <tr>
-                  {paginatedData.length > 0 && (
-                    <th
-                      onClick={() => handleSort("sno")}
-                      style={{ cursor: "pointer" }}
-                    >
-                      Sno
-                    </th>
-                  )}
+          <div style={{ position: "relative" }}>
+            {/* 🔥 LOADER OVERLAY */}
+            {loading && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100%",
+                  background: "rgba(255,255,255,0.1)",
+                  zIndex: 10,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backdropFilter: "blur(1px)",
+                }}
+              >
+                <Spinner />
+              </div>
+            )}
 
-                  {columns.map((col) => (
-                    <th
-                      key={col}
-                      onClick={() => handleSort(col)}
-                      style={{ cursor: "pointer", textAlign: "center" }}
-                    >
-                      <div className="d-flex align-items-center justify-content-center w-100">
-                        <span>{col.toUpperCase()}</span>
+            <div className="table-responsive">
+              <Table
+                hover
+                className="mb-0 align-middle"
+                style={{ fontSize: "0.875rem" }}
+              >
+                <thead style={{ background: "#212529", color: "#fff" }}>
+                  <tr>
+                    {paginatedData.length > 0 && (
+                      <th
+                        onClick={() => handleSort("sno")}
+                        style={{ cursor: "pointer" }}
+                      >
+                        Sno
+                      </th>
+                    )}
 
-                        <div
-                          style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            marginLeft: 4,
-                            lineHeight: "8px",
-                          }}
-                        >
-                          {/* 🔼 ASC */}
-                          <FaSortUp
+                    {columns.map((col) => (
+                      <th
+                        key={col}
+                        onClick={() => handleSort(col)}
+                        style={{ cursor: "pointer", textAlign: "center" }}
+                      >
+                        <div className="d-flex align-items-center justify-content-center w-100">
+                          <span>{col.toUpperCase()}</span>
+
+                          {/* <div
                             style={{
-                              color:
-                                sortConfig.key === col &&
-                                sortConfig.direction === "asc"
-                                  ? "#000" // active
-                                  : "#ccc", // inactive grey
-                              marginBottom: "-4px",
+                              display: "flex",
+                              flexDirection: "column",
+                              marginLeft: 4,
+                              lineHeight: "8px",
                             }}
-                          />
+                          >
+                            <FaSortUp
+                              style={{
+                                color:
+                                  sortConfig.key === col &&
+                                  sortConfig.direction === "asc"
+                                    ? "#000"
+                                    : "#ccc",
+                                marginBottom: "-4px",
+                              }}
+                            />
 
-                          {/* 🔽 DESC */}
-                          <FaSortDown
-                            style={{
-                              color:
-                                sortConfig.key === col &&
-                                sortConfig.direction === "desc"
-                                  ? "#000" // active
-                                  : "#ccc", // inactive grey
-                              marginTop: "-4px",
-                            }}
-                          />
+                            <FaSortDown
+                              style={{
+                                color:
+                                  sortConfig.key === col &&
+                                  sortConfig.direction === "desc"
+                                    ? "#000"
+                                    : "#ccc",
+                                marginTop: "-4px",
+                              }}
+                            />
+                          </div> */}
                         </div>
-                      </div>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td
-                      colSpan={columns.length + 1}
-                      className="text-center py-5"
-                    >
-                      <Spinner />
-                    </td>
+                      </th>
+                    ))}
                   </tr>
-                ) : paginatedData.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={columns.length + 1}
-                      className="text-center py-5"
-                    >
-                      No data available
-                    </td>
-                  </tr>
-                ) : (
-                  paginatedData.map((row, i) => (
-                    <tr key={i}>
-                      <td>{page * limit + i + 1}</td>
+                </thead>
 
-                      {columns.map((col) => (
-                        <td key={col}>
-                          {col === "time"
-                            ? new Date(row[col] * 1000).toLocaleString()
-                            : typeof row[col] === "boolean"
-                              ? row[col]
-                                ? "True"
-                                : "False"
-                              : typeof row[col] === "object"
-                                ? JSON.stringify(row[col]) // or "-"
-                                : row[col]}
-                        </td>
-                      ))}
+                <tbody>
+                  {/* ❌ removed loading condition from here */}
+
+                  {paginatedData.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={columns.length + 1}
+                        className="text-center py-5"
+                      >
+                        No data available
+                      </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </Table>
+                  ) : (
+                    paginatedData.map((row, i) => (
+                      <tr key={i}>
+                        <td>{page * limit + i + 1}</td>
+
+                        {columns.map((col) => (
+                          <td key={col}>
+                            {col === "time"
+                              ? new Date(row[col] * 1000).toLocaleString()
+                              : typeof row[col] === "boolean"
+                                ? row[col]
+                                  ? "True"
+                                  : "False"
+                                : typeof row[col] === "object"
+                                  ? JSON.stringify(row[col])
+                                  : row[col]}
+                          </td>
+                        ))}
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </Table>
+            </div>
           </div>
 
           <div className="d-flex align-items-center gap-2 justify-content-end px-3 py-2">
