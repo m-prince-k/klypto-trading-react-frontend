@@ -183,7 +183,7 @@ export default function OHLCVTable({
 
     if (offset !== null) {
       obj.offset = offset;
-      obj.timeframe = globalTimeframe; // ✅ use global
+      obj.timeframe = timeframe;  // ✅ use global
     } else if (timeframe) {
       obj.timeframe = timeframe;
     }
@@ -377,8 +377,6 @@ export default function OHLCVTable({
       }
     }
 
-    // 🔥 Step 2: fallback (split last 3–5 chars as quote)
-    // works for most unknown pairs
     return symbol.slice(0, symbol.length - 4);
   };
 
@@ -419,6 +417,7 @@ export default function OHLCVTable({
   const filteredData = useMemo(() => {
     let data = mergedData;
 
+    console.log(timeframe.tf, "tfffffffffffffffffffffff")
     // ✅ treat "" as ALL
     if (timeframe?.tf) {
       data = data.filter(
@@ -469,12 +468,6 @@ export default function OHLCVTable({
     return data; // ✅ no sorting at all
   }, [filteredData, sortConfig]);
 
-  // const sortedData = useMemo(() => {
-  //   return filteredData.map((row, index) => ({
-  //     ...row,
-  //     sno: index + 1,
-  //   }));
-  // }, [filteredData]);
 
   const totalRecords = mergedData.length;
   const totalPages = Math.ceil(totalRecords / limit);
