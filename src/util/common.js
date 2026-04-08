@@ -238,33 +238,33 @@ export const chartOptions = [
   { value: "histogram", label: "Histogram", icon: FiBarChart2 },
 ];
 
-  export const getTimeframeLabel = (tf) => {
-    if (!tf) return "Daily";
+export const getTimeframeLabel = (tf) => {
+  if (!tf) return "Daily";
 
-    const value = tf.toLowerCase();
+  const value = tf.toLowerCase();
 
-    // 🔥 HANDLE "_ago" FORMAT FIRST
-    if (value.includes("_ago")) {
-      if (value.includes("m_ago")) return "Monthly";
-      if (value.includes("w_ago")) return "Weekly";
-      if (value.includes("d_ago")) return "Daily";
-      if (value.includes("q_ago")) return "Quarterly";
-      if (value.includes("y_ago")) return "Yearly";
-    }
+  // 🔥 HANDLE "_ago" FORMAT FIRST
+  if (value.includes("_ago")) {
+    if (value.includes("m_ago")) return "Monthly";
+    if (value.includes("w_ago")) return "Weekly";
+    if (value.includes("d_ago")) return "Daily";
+    if (value.includes("q_ago")) return "Quarterly";
+    if (value.includes("y_ago")) return "Yearly";
+  }
 
-    // ⏱️ MINUTES / HOURS (ONLY if NOT _ago)
-    if (value.endsWith("m")) return tf; // 1m, 5m → keep same
-    if (value.endsWith("h")) return tf; // 1h, 2h → keep same
+  // ⏱️ MINUTES / HOURS (ONLY if NOT _ago)
+  if (value.endsWith("m")) return tf; // 1m, 5m → keep same
+  if (value.endsWith("h")) return tf; // 1h, 2h → keep same
 
-    // 📅 NORMAL FORMAT
-    if (value.includes("mo")) return "Monthly";
-    if (value.includes("w")) return "Weekly";
-    if (value.includes("d")) return "Daily";
-    if (value.includes("q")) return "Quarterly";
-    if (value.includes("y")) return "Yearly";
+  // 📅 NORMAL FORMAT
+  if (value.includes("mo")) return "Monthly";
+  if (value.includes("w")) return "Weekly";
+  if (value.includes("d")) return "Daily";
+  if (value.includes("q")) return "Quarterly";
+  if (value.includes("y")) return "Yearly";
 
-    return tf;
-  };
+  return tf;
+};
 
 // export const symbols = [
 //   { label: "BTCUSDT", value: "BTCUSDT" },
@@ -356,8 +356,8 @@ export const chartSeriesStyles = {
 };
 
 export const OPERATORS = [
-  {label: "Select Operation", value: "" },
- { label: "+", value: "+" },
+  { label: "Select Operation", value: "" },
+  { label: "+", value: "+" },
   { label: "-", value: "-" },
   { label: "*", value: "*" },
   { label: "/", value: "/" },
@@ -445,7 +445,6 @@ export const timeframeMap = {
   "2 days ago": "2d_ago",
   "3 day ago": "3d_ago",
   "3 days ago": "3d_ago",
-
 
   // ================= WEEKS =================
   "1 week ago": "1w_ago",
@@ -584,9 +583,6 @@ export function handleCopy(rows = null) {
 
   alert("Copied to clipboard ✔");
 }
-
-
-
 
 export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
   switch (indicator) {
@@ -849,13 +845,13 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           children: [
             {
               key: "topFillColor1",
-              parent: "oscillatorFill", 
+              parent: "oscillatorFill",
               label: "Bullish Fill",
               type: "fill",
             },
             {
               key: "topFillColor2",
-              parent: "oscillatorFill", 
+              parent: "oscillatorFill",
               label: "Bearish Fill",
               type: "fill",
             },
@@ -1782,8 +1778,6 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
   }
 };
 
-
-
 export const RANGE_INTERVAL_MAPPING = {
   "1D": "1m",
   "5D": "5m",
@@ -1794,4 +1788,38 @@ export const RANGE_INTERVAL_MAPPING = {
   "1Y": "1d",
   "5Y": "1w",
   All: "1d",
+};
+
+export const tfToMinutes = (tf = "") => {
+  const clean = tf.toLowerCase();
+
+  const value = parseInt(clean);
+
+  if (clean.includes("m")) return value;
+  if (clean.includes("h")) return value * 60;
+  if (clean.includes("d")) return value * 60 * 24;
+  if (clean.includes("w")) return value * 60 * 24 * 7;
+  if (clean.includes("mo")) return value * 60 * 24 * 30;
+
+  return 0;
+};
+
+export const getAllTimeframes = (rules = []) => {
+  const tfs = [];
+
+  rules.forEach((rule) => {
+    if (rule.object1?.timeframe) tfs.push(rule.object1.timeframe);
+    if (rule.object2?.timeframe) tfs.push(rule.object2.timeframe);
+    if (rule.object3?.timeframe) tfs.push(rule.object3.timeframe);
+  });
+
+  return tfs;
+};
+
+export const getMaxTimeframe = (tfs = []) => {
+  if (!tfs.length) return null;
+
+  return tfs.reduce((max, curr) => {
+    return tfToMinutes(curr) > tfToMinutes(max) ? curr : max;
+  });
 };

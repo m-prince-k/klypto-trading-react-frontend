@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import ReactPaginate from "react-paginate";
 import apiService from "../../services/apiServices";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -6,6 +6,8 @@ import { Dropdown, Badge } from "react-bootstrap";
 import { Container, Table, Card, Form } from "react-bootstrap";
 import { FaSortUp, FaSortDown } from "react-icons/fa";
 import {
+  getAllTimeframes,
+  getMaxTimeframe,
   handleCopy,
   handleCSVDownload,
   handleExcelDownload,
@@ -28,7 +30,7 @@ export default function OHLCVTable({
   selectedCurrencies,
   setSelectedCurrencies,
 }) {
-  const [timeframe, setTimeframe] = useState(""); // default ALL
+  const [timeframe, setTimeframe] = useState(null); // null = ALL
   const [limit, setLimit] = useState(10); // actual data limit
   const [selectedLimit, setSelectedLimit] = useState(""); // dropdown UI
   const [page, setPage] = useState(0);
@@ -41,18 +43,34 @@ export default function OHLCVTable({
   const [months, setMonths] = useState(null);
   const debouncedCurrencies = useDebounce(selectedCurrencies, 1000);
   const [fetchTimeframe, setFetchTimeframe] = useState([]);
-  const [timeframeValue, setTimeframeValue] = useState("1m");
+  const [timeframeValue, setTimeframeValue] = useState("");
   const [payloadRules, setPayloadRules] = useState([]);
   const [sortConfig, setSortConfig] = useState({
     key: null,
     direction: "asc",
   });
 
+  // ✅ Tracks whether the user manually picked a TF from dropdown 1
+  // When true, fetchData will NOT override timeframeValue with maxTF
+  const userPickedTf = useRef(false);
+
+  // ✅ Stores a pending TF override {indicator, oldTf, newTf}
+  // Applied inside fetchData so it survives the formattedRules rebuild
+  const manualTfOverride = useRef(null);
+
   const timeframes = useMemo(() => {
     return dataSource && typeof dataSource === "object"
       ? Object.keys(dataSource)
       : [];
   }, [dataSource]);
+
+  // ✅ Reset UI and tracking variables when a fresh scan is executed
+  useEffect(() => {
+    userPickedTf.current = false;
+    manualTfOverride.current = null;
+    setTimeframe({ tf: "ALL", indicator: "ALL" });
+    setTimeframeValue("");
+  }, [runScanTrigger]);
 
   useEffect(() => {
     fetchData();
@@ -144,7 +162,6 @@ export default function OHLCVTable({
     value,
     source,
     type,
-    globalTimeframe,
   }) => {
     const offset = convertToDays(timeframe);
 
@@ -183,7 +200,7 @@ export default function OHLCVTable({
 
     if (offset !== null) {
       obj.offset = offset;
-      obj.timeframe = timeframe;  // ✅ use global
+      obj.timeframe = timeframe; // ✅ use global
     } else if (timeframe) {
       obj.timeframe = timeframe;
     }
@@ -237,9 +254,7 @@ export default function OHLCVTable({
     const formattedRules = activeRules.map((rule) => {
       // ✅ helper to avoid repetition
       const createObject = (config, condition = true) =>
-        condition
-          ? buildObject({ ...config, globalTimeframe: timeframeValue })
-          : null;
+        condition ? buildObject({ ...config }) : null;
 
       const object1 = createObject({
         indicator: rule.indicator,
@@ -280,8 +295,35 @@ export default function OHLCVTable({
         ...(object3 && { object3 }),
       };
     });
-    setPayloadRules(formattedRules);
-    console.log("✅ Final Payload:", formattedRules);
+
+    // ✅ Apply manual TF override BEFORE storing payloadRules
+    // Match by indicator only — oldTf goes stale when dropdown 2 is changed multiple times
+    const patchedRules = manualTfOverride.current
+      ? formattedRules.map((rule) => {
+          const { indicator, newTf } = manualTfOverride.current;
+          const updated = { ...rule };
+          ["object1", "object2", "object3"].forEach((key) => {
+            if (
+              updated[key] &&
+              updated[key].indicator === indicator
+            ) {
+              updated[key] = { ...updated[key], timeframe: newTf };
+            }
+          });
+          return updated;
+        })
+      : formattedRules;
+
+    setPayloadRules(patchedRules);
+
+    const allTFs = getAllTimeframes(patchedRules);
+    const maxTF = getMaxTimeframe(allTFs);
+
+    // ✅ Only auto-set maxTF if user hasn't manually picked a timeframe
+    if (maxTF && !userPickedTf.current) {
+      setTimeframeValue(maxTF);
+    }
+    console.log("✅ Final Payload:", patchedRules);
 
     /* ================= API ================= */
 
@@ -289,7 +331,7 @@ export default function OHLCVTable({
       // ✅ cleaner calculation
       const totalDays = days ? days : months ? Math.round(months * 30) : null;
 
-      if (!totalDays) return;
+      if (!totalDays || !timeframeValue) return;
 
       const { data: result = {} } = await apiService.post(
         `/api/scannerDetail?&interval=${timeframeValue}&day=${totalDays}`,
@@ -326,27 +368,32 @@ export default function OHLCVTable({
 
     const list = [];
 
-    payloadRules.forEach((rule) => {
-      if (rule.object1) {
-        list.push({
-          tf: rule.object1.timeframe,
-          indicator: rule.object1.indicator,
-        });
-      }
+    payloadRules.forEach((rule, ruleIndex) => {
+      ["object1", "object2", "object3"].forEach((key) => {
+        const obj = rule[key];
+        if (!obj) return;
 
-      if (rule.object2) {
-        list.push({
-          tf: rule.object2.timeframe,
-          indicator: rule.object2.indicator,
-        });
-      }
+        // ✅ Skip non-indicator types (price fields, numbers, plain values)
+        const SKIP_INDICATORS = new Set([
+          "number",
+          "open",
+          "high",
+          "low",
+          "close",
+          "volume",
+        ]);
+        if (!obj.indicator || SKIP_INDICATORS.has(obj.indicator.toLowerCase()))
+          return;
 
-      if (rule.object3) {
+        // ✅ Skip objects without a timeframe (e.g. pure value comparisons)
+        if (!obj.timeframe) return;
+
         list.push({
-          tf: rule.object3.timeframe,
-          indicator: rule.object3.indicator,
+          tf: obj.timeframe,
+          indicator: obj.indicator,
+          ruleIndex, // ✅ track which rule this belongs to (for divider)
         });
-      }
+      });
     });
 
     return list;
@@ -417,11 +464,16 @@ export default function OHLCVTable({
   const filteredData = useMemo(() => {
     let data = mergedData;
 
-    console.log(timeframe.tf, "tfffffffffffffffffffffff")
-    // ✅ treat "" as ALL
-    if (timeframe?.tf) {
-      data = data.filter(
-        (row) => row.timeframe?.toLowerCase() === timeframe.tf.toLowerCase(),
+    // ✅ APPLY FILTER ONLY WHEN a specific (non-ALL) TF+indicator is selected
+    if (timeframe?.tf && timeframe?.indicator && timeframe.tf !== "ALL") {
+      const indLower = timeframe.indicator.toLowerCase();
+      const tfLower = timeframe.tf.toLowerCase();
+
+      data = data.filter((row) =>
+        Object.keys(row).some((k) => {
+          const lowerK = k.toLowerCase();
+          return lowerK.includes(indLower) && lowerK.includes(tfLower);
+        }),
       );
     }
 
@@ -468,7 +520,6 @@ export default function OHLCVTable({
     return data; // ✅ no sorting at all
   }, [filteredData, sortConfig]);
 
-
   const totalRecords = mergedData.length;
   const totalPages = Math.ceil(totalRecords / limit);
 
@@ -497,15 +548,30 @@ export default function OHLCVTable({
     const indicatorCols = Array.from(
       new Set(
         mergedData.flatMap((row) =>
-          Object.keys(row).filter(
-            (key) => !ignore.has(key) && key.toLowerCase().startsWith(key),
-          ),
+          Object.keys(row).filter((key) => {
+            if (ignore.has(key)) return false;
+
+            // ✅ Filter columns to match selected timeframe/indicator (skip when ALL)
+            if (
+              timeframe?.tf &&
+              timeframe?.indicator &&
+              timeframe.tf !== "ALL"
+            ) {
+              const lowerKey = key.toLowerCase();
+              return (
+                lowerKey.includes(timeframe.indicator.toLowerCase()) &&
+                lowerKey.includes(timeframe.tf.toLowerCase())
+              );
+            }
+
+            return true;
+          }),
         ),
       ),
     );
 
     return [...baseColumns, ...indicatorCols, "timeframe"];
-  }, [mergedData]);
+  }, [mergedData, timeframe]);
 
   const handleSort = (key) => {
     setSortConfig((prev) => {
@@ -557,17 +623,39 @@ export default function OHLCVTable({
               onSelect={(val) => {
                 const selected = JSON.parse(val);
 
+                // ✅ HANDLE ALL — show "ALL" in toggle, set dropdown 2 to max TF
+                if (selected.tf === "ALL") {
+                  setTimeframe({ tf: "ALL", indicator: "ALL" });
+                  // Set dropdown 2 to the current max timeframe from payloadRules
+                  const allTFs = getAllTimeframes(payloadRules);
+                  const maxTF = getMaxTimeframe(allTFs);
+                  if (maxTF) setTimeframeValue(maxTF);
+                  return;
+                }
+
                 setTimeframe(selected);
-                setTimeframeValue(selected.tf);
+
+                // ✅ Mark that user manually selected a TF — block auto-override
+                userPickedTf.current = true;
+
+                // ✅ Strip "_ago" suffix so it matches dropdown 2 option values
+                // e.g. "1h_ago" → "1h", "1d_ago" → "1d"
+                const normalizedTf = selected.tf
+                  ? selected.tf.replace(/_ago$/i, "")
+                  : selected.tf;
+                setTimeframeValue(normalizedTf); // sync with dropdown 2
               }}
             >
               <Dropdown.Toggle
                 size="sm"
                 variant="light"
-                style={{ height: 32, width: 100, fontSize: 13 }}
+                className="d-flex align-items-center justify-content-between"
+                style={{ height: 32, width: 135, fontSize: 13 }}
               >
                 {!timeframe ? (
-                  "Timeframe"
+                  "Select Timeframe"
+                ) : timeframe.tf === "ALL" ? (
+                  <span>ALL Timeframes</span>
                 ) : (
                   <div className="d-flex align-items-center gap-2">
                     <span>{timeframe.tf}</span>
@@ -587,26 +675,62 @@ export default function OHLCVTable({
                 )}
               </Dropdown.Toggle>
 
-              <Dropdown.Menu style={{ fontSize: 13, minWidth: 160 }}>
-                {flatTimeframes.map((item, i) => (
-                  <Dropdown.Item key={i} eventKey={JSON.stringify(item)}>
-                    <div className="d-flex justify-content-between w-100">
-                      <span>{item.tf}</span>
-                      <Badge
-                        bg=""
-                        style={{
-                          fontSize: 10,
-                          padding: "2px 5px",
-                          background: "var(--bs-secondary-bg)",
-                          color: "var(--bs-secondary-color)",
-                          border: "0.5px solid var(--bs-border-color)",
-                        }}
+              <Dropdown.Menu style={{ fontSize: 13, minWidth: 180 }}>
+                {/* ✅ ALL OPTION */}
+                <Dropdown.Item
+                  eventKey={JSON.stringify({ tf: "ALL", indicator: "ALL" })}
+                >
+                  <div className="d-flex justify-content-between w-100">
+                    <span>ALL</span>
+                    <Badge
+                      bg=""
+                      style={{
+                        fontSize: 10,
+                        padding: "2px 5px",
+                        background: "var(--bs-secondary-bg)",
+                        color: "var(--bs-secondary-color)",
+                        border: "0.5px solid var(--bs-border-color)",
+                      }}
+                    >
+                      ALL
+                    </Badge>
+                  </div>
+                </Dropdown.Item>
+
+                {/* ✅ DYNAMIC OPTIONS — grouped by rule with dividers */}
+                {flatTimeframes.map((item, i) => {
+                  const prevItem = flatTimeframes[i - 1];
+                  const showDivider =
+                    i > 0 && item.ruleIndex !== prevItem?.ruleIndex;
+
+                  return (
+                    <React.Fragment key={i}>
+                      {showDivider && <Dropdown.Divider />}
+                      <Dropdown.Item
+                        eventKey={JSON.stringify({
+                          tf: item.tf,
+                          indicator: item.indicator,
+                        })}
                       >
-                        {item.indicator?.toUpperCase()}
-                      </Badge>
-                    </div>
-                  </Dropdown.Item>
-                ))}
+                        <div className="d-flex justify-content-between w-100">
+                          <span>{item.tf}</span>
+                          <Badge
+                            bg=""
+                            style={{
+                              fontSize: 10,
+                              padding: "2px 5px",
+                              background: "var(--bs-secondary-bg)",
+                              color: "var(--bs-secondary-color)",
+                              border: "0.5px solid var(--bs-border-color)",
+                            }}
+                          >
+                            {item.indicator?.toUpperCase()}
+                          </Badge>
+                        </div>
+                      </Dropdown.Item>
+                    </React.Fragment>
+                  );
+                })}
               </Dropdown.Menu>
             </Dropdown>
 
@@ -697,10 +821,48 @@ export default function OHLCVTable({
             {/* timeframe */}
             <div title={timeframeValue}>
               <select
-                value={timeframeValue || "1m"}
-                onChange={(e) => setTimeframeValue(e.target.value)}
+                value={timeframeValue || ""}
+                onChange={(e) => {
+                  const newTf = e.target.value;
+                  setTimeframeValue(newTf);
+                  userPickedTf.current = true;
+
+                  // ✅ If dropdown 1 has a specific TF+indicator locked in,
+                  // update that object's timeframe in payloadRules and sync dropdown 1
+                  if (timeframe?.tf && timeframe?.indicator) {
+                    const oldTf = timeframe.tf;
+                    const targetIndicator = timeframe.indicator;
+
+                    // ✅ Save it in refs so fetchData uses it when rebuilding payload!
+                    manualTfOverride.current = {
+                      indicator: targetIndicator,
+                      newTf,
+                    };
+
+                    setPayloadRules((prev) =>
+                      prev.map((rule) => {
+                        const updated = { ...rule };
+                        ["object1", "object2", "object3"].forEach((key) => {
+                          if (
+                            updated[key] &&
+                            updated[key].indicator === targetIndicator
+                          ) {
+                            updated[key] = {
+                              ...updated[key],
+                              timeframe: newTf,
+                            };
+                          }
+                        });
+                        return updated;
+                      }),
+                    );
+
+                    // ✅ Sync dropdown 1 label to reflect the new TF
+                    setTimeframe({ tf: newTf, indicator: targetIndicator });
+                  }
+                }}
                 className="form-select form-select-sm"
-                style={{ height: 35, width: 120 }}
+                style={{ height: 35, width: 170 }}
                 onClick={() => {
                   if (
                     !fetchTimeframe ||
@@ -710,6 +872,9 @@ export default function OHLCVTable({
                   }
                 }}
               >
+                <option value="" disabled>
+                  Select Timeframe
+                </option>
                 {/* ✅ Default fallback */}
                 {!fetchTimeframe && <option value="1m">1 Minute</option>}
 
