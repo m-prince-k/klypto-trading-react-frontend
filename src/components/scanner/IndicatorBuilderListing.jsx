@@ -42,6 +42,7 @@ export default function OHLCVTable({
   const debouncedCurrencies = useDebounce(selectedCurrencies, 1000);
   const [fetchTimeframe, setFetchTimeframe] = useState([]);
   const [timeframeValue, setTimeframeValue] = useState("1m");
+  const [payloadRules, setPayloadRules] = useState([]);
   const [sortConfig, setSortConfig] = useState({
     key: null,
     direction: "asc",
@@ -279,7 +280,7 @@ export default function OHLCVTable({
         ...(object3 && { object3 }),
       };
     });
-
+    setPayloadRules(formattedRules);
     console.log("✅ Final Payload:", formattedRules);
 
     /* ================= API ================= */
@@ -291,7 +292,7 @@ export default function OHLCVTable({
       if (!totalDays) return;
 
       const { data: result = {} } = await apiService.post(
-        `/api/scannerDetail?&interval=1d&day=${totalDays}`,
+        `/api/scannerDetail?&interval=${timeframeValue}&day=${totalDays}`,
         {
           currencies: (debouncedCurrencies || []).map((c) => c.value),
           rules: formattedRules,
@@ -319,6 +320,37 @@ export default function OHLCVTable({
       setLoading(false);
     }
   };
+
+  const flatTimeframes = useMemo(() => {
+    if (!payloadRules?.length) return [];
+
+    const list = [];
+
+    payloadRules.forEach((rule) => {
+      if (rule.object1) {
+        list.push({
+          tf: rule.object1.timeframe,
+          indicator: rule.object1.indicator,
+        });
+      }
+
+      if (rule.object2) {
+        list.push({
+          tf: rule.object2.timeframe,
+          indicator: rule.object2.indicator,
+        });
+      }
+
+      if (rule.object3) {
+        list.push({
+          tf: rule.object3.timeframe,
+          indicator: rule.object3.indicator,
+        });
+      }
+    });
+
+    return list;
+  }, [payloadRules]);
 
   const getBaseFromSymbol = (symbol = "") => {
     if (!symbol) return "";
@@ -379,8 +411,8 @@ export default function OHLCVTable({
       });
     });
 
-    // return finalData.sort((a, b) => b.time - a.time);
-    return finalData;
+    return finalData.sort((a, b) => b.time - a.time);
+    // return finalData;
   }, [dataSource]);
 
   /* ================= SEARCH ================= */
@@ -388,9 +420,9 @@ export default function OHLCVTable({
     let data = mergedData;
 
     // ✅ treat "" as ALL
-    if (timeframe && timeframe !== "ALL") {
+    if (timeframe?.tf) {
       data = data.filter(
-        (row) => row.timeframe?.toLowerCase() === timeframe.toLowerCase(),
+        (row) => row.timeframe?.toLowerCase() === timeframe.tf.toLowerCase(),
       );
     }
 
@@ -409,39 +441,40 @@ export default function OHLCVTable({
   }, [mergedData, search, timeframe]);
 
   /* ================= SORTING ================= */
-  // const sortedData = useMemo(() => {
-  //   let data = [...filteredData].map((row, index) => ({
-  //     ...row,
-  //     sno: index + 1,
-  //   }));
-
-  //   // if (!sortConfig.key) return data;
-
-  //   // return data.sort((a, b) => {
-  //   //   const aVal = a[sortConfig.key];
-  //   //   const bVal = b[sortConfig.key];
-
-  //   //   if (aVal == null) return 1;
-  //   //   if (bVal == null) return -1;
-
-  //   //   if (typeof aVal === "number" && typeof bVal === "number") {
-  //   //     return sortConfig.direction === "asc" ? aVal - bVal : bVal - aVal;
-  //   //   }
-
-  //   //   return sortConfig.direction === "asc"
-  //   //     ? aVal.toString().localeCompare(bVal.toString())
-  //   //     : bVal.toString().localeCompare(aVal.toString());
-  //   // });
-
-  //   return data; // ✅ no sorting at all
-  // }, [filteredData, sortConfig]);
 
   const sortedData = useMemo(() => {
-    return filteredData.map((row, index) => ({
+    let data = [...filteredData].map((row, index) => ({
       ...row,
       sno: index + 1,
     }));
-  }, [filteredData]);
+
+    if (!sortConfig.key) return data;
+
+    return data.sort((a, b) => {
+      const aVal = a[sortConfig.key];
+      const bVal = b[sortConfig.key];
+
+      if (aVal == null) return 1;
+      if (bVal == null) return -1;
+
+      if (typeof aVal === "number" && typeof bVal === "number") {
+        return sortConfig.direction === "asc" ? aVal - bVal : bVal - aVal;
+      }
+
+      return sortConfig.direction === "asc"
+        ? aVal.toString().localeCompare(bVal.toString())
+        : bVal.toString().localeCompare(aVal.toString());
+    });
+
+    return data; // ✅ no sorting at all
+  }, [filteredData, sortConfig]);
+
+  // const sortedData = useMemo(() => {
+  //   return filteredData.map((row, index) => ({
+  //     ...row,
+  //     sno: index + 1,
+  //   }));
+  // }, [filteredData]);
 
   const totalRecords = mergedData.length;
   const totalPages = Math.ceil(totalRecords / limit);
@@ -527,52 +560,60 @@ export default function OHLCVTable({
               style={{ maxWidth: 200 }}
             />
 
-            <Dropdown onSelect={(val) => setTimeframe(val)}>
+            <Dropdown
+              onSelect={(val) => {
+                const selected = JSON.parse(val);
+
+                setTimeframe(selected);
+                setTimeframeValue(selected.tf);
+              }}
+            >
               <Dropdown.Toggle
                 size="sm"
                 variant="light"
-                style={{
-                  height: 32,
-                  fontSize: 13,
-                }}
+                style={{ height: 32, width: 100, fontSize: 13 }}
               >
-                {timeframe === ""
-                  ? "Timeframe"
-                  : timeframe === "ALL"
-                    ? "All"
-                    : timeframe}
+                {!timeframe ? (
+                  "Timeframe"
+                ) : (
+                  <div className="d-flex align-items-center gap-2">
+                    <span>{timeframe.tf}</span>
+                    <Badge
+                      bg=""
+                      style={{
+                        fontSize: 10,
+                        padding: "2px 5px",
+                        background: "var(--bs-secondary-bg)",
+                        color: "var(--bs-secondary-color)",
+                        border: "0.5px solid var(--bs-border-color)",
+                      }}
+                    >
+                      {timeframe.indicator?.toUpperCase()}
+                    </Badge>
+                  </div>
+                )}
               </Dropdown.Toggle>
+
               <Dropdown.Menu style={{ fontSize: 13, minWidth: 160 }}>
-                <Dropdown.Item eventKey="ALL">All</Dropdown.Item>
-                {timeframes.map((tf) => {
-                  const indicatorsForTf = rules
-                    ?.filter((r) => r.timeframe === tf)
-                    ?.map((r) => r.indicator);
-                  return (
-                    <Dropdown.Item key={tf} eventKey={tf}>
-                      <div className="d-flex justify-content-between w-100 gap-2">
-                        <span>{tf}</span>
-                        <div className="d-flex gap-1">
-                          {indicatorsForTf?.map((ind, i) => (
-                            <Badge
-                              key={i}
-                              bg=""
-                              style={{
-                                fontSize: 10,
-                                padding: "2px 5px",
-                                background: "var(--bs-secondary-bg)",
-                                color: "var(--bs-secondary-color)",
-                                border: "0.5px solid var(--bs-border-color)",
-                              }}
-                            >
-                              {ind?.toUpperCase()}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </Dropdown.Item>
-                  );
-                })}
+                {flatTimeframes.map((item, i) => (
+                  <Dropdown.Item key={i} eventKey={JSON.stringify(item)}>
+                    <div className="d-flex justify-content-between w-100">
+                      <span>{item.tf}</span>
+                      <Badge
+                        bg=""
+                        style={{
+                          fontSize: 10,
+                          padding: "2px 5px",
+                          background: "var(--bs-secondary-bg)",
+                          color: "var(--bs-secondary-color)",
+                          border: "0.5px solid var(--bs-border-color)",
+                        }}
+                      >
+                        {item.indicator?.toUpperCase()}
+                      </Badge>
+                    </div>
+                  </Dropdown.Item>
+                ))}
               </Dropdown.Menu>
             </Dropdown>
 
