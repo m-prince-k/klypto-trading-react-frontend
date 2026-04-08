@@ -314,7 +314,13 @@ export default function OHLCVTable({
         })
       : formattedRules;
 
+    // ✅ Clear override AFTER applying — prevent it from sticking on next fetchData call
+    manualTfOverride.current = null;
+
     setPayloadRules(patchedRules);
+
+    console.log(patchedRules, "patchedRules" )
+    
 
     const allTFs = getAllTimeframes(patchedRules);
     const maxTF = getMaxTimeframe(allTFs);
@@ -337,7 +343,7 @@ export default function OHLCVTable({
         `/api/scannerDetail?&interval=${timeframeValue}&day=${totalDays}`,
         {
           currencies: (debouncedCurrencies || []).map((c) => c.value),
-          rules: formattedRules,
+          rules: patchedRules, // ✅ use patched rules, not original formattedRules
         },
       );
 
@@ -827,13 +833,16 @@ export default function OHLCVTable({
                   setTimeframeValue(newTf);
                   userPickedTf.current = true;
 
-                  // ✅ If dropdown 1 has a specific TF+indicator locked in,
+                  // ✅ If dropdown 1 has a specific TF+indicator locked in (not ALL),
                   // update that object's timeframe in payloadRules and sync dropdown 1
-                  if (timeframe?.tf && timeframe?.indicator) {
-                    const oldTf = timeframe.tf;
+                  if (
+                    timeframe?.tf &&
+                    timeframe?.indicator &&
+                    timeframe.tf !== "ALL"
+                  ) {
                     const targetIndicator = timeframe.indicator;
 
-                    // ✅ Save it in refs so fetchData uses it when rebuilding payload!
+                    // ✅ Save override so fetchData uses it when rebuilding payload
                     manualTfOverride.current = {
                       indicator: targetIndicator,
                       newTf,

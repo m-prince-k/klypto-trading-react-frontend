@@ -1137,6 +1137,7 @@ export default function Candlestick() {
           selectedCurrency={selectedCurrency}
           timeframeValue={timeframeValue}
           rules={rules}
+          setRules={setRules}
           runScanTrigger={runScanTrigger}
           setRunScanTrigger={setRunScanTrigger}
           listingTimeframe={listingTimeframe}
