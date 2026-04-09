@@ -26,6 +26,7 @@ import AlertModal from "./ScannerModals";
 export default function OHLCVTable({
   selectedCurrency,
   rules,
+  logic,
   runScanTrigger,
   listingTimeframe,
   selectedCurrencies,
@@ -123,8 +124,7 @@ export default function OHLCVTable({
 
       const data = response?.data || {};
 
-      setFetchTimeframe(data); 
-
+      setFetchTimeframe(data);
     } catch (err) {
       console.error(err);
       setError(err?.message || "Failed to fetch timeframes");
@@ -214,8 +214,6 @@ export default function OHLCVTable({
         ...params,
         ...(isMA ? { source: (source || "close").toLowerCase() } : {}),
       };
-    } else {
-      obj.length = null;
     }
 
     return obj;
@@ -256,6 +254,16 @@ export default function OHLCVTable({
         }
 
         if (!rule?.scanner || rule.scanner === "Select Scanner") {
+          errorMessage = `Rule ${ruleNum}: Compare scanner not selected`;
+          return true;
+        }
+
+        if (rule.operator2 === "Select Operation") {
+          errorMessage = `Rule ${ruleNum}: Operator not selected`;
+          return true;
+        }
+
+        if (rule.scanner2 === "Select Scanner") {
           errorMessage = `Rule ${ruleNum}: Compare scanner not selected`;
           return true;
         }
@@ -321,6 +329,7 @@ export default function OHLCVTable({
         );
 
         return {
+          logic: rule.logic,
           object1,
           operator1: rule.operator,
 
@@ -373,6 +382,7 @@ export default function OHLCVTable({
         {
           currencies: (debouncedCurrencies || []).map((c) => c.value),
           rules: patchedRules, // ✅ use patched rules, not original formattedRules
+          logic: logic,
         },
       );
 

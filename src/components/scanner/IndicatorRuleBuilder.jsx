@@ -36,21 +36,21 @@ export default function IndicatorRuleBuilder({
   onOpen,
   rules,
   setRules,
+  logic,
+  setLogic,
   runScanTrigger,
   setRunScanTrigger,
-  setListingTimeframe,
-  listingTimeframe,
   selectedCurrencies,
   setSelectedCurrencies,
+  scannerOptions,
+  setScannerOptions,
 }) {
   const [timeframeOptions, setTimeframeOptions] = useState([]);
-  const [scannerOptions, setScannerOptions] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState(null);
   const [currencies, setCurrencies] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [logic, setLogic] = useState("AND");
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
@@ -74,7 +74,6 @@ export default function IndicatorRuleBuilder({
       const raw = response?.data ?? [];
 
       const formatted = [
-        // { label: "Select Currency", value: "" },
         ...raw.map((item) => ({
           label: item.label ?? item.name ?? item.symbol,
           value: item.value ?? item.symbol ?? item.label,
@@ -536,6 +535,11 @@ export default function IndicatorRuleBuilder({
     }
   }
 
+const getApiIndicator = (value) => {
+  const selected = scannerOptions.find((opt) => opt.value === value);
+  return selected?.slug || value;
+};
+
   async function fetchScanners() {
     try {
       const response = await apiService.post("/api/scanner");
@@ -544,16 +548,35 @@ export default function IndicatorRuleBuilder({
       const formatted = [
         { label: "Select Scanner", value: "" },
         ...(raw ?? []).map((item) => {
-          const fallbackValue = item.slug || item.label; // ✅ fallback logic
+          let fallbackValue = item.slug || item.label;
+
+          // ✅ ONLY HANDLE MACD CASE
+          if (item.slug === "macd") {
+            const label = item.label.toLowerCase();
+
+            if (label.includes("histogram")) {
+              fallbackValue = "macd_histogram";
+            } else if (label.includes("signal")) {
+              fallbackValue = "macd_signal";
+            } else {
+              fallbackValue = "macd_line";
+            }
+          }
 
           return {
             label: item.label,
-
-            // ✅ use slug if exists, else label
-            value: fallbackValue,
-
-            // optional
+            value: fallbackValue, // ✅ unique ONLY for macd
             slug: item.slug || null,
+
+            // ✅ store type for later use (VERY IMPORTANT)
+            type:
+              item.slug === "macd"
+                ? item.label.toLowerCase().includes("histogram")
+                  ? "histogram"
+                  : item.label.toLowerCase().includes("signal")
+                    ? "signal"
+                    : "line"
+                : null,
 
             meta:
               typeof item.value === "object" && item.value !== null
@@ -579,34 +602,26 @@ export default function IndicatorRuleBuilder({
     fetchScanners();
   }, []);
 
-  const updateOperation = (ruleId, opId, field, value) => {
-    setRules((prev) =>
-      prev.map((r) =>
-        r.id === ruleId
-          ? {
-              ...r,
-              operations: r.operations.map((o) =>
-                o.id === opId ? { ...o, [field]: value } : o,
-              ),
-            }
-          : r,
-      ),
-    );
-  };
+  const PRICE_FIELDS = [
+    "Open",
+    "High",
+    "Low",
+    "Close",
+    "Volume",
+    "% Change",
+    "VWAP",
+    "Accumulation / Distribution",
+    "Volume Oscillator",
+    "Pivot Point",
+    "OBV",
+    "Session Volume Profile",
+    "Positive Volume Index",
+  ];
+
   const getScannerMeta = (value) => {
     const selected = scannerOptions.find((opt) => opt.value === value);
 
     const hasParams = selected?.meta && Object.keys(selected.meta).length > 0;
-
-    const PRICE_FIELDS = [
-      "Open",
-      "High",
-      "Low",
-      "Close",
-      "Volume",
-      "% Change",
-      "VWAP",
-    ];
 
     const isPriceField = PRICE_FIELDS.includes(value);
 
@@ -616,11 +631,18 @@ export default function IndicatorRuleBuilder({
   const MA_INDICATORS = ["sma", "ema", "tema", "wma", "hma", "stddev"];
 
   const PRICE_OPTIONS = [
-    { label: "Open", value: "Open" },
-    { label: "High", value: "High" },
-    { label: "Low", value: "Low" },
-    { label: "Close", value: "Close" },
-    { label: "Volume", value: "Volume" },
+    { label: "Open", value: "open" },
+    { label: "High", value: "high" },
+    { label: "Low", value: "low" },
+    { label: "Close", value: "close" },
+    { label: "Volume", value: "volume" },
+    { label: "VWAP", value: "VWAP" },
+    { label: "Accumulation / Distribution", value: "ad" },
+    { label: "Pivot Point", value: "pivot" },
+    { label: "OBV", value: "obv" },
+    { label: "Session Volume Profile", value: "svp" },
+    { label: "Positive Volume Index", value: "pvi" },
+    { label: "Negative Volume Index", value: "nvi" },
   ];
 
   const isMATypeFn = (value = "") =>
@@ -746,6 +768,8 @@ export default function IndicatorRuleBuilder({
                 (opt) => opt.value === rule.indicator,
               );
 
+              console.log(scannerOptions, "scanerrrrrrrrr");
+
               const selectedScanner = scannerOptions.find(
                 (opt) => opt.value === rule.scanner,
               );
@@ -758,23 +782,25 @@ export default function IndicatorRuleBuilder({
                 selectedScanner?.meta &&
                 Object.keys(selectedScanner.meta).length > 0;
 
-              const PRICE_FIELDS = [
-                "Open",
-                "High",
-                "Low",
-                "Close",
-                "Volume",
-                "% Change",
-                "VWAP",
-              ];
-
-              const isIndicatorPriceField = PRICE_FIELDS.includes(
-                rule.indicator,
+              const isIndicatorPriceField = PRICE_OPTIONS.some(
+                (opt) =>
+                  opt.value.toLowerCase() ===
+                  (rule.indicator || "").toLowerCase(),
               );
-              const isScannerPriceField = PRICE_FIELDS.includes(rule.scanner);
+
+              const isScannerPriceField = PRICE_OPTIONS.some(
+                (opt) =>
+                  opt.value.toLowerCase() ===
+                  (rule.scanner || "").toLowerCase(),
+              );
+              const isScanner2PriceField = PRICE_OPTIONS.some(
+                (opt) =>
+                  opt.value.toLowerCase() ===
+                  (rule.scanner2 || "").toLowerCase(),
+              );
               const isMAType = MA_INDICATORS.includes(rule.indicator);
-              const isScannerMAType = MA_INDICATORS.includes(rule.scanner);
-              const isScanner2MAType = MA_INDICATORS.includes(rule.scanner2);
+              // const isScannerMAType = MA_INDICATORS.includes(rule.scanner);
+              // const isScanner2MAType = MA_INDICATORS.includes(rule.scanner2);
 
               return (
                 <div
@@ -862,6 +888,10 @@ export default function IndicatorRuleBuilder({
                             params[key] = selected.meta[key];
                           });
                           updateField(rule.id, "indicatorParams", params);
+                        }
+
+                        if (selected) {
+                          updateField(rule.id, "indicatorType", selected.type); // ✅ add this
                         }
                       }}
                     />
@@ -1129,11 +1159,13 @@ export default function IndicatorRuleBuilder({
 
                   {rule.scanner2 !== undefined &&
                     (() => {
-                      const {
-                        selected: selectedScanner2,
-                        hasParams: scanner2HasParams,
-                        isPriceField: isScanner2PriceField,
-                      } = getScannerMeta(rule.scanner2);
+                      const selectedScanner2 = scannerOptions.find(
+                        (opt) => opt.value === rule.scanner2,
+                      );
+
+                      const scanner2HasParams =
+                        selectedScanner2?.meta &&
+                        Object.keys(selectedScanner2.meta).length > 0;
 
                       return (
                         <div

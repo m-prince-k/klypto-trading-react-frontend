@@ -180,7 +180,7 @@ export default function EditableMultiSelect({
             className="d-flex align-items-center gap-1 border-0"
             style={{
               background: "#eff6ff",
-              color: "#3b82f6",
+              color: "#fff",
               fontWeight: 600,
               fontSize: "12px",
               padding: "4px 8px",
