@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Form, Badge } from "react-bootstrap";
+import { IoClose } from "react-icons/io5";
 
 export function EditableSelect({ value, options, onChange }) {
   const [editing, setEditing] = useState(false);
@@ -163,14 +164,39 @@ export default function EditableMultiSelect({
     value.length === 0 ? (
       <span className="text-secondary">{placeholder}</span>
     ) : (
-      <div className="d-flex flex-wrap gap-1">
+      <div
+        className="d-flex flex-wrap gap-1 align-items-center"
+        style={{
+          maxWidth: "100%",
+          maxHeight: "120px",
+          overflowY: "auto",
+          padding: "2px 0",
+        }}
+      >
         {value.map((item) => (
           <Badge
             key={item.value}
             pill
-            style={{ background: "#e4e4e4", color: "#fff", fontWeight: 500 }}
+            className="d-flex align-items-center gap-1 border-0"
+            style={{
+              background: "#eff6ff",
+              color: "#3b82f6",
+              fontWeight: 600,
+              fontSize: "12px",
+              padding: "4px 8px",
+              border: "1px solid #dbeafe !important",
+            }}
           >
             {item.label}
+            <IoClose
+              size={14}
+              className="cursor-pointer hover-scale transition"
+              style={{ cursor: "pointer", opacity: 0.7 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleOption(item);
+              }}
+            />
           </Badge>
         ))}
       </div>
@@ -186,14 +212,16 @@ export default function EditableMultiSelect({
       {/* FIELD */}
       <div
         onClick={() => setOpen((o) => !o)}
-        className="d-flex align-items-center gap-2 px-2 py-1 bg-white rounded-3 cursor-pointer"
+        className="d-flex align-items-center gap-2 px-2 py-1 bg-white rounded-3 cursor-pointer border border-light-subtle"
         style={{
-          minHeight: "36px",
-          width: "fit-content",
+          minHeight: "40px",
+          width: "auto",
+          minWidth: "150px",
+          maxWidth: "400px",
           cursor: "pointer",
         }}
       >
-        <div className="flex-grow-1 fw-semibold text-dark">{display}</div>
+        <div className="flex-grow-1 fw-semibold text-dark w-100">{display}</div>
       </div>
 
       {/* DROPDOWN */}

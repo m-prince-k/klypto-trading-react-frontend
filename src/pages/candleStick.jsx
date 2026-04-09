@@ -1142,6 +1142,7 @@ export default function Candlestick() {
           setRunScanTrigger={setRunScanTrigger}
           listingTimeframe={listingTimeframe}
           selectedCurrencies={selectedCurrencies}
+          setSelectedCurrencies={setSelectedCurrencies}
         />
       </div>
     </>

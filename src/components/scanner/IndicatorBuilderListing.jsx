@@ -13,22 +13,24 @@ import {
   handleExcelDownload,
   symbols,
   useDebounce,
+  tfToMinutes,
 } from "../../util/common";
 import { toast } from "react-toastify";
 import axios from "axios";
 import { Spinner } from "../tradingModals/Spinner";
 import EditableMultiSelect from "../indicator/EditTableLabel";
+import AlertModal from "./ScannerModals";
 
 /* ================= SYMBOL LIST ================= */
 
 export default function OHLCVTable({
   selectedCurrency,
   rules,
-  // timeframeValue,
   runScanTrigger,
   listingTimeframe,
   selectedCurrencies,
   setSelectedCurrencies,
+  setRules,
 }) {
   const [timeframe, setTimeframe] = useState(null); // null = ALL
   const [limit, setLimit] = useState(10); // actual data limit
@@ -50,6 +52,9 @@ export default function OHLCVTable({
     direction: "asc",
   });
 
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMsg, setAlertMsg] = useState("");
+
   // ✅ Tracks whether the user manually picked a TF from dropdown 1
   // When true, fetchData will NOT override timeframeValue with maxTF
   const userPickedTf = useRef(false);
@@ -57,6 +62,7 @@ export default function OHLCVTable({
   // ✅ Stores a pending TF override {indicator, oldTf, newTf}
   // Applied inside fetchData so it survives the formattedRules rebuild
   const manualTfOverride = useRef(null);
+  const isFetching = useRef(false);
 
   const timeframes = useMemo(() => {
     return dataSource && typeof dataSource === "object"
@@ -117,10 +123,8 @@ export default function OHLCVTable({
 
       const data = response?.data || {};
 
-      setFetchTimeframe(data); // ✅ correct state
+      setFetchTimeframe(data); 
 
-      // ❌ REMOVE THIS (no use)
-      // setTimeframeValue(timeframeValue);
     } catch (err) {
       console.error(err);
       setError(err?.message || "Failed to fetch timeframes");
@@ -218,122 +222,147 @@ export default function OHLCVTable({
   };
 
   const fetchData = async () => {
+    if (isFetching.current) return;
+    isFetching.current = true;
     setLoading(true);
 
-    /* ================= VALIDATION ================= */
-
-    let errorMessage = "";
-
-    const hasInvalidRule = rules?.some((rule, index) => {
-      if (!rule?.indicator || rule.indicator === "Select Scanner") {
-        errorMessage = `Rule ${index + 1}: Indicator not selected`;
-        return true;
-      }
-
-      if (!rule?.operator || rule.operator === "Select Operation") {
-        errorMessage = `Rule ${index + 1}: Operator not selected`;
-        return true;
-      }
-
-      if (!rule?.scanner || rule.scanner === "Select Scanner") {
-        errorMessage = `Rule ${index + 1}: Compare scanner not selected`;
-        return true;
-      }
-
-      return false;
-    });
-
-    if (hasInvalidRule) {
-      toast.error(errorMessage);
-      setLoading(false);
-      return;
-    }
-    const activeRules = rules.filter((r) => !r.disabled);
-    /* ================= FORMATTING ================= */
-
-    const formattedRules = activeRules.map((rule) => {
-      // ✅ helper to avoid repetition
-      const createObject = (config, condition = true) =>
-        condition ? buildObject({ ...config }) : null;
-
-      const object1 = createObject({
-        indicator: rule.indicator,
-        timeframe: rule.timeframe,
-        params: rule.indicatorParams,
-        value: rule.value,
-        source: rule.source,
-        type: "object1",
-      });
-
-      const object2 = createObject({
-        indicator: rule.scanner,
-        timeframe: rule.compareTimeframe,
-        params: rule.scannerParams,
-        value: rule.compareValue,
-        source: rule.scannerSource,
-        type: "object2",
-      });
-
-      const object3 = createObject(
-        {
-          indicator: rule.scanner2,
-          timeframe: rule.timeframe2,
-          params: rule.params2,
-          value: rule.value2,
-          source: rule.source2,
-          type: "object3",
-        },
-        rule.scanner2 !== undefined,
-      );
-
-      return {
-        object1,
-        operator1: rule.operator,
-
-        ...(object2 && { object2 }),
-        ...(rule.operator2 && { operator2: rule.operator2 }),
-        ...(object3 && { object3 }),
-      };
-    });
-
-    // ✅ Apply manual TF override BEFORE storing payloadRules
-    // Match by indicator only — oldTf goes stale when dropdown 2 is changed multiple times
-    const patchedRules = manualTfOverride.current
-      ? formattedRules.map((rule) => {
-          const { indicator, newTf } = manualTfOverride.current;
-          const updated = { ...rule };
-          ["object1", "object2", "object3"].forEach((key) => {
-            if (
-              updated[key] &&
-              updated[key].indicator === indicator
-            ) {
-              updated[key] = { ...updated[key], timeframe: newTf };
-            }
-          });
-          return updated;
-        })
-      : formattedRules;
-
-    // ✅ Clear override AFTER applying — prevent it from sticking on next fetchData call
-    manualTfOverride.current = null;
-
-    setPayloadRules(patchedRules);
-
-    console.log(patchedRules, "patchedRules" )
-    
-
-    const allTFs = getAllTimeframes(patchedRules);
-    const maxTF = getMaxTimeframe(allTFs);
-
-    // ✅ Only auto-set maxTF if user hasn't manually picked a timeframe
-    if (maxTF && !userPickedTf.current) {
-      setTimeframeValue(maxTF);
-    }
-    console.log("✅ Final Payload:", patchedRules);
-
-    /* ================= API ================= */
-
     try {
+      /* ================= VALIDATION ================= */
+
+      let errorMessage = "";
+      const comparisonOps = new Set([
+        ">",
+        "<",
+        ">=",
+        "<=",
+        "==",
+        "!=",
+        "cross_above",
+        "cross_below",
+      ]);
+
+      const hasInvalidRule = rules?.some((rule, index) => {
+        const ruleNum = index + 1;
+
+        // 1. Basic field selection checks
+        if (!rule?.indicator || rule.indicator === "Select Scanner") {
+          errorMessage = `Rule ${ruleNum}: Indicator not selected`;
+          return true;
+        }
+
+        if (!rule?.operator || rule.operator === "Select Operation") {
+          errorMessage = `Rule ${ruleNum}: Operator not selected`;
+          return true;
+        }
+
+        if (!rule?.scanner || rule.scanner === "Select Scanner") {
+          errorMessage = `Rule ${ruleNum}: Compare scanner not selected`;
+          return true;
+        }
+
+        // 2. Comparison operator count check
+        let compCount = 0;
+        if (comparisonOps.has(rule.operator)) compCount++;
+        if (comparisonOps.has(rule.operator2)) compCount++;
+
+        if (compCount === 0) {
+          errorMessage = `Rule ${ruleNum}: One comparison operator (<, >, =, etc.) is required`;
+          return true;
+        }
+        if (compCount > 1) {
+          errorMessage = `Rule ${ruleNum}: Only one comparison operator is allowed per rule`;
+          return true;
+        }
+
+        return false;
+      });
+
+      if (hasInvalidRule) {
+        setAlertMsg(errorMessage);
+        setShowAlert(true);
+        return;
+      }
+      const activeRules = rules.filter((r) => !r.disabled);
+      /* ================= FORMATTING ================= */
+
+      const formattedRules = activeRules.map((rule) => {
+        // ✅ helper to avoid repetition
+        const createObject = (config, condition = true) =>
+          condition ? buildObject({ ...config }) : null;
+
+        const object1 = createObject({
+          indicator: rule.indicator,
+          timeframe: rule.timeframe,
+          params: rule.indicatorParams,
+          value: rule.value,
+          source: rule.source,
+          type: "object1",
+        });
+
+        const object2 = createObject({
+          indicator: rule.scanner,
+          timeframe: rule.compareTimeframe,
+          params: rule.scannerParams,
+          value: rule.compareValue,
+          source: rule.scannerSource,
+          type: "object2",
+        });
+
+        const object3 = createObject(
+          {
+            indicator: rule.scanner2,
+            timeframe: rule.timeframe2,
+            params: rule.params2,
+            value: rule.value2,
+            source: rule.source2,
+            type: "object3",
+          },
+          rule.scanner2 !== undefined,
+        );
+
+        return {
+          object1,
+          operator1: rule.operator,
+
+          ...(object2 && { object2 }),
+          ...(rule.operator2 && { operator2: rule.operator2 }),
+          ...(object3 && { object3 }),
+        };
+      });
+
+      // ✅ Apply manual TF override BEFORE storing payloadRules
+      // Match by indicator only — oldTf goes stale when dropdown 2 is changed multiple times
+      const patchedRules = manualTfOverride.current
+        ? formattedRules.map((rule) => {
+            const { indicator, newTf } = manualTfOverride.current;
+            const updated = { ...rule };
+            ["object1", "object2", "object3"].forEach((key) => {
+              if (updated[key] && updated[key].indicator === indicator) {
+                updated[key] = { ...updated[key], timeframe: newTf };
+              }
+            });
+            return updated;
+          })
+        : formattedRules;
+
+      // ✅ Clear override AFTER applying — prevent it from sticking on next fetchData call
+      manualTfOverride.current = null;
+
+      setPayloadRules(patchedRules);
+
+      console.log(patchedRules, "patchedRules");
+
+      const allTFs = getAllTimeframes(patchedRules);
+      const maxTF = getMaxTimeframe(allTFs);
+
+      // ✅ Only auto-set maxTF if user hasn't manually picked a timeframe
+      if (maxTF && !userPickedTf.current) {
+        setTimeframeValue(maxTF);
+      }
+      console.log("✅ Final Payload:", patchedRules);
+
+      /* ================= API ================= */
+
       // ✅ cleaner calculation
       const totalDays = days ? days : months ? Math.round(months * 30) : null;
 
@@ -366,6 +395,7 @@ export default function OHLCVTable({
       setDataSource({});
     } finally {
       setLoading(false);
+      isFetching.current = false;
     }
   };
 
@@ -833,15 +863,32 @@ export default function OHLCVTable({
                   setTimeframeValue(newTf);
                   userPickedTf.current = true;
 
-                  // ✅ If dropdown 1 has a specific TF+indicator locked in (not ALL),
-                  // update that object's timeframe in payloadRules and sync dropdown 1
+                  let targetIndicator = null;
+
+                  // ✅ CASE 1: Specific indicator selected
                   if (
                     timeframe?.tf &&
                     timeframe?.indicator &&
                     timeframe.tf !== "ALL"
                   ) {
-                    const targetIndicator = timeframe.indicator;
+                    targetIndicator = timeframe.indicator;
+                  }
+                  // ✅ CASE 2: "ALL Timeframes" selected — target the LARGEST timeframe indicator
+                  else if (
+                    timeframe?.tf === "ALL" &&
+                    flatTimeframes.length > 0
+                  ) {
+                    let maxMins = -1;
+                    flatTimeframes.forEach((item) => {
+                      const mins = tfToMinutes(item.tf);
+                      if (mins > maxMins) {
+                        maxMins = mins;
+                        targetIndicator = item.indicator;
+                      }
+                    });
+                  }
 
+                  if (targetIndicator) {
                     // ✅ Save override so fetchData uses it when rebuilding payload
                     manualTfOverride.current = {
                       indicator: targetIndicator,
@@ -866,8 +913,31 @@ export default function OHLCVTable({
                       }),
                     );
 
-                    // ✅ Sync dropdown 1 label to reflect the new TF
-                    setTimeframe({ tf: newTf, indicator: targetIndicator });
+                    // ✅ Sync dropdown 1 label to reflect the new TF (only if not in ALL mode)
+                    if (timeframe.tf !== "ALL") {
+                      setTimeframe({ tf: newTf, indicator: targetIndicator });
+                    }
+
+                    // ✅ SYNC TO MASTER RULES (for IndicatorRuleBuilder UI)
+                    if (setRules) {
+                      setRules((prev) =>
+                        prev.map((r) => {
+                          const updated = { ...r };
+                          const matches = (v) =>
+                            v &&
+                            v.toLowerCase() === targetIndicator.toLowerCase();
+
+                          if (matches(updated.indicator))
+                            updated.timeframe = newTf;
+                          if (matches(updated.scanner))
+                            updated.compareTimeframe = newTf;
+                          if (matches(updated.scanner2))
+                            updated.timeframe2 = newTf;
+
+                          return updated;
+                        }),
+                      );
+                    }
                   }
                 }}
                 className="form-select form-select-sm"
@@ -957,7 +1027,7 @@ export default function OHLCVTable({
                         <div className="d-flex align-items-center justify-content-center w-100">
                           <span>{col.toUpperCase()}</span>
 
-                          {/* <div
+                          <div
                             style={{
                               display: "flex",
                               flexDirection: "column",
@@ -986,7 +1056,7 @@ export default function OHLCVTable({
                                 marginTop: "-4px",
                               }}
                             />
-                          </div> */}
+                          </div>
                         </div>
                       </th>
                     ))}
@@ -1083,6 +1153,12 @@ export default function OHLCVTable({
           </div>
         </Card.Body>
       </Card>
+
+      <AlertModal
+        isOpen={showAlert}
+        message={alertMsg}
+        onClose={() => setShowAlert(false)}
+      />
     </Container>
   );
 }
