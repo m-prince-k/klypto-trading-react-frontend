@@ -289,7 +289,11 @@ export default function IndicatorPropertyDialog({
   ========================== */
 
   function renderIndicatorSetting() {
-    switch (activeBarIndicator) {
+    const baseIndicator = activeBarIndicator.startsWith("CUSTOM_")
+      ? activeBarIndicator.replace("CUSTOM_", "")
+      : activeBarIndicator;
+
+    switch (baseIndicator) {
       case "SMA":
       case "EMA":
         return (

@@ -35,10 +35,14 @@ export default function useChartFunctions({
     if (!selectedIndicator?.length) return;
 
     for (const indicator of selectedIndicator) {
+      const baseIndicator = indicator.startsWith("CUSTOM_")
+        ? indicator.replace("CUSTOM_", "")
+        : indicator;
+
       try {
         const result = await fetchDataForIndicators(
           selectedCurrency,
-          indicator,
+          baseIndicator,
           timeframeValue,
           setIndicatorLoading,
         );
@@ -47,21 +51,21 @@ export default function useChartFunctions({
 
         const config = indicatorConfigs?.[indicator] || {};
         const { maType } = config;
-        const rows = getRowsByIndicator(indicator, maType, indicatorConfigs);
+        const rows = getRowsByIndicator(baseIndicator, maType, indicatorConfigs);
 
-        switch (indicator) {
+        switch (baseIndicator) {
           case "RSI": {
             const rsiData = result?.data?.rsi ?? [];
             const smoothingData = result?.data?.smoothingMA ?? [];
             const bbUpperData = result?.data?.bbUpperBand ?? [];
             const bbLowerData = result?.data?.bbLowerBand ?? [];
 
-            indicatorSeriesRef.current.RSI = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.RSI = {
+            latestIndicatorValuesRef.current[indicator] = {
               rsi: rsiData[rsiData.length - 1]?.value,
               smoothingMA: smoothingData[smoothingData.length - 1]?.value,
               bbUpperBand:
@@ -81,12 +85,12 @@ export default function useChartFunctions({
             const highestData = result?.data?.highest ?? [];
             const lowestData = result?.data?.lowest ?? [];
 
-            indicatorSeriesRef.current.BBW = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.BBW = {
+            latestIndicatorValuesRef.current[indicator] = {
               bbw: bbwData[bbwData.length - 1]?.value ?? null,
 
               highest:
@@ -107,12 +111,12 @@ export default function useChartFunctions({
             const signalData = result?.data?.signal ?? [];
             const histogramData = result?.data?.histogram ?? [];
 
-            indicatorSeriesRef.current.MACD = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.MACD = {
+            latestIndicatorValuesRef.current[indicator] = {
               macd: macdData[macdData.length - 1]?.value ?? null,
 
               signal: signalData[signalData.length - 1]?.value ?? null,
@@ -131,12 +135,12 @@ export default function useChartFunctions({
             const upper3Data = result?.data?.upper3 ?? [];
             const lower3Data = result?.data?.lower3 ?? [];
 
-            indicatorSeriesRef.current.VWAP = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.VWAP = {
+            latestIndicatorValuesRef.current[indicator] = {
               vwap: vwapData[vwapData.length - 1]?.value ?? null,
               upper1: upper1Data[upper1Data.length - 1]?.value ?? null,
               lower1: lower1Data[lower1Data.length - 1]?.value ?? null,
@@ -154,12 +158,12 @@ export default function useChartFunctions({
             const longData = result?.data?.long ?? [];
             const shortData = result?.data?.short ?? [];
 
-            indicatorSeriesRef.current.CKS = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.CKS = {
+            latestIndicatorValuesRef.current[indicator] = {
               long: longData[longData.length - 1]?.value ?? null,
               short: shortData[shortData.length - 1]?.value ?? null,
             };
@@ -169,12 +173,12 @@ export default function useChartFunctions({
           case "HV": {
             const hvData = result?.data?.hv ?? [];
 
-            indicatorSeriesRef.current.HV = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.HV = {
+            latestIndicatorValuesRef.current[indicator] = {
               hvLine: hvData[hvData.length - 1]?.value ?? null,
             };
 
@@ -184,12 +188,12 @@ export default function useChartFunctions({
           case "CMF": {
             const cmfData = result?.data?.cmf ?? [];
 
-            indicatorSeriesRef.current.CMF = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.CMF = {
+            latestIndicatorValuesRef.current[indicator] = {
               cmfLine: cmfData[cmfData.length - 1]?.value ?? null,
             };
 
@@ -201,12 +205,12 @@ export default function useChartFunctions({
             const bbUpper = result?.data?.bbUpper ?? [];
             const bbLower = result?.data?.bbLower ?? [];
 
-            indicatorSeriesRef.current.SMA = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.SMA = {
+            latestIndicatorValuesRef.current[indicator] = {
               sma: smaData[smaData.length - 1]?.value,
               smoothingMA: smoothingData[smoothingData.length - 1]?.value,
               bbUpper: bbUpper[bbUpper.length - 1]?.value,
@@ -216,7 +220,7 @@ export default function useChartFunctions({
           }
 
           case "ICHIMOKU": {
-            indicatorSeriesRef.current.ICHIMOKU = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
@@ -226,7 +230,7 @@ export default function useChartFunctions({
             const leadLine2 = result?.data?.leadLine2;
             const laggingSpan = result?.data?.laggingSpan;
 
-            latestIndicatorValuesRef.current.ICHIMOKU = {
+            latestIndicatorValuesRef.current[indicator] = {
               conversionLine:
                 conversionLine?.[conversionLine.length - 1]?.value,
               baseLine: baseLine?.[baseLine.length - 1]?.value,
@@ -243,12 +247,12 @@ export default function useChartFunctions({
             const bbUpperData = result?.data?.bbUpper ?? [];
             const bbLowerData = result?.data?.bbLower ?? [];
 
-            indicatorSeriesRef.current.EMA = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.EMA = {
+            latestIndicatorValuesRef.current[indicator] = {
               ema: emaData[emaData.length - 1]?.value ?? null,
               smoothingMA:
                 smoothingData[smoothingData.length - 1]?.value ?? null,
@@ -261,12 +265,12 @@ export default function useChartFunctions({
           case "WMA": {
             const wmaData = result?.data?.wma ?? [];
 
-            indicatorSeriesRef.current.WMA = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.WMA = {
+            latestIndicatorValuesRef.current[indicator] = {
               wma: wmaData[wmaData.length - 1]?.value,
             };
 
@@ -275,12 +279,12 @@ export default function useChartFunctions({
           case "HMA": {
             const hmaData = result?.data?.hma ?? [];
 
-            indicatorSeriesRef.current.HMA = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.HMA = {
+            latestIndicatorValuesRef.current[indicator] = {
               hma: hmaData[hmaData.length - 1]?.value,
             };
 
@@ -289,12 +293,12 @@ export default function useChartFunctions({
           case "DEMA": {
             const demaData = result?.data?.dema ?? [];
 
-            indicatorSeriesRef.current.DEMA = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.DEMA = {
+            latestIndicatorValuesRef.current[indicator] = {
               dema: demaData[demaData.length - 1]?.value,
             };
 
@@ -303,12 +307,12 @@ export default function useChartFunctions({
           case "TEMA": {
             const temaData = result?.data?.tema ?? [];
 
-            indicatorSeriesRef.current.TEMA = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.TEMA = {
+            latestIndicatorValuesRef.current[indicator] = {
               tema: temaData[temaData.length - 1]?.value,
             };
 
@@ -317,12 +321,12 @@ export default function useChartFunctions({
           case "KAMA": {
             const kamaData = result?.data?.kama ?? [];
 
-            indicatorSeriesRef.current.KAMA = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.KAMA = {
+            latestIndicatorValuesRef.current[indicator] = {
               kama: kamaData[kamaData.length - 1]?.value,
             };
 
@@ -334,7 +338,7 @@ export default function useChartFunctions({
             const bodyMiddle = result?.data?.bodyMiddle ?? [];
 
             // store the series reference and rows
-            indicatorSeriesRef.current.SUPERTREND = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
@@ -345,7 +349,7 @@ export default function useChartFunctions({
             const lastMiddle = bodyMiddle[bodyMiddle.length - 1]?.value ?? null;
 
             // store latest values
-            latestIndicatorValuesRef.current.SUPERTREND = {
+            latestIndicatorValuesRef.current[indicator] = {
               upTrend: lastUp,
               downTrend: lastDown,
               bodyMiddle: lastMiddle,
@@ -357,13 +361,13 @@ export default function useChartFunctions({
             const aroonUp = result?.data?.aroonUp ?? [];
             const aroonDown = result?.data?.aroonDown ?? [];
 
-            indicatorSeriesRef.current.AROON = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
             console.log(result, "ressssssssssss");
 
-            latestIndicatorValuesRef.current.AROON = {
+            latestIndicatorValuesRef.current[indicator] = {
               aroonUp: aroonUp[aroonUp.length - 1]?.value,
               aroonDown: aroonDown[aroonDown.length - 1]?.value,
             };
@@ -373,25 +377,25 @@ export default function useChartFunctions({
           case "AO": {
             const osc = result?.data ?? [];
 
-            indicatorSeriesRef.current.AO = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
-            latestIndicatorValuesRef.current.AO = {
+            latestIndicatorValuesRef.current[indicator] = {
               oscillator: osc[osc.length - 1]?.value,
             };
 
             break;
           }
           case "ADX": {
-            indicatorSeriesRef.current.ADX = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
             const adx = result?.data?.adx ?? [];
 
-            latestIndicatorValuesRef.current.ADX = {
+            latestIndicatorValuesRef.current[indicator] = {
               adx: adx[adx.length - 1]?.value,
             };
 
@@ -403,11 +407,11 @@ export default function useChartFunctions({
             const bbUpper = result?.data?.bbUpper ?? [];
             const bbLower = result?.data?.bbLower ?? [];
 
-            indicatorSeriesRef.current.CCI = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
-            latestIndicatorValuesRef.current.CCI = {
+            latestIndicatorValuesRef.current[indicator] = {
               cci: cciLine[cciLine.length - 1]?.value,
               cciMa: cciMa[cciMa.length - 1]?.value,
               bbUpper: bbUpper[bbUpper.length - 1]?.value,
@@ -419,12 +423,12 @@ export default function useChartFunctions({
           case "CMO": {
             const cmoData = result?.data?.cmo ?? [];
 
-            indicatorSeriesRef.current.CMO = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.CMO = {
+            latestIndicatorValuesRef.current[indicator] = {
               cmo: cmoData[cmoData.length - 1]?.value ?? null,
             };
 
@@ -434,18 +438,18 @@ export default function useChartFunctions({
           case "MOM": {
             const momentum = result?.data?.MOM ?? [];
 
-            if (!indicatorSeriesRef.current.MOM) {
-              indicatorSeriesRef.current.MOM = {
+            if (!indicatorSeriesRef.current[indicator]) {
+              indicatorSeriesRef.current[indicator] = {
                 MOM: null,
                 result: null,
                 rows: [],
               };
             }
 
-            indicatorSeriesRef.current.MOM.result = result;
-            indicatorSeriesRef.current.MOM.rows = rows;
+            indicatorSeriesRef.current[indicator].result = result;
+            indicatorSeriesRef.current[indicator].rows = rows;
 
-            latestIndicatorValuesRef.current.MOM = {
+            latestIndicatorValuesRef.current[indicator] = {
               MOM: momentum[momentum.length - 1]?.value,
             };
 
@@ -453,14 +457,14 @@ export default function useChartFunctions({
           }
 
           case "ROC": {
-            indicatorSeriesRef.current.ROC = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
             const roc = result?.data?.roc ?? [];
 
-            latestIndicatorValuesRef.current.ROC = {
+            latestIndicatorValuesRef.current[indicator] = {
               roc: roc[roc.length - 1]?.value,
             };
 
@@ -468,14 +472,14 @@ export default function useChartFunctions({
           }
 
           case "WPR": {
-            indicatorSeriesRef.current["WPR"] = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
             const r = result?.data?.r ?? [];
 
-            latestIndicatorValuesRef.current["WPR"] = {
+            latestIndicatorValuesRef.current[indicator] = {
               r: r[r.length - 1]?.value,
             };
 
@@ -483,14 +487,14 @@ export default function useChartFunctions({
           }
 
           case "ATR": {
-            indicatorSeriesRef.current.ATR = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
             const atr = result?.data?.atr ?? [];
 
-            latestIndicatorValuesRef.current.ATR = {
+            latestIndicatorValuesRef.current[indicator] = {
               atr: atr[atr.length - 1]?.value,
             };
 
@@ -499,12 +503,12 @@ export default function useChartFunctions({
           case "MFI": {
             const mfiData = result?.data?.mfi ?? [];
 
-            indicatorSeriesRef.current.MFI = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.MFI = {
+            latestIndicatorValuesRef.current[indicator] = {
               mfi: mfiData[mfiData.length - 1]?.value ?? null,
             };
 
@@ -513,12 +517,12 @@ export default function useChartFunctions({
           case "PSAR": {
             const psar = result;
 
-            indicatorSeriesRef.current.PSAR = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.PSAR = {
+            latestIndicatorValuesRef.current[indicator] = {
               psar: psar?.[psar.length - 1]?.value,
             };
 
@@ -528,12 +532,12 @@ export default function useChartFunctions({
           case "EOM": {
             const eomData = result?.data?.eom ?? [];
 
-            indicatorSeriesRef.current.EOM = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.EOM = {
+            latestIndicatorValuesRef.current[indicator] = {
               eom: eomData[eomData.length - 1]?.value,
             };
             break;
@@ -544,12 +548,12 @@ export default function useChartFunctions({
             const lowerData = result?.data?.lower ?? [];
             const middleData = result?.data?.middle ?? [];
 
-            indicatorSeriesRef.current.KC = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.KC = {
+            latestIndicatorValuesRef.current[indicator] = {
               upper: upperData[upperData.length - 1]?.value ?? null,
               lower: lowerData[lowerData.length - 1]?.value ?? null,
               middle: middleData[middleData.length - 1]?.value ?? null,
@@ -562,12 +566,12 @@ export default function useChartFunctions({
             const lowerData = result?.data?.lower ?? [];
             const basisData = result?.data?.basis ?? [];
 
-            indicatorSeriesRef.current.DC = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.DC = {
+            latestIndicatorValuesRef.current[indicator] = {
               upper: upperData[upperData.length - 1]?.value ?? null,
               lower: lowerData[lowerData.length - 1]?.value ?? null,
               basis: basisData[basisData.length - 1]?.value ?? null,
@@ -581,18 +585,18 @@ export default function useChartFunctions({
             const signalData = result?.data?.signal ?? [];
             const histData = result?.data?.hist ?? [];
 
-            if (!indicatorSeriesRef.current.PVO) {
-              indicatorSeriesRef.current.PVO = {};
+            if (!indicatorSeriesRef.current[indicator]) {
+              indicatorSeriesRef.current[indicator] = {};
             }
 
-            indicatorSeriesRef.current.PVO.result = result;
-            indicatorSeriesRef.current.PVO.rows = rows;
+            indicatorSeriesRef.current[indicator].result = result;
+            indicatorSeriesRef.current[indicator].rows = rows;
 
-            if (!latestIndicatorValuesRef.current.PVO) {
-              latestIndicatorValuesRef.current.PVO = {};
+            if (!latestIndicatorValuesRef.current[indicator]) {
+              latestIndicatorValuesRef.current[indicator] = {};
             }
 
-            latestIndicatorValuesRef.current.PVO = {
+            latestIndicatorValuesRef.current[indicator] = {
               pvo: pvoData[pvoData.length - 1]?.value,
               signal: signalData[signalData.length - 1]?.value,
               hist: histData[histData.length - 1]?.value,
@@ -603,12 +607,12 @@ export default function useChartFunctions({
           case "UO": {
             const uoData = result?.data?.uo ?? [];
 
-            indicatorSeriesRef.current.UO = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.UO = {
+            latestIndicatorValuesRef.current[indicator] = {
               uo: uoData[uoData.length - 1]?.value ?? null,
             };
 
@@ -618,12 +622,12 @@ export default function useChartFunctions({
             const pviData = result?.data?.pvi ?? [];
             const pviEmaData = result?.data?.pviEma ?? [];
 
-            indicatorSeriesRef.current.PVI = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.PVI = {
+            latestIndicatorValuesRef.current[indicator] = {
               pvi: pviData[pviData.length - 1]?.value ?? null,
               pviEma: pviEmaData[pviEmaData.length - 1]?.value ?? null,
             };
@@ -634,12 +638,12 @@ export default function useChartFunctions({
             const nviData = result?.data?.nvi ?? [];
             const nviEmaData = result?.data?.pviEma ?? [];
 
-            indicatorSeriesRef.current.NVI = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.NVI = {
+            latestIndicatorValuesRef.current[indicator] = {
               nvi: nviData[nviData.length - 1]?.value ?? null,
               nviEma: nviEmaData[nviEmaData.length - 1]?.value ?? null,
             };
@@ -651,12 +655,12 @@ export default function useChartFunctions({
             const kData = result?.data?.kLine ?? [];
             const dData = result?.data?.dLine ?? [];
 
-            indicatorSeriesRef.current.STOCHRSI = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.STOCHRSI = {
+            latestIndicatorValuesRef.current[indicator] = {
               kLine: kData[kData.length - 1]?.value ?? null,
               dLine: dData[dData.length - 1]?.value ?? null,
             };
@@ -668,12 +672,12 @@ export default function useChartFunctions({
             const k = result?.data?.k ?? [];
             const d = result?.data?.d ?? [];
 
-            indicatorSeriesRef.current.STOCH = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.STOCH = {
+            latestIndicatorValuesRef.current[indicator] = {
               k: k.length ? k[k.length - 1].value : null,
               d: d.length ? d[d.length - 1].value : null,
             };
@@ -684,12 +688,12 @@ export default function useChartFunctions({
           case "TRIX": {
             const trixData = result?.data?.trix ?? [];
 
-            indicatorSeriesRef.current.TRIX = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.TRIX = {
+            latestIndicatorValuesRef.current[indicator] = {
               trix: trixData[trixData.length - 1]?.value ?? null,
             };
 
@@ -698,14 +702,14 @@ export default function useChartFunctions({
           case "FT": {
             const rows = result?.data?.candles ?? [];
 
-            indicatorSeriesRef.current.FT = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
             console.log("result", result);
 
-            latestIndicatorValuesRef.current.FT = {
+            latestIndicatorValuesRef.current[indicator] = {
               fisherLine: rows[rows.length - 1]?.fish ?? null,
               triggerLine: rows[rows.length - 1]?.trigger ?? null,
             };
@@ -716,12 +720,12 @@ export default function useChartFunctions({
             const lineData = result?.data?.zigzagLine ?? [];
             const pivots = result?.data?.paneLabels ?? [];
 
-            indicatorSeriesRef.current.ZIGZAG = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.ZIGZAG = {
+            latestIndicatorValuesRef.current[indicator] = {
               zigzagLine: lineData[lineData.length - 1]?.value ?? null,
               lastPivotType: pivots[pivots.length - 1]?.type ?? null,
             };
@@ -733,12 +737,12 @@ export default function useChartFunctions({
             const volume = result?.data?.volume ?? [];
             const volumeMA = result?.data?.volumeMA ?? [];
 
-            indicatorSeriesRef.current.VP = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.VP = {
+            latestIndicatorValuesRef.current[indicator] = {
               volume: volume.at(-1)?.value,
               volumeMA: volumeMA.at(-1)?.value,
             };
@@ -751,12 +755,12 @@ export default function useChartFunctions({
             const bbUpper = result?.data?.bbUpper ?? [];
             const bbLower = result?.data?.bbLower ?? [];
 
-            indicatorSeriesRef.current.OBV = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.OBV = {
+            latestIndicatorValuesRef.current[indicator] = {
               obv: obv.at(-1)?.value ?? null,
               smoothingMA: ma.at(-1)?.value ?? null,
               bbUpper: bbUpper.at(-1)?.value ?? null,
@@ -769,12 +773,12 @@ export default function useChartFunctions({
             const volData = result?.data?.volume ?? [];
             const maData = result?.data?.volumeMA ?? [];
 
-            indicatorSeriesRef.current.VOL = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.VOL = {
+            latestIndicatorValuesRef.current[indicator] = {
               volume: volData[volData.length - 1]?.value ?? null,
               volumeMA: maData[maData.length - 1]?.value ?? null,
             };
@@ -784,13 +788,13 @@ export default function useChartFunctions({
           case "CHOP": {
             const chopData = result?.data?.chopLine ?? [];
 
-            indicatorSeriesRef.current.CHOP = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
             console.log(result, "ressssss");
-            latestIndicatorValuesRef.current.CHOP = {
+            latestIndicatorValuesRef.current[indicator] = {
               chop: chopData[chopData.length - 1]?.value ?? null,
             };
 
@@ -799,12 +803,12 @@ export default function useChartFunctions({
           case "STDDEV": {
             const stddevData = result?.data ?? [];
 
-            indicatorSeriesRef.current.STDDEV = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.STDDEV = {
+            latestIndicatorValuesRef.current[indicator] = {
               value: stddevData.at(-1)?.value,
             };
 
@@ -815,12 +819,12 @@ export default function useChartFunctions({
             const lowerData = result?.data?.lower ?? [];
             const basisData = result?.data?.basis ?? [];
 
-            indicatorSeriesRef.current.BB = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.BB = {
+            latestIndicatorValuesRef.current[indicator] = {
               upper: upperData[upperData.length - 1]?.value ?? null,
               lower: lowerData[lowerData.length - 1]?.value ?? null,
               basis: basisData[basisData.length - 1]?.value ?? null,
@@ -831,13 +835,13 @@ export default function useChartFunctions({
           case "AD": {
             const adData = result?.data ?? [];
 
-            indicatorSeriesRef.current.AD = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
             console.log(result, "ress");
 
-            latestIndicatorValuesRef.current.AD = {
+            latestIndicatorValuesRef.current[indicator] = {
               value: adData.at(-1)?.value,
             };
 
@@ -847,12 +851,12 @@ export default function useChartFunctions({
             const kvoData = result?.data?.kvo ?? [];
             const signalData = result?.data?.signal ?? [];
 
-            indicatorSeriesRef.current.KVO = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.KVO = {
+            latestIndicatorValuesRef.current[indicator] = {
               kvo: kvoData[kvoData.length - 1]?.value ?? null,
               signal: signalData[signalData.length - 1]?.value ?? null,
             };
@@ -872,12 +876,12 @@ export default function useChartFunctions({
                 changeToRed: d.changeToRed,
               }));
 
-            indicatorSeriesRef.current.AWO = {
+            indicatorSeriesRef.current[indicator] = {
               result,
               rows,
             };
 
-            latestIndicatorValuesRef.current.AWO = {
+            latestIndicatorValuesRef.current[indicator] = {
               awo: awoData.length ? awoData[awoData.length - 1].value : null,
             };
 

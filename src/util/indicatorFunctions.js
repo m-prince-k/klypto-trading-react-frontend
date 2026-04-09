@@ -1,65 +1,38 @@
 export function resolvePaneKey(type) {
-  switch (type) {
+  const baseType = type.startsWith("CUSTOM_") ? type.replace("CUSTOM_", "") : type;
+
+  switch (baseType) {
     case "RSI":
-      return "RSI";
     case "MACD":
-      return "MACD";
     case "ATR":
-      return "ATR";
     case "AROON":
-      return "AROON";
     case "ADX":
-      return "ADX";
     case "CCI":
-      return "CCI";
     case "ROC":
-      return "ROC";
     case "MFI":
-      return "MFI";
     case "WPR":
-      return "WPR";
     case "AO":
-      return "AO";
     case "CHOP":
-      return "CHOP";
     case "FT":
-      return "FT";
     case "EOM":
-      return "EOM";
     case "MOM":
-      return "MOM";
     case "UO":
-      return "UO";
     case "PVI":
-      return "PVI";
     case "NVI":
-      return "NVI";
     case "STOCHRSI":
-      return "STOCHRSI";
     case "STOCH":
-      return "STOCH";
     case "CMO":
-      return "CMO";
     case "HV":
-      return "HV";
     case "PVO":
-      return "PVO";
     case "OBV":
-      return "OBV";
     case "STDDEV":
-      return "STDDEV";
     case "AD":
-      return "AD";
     case "TRIX":
-      return "TRIX";
     case "VP":
-      return "VP";
     case "BBW":
-      return "BBW";
     case "KVO":
-      return "KVO";
     case "AWO":
-      return "AWO";
+      return type; // Return full type to keep panes separate
     default:
       return type;
   }

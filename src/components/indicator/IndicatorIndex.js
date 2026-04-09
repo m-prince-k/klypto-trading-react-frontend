@@ -210,11 +210,21 @@ export function updateIndicatorFromInput(
   latestIndicatorValuesRef,
   maType,
 ) {
-  const handler = indicatorInputs[indicatorType];
+  const baseIndicator = indicatorType.startsWith("CUSTOM_")
+    ? indicatorType.replace("CUSTOM_", "")
+    : indicatorType;
+
+  const handler = indicatorInputs[baseIndicator];
   if (!handler) {
-    console.warn("No input handler for:", indicatorType);
+    console.warn("No input handler for:", baseIndicator);
     return;
   }
 
-  handler(response, indicatorSeriesRef, latestIndicatorValuesRef, maType);
+  handler(
+    response,
+    indicatorSeriesRef,
+    latestIndicatorValuesRef,
+    maType,
+    indicatorType, // pass the full key
+  );
 }

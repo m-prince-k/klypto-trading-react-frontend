@@ -585,7 +585,11 @@ export function handleCopy(rows = null) {
 }
 
 export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
-  switch (indicator) {
+  const baseIndicator = indicator.startsWith("CUSTOM_")
+    ? indicator.replace("CUSTOM_", "")
+    : indicator;
+
+  switch (baseIndicator) {
     case "SMA": {
       const rows = [{ key: "sma", label: "SMA", type: "line" }];
 
@@ -1636,7 +1640,7 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
       ];
 
     case "VWAP": {
-      const config = indicatorConfigs?.VWAP || {};
+      const config = indicatorConfigs?.[indicator] || {};
 
       const rows = [
         {

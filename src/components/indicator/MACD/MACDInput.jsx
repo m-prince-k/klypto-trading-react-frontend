@@ -1,8 +1,11 @@
 export default function MACDInput(
   response,
   indicatorSeriesRef,
-  latestIndicatorValuesRef
+  latestIndicatorValuesRef,
+  maType, // maType is passed by updateIndicatorFromInput
+  indicatorType, // full key (e.g. MACD or CUSTOM_MACD)
 ) {
+  const indicatorKey = indicatorType || "MACD";
   const rows = Array.isArray(response?.data) ? response.data : [];
   if (!rows.length) return;
 
@@ -20,7 +23,7 @@ export default function MACDInput(
     .map((d) => ({ time: Number(d.time), value: Number(d.hist) }));
 
   // ---------- UPDATE SERIES IF EXISTS ----------
-  const series = indicatorSeriesRef.current?.MACD;
+  const series = indicatorSeriesRef.current?.[indicatorKey];
   if (series) {
     series.macd?.setData(macdData);
     series.signal?.setData(signalData);
@@ -33,14 +36,14 @@ export default function MACDInput(
     series.result = { data: { macd: macdData, signal: signalData, histogram: histogramData } };
   } else {
     // If series does not exist yet, store result and rows for MACDPlot
-    indicatorSeriesRef.current.MACD = {
+    indicatorSeriesRef.current[indicatorKey] = {
       result: { data: { macd: macdData, signal: signalData, histogram: histogramData } },
       rows,
     };
   }
 
   // ---------- UPDATE LATEST VALUES ----------
-  latestIndicatorValuesRef.current.MACD = {
+  latestIndicatorValuesRef.current[indicatorKey] = {
     macd: macdData[macdData.length - 1]?.value ?? null,
     signal: signalData[signalData.length - 1]?.value ?? null,
     histogram: histogramData[histogramData.length - 1]?.value ?? null,

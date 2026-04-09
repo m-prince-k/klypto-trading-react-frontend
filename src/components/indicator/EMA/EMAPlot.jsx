@@ -10,6 +10,7 @@ export default function EMAPlot({
   chart,
   containerRef,
   indicatorConfigs,
+  indicator, // full key (e.g. EMA or CUSTOM_EMA)
 }) {
 
   const canvasRef = useRef(null);
@@ -20,13 +21,13 @@ export default function EMAPlot({
 
     if (!result) return;
 
-    if (indicatorSeriesRef.current?.EMA) {
-      Object.values(indicatorSeriesRef.current.EMA).forEach((s) => {
+    if (indicatorSeriesRef.current?.[indicator]) {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         if (s?.setData) {
           try { s.setData([]); } catch {}
         }
       });
-      indicatorSeriesRef.current.EMA = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const groupedSeries = {};
@@ -37,9 +38,9 @@ export default function EMAPlot({
     Object.entries(result?.data || {}).forEach(([lineName, lineData]) => {
 
       const rowConfig = rows?.find((r) => r.key === lineName);
-      const styleConfig = indicatorStyle?.EMA?.[lineName];
+      const styleConfig = indicatorStyle?.[indicator]?.[lineName];
 
-      const series = addSeries("EMA", LineSeries, {
+      const series = addSeries(indicator, LineSeries, {
         color: styleConfig?.color || rowConfig?.color || "#42a5f5",
         lineWidth: styleConfig?.width || 2,
         lineStyle: styleConfig?.lineStyle,
@@ -62,7 +63,7 @@ export default function EMAPlot({
     groupedSeries.bbUpperData = upperData;
     groupedSeries.bbLowerData = lowerData;
 
-    indicatorSeriesRef.current.EMA = groupedSeries;
+    indicatorSeriesRef.current[indicator] = groupedSeries;
 
   }, [result]);
 
@@ -94,7 +95,7 @@ export default function EMAPlot({
 
   const drawCloud = () => {
 
-    const emaGroup = indicatorSeriesRef.current?.EMA;
+    const emaGroup = indicatorSeriesRef.current?.[indicator];
     if (!emaGroup) return;
 
     const upper = emaGroup.bbUpperData || [];
@@ -113,11 +114,11 @@ export default function EMAPlot({
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const maType = indicatorConfigs?.EMA?.maType;
+    const maType = indicatorConfigs?.[indicator]?.maType;
 
     if (maType !== "SMA + Bollinger Bands") return;
 
-    const fill = indicatorStyle?.EMA?.bbFill;
+    const fill = indicatorStyle?.[indicator]?.bbFill;
 
     if (!fill?.visible) return;
 
@@ -188,14 +189,14 @@ export default function EMAPlot({
 
   useEffect(() => {
 
-    const emaGroup = indicatorSeriesRef.current?.EMA;
+    const emaGroup = indicatorSeriesRef.current?.[indicator];
     if (!emaGroup) return;
 
     Object.entries(emaGroup).forEach(([key, series]) => {
 
       if (!series?.applyOptions) return;
 
-      const style = indicatorStyle?.EMA?.[key];
+      const style = indicatorStyle?.[indicator]?.[key];
       if (!style) return;
 
       series.applyOptions({
@@ -223,8 +224,8 @@ export default function EMAPlot({
 
       canvasRef.current = null;
 
-      if (indicatorSeriesRef.current?.EMA) {
-        indicatorSeriesRef.current.EMA = null;
+      if (indicatorSeriesRef.current?.[indicator]) {
+        indicatorSeriesRef.current[indicator] = null;
       }
     };
   }, []);

@@ -148,7 +148,11 @@ export default function Candlestick() {
   //  GET PANE INDEX
   const getPaneIndex = (indicator) => {
     // ❗ overlay indicators → always main pane
-    if (!PANE_INDICATORS.has(indicator)) return 0;
+    const baseIndicator = indicator.startsWith("CUSTOM_")
+      ? indicator.replace("CUSTOM_", "")
+      : indicator;
+
+    if (!PANE_INDICATORS.has(baseIndicator)) return 0;
 
     if (paneIndexRef.current[indicator] !== undefined) {
       return paneIndexRef.current[indicator];
@@ -415,8 +419,11 @@ export default function Candlestick() {
     /* ================= OBJECT VALUES ================= */
     if (typeof value === "object") {
       let keysToShow;
+      const baseIndicator = indicator.startsWith("CUSTOM_")
+        ? indicator.replace("CUSTOM_", "")
+        : indicator;
 
-      switch (indicator) {
+      switch (baseIndicator) {
         case "RSI":
           keysToShow = ["rsi", "smoothingMA", "bbUpper", "bbLower"];
           break;
@@ -515,7 +522,10 @@ export default function Candlestick() {
 
   const renderIndicators = () => {
     return selectedIndicator.map((indicator) => {
-      const Component = indicatorComponents[indicator];
+      const baseIndicator = indicator.startsWith("CUSTOM_")
+        ? indicator.replace("CUSTOM_", "")
+        : indicator;
+      const Component = indicatorComponents[baseIndicator];
       if (!Component) return null;
 
       const data = indicatorSeriesRef.current?.[indicator];
@@ -523,6 +533,7 @@ export default function Candlestick() {
       return (
         <Component
           key={indicator}
+          indicator={indicator}
           result={data?.result}
           rows={data?.rows}
           indicatorStyle={indicatorStyle}
@@ -819,6 +830,8 @@ export default function Candlestick() {
                   selectedIndicator={selectedIndicator}
                   setSelectedIndicator={setSelectedIndicator}
                   toggleIndicator={toggleIndicator}
+                  setIndicatorConfigs={setIndicatorConfigs}
+                  setIndicatorStyle={setIndicatorStyle}
                 />
               </div>
             </div>
@@ -921,14 +934,19 @@ export default function Candlestick() {
                   {selectedIndicator &&
                     selectedIndicator?.map((indicator, index) => {
                       const normalizedType = indicator.replace(/[\s/%]+/g, "");
+                      const isCustom = normalizedType.startsWith("CUSTOM_");
+                      const displayLabel = isCustom
+                        ? `Custom ${normalizedType.replace("CUSTOM_", "")}`
+                        : indicator;
                       const value = liveIndicatorData[normalizedType];
+
                       return (
                         <div
                           key={index}
                           className="flex w-full justify-between items-center gap-3 bg-white shadow-sm border border-slate-200 rounded-3 px-3 h-8 text-xs "
                         >
                           <span className="font-medium w-full text-slate-800 flex items-center gap-2">
-                            {indicator} :{" "}
+                            {displayLabel} :{" "}
                             {indicatorConfigs?.[normalizedType]?.length ?? ""}{" "}
                             {indicatorConfigs?.[normalizedType]?.source ?? ""}{" "}
                             <span style={{ display: "flex", gap: 6 }}>
@@ -958,7 +976,7 @@ export default function Candlestick() {
                             <button
                               title="Indicator Settings"
                               onClick={() => {
-                                setActiveBarIndicator(indicator);
+                                setActiveBarIndicator(normalizedType);
                                 setIndicatorProperty((prev) => !prev);
                               }}
                               className="text-slate-600"
@@ -969,7 +987,7 @@ export default function Candlestick() {
                             <button
                               title="Source Code"
                               onClick={() => {
-                                setActiveSourceIndicator(indicator);
+                                setActiveSourceIndicator(normalizedType);
                                 setShowSourcePanel(true);
                               }}
                               className="text-slate-600"

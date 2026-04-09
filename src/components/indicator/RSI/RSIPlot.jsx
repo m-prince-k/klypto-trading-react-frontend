@@ -10,6 +10,7 @@ export default function RSIPlot({
   indicatorConfigs,
   chart,
   panesRef,
+  indicator, // full key (e.g. RSI or CUSTOM_RSI)
 }) {
   const canvasRef = useRef(null);
 
@@ -18,8 +19,8 @@ export default function RSIPlot({
   useEffect(() => {
     if (!result) return;
 
-    if (indicatorSeriesRef.current?.RSI) {
-      Object.values(indicatorSeriesRef.current.RSI).forEach((s) => {
+    if (indicatorSeriesRef.current?.[indicator]) {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         if (s?.setData) {
           try {
             s.setData([]);
@@ -27,7 +28,7 @@ export default function RSIPlot({
         }
       });
 
-      indicatorSeriesRef.current.RSI = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const groupedSeries = {};
@@ -36,19 +37,19 @@ export default function RSIPlot({
     let bbUpperData = [];
     let bbLowerData = [];
 
-    const upper = indicatorStyle?.RSI?.upper?.value ?? 70;
-    const middle = indicatorStyle?.RSI?.middle?.value ?? 50;
-    const lower = indicatorStyle?.RSI?.lower?.value ?? 30;
+    const upper = indicatorStyle?.[indicator]?.upper?.value ?? 70;
+    const middle = indicatorStyle?.[indicator]?.middle?.value ?? 50;
+    const lower = indicatorStyle?.[indicator]?.lower?.value ?? 30;
 
-    const bandFill = indicatorStyle?.RSI?.bandFill;
-    const obFill = indicatorStyle?.RSI?.obFill;
-    const osFill = indicatorStyle?.RSI?.osFill;
+    const bandFill = indicatorStyle?.[indicator]?.bandFill;
+    const obFill = indicatorStyle?.[indicator]?.obFill;
+    const osFill = indicatorStyle?.[indicator]?.osFill;
 
     Object.entries(result?.data).forEach(([lineName, lineData]) => {
       const rowConfig = rows?.find((r) => r.key === lineName);
-      const styleConfig = indicatorStyle?.RSI?.[lineName];
+      const styleConfig = indicatorStyle?.[indicator]?.[lineName];
 
-      const series = addSeries("RSI", LineSeries, {
+      const series = addSeries(indicator, LineSeries, {
         color: styleConfig?.color || rowConfig?.color || "rgba(38,166,154,1)",
         lineWidth: styleConfig?.width || 2,
         visible: styleConfig?.visible ?? true,
@@ -81,29 +82,29 @@ export default function RSIPlot({
         value,
       }));
 
-    const upperLine = addSeries("RSI", LineSeries, {
-      color: indicatorStyle?.RSI?.upper?.color,
-      lineWidth: indicatorStyle?.RSI?.upper?.width ?? 1,
-      lineStyle: indicatorStyle?.RSI?.upper?.lineStyle ?? 2,
-      visible: indicatorStyle?.RSI?.upper?.visible ?? true,
+    const upperLine = addSeries(indicator, LineSeries, {
+      color: indicatorStyle?.[indicator]?.upper?.color,
+      lineWidth: indicatorStyle?.[indicator]?.upper?.width ?? 1,
+      lineStyle: indicatorStyle?.[indicator]?.upper?.lineStyle ?? 2,
+      visible: indicatorStyle?.[indicator]?.upper?.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: false,
     });
 
-    const middleLine = addSeries("RSI", LineSeries, {
-      color: indicatorStyle?.RSI?.middle?.color,
-      lineWidth: indicatorStyle?.RSI?.middle?.width ?? 1,
-      lineStyle: indicatorStyle?.RSI?.middle?.lineStyle ?? 2,
-      visible: indicatorStyle?.RSI?.middle?.visible ?? true,
+    const middleLine = addSeries(indicator, LineSeries, {
+      color: indicatorStyle?.[indicator]?.middle?.color,
+      lineWidth: indicatorStyle?.[indicator]?.middle?.width ?? 1,
+      lineStyle: indicatorStyle?.[indicator]?.middle?.lineStyle ?? 2,
+      visible: indicatorStyle?.[indicator]?.middle?.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: false,
     });
 
-    const lowerLine = addSeries("RSI", LineSeries, {
-      color: indicatorStyle?.RSI?.lower?.color,
-      lineWidth: indicatorStyle?.RSI?.lower?.width ?? 1,
-      lineStyle: indicatorStyle?.RSI?.lower?.lineStyle ?? 2,
-      visible: indicatorStyle?.RSI?.lower?.visible ?? true,
+    const lowerLine = addSeries(indicator, LineSeries, {
+      color: indicatorStyle?.[indicator]?.lower?.color,
+      lineWidth: indicatorStyle?.[indicator]?.lower?.width ?? 1,
+      lineStyle: indicatorStyle?.[indicator]?.lower?.lineStyle ?? 2,
+      visible: indicatorStyle?.[indicator]?.lower?.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: false,
     });
@@ -121,7 +122,7 @@ export default function RSIPlot({
       value: upper,
     }));
 
-    const bandBackgroundSeries = addSeries("RSI", BaselineSeries, {
+    const bandBackgroundSeries = addSeries(indicator, BaselineSeries, {
       baseValue: { type: "price", price: lower },
       topFillColor1: bandFill?.topFillColor1,
       topFillColor2: bandFill?.topFillColor2,
@@ -136,7 +137,7 @@ export default function RSIPlot({
 
     bandBackgroundSeries.setData(bandData);
 
-    const overboughtSeries = addSeries("RSI", BaselineSeries, {
+    const overboughtSeries = addSeries(indicator, BaselineSeries, {
       baseValue: { type: "price", price: upper },
       topFillColor1: obFill?.topFillColor1,
       topFillColor2: obFill?.topFillColor2,
@@ -149,7 +150,7 @@ export default function RSIPlot({
       lastValueVisible: false,
     });
 
-    const oversoldSeries = addSeries("RSI", BaselineSeries, {
+    const oversoldSeries = addSeries(indicator, BaselineSeries, {
       baseValue: { type: "price", price: lower },
       bottomFillColor1: osFill?.bottomFillColor1,
       bottomFillColor2: osFill?.bottomFillColor2,
@@ -188,7 +189,7 @@ export default function RSIPlot({
     groupedSeries.bbUpperData = bbUpperData;
     groupedSeries.bbLowerData = bbLowerData;
 
-    indicatorSeriesRef.current.RSI = groupedSeries;
+    indicatorSeriesRef.current[indicator] = groupedSeries;
   }, [result]);
 
   /* ================= CANVAS INIT ================= */
@@ -196,7 +197,7 @@ export default function RSIPlot({
   useEffect(() => {
     if (!panesRef || canvasRef.current) return;
 
-    const pane = panesRef.current?.RSI;
+    const pane = panesRef.current?.[indicator];
     const paneDiv = pane?.div;
 
     if (!paneDiv) return;
@@ -228,7 +229,7 @@ export default function RSIPlot({
 
     if (!upperData.length || !lowerData.length) return;
 
-    const pane = panesRef.current?.RSI;
+    const pane = panesRef.current?.[indicator];
     const paneDiv = pane?.div;
     const paneChart = pane?.chart;
 
@@ -253,7 +254,7 @@ export default function RSIPlot({
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const fill = indicatorStyle?.RSI?.bbFill;
+    const fill = indicatorStyle?.[indicator]?.bbFill;
     if (!fill?.visible) return;
 
     ctx.beginPath();
@@ -281,7 +282,7 @@ export default function RSIPlot({
   };
 
   useEffect(() => {
-    const pane = panesRef.current?.RSI;
+    const pane = panesRef.current?.[indicator];
     const paneChart = pane?.chart;
 
     if (!paneChart) return;
@@ -305,14 +306,14 @@ export default function RSIPlot({
   /* ================= STYLE UPDATE ================= */
 
   useEffect(() => {
-    const rsiGroup = indicatorSeriesRef.current?.RSI;
+    const rsiGroup = indicatorSeriesRef.current?.[indicator];
     if (!rsiGroup) return;
 
     const rsiData = rsiGroup.rsiData ?? [];
 
-    const upperValue = indicatorStyle?.RSI?.upper?.value ?? 70;
-    const middleValue = indicatorStyle?.RSI?.middle?.value ?? 50;
-    const lowerValue = indicatorStyle?.RSI?.lower?.value ?? 30;
+    const upperValue = indicatorStyle?.[indicator]?.upper?.value ?? 70;
+    const middleValue = indicatorStyle?.[indicator]?.middle?.value ?? 50;
+    const lowerValue = indicatorStyle?.[indicator]?.lower?.value ?? 30;
 
     const makeLevel = (v) => rsiData.map((p) => ({ time: p.time, value: v }));
 
@@ -320,12 +321,12 @@ export default function RSIPlot({
     rsiGroup.middle?.setData(makeLevel(middleValue));
     rsiGroup.lower?.setData(makeLevel(lowerValue));
 
-    const rsiStyle = indicatorStyle?.RSI?.rsi;
-    const smoothingStyle = indicatorStyle?.RSI?.smoothingMA;
+    const rsiStyle = indicatorStyle?.[indicator]?.rsi;
+    const smoothingStyle = indicatorStyle?.[indicator]?.smoothingMA;
 
-    const bandFill = indicatorStyle?.RSI?.bandFill;
-    const obFill = indicatorStyle?.RSI?.obFill;
-    const osFill = indicatorStyle?.RSI?.osFill;
+    const bandFill = indicatorStyle?.[indicator]?.bandFill;
+    const obFill = indicatorStyle?.[indicator]?.obFill;
+    const osFill = indicatorStyle?.[indicator]?.osFill;
 
     if (rsiGroup.rsi) {
       rsiGroup.rsi.applyOptions({
@@ -344,15 +345,15 @@ export default function RSIPlot({
     }
 
     rsiGroup.bbUpper?.applyOptions({
-      color: indicatorStyle?.RSI?.bbUpper?.color,
-      lineWidth: indicatorStyle?.RSI?.bbUpper?.width,
-      visible: indicatorStyle?.RSI?.bbUpper?.visible,
+      color: indicatorStyle?.[indicator]?.bbUpper?.color,
+      lineWidth: indicatorStyle?.[indicator]?.bbUpper?.width,
+      visible: indicatorStyle?.[indicator]?.bbUpper?.visible,
     });
 
     rsiGroup.bbLower?.applyOptions({
-      color: indicatorStyle?.RSI?.bbLower?.color,
-      lineWidth: indicatorStyle?.RSI?.bbLower?.width,
-      visible: indicatorStyle?.RSI?.bbLower?.visible,
+      color: indicatorStyle?.[indicator]?.bbLower?.color,
+      lineWidth: indicatorStyle?.[indicator]?.bbLower?.width,
+      visible: indicatorStyle?.[indicator]?.bbLower?.visible,
     });
 
     if (rsiGroup.bandBackground) {
@@ -384,7 +385,7 @@ export default function RSIPlot({
 
 
   useEffect(() => {
-    const pane = panesRef.current?.RSI;
+    const pane = panesRef.current?.[indicator];
     const paneChart = pane?.chart;
 
     if (!paneChart) return;

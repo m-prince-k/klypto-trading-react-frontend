@@ -11,6 +11,7 @@ import { EditableNumber } from "../indicator/EditTableLabel";
 import { isAuthenticated, logout } from "../../pages/auth/protected";
 import { Navigate, useNavigate } from "react-router-dom";
 import ProfileDropDown from "../auth/profile/ProfileDropDown";
+import { BsSliders2 } from "react-icons/bs";
 
 export default function ChartHeader({
   timeframeValue,
@@ -22,9 +23,10 @@ export default function ChartHeader({
   toggleIndicator,
   setChartType,
   chartType,
+  setIndicatorConfigs,
+  setIndicatorStyle,
 }) {
   const navigate = useNavigate();
-
 
   const [timeframe, setTimeframe] = useState(60);
   const [loading, setLoading] = useState(false);
@@ -176,6 +178,20 @@ export default function ChartHeader({
             <span>Indicators</span>
           </button>
 
+          {/* Custom Indicators */}
+          <button
+            title="Custom Indicators"
+            style={{
+              borderWidth: "2px", // ✅ thicker border
+              borderRadius: "5px",
+            }}
+            onClick={() => openModal("Custom Indicators")}
+            className="btn  border border-grey d-flex align-items-center gap-2"
+          >
+            <BsSliders2 />
+            <span>Custom Indicators</span>
+          </button>
+
           {/* Alert */}
           <button
             title="Create Alert"
@@ -221,10 +237,7 @@ export default function ChartHeader({
           )}
         </div>
 
-          
-          <ProfileDropDown />
-
-
+        <ProfileDropDown />
       </div>
 
       {/* MODAL (UNCHANGED) */}
@@ -237,6 +250,8 @@ export default function ChartHeader({
         selectedIndicator={selectedIndicator}
         setSelectedIndicator={setSelectedIndicator}
         toggleIndicator={toggleIndicator}
+        setIndicatorConfigs={setIndicatorConfigs}
+        setIndicatorStyle={setIndicatorStyle}
       />
     </div>
   );

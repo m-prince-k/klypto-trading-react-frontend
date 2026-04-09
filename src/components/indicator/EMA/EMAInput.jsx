@@ -1,11 +1,11 @@
-import { LineSeries } from "lightweight-charts";
-
 export default function EMAInput(
   response,
   indicatorSeriesRef,
   latestIndicatorValuesRef,
-  maType
+  maType,
+  indicatorType, // full key (e.g. EMA or CUSTOM_EMA)
 ) {
+  const indicatorKey = indicatorType || "EMA";
   const rows = Array.isArray(response?.data) ? response.data : [];
 
   /* ================= EMA ================= */
@@ -50,7 +50,7 @@ export default function EMAInput(
   }
 
   /* ================= UPDATE SERIES ================= */
-  const series = indicatorSeriesRef.current?.EMA;
+  const series = indicatorSeriesRef.current?.[indicatorKey];
   if (!series) return;
 
   series.ema?.setData(emaData);
@@ -67,20 +67,20 @@ export default function EMAInput(
   }
 
   /* ================= UPDATE HOVER VALUES ================= */
-  latestIndicatorValuesRef.current.EMA =
-    typeof latestIndicatorValuesRef.current.EMA === "object" &&
-    latestIndicatorValuesRef.current.EMA !== null
-      ? latestIndicatorValuesRef.current.EMA
+  latestIndicatorValuesRef.current[indicatorKey] =
+    typeof latestIndicatorValuesRef.current[indicatorKey] === "object" &&
+    latestIndicatorValuesRef.current[indicatorKey] !== null
+      ? latestIndicatorValuesRef.current[indicatorKey]
       : {};
 
-  latestIndicatorValuesRef.current.EMA.ema = emaData[emaData.length - 1]?.value ?? null;
-  latestIndicatorValuesRef.current.EMA.smoothingMA =
+  latestIndicatorValuesRef.current[indicatorKey].ema = emaData[emaData.length - 1]?.value ?? null;
+  latestIndicatorValuesRef.current[indicatorKey].smoothingMA =
     smoothingData[smoothingData.length - 1]?.value ?? null;
-  latestIndicatorValuesRef.current.EMA.bbUpper = bbUpperData[bbUpperData.length - 1]?.value ?? null;
-  latestIndicatorValuesRef.current.EMA.bbLower = bbLowerData[bbLowerData.length - 1]?.value ?? null;
+  latestIndicatorValuesRef.current[indicatorKey].bbUpper = bbUpperData[bbUpperData.length - 1]?.value ?? null;
+  latestIndicatorValuesRef.current[indicatorKey].bbLower = bbLowerData[bbLowerData.length - 1]?.value ?? null;
 
   /* ================= STORE RESULT ================= */
-  indicatorSeriesRef.current.EMA.result = {
+  indicatorSeriesRef.current[indicatorKey].result = {
     data: {
       ema: emaData,
       smoothingMA: maType !== "none" ? smoothingData : [],

@@ -535,11 +535,6 @@ export default function IndicatorRuleBuilder({
     }
   }
 
-const getApiIndicator = (value) => {
-  const selected = scannerOptions.find((opt) => opt.value === value);
-  return selected?.slug || value;
-};
-
   async function fetchScanners() {
     try {
       const response = await apiService.post("/api/scanner");
@@ -555,11 +550,83 @@ const getApiIndicator = (value) => {
             const label = item.label.toLowerCase();
 
             if (label.includes("histogram")) {
-              fallbackValue = "macd_histogram";
+              fallbackValue = "macd histogram";
             } else if (label.includes("signal")) {
-              fallbackValue = "macd_signal";
+              fallbackValue = "macd signal";
             } else {
-              fallbackValue = "macd_line";
+              fallbackValue = "macd";
+            }
+          }
+
+          if (item.slug === "ichimoku") {
+            const label = item.label.toLowerCase();
+
+            if (label.includes("base")) {
+              fallbackValue = "ichimoku base line";
+            } else if (label.includes("conversion")) {
+              fallbackValue = "ichimoku conversion line";
+            } else if (label.includes("span a")) {
+              fallbackValue = "ichimoku lead line 1";
+            } else if (label.includes("span b")) {
+              fallbackValue = "ichimoku lead line 2";
+            } else {
+              fallbackValue = "ichimoku";
+            }
+          }
+
+          if (item.slug === "kc") {
+            const label = item.label.toLowerCase();
+
+            if (label.includes("upper")) {
+              fallbackValue = "keltner channels upper";
+            } else if (label.includes("lower")) {
+              fallbackValue = "keltner channels lower";
+            } else if (label.includes("middle")) {
+              fallbackValue = "keltner channels middle";
+            } else {
+              fallbackValue = "keltner";
+            }
+          }
+
+          if (item.slug === "bb") {
+            const label = item.label.toLowerCase();
+
+            if (label.includes("%b")) {
+              fallbackValue = "bollinger bands percent b";
+            } else if (label.includes("upper")) {
+              fallbackValue = "bollinger bands upper";
+            } else if (label.includes("lower")) {
+              fallbackValue = "bollinger bands lower";
+            } else if (label.includes("middle")) {
+              fallbackValue = "bollinger bands middle";
+            } else if (label.includes("width")) {
+              fallbackValue = "bollinger bands width";
+            } else {
+              fallbackValue = "bollinger bands";
+            }
+          }
+
+          if (item.slug === "dc") {
+            const label = item.label.toLowerCase();
+
+            if (label.includes("upper")) {
+              fallbackValue = "dc upper";
+            } else if (label.includes("lower")) {
+              fallbackValue = "dc lower";
+            } else {
+              fallbackValue = "dc";
+            }
+          }
+
+          if (item.slug === "aroon") {
+            const label = item.label.toLowerCase();
+
+            if (label.includes("up")) {
+              fallbackValue = "aroon up";
+            } else if (label.includes("down")) {
+              fallbackValue = "aroon down";
+            } else {
+              fallbackValue = "aroon";
             }
           }
 

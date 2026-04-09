@@ -6,6 +6,7 @@ export default function MACDPlot({
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
+  indicator, // full key (e.g. MACD or CUSTOM_MACD)
 }) {
 
   /* ================= CREATE SERIES ================= */
@@ -15,14 +16,14 @@ export default function MACDPlot({
 
     /* ---------- REMOVE OLD SERIES ---------- */
 
-    if (indicatorSeriesRef.current?.MACD) {
-      Object.values(indicatorSeriesRef.current.MACD).forEach((s) => {
+    if (indicatorSeriesRef.current?.[indicator]) {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         try {
           s?.setData?.([]);
         } catch {}
       });
 
-      indicatorSeriesRef.current.MACD = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const groupedSeries = {};
@@ -33,13 +34,13 @@ export default function MACDPlot({
     Object.entries(result.data).forEach(([lineName, lineData]) => {
       if (!Array.isArray(lineData)) return;
 
-      const style = indicatorStyle?.MACD?.[lineName];
+      const style = indicatorStyle?.[indicator]?.[lineName];
 
       /* ================= HISTOGRAM ================= */
 
       if (lineName === "histogram") {
-        const series = addSeries("MACD", HistogramSeries, {
-          visible: indicatorStyle?.MACD?.histogram?.visible ?? true,
+        const series = addSeries(indicator, HistogramSeries, {
+          visible: indicatorStyle?.[indicator]?.histogram?.visible ?? true,
           priceLineVisible: false,
           lastValueVisible: true,
         });
@@ -51,7 +52,7 @@ export default function MACDPlot({
             value: Number(d.value),
           }));
 
-        const palette = indicatorStyle?.MACD?.histogram?.palette || {};
+        const palette = indicatorStyle?.[indicator]?.histogram?.palette || {};
 
         const colored = histogramRaw.map((d, i, arr) => {
           const v = d.value;
@@ -80,7 +81,7 @@ export default function MACDPlot({
       /* ================= MACD + SIGNAL ================= */
 
       else {
-        const series = addSeries("MACD", LineSeries, {
+        const series = addSeries(indicator, LineSeries, {
           color: style?.color,
           lineWidth: style?.width ?? 2,
           lineStyle: style?.lineStyle ?? 0,
@@ -106,9 +107,9 @@ export default function MACDPlot({
 
     /* ================= ZERO LINE ================= */
 
-    const zeroStyle = indicatorStyle?.MACD?.zeroLine;
+    const zeroStyle = indicatorStyle?.[indicator]?.zeroLine;
 
-    const zeroLine = addSeries("MACD", LineSeries, {
+    const zeroLine = addSeries(indicator, LineSeries, {
       color: zeroStyle?.color,
       lineWidth: zeroStyle?.width ?? 1,
       lineStyle: zeroStyle?.lineStyle ?? 2,
@@ -139,10 +140,10 @@ export default function MACDPlot({
 
   useEffect(() => {
 
-    const macdGroup = indicatorSeriesRef.current?.MACD;
+    const macdGroup = indicatorSeriesRef.current?.[indicator];
     if (!macdGroup) return;
 
-    const style = indicatorStyle?.MACD;
+    const style = indicatorStyle?.[indicator];
     const macdData = macdGroup.macdData ?? [];
     const histogramRaw = macdGroup.histogramRaw ?? [];
 

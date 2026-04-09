@@ -1,19 +1,144 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createChart, ColorType, CandlestickSeries, LineSeries } from 'lightweight-charts';
 import { Settings2, X, Search, Rocket, Eye, EyeOff } from 'lucide-react';
+import apiService from '../../services/apiServices';
+import { useDebounce } from '../../util/common';
 
 // --- STYLES ---
 const styles = {
-  container: { padding: '24px', backgroundColor: '#0b0e14', minHeight: '100vh', color: '#d1d4dc', fontFamily: "-apple-system, BlinkMacSystemFont, 'Trebuchet MS', Roboto, Ubuntu, sans-serif" },
-  glass: { backgroundColor: '#131722', borderRadius: '12px', border: '1px solid #363a45' },
-  btn: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '14px', transition: 'all 0.2s' },
-  activeTab: { color: '#2962ff', borderBottom: '2px solid #2962ff' },
-  tab: { padding: '12px 16px', cursor: 'pointer', fontSize: '14px', color: '#787b86', fontWeight: '600' },
-  modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000 },
-  modal: { width: '520px', maxHeight: '85vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 16px 32px rgba(0,0,0,0.5)' },
-  input: { backgroundColor: '#1e222d', border: '1px solid #363a45', color: 'white', padding: '8px 12px', borderRadius: '4px', outline: 'none', width: '100%', fontSize: '14px', boxSizing: 'border-box' },
-  label: { fontSize: '12px', color: '#787b86', marginBottom: '6px', display: 'block' },
-  row: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #2a2e39' }
+  container: { 
+    padding: '20px', 
+    backgroundColor: '#ffffff', 
+    color: '#1e293b', 
+    fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%',
+    width: '100%',
+    boxSizing: 'border-box'
+  },
+  searchWrapper: {
+    position: 'relative',
+    marginBottom: '16px',
+  },
+  input: { 
+    backgroundColor: '#f8fafc', 
+    border: '1px solid #e2e8f0', 
+    color: '#1e293b', 
+    padding: '10px 12px', 
+    paddingLeft: '40px',
+    borderRadius: '10px', 
+    outline: 'none', 
+    width: '100%', 
+    fontSize: '14px', 
+    boxSizing: 'border-box',
+    transition: 'all 0.2s ease',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+  },
+  listContainer: {
+    flex: 1,
+    overflowY: 'auto',
+    maxHeight: '400px',
+    paddingRight: '4px',
+    marginRight: '-4px',
+  },
+  row: { 
+    display: 'flex', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    padding: '14px 12px', 
+    borderRadius: '10px',
+    borderBottom: '1px solid #f1f5f9',
+    transition: 'background-color 0.2s ease',
+    cursor: 'pointer',
+    marginBottom: '2px'
+  },
+  indicatorInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px'
+  },
+  indicatorName: { 
+    fontWeight: '600', 
+    fontSize: '14px',
+    color: '#334155'
+  },
+  indicatorCategory: { 
+    fontSize: '11px', 
+    color: '#94a3b8',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px'
+  },
+  btn: { 
+    display: 'flex', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    gap: '8px', 
+    padding: '12px 24px', 
+    borderRadius: '12px', 
+    border: 'none', 
+    cursor: 'pointer', 
+    fontWeight: '600', 
+    fontSize: '14px', 
+    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+  },
+  modalOverlay: { 
+    position: 'fixed', 
+    top: 0, 
+    left: 0, 
+    right: 0, 
+    bottom: 0, 
+    backgroundColor: 'rgba(15, 23, 42, 0.6)', 
+    backdropFilter: 'blur(4px)',
+    display: 'flex', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    zIndex: 2000 
+  },
+  settingsModal: { 
+    width: '420px', 
+    backgroundColor: '#ffffff',
+    borderRadius: '20px',
+    display: 'flex', 
+    flexDirection: 'column', 
+    overflow: 'hidden', 
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' 
+  },
+  label: { 
+    fontSize: '11px', 
+    fontWeight: '700',
+    color: '#64748b', 
+    marginBottom: '6px', 
+    display: 'block',
+    textTransform: 'uppercase'
+  },
+  tabNav: {
+    display: 'flex',
+    borderBottom: '1px solid #f1f5f9',
+    padding: '0 20px'
+  },
+  tab: { 
+    padding: '16px 0', 
+    marginRight: '24px',
+    cursor: 'pointer', 
+    fontSize: '14px', 
+    color: '#64748b', 
+    fontWeight: '600',
+    position: 'relative'
+  },
+  activeTab: { 
+    color: '#2563eb',
+  },
+  activeTabIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '2px',
+    backgroundColor: '#2563eb',
+    borderRadius: '2px 2px 0 0'
+  }
 };
 
 // --- MASTER INDICATOR CATALOG ---
@@ -45,14 +170,35 @@ const INDICATOR_CATALOG = {
   "Classic Pivots": { category: 'Pivots', inputs: { type: { type: 'select', options: ['Traditional', 'Fibonacci', 'Woodie', 'Classic', 'Camarilla'], def: 'Traditional' } }, plots: { p: { label: 'P', color: '#ff9800', thickness: 1, visible: true }, r1: { label: 'R1', color: '#f23645', thickness: 1, visible: true }, s1: { label: 'S1', color: '#089981', thickness: 1, visible: true } } }
 };
 
-const IndicatorChart = () => {
+const IndicatorChart = ({ 
+  selectedIndicator = [], 
+  setSelectedIndicator, 
+  setIndicatorConfigs, 
+  setIndicatorStyle, 
+  onClose 
+}) => {
   const chartRef = useRef(null);
   const chartContainerRef = useRef(null);
   const seriesRef = useRef({});
 
   const [activeIndicators, setActiveIndicators] = useState({});
-  const [stagedIndicators, setStagedIndicators] = useState({});
-  const [isStoreOpen, setIsStoreOpen] = useState(false);
+  const [stagedIndicators, setStagedIndicators] = useState(() => {
+    // Initialize stagedIndicators from selectedIndicator slugs if they start with CUSTOM_
+    const initial = {};
+    selectedIndicator.forEach(slug => {
+        if (slug.startsWith('CUSTOM_')) {
+            const baseSlug = slug.replace('CUSTOM_', '');
+            const meta = INDICATOR_CATALOG[baseSlug];
+            if (meta) {
+                initial[baseSlug] = {
+                    inputs: Object.entries(meta.inputs || {}).reduce((acc, [k, v]) => ({ ...acc, [k]: v.def }), {}),
+                    plots: JSON.parse(JSON.stringify(meta.plots || {}))
+                };
+            }
+        }
+    });
+    return initial;
+  });
   const [editKey, setEditKey] = useState(null);
   const [activeTab, setActiveTab] = useState('Inputs');
   const [searchTerm, setSearchTerm] = useState('');
@@ -152,121 +298,163 @@ const IndicatorChart = () => {
       }));
   };
 
-  const deploy = () => { setActiveIndicators(JSON.parse(JSON.stringify(stagedIndicators))); setIsStoreOpen(false); };
+  const deploy = () => { 
+    // 1. Update active indicators in the chart (slug list)
+    // We add CUSTOM_ prefix to these slugs so they don't collide with normal indicators
+    const currentCustomSlugs = Object.keys(stagedIndicators).map(slug => `CUSTOM_${slug}`);
+    
+    // Merge with existing non-custom indicators already in the state
+    setSelectedIndicator(prev => {
+        const nonCustom = prev.filter(s => !s.startsWith('CUSTOM_'));
+        return [...nonCustom, ...currentCustomSlugs];
+    });
 
-  const filteredCatalog = useMemo(() => {
-      return Object.entries(INDICATOR_CATALOG).filter(([k]) => k.toLowerCase().includes(searchTerm.toLowerCase()));
-  }, [searchTerm]);
+    // 2. Update individual configs and styles if setters provided
+    if (setIndicatorConfigs && setIndicatorStyle) {
+        setIndicatorConfigs(prev => {
+            const next = { ...prev };
+            Object.entries(stagedIndicators).forEach(([slug, config]) => {
+                next[`CUSTOM_${slug}`] = config.inputs;
+            });
+            return next;
+        });
+
+        setIndicatorStyle(prev => {
+            const next = { ...prev };
+            Object.entries(stagedIndicators).forEach(([slug, config]) => {
+                next[`CUSTOM_${slug}`] = config.plots;
+            });
+            return next;
+        });
+    }
+
+    // 3. Notify parent to close modal
+    if (onClose) onClose();
+  };
+
+
+const [indicators, setIndicators] = useState([]);
+const [loading, setLoading] = useState(false);
+const [error, setError] = useState(null);
+const debouncedSearch = useDebounce(searchTerm, 400);
+
+useEffect(() => {
+  fetchIndicators();
+}, [debouncedSearch]);
+
+async function fetchIndicators() {
+  setLoading(true);
+  setError(null);
+
+  try {
+    const response = await apiService.post(
+      debouncedSearch
+        ? `/api/getIndicators?q=${debouncedSearch}`
+        : `/api/getIndicators`
+    );
+
+    setIndicators(response?.data || []);
+  } catch (err) {
+    console.error(err);
+    setError(err?.message || "Failed to fetch indicators");
+  } finally {
+    setLoading(false);
+  }
+}
+
+const filteredCatalog = useMemo(() => {
+  return (indicators || [])
+    .filter((item) =>
+      item.label?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .map((item) => [item.slug || item.label, item]);
+}, [indicators, searchTerm]);
 
   return (
     <div style={styles.container}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h1 style={{ margin: 0, fontWeight: '700', fontSize: '24px', color: 'white' }}>Trading Terminal</h1>
-        <button style={{ ...styles.btn, backgroundColor: '#2962ff', color: 'white' }} onClick={() => setIsStoreOpen(true)}>
-          <Search size={18}/> Custom Indicators
-        </button>
-      </header>
 
-      <main ref={chartContainerRef} style={{ ...styles.glass, overflow: 'hidden', minHeight: '600px' }} />
+      {/* Search Section */}
+      <div style={styles.searchWrapper}>
+        <Search size={18} color="#94a3b8" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
+        <input
+          style={styles.input}
+          placeholder="Search indicators..."
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+          onFocus={e => e.target.style.borderColor = '#2563eb'}
+          onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+        />
+      </div>
 
-      {/* --- INDICATOR STORE MODAL --- */}
-      {isStoreOpen && (
-        <div style={styles.modalOverlay} onClick={() => setIsStoreOpen(false)}>
-          <div style={{ ...styles.modal, ...styles.glass, padding: '20px' }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-              <h2 style={{ margin: 0, fontSize: '18px' }}>Custom Indicators</h2>
-              <X cursor="pointer" onClick={() => setIsStoreOpen(false)} />
-            </div>
-
-            <div style={{ marginBottom: '16px', position: 'relative' }}>
-                <Search size={16} color="#787b86" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-                <input style={{ ...styles.input, paddingLeft: '36px' }} placeholder="Search indicators..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-            </div>
-
-            <div style={{ flex: 1, overflowY: 'auto' }}>
-              {filteredCatalog.map(([k, meta]) => (
-                <div key={k} style={styles.row}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <input type="checkbox" checked={!!stagedIndicators[k]} onChange={() => toggleSelection(k)} style={{ accentColor: '#2962ff', cursor: 'pointer' }} />
-                    <div>
-                        <div style={{ fontWeight: '600', fontSize: '14px' }}>{k}</div>
-                        <div style={{ fontSize: '10px', color: '#787b86' }}>{meta.category}</div>
-                    </div>
-                  </div>
-                  <Settings2 size={18} cursor="pointer" color="#787b86" onClick={() => openSettings(k)} />
+      {/* Indicator List Section */}
+      <div className="custom-indicator-list" style={styles.listContainer}>
+        <style>
+          {`
+            .custom-indicator-list::-webkit-scrollbar { width: 6px; }
+            .custom-indicator-list::-webkit-scrollbar-track { background: transparent; }
+            .custom-indicator-list::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+            .custom-indicator-list::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+          `}
+        </style>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8', fontSize: '14px' }}>
+            <div className="animate-pulse">Loading indicators...</div>
+          </div>
+        ) : filteredCatalog.length > 0 ? (
+          filteredCatalog.map(([k, meta]) => (
+            <div 
+              key={k} 
+              style={styles.row}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+              onClick={(e) => {
+                if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'svg' && e.target.tagName !== 'path') {
+                    toggleSelection(k);
+                }
+              }}
+            >
+              <div style={styles.indicatorInfo}>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <input
+                      type="checkbox"
+                      checked={!!stagedIndicators[k]}
+                      onChange={() => toggleSelection(k)}
+                      style={{ 
+                        accentColor: '#2563eb', 
+                        cursor: 'pointer', 
+                        width: '18px', 
+                        height: '18px',
+                        borderRadius: '4px'
+                      }}
+                    />
                 </div>
-              ))}
+                <div>
+                  <div style={styles.indicatorName}>{k}</div>
+                  <div style={styles.indicatorCategory}>{meta.category}</div>
+                </div>
+              </div>
             </div>
-
-            <button style={{ ...styles.btn, backgroundColor: '#089981', color: 'white', marginTop: '20px', width: '100%' }} onClick={deploy}>
-              <Rocket size={18} /> Apply Changes
-            </button>
+          ))
+        ) : (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>
+            <p style={{ margin: 0, fontSize: '14px' }}>No matching indicators found.</p>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* --- SETTINGS MODAL --- */}
-      {editKey && (
-        <div style={styles.modalOverlay} onClick={() => setEditKey(null)}>
-          <div style={{ ...styles.modal, ...styles.glass, width: '420px' }} onClick={e => e.stopPropagation()}>
-            <div style={{ padding: '20px 20px 0 20px', display: 'flex', justifyContent: 'space-between' }}>
-                <h3 style={{ margin: 0, fontSize: '16px' }}>{editKey} Settings</h3>
-                <X cursor="pointer" onClick={() => setEditKey(null)} size={18} />
-            </div>
+      {/* Apply Button Section */}
+      <div style={{ paddingTop: '16px', borderTop: '1px solid #f1f5f9', marginTop: 'auto' }}>
+        <button
+          style={{ ...styles.btn, backgroundColor: '#2563eb', color: 'white', width: '100%', boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)' }}
+          onClick={deploy}
+          onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1d4ed8'}
+          onMouseLeave={e => e.currentTarget.style.backgroundColor = '#2563eb'}
+        >
+          <Rocket size={18} /> 
+          <span>Apply Indicators</span>
+        </button>
+      </div>
 
-            <div style={{ display: 'flex', borderBottom: '1px solid #2a2e39', marginTop: '10px' }}>
-                <div style={{ ...styles.tab, ...(activeTab === 'Inputs' ? styles.activeTab : {}) }} onClick={() => setActiveTab('Inputs')}>Inputs</div>
-                <div style={{ ...styles.tab, ...(activeTab === 'Style' ? styles.activeTab : {}) }} onClick={() => setActiveTab('Style')}>Style</div>
-            </div>
-
-            <div style={{ padding: '20px', flex: 1, overflowY: 'auto' }}>
-              {activeTab === 'Inputs' ? (
-                  <div style={{ display: 'grid', gap: '16px' }}>
-                    {Object.entries(INDICATOR_CATALOG[editKey]?.inputs || {}).length > 0 ? (
-                        Object.entries(INDICATOR_CATALOG[editKey].inputs).map(([name, meta]) => (
-                            <div key={name}>
-                                <label style={styles.label}>{name.toUpperCase()}</label>
-                                {meta.type === 'number' ? (
-                                    <input type="number" style={styles.input} value={stagedIndicators[editKey]?.inputs?.[name] ?? meta.def} onChange={e => updateInput(editKey, name, parseFloat(e.target.value))} />
-                                ) : (
-                                    <select style={styles.input} value={stagedIndicators[editKey]?.inputs?.[name] ?? meta.def} onChange={e => updateInput(editKey, name, e.target.value)}>
-                                        {(meta.options || []).map(o => <option key={o} value={o}>{o}</option>)}
-                                    </select>
-                                )}
-                            </div>
-                        ))
-                    ) : <div style={{ color: '#787b86', textAlign: 'center', padding: '20px' }}>No settings for this indicator.</div>}
-                  </div>
-              ) : (
-                  <div style={{ display: 'grid', gap: '4px' }}>
-                    {Object.entries(stagedIndicators[editKey]?.plots || {}).map(([plotId, config]) => (
-                        <div key={plotId} style={styles.row}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <div onClick={() => updatePlot(editKey, plotId, 'visible', !config.visible)} style={{ cursor: 'pointer' }}>
-                                    {config.visible ? <Eye size={18} color="#2962ff" /> : <EyeOff size={18} color="#787b86" />}
-                                </div>
-                                <span style={{ fontSize: '14px', color: config.visible ? 'white' : '#787b86' }}>{config.label}</span>
-                            </div>
-                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                <input type="color" value={config.color} onChange={e => updatePlot(editKey, plotId, 'color', e.target.value)} style={{ width: '28px', height: '24px', cursor: 'pointer', border: 'none', background: 'none' }} />
-                                {config.thickness !== undefined && (
-                                    <select style={{ ...styles.input, width: '60px', padding: '4px' }} value={config.thickness} onChange={e => updatePlot(editKey, plotId, 'thickness', parseInt(e.target.value))}>
-                                        {[1,2,3,4].map(t => <option key={t} value={t}>{t}px</option>)}
-                                    </select>
-                                )}
-                            </div>
-                        </div>
-                    ))}
-                  </div>
-              )}
-            </div>
-
-            <div style={{ padding: '16px 20px', borderTop: '1px solid #2a2e39', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                <button style={{ ...styles.btn, backgroundColor: '#2962ff', color: 'white' }} onClick={() => setEditKey(null)}>OK</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

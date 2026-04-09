@@ -2,11 +2,13 @@ export default function RSIInput(
   response,
   indicatorSeriesRef,
   latestIndicatorValuesRef,
-  maType
+  maType,
+  indicatorType, // full key (e.g. RSI or CUSTOM_RSI)
 ) {
+  const indicatorKey = indicatorType || "RSI";
   const rows = Array.isArray(response?.data) ? response.data : [];
 
-  const series = indicatorSeriesRef.current?.RSI;
+  const series = indicatorSeriesRef.current?.[indicatorKey];
   if (!series) return;
 
   /* ================= RSI ================= */
@@ -63,6 +65,8 @@ export default function RSIInput(
 
   /* ================= BOLLINGER BANDS ================= */
 
+  const latestValues = latestIndicatorValuesRef.current[indicatorKey] || {};
+
   if (maType === "SMA + Bollinger Bands") {
     series.bbUpper?.setData(bbUpperData);
     series.bbLower?.setData(bbLowerData);
@@ -70,11 +74,8 @@ export default function RSIInput(
     series.bbUpperData = bbUpperData;
     series.bbLowerData = bbLowerData;
 
-    latestIndicatorValuesRef.current.RSI.bbUpper =
-      bbUpperData[bbUpperData.length - 1]?.value ?? null;
-
-    latestIndicatorValuesRef.current.RSI.bbLower =
-      bbLowerData[bbLowerData.length - 1]?.value ?? null;
+    latestValues.bbUpper = bbUpperData[bbUpperData.length - 1]?.value ?? null;
+    latestValues.bbLower = bbLowerData[bbLowerData.length - 1]?.value ?? null;
   } else {
     /* clear BB if MA type changed */
 
@@ -84,21 +85,20 @@ export default function RSIInput(
     series.bbUpperData = [];
     series.bbLowerData = [];
 
-    latestIndicatorValuesRef.current.RSI.bbUpper = null;
-    latestIndicatorValuesRef.current.RSI.bbLower = null;
+    latestValues.bbUpper = null;
+    latestValues.bbLower = null;
   }
 
   /* ================= UPDATE HOVER VALUES ================= */
 
-  latestIndicatorValuesRef.current.RSI.rsi =
-    rsiData[rsiData.length - 1]?.value ?? null;
+  latestValues.rsi = rsiData[rsiData.length - 1]?.value ?? null;
+  latestValues.smoothingMA = smoothingData[smoothingData.length - 1]?.value ?? null;
 
-  latestIndicatorValuesRef.current.RSI.smoothingMA =
-    smoothingData[smoothingData.length - 1]?.value ?? null;
+  latestIndicatorValuesRef.current[indicatorKey] = latestValues;
 
   /* ================= STORE RESULT ================= */
 
-  indicatorSeriesRef.current.RSI.result = {
+  indicatorSeriesRef.current[indicatorKey].result = {
     data: {
       rsi: rsiData,
       smoothingMA: maType !== "none" ? smoothingData : [],

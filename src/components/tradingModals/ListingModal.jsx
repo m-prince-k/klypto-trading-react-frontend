@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { Spinner } from "./Spinner";
 import apiService from "../../services/apiServices";
 import { useDebounce } from "../../util/common";
+import IndicatorChart from "../customIndicator/CustomIndicator";
 
 export const ListingModal = ({
   isOpen,
@@ -16,6 +17,8 @@ export const ListingModal = ({
   selectedIndicator,
   setSelectedIndicator,
   toggleIndicator,
+  setIndicatorConfigs,
+  setIndicatorStyle,
 }) => {
   const [activeTab, setActiveTab] = useState("Indicators");
   const [indicators, setIndicators] = useState([]);
@@ -79,15 +82,51 @@ export const ListingModal = ({
     }
   }, [title]);
 
+  // Short-circuit: render the full-page IndicatorChart inside its own styled modal
+  if (title === "Custom Indicators" && isOpen) {
+    return (
+      <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4" >
+        <div
+          className="w-full max-w-3xl rounded-md bg-white shadow-2xl overflow-hidden flex flex-col"
+          style={{ height: '600px' }}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-8 py-4 border-b border-slate-100 bg-white">
+            <div>
+                <h2 className="text-xl font-bold text-slate-900 leading-tight">Custom Indicators</h2>
+            </div>
+            <button 
+                onClick={onClose}
+                className="p-2.5 rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all duration-200"
+            >
+                <IoCloseSharp size={22} />
+            </button>
+          </div>
+
+          {/* Indicator Store Content */}
+          <div className="flex-1 overflow-hidden">
+            <IndicatorChart 
+                selectedIndicator={selectedIndicator}
+                setSelectedIndicator={setSelectedIndicator}
+                setIndicatorConfigs={setIndicatorConfigs}
+                setIndicatorStyle={setIndicatorStyle}
+                onClose={onClose}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const filteredIndicators = (indicators ?? []).filter((item) => {
     if (!searchIndicator) return true;
 
     const getInitials = (text) =>
-    text
-      .split(" ")
-      .map((w) => w[0])
-      .join("")
-      .toLowerCase();
+      text
+        .split(" ")
+        .map((w) => w[0])
+        .join("")
+        .toLowerCase();
     const search = searchIndicator.toLowerCase().trim();
 
     const label = item.label.toLowerCase();
@@ -109,8 +148,6 @@ export const ListingModal = ({
       curr?.base?.toLowerCase().includes(search)
     );
   });
-
-  
 
   if (activeTab !== "Indicators") return null;
 
@@ -212,7 +249,7 @@ export const ListingModal = ({
             {activeTab === "Indicators" && (
               <div
                 className="flex-grow overflow-auto"
-                style={{ maxHeight: "68vh" }}
+                style={{ maxHeight: "60vh" }}
               >
                 {loading ? (
                   <div
@@ -237,7 +274,9 @@ export const ListingModal = ({
                             onChange={() => toggleIndicator(item.slug)}
                             className="form-check-input cursor-pointer"
                           />
-                          <span>{item.label} -- {item.slug} </span>
+                          <span>
+                            {item.label} -- {item.slug}{" "}
+                          </span>
                         </label>
                       </li>
                     ))}
