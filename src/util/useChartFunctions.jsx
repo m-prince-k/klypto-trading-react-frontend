@@ -8,7 +8,6 @@ export default function useChartFunctions({
   indicatorConfigs,
   setIndicatorLoading,
 }) {
-
   /* ================= FETCH INDICATOR API ================= */
 
   async function fetchDataByCurrency(selectedCurrency, timeframeValue) {
@@ -118,6 +117,23 @@ export default function useChartFunctions({
               signal: signalData[signalData.length - 1]?.value ?? null,
 
               histogram: histogramData[histogramData.length - 1]?.value ?? null,
+            };
+
+            break;
+          }
+          case "BBPERB": {
+            const percentBData = result?.data?.percentB ?? [];
+
+            indicatorSeriesRef.current[indicator] = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current[indicator] = {
+              percentB:
+                percentBData.length > 0
+                  ? percentBData[percentBData.length - 1]?.value
+                  : null,
             };
 
             break;
@@ -481,7 +497,67 @@ export default function useChartFunctions({
 
             break;
           }
+          case "TR": {
+            const trData = result?.data?.tr ?? [];
 
+            indicatorSeriesRef.current[indicator] = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current[indicator] = {
+              tr: trData.length > 0 ? trData[trData.length - 1]?.value : null,
+            };
+
+            break;
+          }
+          case "VWMA": {
+            const vwmaData = result?.data?.vwma ?? [];
+
+            indicatorSeriesRef.current[indicator] = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current[indicator] = {
+              vwma:
+                vwmaData.length > 0
+                  ? vwmaData[vwmaData.length - 1]?.value
+                  : null,
+            };
+
+            break;
+          }
+          case "TMA": {
+            const tmaData = result?.data?.tma ?? [];
+
+            indicatorSeriesRef.current[indicator] = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current[indicator] = {
+              tma:
+                tmaData.length > 0 ? tmaData[tmaData.length - 1]?.value : null,
+            };
+
+            break;
+          }
+          case "RMA": {
+            const rmaData = result?.data?.rma ?? [];
+
+            indicatorSeriesRef.current[indicator] = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current[indicator] = {
+              rma:
+                rmaData.length > 0 ? rmaData[rmaData.length - 1]?.value : null,
+            };
+
+            break;
+          }
           case "ATR": {
             indicatorSeriesRef.current.ATR = {
               result,
@@ -923,7 +999,6 @@ async function fetchDataForIndicators(
   setIndicatorLoading,
 ) {
   try {
-
     setIndicatorLoading(true);
 
     const response = await apiService.post(
@@ -1044,6 +1119,7 @@ async function fetchDataForIndicators(
                 }))) ?? [],
           },
         };
+     
 
       case "VP":
         return {
@@ -1694,7 +1770,71 @@ async function fetchDataForIndicators(
             aroonDown: response.data?.aroonDownSeries ?? [],
           },
         };
-
+      case "TR":
+        return {
+          type: "single",
+          data: {
+            tr:
+              response?.data
+                ?.filter((d) => d.trueRange != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.trueRange),
+                })) ?? [],
+          },
+        };
+      case "BBPERB":
+        return {
+          type: "multi",
+          data: {
+            percentB:
+              (await response?.data
+                ?.filter((d) => d.percentB != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.percentB),
+                }))) ?? [],
+          },
+        };
+      case "VWMA":
+        return {
+          type: "single",
+          data: {
+            vwma:
+              response?.data
+                ?.filter((d) => d.vwma != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.vwma),
+                })) ?? [],
+          },
+        };
+      case "RMA":
+        return {
+          type: "single",
+          data: {
+            rma:
+              response?.data
+                ?.filter((d) => d.rma != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.rma),
+                })) ?? [],
+          },
+        };
+      case "TMA":
+        return {
+          type: "single",
+          data: {
+            tma:
+              response?.data
+                ?.filter((d) => d.tma != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: Number(d.tma),
+                })) ?? [],
+          },
+        };
       case "WPR":
         return {
           type: "multi",

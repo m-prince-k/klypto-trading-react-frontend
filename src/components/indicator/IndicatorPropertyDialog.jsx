@@ -901,6 +901,26 @@ export default function IndicatorPropertyDialog({
         );
       }
 
+      case "TR": {
+        return (
+          <BaseSettings
+            currentConfig={currentConfig}
+            updateProperty={updateProperty}
+            showOffset={false}
+            showSource={false}
+          />
+        );
+      }
+      case "VWMA": {
+        return (
+          <BaseSettings
+            currentConfig={currentConfig}
+            updateProperty={updateProperty}
+            showOffset={false}
+            showSource={false}
+          />
+        );
+      }
       case "ATR":
         return (
           <>
@@ -926,6 +946,8 @@ export default function IndicatorPropertyDialog({
             </div>
           </>
         );
+
+
       case "BB":
         return (
           <>
@@ -954,6 +976,28 @@ export default function IndicatorPropertyDialog({
                 type="number"
                 className="form-control"
                 value={currentConfig.stdDev}
+                onChange={(e) =>
+                  updateProperty("stdDev", Number(e.target.value))
+                }
+              />
+            </div>
+          </>
+        );
+
+         case "BBPERB":
+        return (
+          <>
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showOffset={false}
+            />
+            <div className="mb-3">
+              <label className="form-label">Standard Deviation</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig?.stdDev}
                 onChange={(e) =>
                   updateProperty("stdDev", Number(e.target.value))
                 }

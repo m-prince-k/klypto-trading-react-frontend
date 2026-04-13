@@ -95,6 +95,16 @@ import STOCHPlot from "./Stochastic/StochasticPlot";
 import STOCHInput from "./Stochastic/StochasticInput";
 import ZIGZAGPlot from "./ZIgZag/ZigZagPlot"
 import ZIGZAGInput from "./ZIgZag/ZigZagInput"
+import BBPERBPlot from "./BBPERB/BBPERBPlot";
+import BBPERBInput from "./BBPERB/BBPERBInput";
+import RMAInput from "./RMA/RMAInput";
+import RMAPlot from "./RMA/RMAPlot";
+import TRPlot from "./TrueRange/TRPlot";
+import TRInput from "./TrueRange/TRInput";
+import VWMAInput from "./VWMA/VWMAInput";
+import VWMAPlot from "./VWMA/VWMAPlot";
+import TMAPlot from "./TMA/TMAPlot";
+import TMAInput from "./TMA/TMAInput";
 
 export const indicatorComponents = {
   VWAP: VWAPPlot,
@@ -148,6 +158,11 @@ export const indicatorComponents = {
   CHOP: CHOPPlot,
   AWO: AWOPlot,
   VP: VPPlot,
+  BBPERB: BBPERBPlot,
+  RMA: RMAPlot,
+  TR: TRPlot,
+  VWMA: VWMAPlot,
+  TMA: TMAPlot,
 };
 
 export const indicatorInputs = {
@@ -201,6 +216,11 @@ export const indicatorInputs = {
   KVO: KVOInput,
   AD: ADInput,
   AWO: AWOInput,
+  BBPERB: BBPERBInput,
+  RMA: RMAInput,
+  TR: TRInput,
+  VWMA: VWMAInput,
+  TMA: TMAInput,
 };
 
 export function updateIndicatorFromInput(
