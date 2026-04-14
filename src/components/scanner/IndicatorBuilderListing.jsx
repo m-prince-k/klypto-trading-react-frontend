@@ -16,7 +16,6 @@ import {
   tfToMinutes,
 } from "../../util/common";
 import { toast } from "react-toastify";
-import axios from "axios";
 import { Spinner } from "../tradingModals/Spinner";
 import EditableMultiSelect from "../indicator/EditTableLabel";
 import AlertModal from "./ScannerModals";
@@ -40,13 +39,13 @@ export default function OHLCVTable({
   const [loading, setLoading] = useState(false);
   const [dataSource, setDataSource] = useState({});
   const [search, setSearch] = useState("");
-  const [days, setDays] = useState(1);
+  const [days, setDays] = useState(30);
   const [currencies, setCurrencies] = useState([]);
   const [error, setError] = useState(null);
   const [months, setMonths] = useState(null);
   const debouncedCurrencies = useDebounce(selectedCurrencies, 1000);
   const [fetchTimeframe, setFetchTimeframe] = useState([]);
-  const [timeframeValue, setTimeframeValue] = useState("");
+  const [timeframeValue, setTimeframeValue] = useState("1d");
   const [payloadRules, setPayloadRules] = useState([]);
   const [sortConfig, setSortConfig] = useState({
     key: null,
@@ -159,66 +158,136 @@ export default function OHLCVTable({
 
   const MA_INDICATORS = ["sma", "ema", "tema", "wma", "hma", "stddev", "wpr"];
 
+  // const buildObject = ({
+  //   indicator,
+  //   timeframe,
+  //   params = {},
+  //   value,
+  //   source,
+  //   type,
+  // }) => {
+  //   const offset = convertToDays(timeframe);
+
+  //   const indicatorKey = indicator?.toLowerCase();
+  //   const isMA = MA_INDICATORS.includes(indicatorKey);
+
+  //   // ✅ STRICT VALUE CHECK (NO LEAK)
+  //   const hasValue =
+  //     value !== undefined &&
+  //     value !== null &&
+  //     value !== "" &&
+  //     !(typeof value === "number" && isNaN(value));
+
+  //   // 🚀 ONLY use value if indicator is number OR explicitly entered
+  //   if (indicatorKey === "number" && hasValue) {
+  //     return {
+  //       indicator: "number",
+  //       value,
+  //     };
+  //   }
+
+  //   // 🚀 DO NOT allow accidental value override
+  //   if (hasValue && indicatorKey === "number") {
+  //     return {
+  //       indicator: indicatorKey,
+  //       value,
+  //     };
+  //   }
+
+  //   // 🚀 NORMAL FLOW (RSI, SMA etc)
+  //   const obj = {
+  //     indicator: indicatorKey,
+  //   };
+
+  //   console.log(timeframeValue, "timeeeeeeeeeeeeeeeeeeeeeeee");
+
+  //   if (offset !== null) {
+  //     obj.offset = offset;
+  //     obj.timeframe = "1d"; // ✅ use global
+  //   } else if (timeframe) {
+  //     obj.timeframe = timeframe;
+  //   }
+
+  //   // if (params && Object.keys(params).length > 0) {
+  //   //   obj.length = {
+  //   //     ...params,
+  //   //     ...(isMA ? { source: (source || "close").toLowerCase() } : {}),
+  //   //   };
+  //   // }
+
+
+  //   return obj;
+  // };
+
+
   const buildObject = ({
-    indicator,
-    timeframe,
-    params = {},
-    value,
-    source,
-    type,
-  }) => {
-    const offset = convertToDays(timeframe);
+  indicator,
+  timeframe,
+  params = {},
+  value,
+  source,
+  type,
+}) => {
+  const offset = convertToDays(timeframe);
 
-    const indicatorKey = indicator?.toLowerCase();
-    const isMA = MA_INDICATORS.includes(indicatorKey);
+  const indicatorKey = indicator?.toLowerCase();
+  const isMA = MA_INDICATORS.includes(indicatorKey);
 
-    // ✅ STRICT VALUE CHECK (NO LEAK)
-    const hasValue =
-      value !== undefined &&
-      value !== null &&
-      value !== "" &&
-      !(typeof value === "number" && isNaN(value));
+  const hasValue =
+    value !== undefined &&
+    value !== null &&
+    value !== "" &&
+    !(typeof value === "number" && isNaN(value));
 
-    // 🚀 ONLY use value if indicator is number OR explicitly entered
-    if (indicatorKey === "number" && hasValue) {
-      return {
+  if (indicatorKey === "number" && hasValue) {
+    return {
+      obj: {
         indicator: "number",
         value,
-      };
-    }
+      },
+      on: null,
+    };
+  }
 
-    // 🚀 DO NOT allow accidental value override
-    if (hasValue && indicatorKey === "number") {
-      return {
+  if (hasValue && indicatorKey === "number") {
+    return {
+      obj: {
         indicator: indicatorKey,
         value,
-      };
-    }
-
-    // 🚀 NORMAL FLOW (RSI, SMA etc)
-    const obj = {
-      indicator: indicatorKey,
+      },
+      on: null,
     };
+  }
 
-    console.log(timeframeValue, "timeeeeeeeeeeeeeeeeeeeeeeee");
-
-    if (offset !== null) {
-      obj.offset = offset;
-      obj.timeframe = timeframe; // ✅ use global
-    } else if (timeframe) {
-      obj.timeframe = timeframe;
-    }
-
-    if (params && Object.keys(params).length > 0) {
-      obj.length = {
-        ...params,
-        ...(isMA ? { source: (source || "close").toLowerCase() } : {}),
-      };
-    }
-
-    return obj;
+  const obj = {
+    indicator: indicatorKey,
   };
 
+  if (offset !== null) {
+    obj.offset = offset;
+    obj.timeframe = "1d";
+  } else if (timeframe) {
+    obj.timeframe = timeframe;
+  }
+
+   if (params && Object.keys(params).length > 0) {
+      obj.length = {
+        ...params,
+        // ...(isMA ? { source: (source || "close").toLowerCase() } : {}),
+      };
+    }
+  let on = null;
+  const normalizedSource = (source || "close").toLowerCase();
+
+  // ✅ detect volume source for MA
+  if (isMA && normalizedSource === "volume") {
+    on = {
+      indicator: "volume",
+    };
+  }
+
+  return { obj, on };
+};
   const fetchData = async () => {
     if (isFetching.current) return;
     isFetching.current = true;
@@ -293,54 +362,104 @@ export default function OHLCVTable({
       const activeRules = rules.filter((r) => !r.disabled);
       /* ================= FORMATTING ================= */
 
-      const formattedRules = activeRules.map((rule) => {
-        // ✅ helper to avoid repetition
-        const createObject = (config, condition = true) =>
-          condition ? buildObject({ ...config }) : null;
+      // const formattedRules = activeRules.map((rule) => {
+      //   // ✅ helper to avoid repetition
+      //   const createObject = (config, condition = true) =>
+      //     condition ? buildObject({ ...config }) : null;
 
-        const object1 = createObject({
-          indicator: rule.indicator,
-          timeframe: rule.timeframe,
-          params: rule.indicatorParams,
-          value: rule.value,
-          source: rule.source,
-          type: "object1",
-        });
+      //   const object1 = createObject({
+      //     indicator: rule.indicator,
+      //     timeframe: rule.timeframe,
+      //     params: rule.indicatorParams,
+      //     value: rule.value,
+      //     source: rule.source,
+      //     type: "object1",
+      //   });
 
-        const object2 = createObject({
-          indicator: rule.scanner,
-          timeframe: rule.compareTimeframe,
-          params: rule.scannerParams,
-          value: rule.compareValue,
-          source: rule.scannerSource,
-          type: "object2",
-        });
+      //   const object2 = createObject({
+      //     indicator: rule.scanner,
+      //     timeframe: rule.compareTimeframe,
+      //     params: rule.scannerParams,
+      //     value: rule.compareValue,
+      //     source: rule.scannerSource,
+      //     type: "object2",
+      //   });
 
-        const object3 = createObject(
-          {
-            indicator: rule.scanner2,
-            timeframe: rule.timeframe2,
-            params: rule.params2,
-            value: rule.value2,
-            source: rule.source2,
-            type: "object3",
-          },
-          rule.scanner2 !== undefined,
-        );
+      //   const object3 = createObject(
+      //     {
+      //       indicator: rule.scanner2,
+      //       timeframe: rule.timeframe2,
+      //       params: rule.params2,
+      //       value: rule.value2,
+      //       source: rule.source2,
+      //       type: "object3",
+      //     },
+      //     rule.scanner2 !== undefined,
+      //   );
 
-        return {
-          logic: rule.logic,
-          object1,
-          operator1: rule.operator,
+      //   return {
+      //     logic: rule.logic,
+      //     object1,
+      //     operator1: rule.operator,
 
-          ...(object2 && { object2 }),
-          ...(rule.operator2 && { operator2: rule.operator2 }),
-          ...(object3 && { object3 }),
-        };
-      });
+      //     ...(object2 && { object2 }),
+      //     ...(rule.operator2 && { operator2: rule.operator2 }),
+      //     ...(object3 && { object3 }),
+      //   };
+      // });
 
       // ✅ Apply manual TF override BEFORE storing payloadRules
       // Match by indicator only — oldTf goes stale when dropdown 2 is changed multiple times
+      
+      
+      const formattedRules = activeRules.map((rule) => {
+  const o1 = buildObject({
+    indicator: rule.indicator,
+    timeframe: rule.timeframe,
+    params: rule.indicatorParams,
+    value: rule.value,
+    source: rule.source,
+    type: "object1",
+  });
+
+  const o2 = buildObject({
+    indicator: rule.scanner,
+    timeframe: rule.compareTimeframe,
+    params: rule.scannerParams,
+    value: rule.compareValue,
+    source: rule.scannerSource,
+    type: "object2",
+  });
+
+  const o3 = rule.scanner2 !== undefined
+    ? buildObject({
+        indicator: rule.scanner2,
+        timeframe: rule.timeframe2,
+        params: rule.params2,
+        value: rule.value2,
+        source: rule.source2,
+        type: "object3",
+      })
+    : null;
+
+  // ✅ pick first available "on"
+  const on = o1.on || o2.on || o3?.on || null;
+
+  return {
+    logic: rule.logic,
+    object1: o1.obj,
+    operator1: rule.operator,
+
+    ...(o2?.obj && { object2: o2.obj }),
+    ...(rule.operator2 && { operator2: rule.operator2 }),
+    ...(o3?.obj && { object3: o3.obj }),
+
+    // ✅ 🔥 attach at ROOT LEVEL
+    ...(on && { on }),
+  };
+});
+      
+      
       const patchedRules = manualTfOverride.current
         ? formattedRules.map((rule) => {
             const { indicator, newTf } = manualTfOverride.current;
@@ -589,7 +708,12 @@ export default function OHLCVTable({
       "volume",
     ];
 
-    const ignore = new Set([...baseColumns, "timeframe", "time"]);
+    const ignore = new Set([
+      ...baseColumns,
+      "timeframe",
+      "time",
+      "upperbandrsi",
+    ]);
 
     const indicatorCols = Array.from(
       new Set(
@@ -705,18 +829,6 @@ export default function OHLCVTable({
                 ) : (
                   <div className="d-flex align-items-center gap-2">
                     <span>{timeframe.tf}</span>
-                    <Badge
-                      bg=""
-                      style={{
-                        fontSize: 10,
-                        padding: "2px 5px",
-                        background: "var(--bs-secondary-bg)",
-                        color: "var(--bs-secondary-color)",
-                        border: "0.5px solid var(--bs-border-color)",
-                      }}
-                    >
-                      {timeframe.indicator?.toUpperCase()}
-                    </Badge>
                   </div>
                 )}
               </Dropdown.Toggle>

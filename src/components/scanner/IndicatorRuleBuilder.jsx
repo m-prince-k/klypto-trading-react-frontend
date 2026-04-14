@@ -490,7 +490,19 @@ export default function IndicatorRuleBuilder({
         ...transformOptions(data.weeks || []),
       ];
 
-      // console.log(flattened, "timeframeeeeeeeeeeeeee options");
+      /* ================= ADD EXTRA TIMEFRAMES ================= */
+      const extraTimeframes = [
+        { label: "Weekly", value: "1w" },
+        { label: "Monthly", value: "1M" },
+        { label: "Quarterly", value: "3M" },
+        { label: "Yearly", value: "1y" },
+      ];
+
+      const mergedTimeframes = [...flattened, ...extraTimeframes];
+
+      const uniqueTimeframes = Array.from(
+        new Map(mergedTimeframes.map((item) => [item.value, item])).values(),
+      );
 
       /* ================= YOUR EXISTING LOGIC ================= */
       const generateAgoOptions = (count, unit, short) => {
@@ -518,7 +530,7 @@ export default function IndicatorRuleBuilder({
       const yearsAgoOptions = generateAgoOptions(3, "year", "y");
 
       const finalOptions = [
-        ...flattened,
+        ...uniqueTimeframes,
         ...daysAgoOptions,
         ...weeksAgoOptions,
         ...monthsAgoOptions,
@@ -534,7 +546,6 @@ export default function IndicatorRuleBuilder({
       setLoading(false);
     }
   }
-
   async function fetchScanners() {
     try {
       const response = await apiService.post("/api/scanner");
@@ -652,7 +663,7 @@ export default function IndicatorRuleBuilder({
 
           return {
             label: item.label,
-            value: fallbackValue, 
+            value: fallbackValue,
             slug: item.slug || null,
             meta:
               typeof item.value === "object" && item.value !== null
@@ -684,7 +695,6 @@ export default function IndicatorRuleBuilder({
     "Low",
     "Close",
     "Volume",
-    "% Change",
     "VWAP",
     "Accumulation / Distribution",
     "Volume Oscillator",
@@ -712,13 +722,13 @@ export default function IndicatorRuleBuilder({
     { label: "Low", value: "low" },
     { label: "Close", value: "close" },
     { label: "Volume", value: "volume" },
-    { label: "VWAP", value: "VWAP" },
-    { label: "Accumulation / Distribution", value: "ad" },
-    { label: "Pivot Point", value: "pivot" },
-    { label: "OBV", value: "obv" },
-    { label: "Session Volume Profile", value: "svp" },
-    { label: "Positive Volume Index", value: "pvi" },
-    { label: "Negative Volume Index", value: "nvi" },
+    // { label: "VWAP", value: "VWAP" },
+    // { label: "Accumulation / Distribution", value: "ad" },
+    // { label: "Pivot Point", value: "pivot" },
+    // { label: "OBV", value: "obv" },
+    // { label: "Session Volume Profile", value: "svp" },
+    // { label: "Positive Volume Index", value: "pvi" },
+    // { label: "Negative Volume Index", value: "nvi" },
   ];
 
   const isMATypeFn = (value = "") =>
