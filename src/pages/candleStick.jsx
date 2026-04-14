@@ -82,9 +82,8 @@ export default function Candlestick() {
   const [runScanTrigger, setRunScanTrigger] = useState(false);
   const [listingTimeframe, setListingTimeframe] = useState("");
   const [selectedCurrencies, setSelectedCurrencies] = useState([]);
-  const [logic, setLogic] = useState("AND");
-    const [scannerOptions, setScannerOptions] = useState([]);
-  
+  const [logic, setLogic] = useState("OR");
+  const [scannerOptions, setScannerOptions] = useState([]);
 
   const [indicatorConfigs, setIndicatorConfigs] = useState(
     indicatorConfigDefault,
