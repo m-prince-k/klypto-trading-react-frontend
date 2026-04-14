@@ -230,11 +230,17 @@ export function updateIndicatorFromInput(
   latestIndicatorValuesRef,
   maType,
 ) {
+  console.log("🔥 updateIndicatorFromInput CALLED:", indicatorType);
+
   const handler = indicatorInputs[indicatorType];
+
   if (!handler) {
-    console.warn("No input handler for:", indicatorType);
+    console.error("❌ No input handler for:", indicatorType);
+    console.log("Available handlers:", Object.keys(indicatorInputs));
     return;
   }
+
+  console.log("✅ Found handler for:", indicatorType);
 
   handler(response, indicatorSeriesRef, latestIndicatorValuesRef, maType);
 }

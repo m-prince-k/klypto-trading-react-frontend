@@ -212,7 +212,7 @@ export const ListingModal = ({
             {activeTab === "Indicators" && (
               <div
                 className="flex-grow overflow-auto"
-                style={{ maxHeight: "68vh" }}
+                style={{ maxHeight: "63vh" }}
               >
                 {loading ? (
                   <div

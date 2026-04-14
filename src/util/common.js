@@ -1646,7 +1646,6 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           type: "band",
           value: 50,
           showValue: true,
-          color: "#9E9E9E",
         },
         {
           key: "lowerBand",
@@ -1654,7 +1653,6 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           type: "band",
           value: 20,
           showValue: true,
-          color: "#26A69A",
         },
         {
           key: "bgFill",
@@ -1686,8 +1684,6 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           key: "nviEma",
           label: "NVI Based EMA",
           type: "line",
-          color: "#26a69a",
-          width: 1,
           visible: true,
         },
       ];
@@ -1698,14 +1694,12 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           label: "PVI",
           type: "line",
           color: "#2962ff",
-          width: 2,
           visible: true,
         },
         {
           key: "pviEma",
           label: "PVI Based EMA",
           type: "line",
-          width: 1,
           visible: true,
         },
       ];
@@ -1730,14 +1724,12 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
             key: "upperBand1",
             label: "Upper Band #1",
             type: "line",
-            width: 1,
             visible: true,
           },
           {
             key: "lowerBand1",
             label: "Lower Band #1",
             type: "line",
-            width: 1,
             visible: true,
           },
           {
@@ -1759,14 +1751,12 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
             key: "upperBand2",
             label: "Upper Band #2",
             type: "line",
-            width: 1,
             visible: true,
           },
           {
             key: "lowerBand2",
             label: "Lower Band #2",
             type: "line",
-            width: 1,
             visible: true,
           },
           {
@@ -1788,14 +1778,12 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
             key: "upperBand3",
             label: "Upper Band #3",
             type: "line",
-            width: 1,
             visible: true,
           },
           {
             key: "lowerBand3",
             label: "Lower Band #3",
             type: "line",
-            width: 1,
             visible: true,
           },
           {

@@ -1269,7 +1269,7 @@ export let indicatorStyleDefault = {
   VWAP: {
     vwap: {
       color: "rgba(255, 193, 7, 1)",
-      width: 2,
+      width: 1,
       lineStyle: 0,
       visible: true,
     },

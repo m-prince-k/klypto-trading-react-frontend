@@ -1,6 +1,10 @@
 export default function VWAPInput(response, indicatorSeriesRef, latestIndicatorValuesRef) {
+  console.log("🚀 VWAP INPUT FUNCTION HIT");
+
   const rows = Array.isArray(response?.data) ? response.data : [];
 
+  console.log("📦 RAW RESPONSE:", response);
+  console.log("📊 ROWS LENGTH:", rows.length);
   // Arrays for VWAP and bands
   const vwap = [];
   const upper1 = [];
