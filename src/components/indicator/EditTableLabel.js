@@ -29,7 +29,7 @@ export function EditableSelect({ value, options, onChange }) {
           onChange={(e) => setSearch(e.target.value)}
           onBlur={() => setTimeout(() => setEditing(false), 150)}
           placeholder="Search..."
-          className="px-2 py-1 text-sm border border-slate-200 rounded-md w-100"
+          className="px-2 text-sm border-none outline-none bg-gray-100 ring-gray-200 rounded-md w-100"
         />
 
         {/* 📋 DROPDOWN LIST */}
@@ -71,7 +71,7 @@ export function EditableSelect({ value, options, onChange }) {
 
 /* ---------------- Editable Number ---------------- */
 
-export function EditableNumber({ value, onChange, width = "w-14" }) {
+export function EditableNumber({ value, onChange, width = "w-fit" }) {
   const [editing, setEditing] = useState(false);
   const ref = useRef();
 
@@ -96,7 +96,7 @@ export function EditableNumber({ value, onChange, width = "w-14" }) {
             setEditing(false);
           }
         }}
-        className={`${width} px-2 py-1 text-sm border border-slate-200 rounded-md`}
+        className={`${width} max-w-20 px-2 text-sm border-none outline-none bg-gray-50 ring-gray-200 rounded-md`}
       />
     );
   }
@@ -104,7 +104,7 @@ export function EditableNumber({ value, onChange, width = "w-14" }) {
   return (
     <span
       onClick={() => setEditing(true)}
-      className={`${width} cursor-pointer text-sm px-2 py-1 rounded-md hover:bg-slate-100 transition text-center`}
+      className={`${width} cursor-pointer text-sm px-2 py-1 rounded-md hover:bg-slate-100  text-center`}
     >
       {value}
     </span>

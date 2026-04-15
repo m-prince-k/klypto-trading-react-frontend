@@ -494,8 +494,8 @@ export default function IndicatorRuleBuilder({
       const extraTimeframes = [
         { label: "Weekly", value: "1w" },
         { label: "Monthly", value: "1M" },
-        { label: "Quarterly", value: "3M" },
-        { label: "Yearly", value: "1y" },
+        //   { label: "Quarterly", value: "90d" },
+        //   { label: "Yearly", value: "365d" },
       ];
 
       const mergedTimeframes = [...flattened, ...extraTimeframes];
@@ -566,6 +566,18 @@ export default function IndicatorRuleBuilder({
               fallbackValue = "macd signal";
             } else {
               fallbackValue = "macd";
+            }
+          }
+          if (item.slug === "adx") {
+            const label = item.label.toLowerCase();
+            const key = (item.key || "").toLowerCase(); // assuming backend gives key
+
+            if (key === "plusdi" || label.includes("positive")) {
+              fallbackValue = "plus di";
+            } else if (key === "minusdi" || label.includes("negative")) {
+              fallbackValue = "minus di";
+            } else {
+              fallbackValue = "adx";
             }
           }
 
@@ -659,7 +671,7 @@ export default function IndicatorRuleBuilder({
             }
           }
 
-          console.log(scannerOptions, "optionsssss");
+          // console.log(scannerOptions, "optionsssss");
 
           return {
             label: item.label,
@@ -896,7 +908,7 @@ export default function IndicatorRuleBuilder({
                     alignItems: "center",
                     flexWrap: "wrap",
                     gap: "1px",
-                    padding: "2px",
+                    padding: "1px",
                     borderRadius: "6px",
                     position: "relative",
                     pointerEvents: rule.disabled ? "none" : "auto",

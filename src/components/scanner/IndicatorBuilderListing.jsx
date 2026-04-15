@@ -121,9 +121,46 @@ export default function OHLCVTable({
     try {
       const response = await apiService.post("/api/getTimeFrames");
 
-      const data = response?.data || {};
+      const data = (await response?.data) || {};
 
-      setFetchTimeframe(data);
+      // ✅ ADD CUSTOM TIMEFRAMES
+      const extendedData = {
+        ...data,
+
+        // keep existing if present
+        month: [
+          ...(data.month || []),
+          {
+            label: "1 month",
+            value: "1M",
+            seconds: 2592000, // approx 30 days
+          },
+        ],
+
+        //   quarter: [
+        //     ...(data.quarter || []),
+        //     {
+        //       label: "1 quarter",
+        //       value: "90d",
+        //       seconds: 7776000, // 90 days
+        //     },
+        //   ],
+
+        //   year: [
+        //     ...(data.year || []),
+        //     {
+        //       label: "1 year",
+        //       value: "365d",
+        //       seconds: 31536000, // 365 days
+        //     },
+        //   ],
+      };
+
+      setFetchTimeframe(extendedData);
+
+      // setFetchTimeframe(data);
+
+      // console.log(fetchTimeframe, "timeframee")
     } catch (err) {
       console.error(err);
       setError(err?.message || "Failed to fetch timeframes");
@@ -147,7 +184,7 @@ export default function OHLCVTable({
     const map = {
       d: 1,
       w: 7,
-      m: 30,
+      M: 30,
       mo: 30,
       q: 90,
       y: 365,
@@ -215,79 +252,97 @@ export default function OHLCVTable({
   //   //   };
   //   // }
 
-
   //   return obj;
   // };
 
-
   const buildObject = ({
-  indicator,
-  timeframe,
-  params = {},
-  value,
-  source,
-  type,
-}) => {
-  const offset = convertToDays(timeframe);
+    indicator,
+    timeframe,
+    params = {},
+    value,
+    source,
+    type,
+  }) => {
+    const offset = convertToDays(timeframe);
 
-  const indicatorKey = indicator?.toLowerCase();
-  const isMA = MA_INDICATORS.includes(indicatorKey);
+    const indicatorKey = indicator?.toLowerCase();
+    const isMA = MA_INDICATORS.includes(indicatorKey);
 
-  const hasValue =
-    value !== undefined &&
-    value !== null &&
-    value !== "" &&
-    !(typeof value === "number" && isNaN(value));
+    const hasValue =
+      value !== undefined &&
+      value !== null &&
+      value !== "" &&
+      !(typeof value === "number" && isNaN(value));
 
-  if (indicatorKey === "number" && hasValue) {
-    return {
-      obj: {
-        indicator: "number",
-        value,
-      },
-      on: null,
-    };
-  }
-
-  if (hasValue && indicatorKey === "number") {
-    return {
-      obj: {
-        indicator: indicatorKey,
-        value,
-      },
-      on: null,
-    };
-  }
-
-  const obj = {
-    indicator: indicatorKey,
-  };
-
-  if (offset !== null) {
-    obj.offset = offset;
-    obj.timeframe = "1d";
-  } else if (timeframe) {
-    obj.timeframe = timeframe;
-  }
-
-   if (params && Object.keys(params).length > 0) {
-      obj.length = {
-        ...params,
-        // ...(isMA ? { source: (source || "close").toLowerCase() } : {}),
+    if (indicatorKey === "number" && hasValue) {
+      return {
+        obj: {
+          indicator: "number",
+          value,
+        },
+        on: null,
       };
     }
-  let on = null;
-  const normalizedSource = (source || "close").toLowerCase();
 
-  // ✅ detect volume source for MA
-  if (isMA && normalizedSource === "volume") {
-    on = {
-      indicator: "volume",
+    if (hasValue && indicatorKey === "number") {
+      return {
+        obj: {
+          indicator: indicatorKey,
+          value,
+        },
+        on: null,
+      };
+    }
+
+    const obj = {
+      indicator: indicatorKey,
     };
-  }
 
-  return { obj, on };
-};
+    if (offset !== null) {
+      obj.offset = offset;
+      obj.timeframe = "1d";
+    } else if (timeframe) {
+      obj.timeframe = timeframe;
+    }
+    const normalizedSource = (source || "close").toLowerCase();
+
+    if (indicatorKey === "volume") {
+      // ✅ NO length for volume indicator
+    } else if (params && Object.keys(params).length > 0) {
+      const isVolumeMA = isMA && normalizedSource === "volume";
+
+      let finalParams = { ...params };
+
+      // ✅ ONLY modify params for VOLUME MA
+      if (isVolumeMA) {
+        finalParams = { ...params };
+
+        if (finalParams.length !== undefined) {
+          finalParams.maLength = finalParams.length;
+          delete finalParams.length;
+        }
+      }
+
+      obj.length = {
+        ...finalParams, // ✅ use modified OR original
+
+        // ✅ always attach source for MA
+        ...(isMA ? { source: normalizedSource } : {}),
+
+        // ✅ only for volume MA
+        ...(isVolumeMA ? { inputIndicator: "volume" } : {}),
+      };
+    }
+
+    let on = null;
+
+    // ✅ keep this if your API still uses `on`
+    if (isMA && normalizedSource === "volume") {
+      on = "volume";
+    }
+    return { obj, on };
+  };
+
   const fetchData = async () => {
     if (isFetching.current) return;
     isFetching.current = true;
@@ -410,56 +465,55 @@ export default function OHLCVTable({
 
       // ✅ Apply manual TF override BEFORE storing payloadRules
       // Match by indicator only — oldTf goes stale when dropdown 2 is changed multiple times
-      
-      
+
       const formattedRules = activeRules.map((rule) => {
-  const o1 = buildObject({
-    indicator: rule.indicator,
-    timeframe: rule.timeframe,
-    params: rule.indicatorParams,
-    value: rule.value,
-    source: rule.source,
-    type: "object1",
-  });
+        const o1 = buildObject({
+          indicator: rule.indicator,
+          timeframe: rule.timeframe,
+          params: rule.indicatorParams,
+          value: rule.value,
+          source: rule.source,
+          type: "object1",
+        });
 
-  const o2 = buildObject({
-    indicator: rule.scanner,
-    timeframe: rule.compareTimeframe,
-    params: rule.scannerParams,
-    value: rule.compareValue,
-    source: rule.scannerSource,
-    type: "object2",
-  });
+        const o2 = buildObject({
+          indicator: rule.scanner,
+          timeframe: rule.compareTimeframe,
+          params: rule.scannerParams,
+          value: rule.compareValue,
+          source: rule.scannerSource,
+          type: "object2",
+        });
 
-  const o3 = rule.scanner2 !== undefined
-    ? buildObject({
-        indicator: rule.scanner2,
-        timeframe: rule.timeframe2,
-        params: rule.params2,
-        value: rule.value2,
-        source: rule.source2,
-        type: "object3",
-      })
-    : null;
+        const o3 =
+          rule.scanner2 !== undefined
+            ? buildObject({
+                indicator: rule.scanner2,
+                timeframe: rule.timeframe2,
+                params: rule.params2,
+                value: rule.value2,
+                source: rule.source2,
+                type: "object3",
+              })
+            : null;
 
-  // ✅ pick first available "on"
-  const on = o1.on || o2.on || o3?.on || null;
+        // ✅ pick first available "on"
+        const on = o1.on || o2.on || o3?.on || null;
 
-  return {
-    logic: rule.logic,
-    object1: o1.obj,
-    operator1: rule.operator,
+        return {
+          logic: rule.logic,
+          object1: o1.obj,
+          operator1: rule.operator,
 
-    ...(o2?.obj && { object2: o2.obj }),
-    ...(rule.operator2 && { operator2: rule.operator2 }),
-    ...(o3?.obj && { object3: o3.obj }),
+          ...(o2?.obj && { object2: o2.obj }),
+          ...(rule.operator2 && { operator2: rule.operator2 }),
+          ...(o3?.obj && { object3: o3.obj }),
 
-    // ✅ 🔥 attach at ROOT LEVEL
-    ...(on && { on }),
-  };
-});
-      
-      
+          // ✅ 🔥 attach at ROOT LEVEL
+          ...(on && { inputIndicator: on }),
+        };
+      });
+
       const patchedRules = manualTfOverride.current
         ? formattedRules.map((rule) => {
             const { indicator, newTf } = manualTfOverride.current;
@@ -556,10 +610,13 @@ export default function OHLCVTable({
         list.push({
           tf: obj.timeframe,
           indicator: obj.indicator,
+          params: obj.params || obj.length,
           ruleIndex, // ✅ track which rule this belongs to (for divider)
         });
       });
     });
+
+    console.log(list, "list");
 
     return list;
   }, [payloadRules]);
@@ -755,6 +812,22 @@ export default function OHLCVTable({
     });
   };
 
+  // ✅ helper (ADD THIS ABOVE RETURN OR IN SAME FILE)
+  const formatIndicatorLabel = (item) => {
+    if (!item?.indicator) return "";
+
+    let label = item.indicator.toUpperCase();
+    console.log(item.params, "prams");
+
+    // ✅ append params if present
+    if (item.params && Object.keys(item.params).length > 0) {
+      const paramStr = Object.values(item.params).join(",");
+      label += ` (${paramStr})`;
+    }
+
+    return label;
+  };
+
   useEffect(() => {
     setPage(0);
   }, [limit, timeframe, search]);
@@ -789,7 +862,7 @@ export default function OHLCVTable({
               style={{ maxWidth: 200 }}
             />
 
-            <Dropdown
+            {/* <Dropdown
               onSelect={(val) => {
                 const selected = JSON.parse(val);
 
@@ -835,7 +908,7 @@ export default function OHLCVTable({
 
               <Dropdown.Menu style={{ fontSize: 13, minWidth: 180 }}>
                 {/* ✅ ALL OPTION */}
-                <Dropdown.Item
+            {/* <Dropdown.Item
                   eventKey={JSON.stringify({ tf: "ALL", indicator: "ALL" })}
                 >
                   <div className="d-flex justify-content-between w-100">
@@ -853,10 +926,10 @@ export default function OHLCVTable({
                       ALL
                     </Badge>
                   </div>
-                </Dropdown.Item>
+                </Dropdown.Item> */}
 
-                {/* ✅ DYNAMIC OPTIONS — grouped by rule with dividers */}
-                {flatTimeframes.map((item, i) => {
+            {/* ✅ DYNAMIC OPTIONS — grouped by rule with dividers */}
+            {/* {flatTimeframes.map((item, i) => {
                   const prevItem = flatTimeframes[i - 1];
                   const showDivider =
                     i > 0 && item.ruleIndex !== prevItem?.ruleIndex;
@@ -883,6 +956,126 @@ export default function OHLCVTable({
                             }}
                           >
                             {item.indicator?.toUpperCase()}
+                          </Badge>
+                        </div>
+                      </Dropdown.Item>
+                    </React.Fragment>
+                  );
+                })}
+              </Dropdown.Menu>
+            </Dropdown>  */}
+
+            <Dropdown
+              onSelect={(val) => {
+                const selected = JSON.parse(val);
+
+                // ✅ HANDLE ALL — show "ALL" in toggle, set dropdown 2 to max TF
+                if (selected.tf === "ALL") {
+                  setTimeframe({ tf: "ALL", indicator: "ALL" });
+
+                  const allTFs = getAllTimeframes(payloadRules);
+                  const maxTF = getMaxTimeframe(allTFs);
+                  if (maxTF) setTimeframeValue(maxTF);
+                  return;
+                }
+
+                setTimeframe(selected);
+
+                // ✅ Mark that user manually selected a TF — block auto-override
+                userPickedTf.current = true;
+
+                // ✅ normalize tf
+                const normalizedTf = selected.tf
+                  ? selected.tf.replace(/_ago$/i, "")
+                  : selected.tf;
+
+                setTimeframeValue(normalizedTf);
+              }}
+            >
+              <Dropdown.Toggle
+                size="sm"
+                variant="light"
+                className="d-flex align-items-center justify-content-between"
+                style={{ height: 32, width: 160, fontSize: 13 }}
+              >
+                {!timeframe ? (
+                  "Select Timeframe"
+                ) : timeframe.tf === "ALL" ? (
+                  <span>ALL Timeframes</span>
+                ) : (
+                  <div className="d-flex align-items-center justify-content-between w-100">
+                    <span>{timeframe.tf}</span>
+
+                    {/* ✅ BADGE IN PLACEHOLDER */}
+                    <Badge
+                      bg=""
+                      style={{
+                        fontSize: 10,
+                        padding: "2px 5px",
+                        background: "var(--bs-secondary-bg)",
+                        color: "var(--bs-secondary-color)",
+                        border: "0.5px solid var(--bs-border-color)",
+                      }}
+                    >
+                      {formatIndicatorLabel(timeframe)}
+                    </Badge>
+                  </div>
+                )}
+              </Dropdown.Toggle>
+
+              <Dropdown.Menu style={{ fontSize: 13, minWidth: 180 }}>
+                {/* ✅ ALL OPTION */}
+                <Dropdown.Item
+                  eventKey={JSON.stringify({ tf: "ALL", indicator: "ALL" })}
+                >
+                  <div className="d-flex justify-content-between w-100">
+                    <span>ALL</span>
+                    <Badge
+                      bg=""
+                      style={{
+                        fontSize: 10,
+                        padding: "2px 5px",
+                        background: "var(--bs-secondary-bg)",
+                        color: "var(--bs-secondary-color)",
+                        border: "0.5px solid var(--bs-border-color)",
+                      }}
+                    >
+                      ALL
+                    </Badge>
+                  </div>
+                </Dropdown.Item>
+
+                {/* ✅ DYNAMIC OPTIONS */}
+                {flatTimeframes.map((item, i) => {
+                  const prevItem = flatTimeframes[i - 1];
+                  const showDivider =
+                    i > 0 && item.ruleIndex !== prevItem?.ruleIndex;
+
+                  return (
+                    <React.Fragment key={i}>
+                      {showDivider && <Dropdown.Divider />}
+
+                      <Dropdown.Item
+                        eventKey={JSON.stringify({
+                          tf: item.tf,
+                          indicator: item.indicator,
+                          params: item.params, // ✅ PASS PARAMS
+                        })}
+                      >
+                        <div className="d-flex justify-content-between w-100">
+                          <span>{item.tf}</span>
+
+                          <Badge
+                            bg=""
+                            style={{
+                              fontSize: 10,
+                              padding: "2px 5px",
+                              background: "var(--bs-secondary-bg)",
+                              color: "var(--bs-secondary-color)",
+                              border: "0.5px solid var(--bs-border-color)",
+                            }}
+                          >
+                            {formatIndicatorLabel(item)}
                           </Badge>
                         </div>
                       </Dropdown.Item>
