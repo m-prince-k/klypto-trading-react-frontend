@@ -140,6 +140,8 @@ export let indicatorConfigDefault = {
   },
   VWMA: {
     length: 20,
+    source: "close",
+    offset: 0,
   },
   AO: {
     length: 14,

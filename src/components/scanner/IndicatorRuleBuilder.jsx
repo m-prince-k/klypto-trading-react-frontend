@@ -592,6 +592,10 @@ export default function IndicatorRuleBuilder({
               fallbackValue = "ichimoku lead line 1";
             } else if (label.includes("span b")) {
               fallbackValue = "ichimoku lead line 2";
+            }else if (label.includes("cloud top")) {
+              fallbackValue = "ichimoku cloud top";
+            }else if (label.includes("cloud bottom")) {
+              fallbackValue = "ichimoku cloud bottom";
             } else {
               fallbackValue = "ichimoku";
             }

@@ -916,8 +916,6 @@ export default function IndicatorPropertyDialog({
           <BaseSettings
             currentConfig={currentConfig}
             updateProperty={updateProperty}
-            showOffset={false}
-            showSource={false}
           />
         );
       }
