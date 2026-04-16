@@ -193,7 +193,7 @@ export default function OHLCVTable({
     return value * (map[unit] || 1);
   };
 
-  const MA_INDICATORS = ["sma", "ema", "tema", "wma", "hma", "stddev", "wpr"];
+  const MA_INDICATORS = ["sma", "ema", "tema", "wma", "hma", "stddev", "wpr", "vwma", "rma"];
 
   // const buildObject = ({
   //   indicator,

@@ -568,6 +568,7 @@ export default function IndicatorRuleBuilder({
               fallbackValue = "macd";
             }
           }
+
           if (item.slug === "adx") {
             const label = item.label.toLowerCase();
             const key = (item.key || "").toLowerCase(); // assuming backend gives key
@@ -578,6 +579,17 @@ export default function IndicatorRuleBuilder({
               fallbackValue = "minus di";
             } else {
               fallbackValue = "adx";
+            }
+          }
+
+          if (item.slug === "kvo") {
+            const label = item.label.toLowerCase();
+            const key = (item.key || "").toLowerCase();
+
+            if (key.includes("signal") || label.includes("signal")) {
+              fallbackValue = "klinger signal line";
+            } else {
+              fallbackValue = "kvo";
             }
           }
 
@@ -592,9 +604,9 @@ export default function IndicatorRuleBuilder({
               fallbackValue = "ichimoku lead line 1";
             } else if (label.includes("span b")) {
               fallbackValue = "ichimoku lead line 2";
-            }else if (label.includes("cloud top")) {
+            } else if (label.includes("cloud top")) {
               fallbackValue = "ichimoku cloud top";
-            }else if (label.includes("cloud bottom")) {
+            } else if (label.includes("cloud bottom")) {
               fallbackValue = "ichimoku cloud bottom";
             } else {
               fallbackValue = "ichimoku";
@@ -730,7 +742,25 @@ export default function IndicatorRuleBuilder({
     return { selected, hasParams, isPriceField };
   };
 
-  const MA_INDICATORS = ["sma", "ema", "tema", "wma", "hma", "stddev", "wpr"];
+  const MA_INDICATORS = [
+    "sma",
+    "ema",
+    "tema",
+    "wma",
+    "hma",
+    "stddev",
+    "wpr",
+    "vwma",
+    "rma",
+  ];
+
+   const ohlcv_dropdown = [
+    { label: "Open", value: "open" },
+    { label: "High", value: "high" },
+    { label: "Low", value: "low" },
+    { label: "Close", value: "close" },
+    { label: "Volume", value: "volume" },
+   ];
 
   const PRICE_OPTIONS = [
     { label: "Open", value: "open" },
@@ -738,13 +768,11 @@ export default function IndicatorRuleBuilder({
     { label: "Low", value: "low" },
     { label: "Close", value: "close" },
     { label: "Volume", value: "volume" },
-    // { label: "VWAP", value: "VWAP" },
-    // { label: "Accumulation / Distribution", value: "ad" },
-    // { label: "Pivot Point", value: "pivot" },
-    // { label: "OBV", value: "obv" },
-    // { label: "Session Volume Profile", value: "svp" },
-    // { label: "Positive Volume Index", value: "pvi" },
-    // { label: "Negative Volume Index", value: "nvi" },
+    { label: "VWAP", value: "VWAP" },
+    { label: "Accumulation / Distribution", value: "ad" },
+    { label: "Pivot Point", value: "pivot" },
+    { label: "OBV", value: "obv" },
+    { label: "Session Volume Profile", value: "svp" },
   ];
 
   const isMATypeFn = (value = "") =>
@@ -1019,7 +1047,7 @@ export default function IndicatorRuleBuilder({
                         {/* PRICE SELECT */}
                         <EditableSelect
                           value={rule.source || "Close"}
-                          options={PRICE_OPTIONS}
+                          options={ohlcv_dropdown}
                           onChange={(v) => updateField(rule.id, "source", v)}
                         />
 
@@ -1171,7 +1199,7 @@ export default function IndicatorRuleBuilder({
                         {/* PRICE SELECT */}
                         <EditableSelect
                           value={rule.scannerSource || "Close"}
-                          options={PRICE_OPTIONS}
+                          options={ohlcv_dropdown}
                           onChange={(v) =>
                             updateField(rule.id, "scannerSource", v)
                           }
@@ -1357,7 +1385,7 @@ export default function IndicatorRuleBuilder({
                                 {/* PRICE SELECT */}
                                 <EditableSelect
                                   value={rule.source2 || "Close"}
-                                  options={PRICE_OPTIONS}
+                                  options={ohlcv_dropdown}
                                   onChange={(v) =>
                                     setRules((prev) =>
                                       prev.map((r) =>
