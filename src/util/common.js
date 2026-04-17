@@ -1853,6 +1853,110 @@ export const RANGE_INTERVAL_MAPPING = {
   All: "1d",
 };
 
+export const normalizeIndicator = (ind) => {
+  if (!ind) return "";
+
+  ind = ind.toLowerCase();
+
+  if (ind.includes("macd")) return "macd";
+  if (ind.includes("adx")) return "adx";
+  if (ind.includes("bollinger")) return "bb";
+  if (ind.includes("donchian")) return "dc";
+  if (ind.includes("keltner")) return "kc";
+  if (ind.includes("ichimoku")) return "ichimoku";
+  if (ind.includes("klinger")) return "kvo";
+
+  return ind;
+};
+
+export const INDICATOR_DAYS_MAP = {
+  // 🔴 FULL HISTORY (cumulative) → ALWAYS MAX
+  obv: 4000,
+  ad: 4000,
+  nvi: 4000,
+  pvi: 4000,
+
+  // 🟡 Volume / session based (need deep history)
+  vwap: 2000,
+  svp: 2000,
+  frvp: 2000,
+  volume: 3000,
+  "volume oscillator": 500,
+
+  // 🟢 Trend / MA based (buffer added)
+  sma: 200,
+  ema: 200,
+  wma: 200,
+  vwma: 200,
+  hma: 200,
+  rma: 200,
+  tema: 200,
+  tma: 200,
+  kama: 200,
+
+  // 🟢 Volatility
+  atr: 150,
+  tr: 150,
+  stddev: 150,
+
+  // 🟢 Momentum
+  rsi: 150,
+  cci: 150,
+  cmo: 150,
+  mom: 150,
+  roc: 150,
+  trix: 200,
+  ft: 4000,
+
+  // 🟢 Volume indicators (non cumulative)
+  cmf: 200,
+  eom: 200,
+  mfi: 200,
+
+  // 🟢 MACD family
+  macd: 200,
+
+  // 🟢 ADX family
+  adx: 200,
+
+  // 🟢 Oscillators
+  ao: 150,
+  awo: 150,
+  aroon: 150,
+  stoch: 150,
+  stochrsi: 150,
+  wpr: 150,
+
+  // 🟢 Bands / Channels
+  bb: 150,
+  bbw: 150,
+  dc: 150,
+  kc: 150,
+
+  // 🟢 Supertrend / PSAR
+  supertrend: 200,
+  psar: 150,
+
+  // 🟢 Ichimoku (IMPORTANT → max 52 lagging span)
+  ichimoku: 200,
+
+  // 🟢 KVO (long EMA = 55 → needs more buffer)
+  kvo: 250,
+
+  // 🟢 Pivot (daily based, no history needed but safe buffer)
+  pivot: 50,
+
+  // 🟢 Misc
+  "pivot point": 50,
+  "pivot r1": 50,
+  "pivot r2": 50,
+  "pivot s1": 50,
+  "pivot s2": 50,
+
+  // 🟢 Default fallback
+  default: 100,
+};
+
 export const tfToMinutes = (tf = "") => {
   const clean = tf.toLowerCase();
 

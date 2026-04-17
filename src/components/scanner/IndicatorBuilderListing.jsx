@@ -15,6 +15,8 @@ import {
   useDebounce,
   tfToMinutes,
   comparisonOps,
+  normalizeIndicator,
+  INDICATOR_DAYS_MAP,
 } from "../../util/common";
 import { toast } from "react-toastify";
 import { Spinner } from "../tradingModals/Spinner";
@@ -132,7 +134,7 @@ export default function OHLCVTable({
         month: [
           ...(data.month || []),
           {
-            label: "1 month",
+            label: "1 Month",
             value: "1M",
             seconds: 2592000, // approx 30 days
           },
@@ -194,7 +196,390 @@ export default function OHLCVTable({
     return value * (map[unit] || 1);
   };
 
-  const MA_INDICATORS = ["sma", "ema", "tema", "wma", "hma", "stddev", "wpr", "vwma", "rma"];
+  const MA_INDICATORS = [
+    "sma",
+    "ema",
+    "tema",
+    "wma",
+    "hma",
+    "stddev",
+    "wpr",
+    "vwma",
+    "rma",
+  ];
+
+  const INDICATOR_ALIASES = {
+    "bollinger bands upper": ["bbupper", "bb_upper", "upper"],
+    "bollinger bands lower": ["bblower", "bb_lower", "lower"],
+    "bollinger bands basis": ["bbbasis", "bbmiddle", "bb_basis", "basis"],
+    "bollinger bands percentage b": ["bb%b", "bbpb", "bb_pb"],
+    "bollinger bands width": ["bbwidth", "bb_width"],
+    "keltner channels upper": ["kcupper", "UPPERBANDKELTNER"],
+    "keltner channels lower": ["kclower", "LOWERBANDKELTNER"],
+    "keltner channels middle": [
+      "kcmiddle",
+      "MIDDLELINEKELTNER",
+      "kc_middle",
+      "kc_basis",
+    ],
+    "donchian channels upper": ["dcupper", "UPPERDC"],
+    "donchian channels lower": ["dclower", "LOWERDC"],
+    "donchian channels middle": ["MIDDLEDC"],
+    "macd line": ["macd", "MACD"],
+    "macd histogram": ["macd_h", "MACDHISTOGRAM", "macdhist", "histogram"],
+    "macd signal": ["MACDSIGNAL", "macdsignal", "signal"],
+    "plus di": ["plus_di", "pdi", "+di", "plus"],
+    "minus di": ["minus_di", "mdi", "-di", "minus"],
+    "ichimoku base line": ["kijun", "BASELINEICHIMOKU"],
+    "ichimoku conversion line": ["tenkan", "CONVERSIONLINEICHIMOKU"],
+    "ichimoku lead line 1": ["spana", "LEADLINE1ICHIMOKU"],
+    "ichimoku lead line 2": ["LEADLINE2ICHIMOKU"],
+    "ichimoku cloud bottom": ["cloud", "CLOUDBOTTOMICHIMOKU"],
+    "ichimoku cloud top": ["cloud", "CLOUDTOPICHIMOKU"],
+    "slow stochastic %k": ["SLOWSTOCHASTICK", "stochk", "%k"],
+    "slow stochastic %d": ["SLOWSTOCHASTICD", "stochd", "%d"],
+    "fast stochastic %k": ["FASTSTOCHASTICK", "stochk", "%k"],
+    "fast stochastic %d": ["FASTSTOCHASTICD", "stochd", "%d"],
+  };
+
+  const isIndicatorMatch = (key, indicator, tf) => {
+    if (!key || !indicator || !tf) return false;
+    const lowerKey = key.toLowerCase();
+    const lowerInd = indicator.toLowerCase();
+    const lowerTf = tf.toLowerCase();
+
+    // 1. Direct includes match (works for rsi (14) 1d, ema (20) 1d etc.)
+    if (lowerKey.includes(lowerInd) && lowerKey.includes(lowerTf)) return true;
+
+    // 2. Alias match
+    const aliases = INDICATOR_ALIASES[lowerInd] || [];
+    for (const alias of aliases) {
+      if (lowerKey.includes(alias.toLowerCase()) && lowerKey.includes(lowerTf))
+        return true;
+    }
+
+    // 3. Fallback for composite names (e.g. "Bollinger Upper Band" vs "bb_upper")
+    if (lowerInd.includes("bollinger") && lowerKey.includes("bb")) {
+      if (lowerInd.includes("upper") && lowerKey.includes("upper"))
+        return lowerKey.includes(lowerTf);
+      if (lowerInd.includes("lower") && lowerKey.includes("lower"))
+        return lowerKey.includes(lowerTf);
+      if (
+        lowerInd.includes("basis") &&
+        (lowerKey.includes("basis") || lowerKey.includes("middle"))
+      )
+        return lowerKey.includes(lowerTf);
+    }
+
+    return false;
+  };
+  const getTotalDays = (patchedRules) => {
+    const daysArray = patchedRules.flatMap((rule) =>
+      ["object1", "object2", "object3", "object4"].map((key) => {
+        const raw = rule[key]?.indicator;
+        const ind = normalizeIndicator(raw);
+
+        return INDICATOR_DAYS_MAP[ind] || INDICATOR_DAYS_MAP.default;
+      }),
+    );
+
+    return daysArray.length
+      ? Math.max(...daysArray)
+      : INDICATOR_DAYS_MAP.default;
+  };
+
+  // const buildObject = ({
+  //   indicator,
+  //   timeframe,
+  //   params = {},
+  //   value,
+  //   source,
+  //   type,
+  // }) => {
+  //   const offset = convertToDays(timeframe);
+
+  //   const indicatorKey = indicator?.toLowerCase();
+  //   const isMA = MA_INDICATORS.includes(indicatorKey);
+
+  //   const hasValue =
+  //     value !== undefined &&
+  //     value !== null &&
+  //     value !== "" &&
+  //     !(typeof value === "number" && isNaN(value));
+
+  //   if (indicatorKey === "number" && hasValue) {
+  //     return {
+  //       obj: {
+  //         indicator: "number",
+  //         value,
+  //       },
+  //       on: null,
+  //     };
+  //   }
+
+  //   if (hasValue && indicatorKey === "number") {
+  //     return {
+  //       obj: {
+  //         indicator: indicatorKey,
+  //         value,
+  //       },
+  //       on: null,
+  //     };
+  //   }
+
+  //   const obj = {
+  //     indicator: indicatorKey,
+  //   };
+
+  //   if (offset !== null) {
+  //     obj.offset = offset;
+  //     obj.timeframe = "1d";
+  //   } else if (timeframe) {
+  //     obj.timeframe = timeframe;
+  //   }
+  //   const normalizedSource = (source || "close").toLowerCase();
+
+  //   if (indicatorKey === "volume") {
+  //     // ✅ NO length for volume indicator
+  //   } else if (params && Object.keys(params).length > 0) {
+  //     const isVolumeMA = isMA && normalizedSource === "volume";
+
+  //     let finalParams = { ...params };
+
+  //     // ✅ ONLY modify params for VOLUME MA
+  //     if (isVolumeMA) {
+  //       finalParams = { ...params };
+
+  //       if (finalParams.length !== undefined) {
+  //         finalParams.maLength = finalParams.length;
+  //         delete finalParams.length;
+  //       }
+  //     }
+
+  //     obj.length = {
+  //       ...finalParams, // ✅ use modified OR original
+
+  //       // ✅ always attach source for MA
+  //       ...(isMA ? { source: normalizedSource } : {}),
+
+  //       // ✅ only for volume MA
+  //       ...(isVolumeMA ? { inputIndicator: "volume" } : {}),
+  //     };
+  //   }
+
+  //   let on = null;
+
+  //   // ✅ keep this if your API still uses `on`
+  //   if (isMA && normalizedSource === "volume") {
+  //     on = "volume";
+  //   }
+  //   return { obj, on };
+  // };
+
+  // const fetchData = async () => {
+  //   if (isFetching.current) return;
+  //   isFetching.current = true;
+  //   setLoading(true);
+
+  //   try {
+  //     /* ================= VALIDATION ================= */
+
+  //     let errorMessage = "";
+
+  //     const hasInvalidRule = rules?.some((rule, index) => {
+  //       const ruleNum = index + 1;
+
+  //       const checks = [
+  //         [!rule?.indicator || rule.indicator === "Select Scanner","Scanner not selected"],
+  //         [!rule?.operator || rule.operator === "Select Operation","Operator not selected"],
+  //         [!rule?.scanner || rule.scanner === "Select Scanner","Scanner not selected"],
+  //         [rule.operator2 === "Select Operation", "Operator not selected"],
+  //         [rule.scanner2 === "Select Scanner", "Scanner not selected"],
+  //         [rule.operator3 === "Select Operation", "Operator not selected"],
+  //         [rule.scanner3 === "Select Scanner", "Scanner not selected"],
+  //       ];
+
+  //       for (const [condition, message] of checks) {
+  //         if (condition) {
+  //           errorMessage = `Rule ${ruleNum}: ${message}`;
+  //           return true;
+  //         }
+  //       }
+  //       const compCount =
+  //         (comparisonOps.has(rule.operator) ? 1 : 0) +
+  //         (comparisonOps.has(rule.operator2) ? 1 : 0) +
+  //         (comparisonOps.has(rule.operator3) ? 1 : 0);
+
+  //       if (compCount === 0) {
+  //         errorMessage = `Rule ${ruleNum}: One comparison operator required`;
+  //         return true;
+  //       }
+
+  //       if (compCount > 1) {
+  //         errorMessage = `Rule ${ruleNum}: Only one comparison operator allowed`;
+  //         return true;
+  //       }
+
+  //       return false;
+  //     });
+
+  //     if (hasInvalidRule) {
+  //       setAlertMsg(errorMessage);
+  //       setShowAlert(true);
+  //       return;
+  //     }
+  //     const activeRules = rules.filter((r) => !r.disabled);
+  //     /* ================= FORMATTING ================= */
+
+  //     const formattedRules = activeRules.map((rule) => {
+  //       const o1 = buildObject({
+  //         indicator: rule.indicator,
+  //         timeframe: rule.timeframe,
+  //         params: rule.indicatorParams,
+  //         value: rule.value,
+  //         source: rule.source,
+  //         type: "object1",
+  //       });
+
+  //       const o2 = buildObject({
+  //         indicator: rule.scanner,
+  //         timeframe: rule.compareTimeframe,
+  //         params: rule.scannerParams,
+  //         value: rule.compareValue,
+  //         source: rule.scannerSource,
+  //         type: "object2",
+  //       });
+
+  //       const o3 =
+  //         rule.scanner2 !== undefined
+  //           ? buildObject({
+  //               indicator: rule.scanner2,
+  //               timeframe: rule.timeframe2,
+  //               params: rule.params2,
+  //               value: rule.value2,
+  //               source: rule.source2,
+  //               type: "object3",
+  //             })
+  //           : null;
+
+  //       const o4 =
+  //         rule.scanner3 !== undefined
+  //           ? buildObject({
+  //               indicator: rule.scanner3,
+  //               timeframe: rule.timeframe3,
+  //               params: rule.params3,
+  //               value: rule.value3,
+  //               source: rule.source3,
+  //               type: "object4",
+  //             })
+  //           : null;
+
+  //       // ✅ pick first available "on"
+  //       const on = o1.on || o2.on || o3?.on || o4?.on || null;
+
+  //       return {
+  //         logic: rule.logic,
+  //         object1: o1.obj,
+  //         operator1: rule.operator,
+
+  //         ...(o2?.obj && { object2: o2.obj }),
+  //         ...(rule.operator2 && { operator2: rule.operator2 }),
+  //         ...(o3?.obj && { object3: o3.obj }),
+  //         ...(rule.operator3 && { operator3: rule.operator3 }),
+  //         ...(o4?.obj && { object4: o4.obj }),
+
+  //         // ✅ 🔥 attach at ROOT LEVEL
+  //         ...(on && { inputIndicator: on }),
+  //       };
+  //     });
+
+  //     const patchedRules = manualTfOverride.current
+  //       ? formattedRules.map((rule) => {
+  //           const { indicator, newTf } = manualTfOverride.current;
+  //           const updated = { ...rule };
+  //           ["object1", "object2", "object3"].forEach((key) => {
+  //             if (updated[key] && updated[key].indicator === indicator) {
+  //               updated[key] = { ...updated[key], timeframe: newTf };
+  //             }
+  //           });
+  //           return updated;
+  //         })
+  //       : formattedRules;
+
+  //     // ✅ Clear override AFTER applying — prevent it from sticking on next fetchData call
+  //     manualTfOverride.current = null;
+
+  //     setPayloadRules(patchedRules);
+
+  //     console.log(patchedRules, "patchedRules");
+
+  //     const allTFs = getAllTimeframes(patchedRules);
+  //     const maxTF = getMaxTimeframe(allTFs);
+
+  //     // ✅ Only auto-set maxTF if user hasn't manually picked a timeframe
+  //     if (maxTF && !userPickedTf.current) {
+  //       setTimeframeValue(maxTF);
+  //     }
+  //     console.log("✅ Final Payload:", patchedRules);
+
+  //     /* ================= API ================= */
+
+  //     // ✅ cleaner calculation
+  //     let totalDays = days ? days : months ? Math.round(months * 30) : null;
+  //     const LONG_RANGE_INDICATORS = ["nvi", "pvi", "vwap", "obv", "ad"];
+
+  //     const hasLongRangeIndicator = patchedRules.some((rule) => {
+  //       return ["object1", "object2", "object3", "object4"].some((key) => {
+  //         const indicator = (rule[key]?.indicator || "").toLowerCase();
+  //         return LONG_RANGE_INDICATORS.includes(indicator);
+  //       });
+  //     });
+
+  //     if (hasLongRangeIndicator) {
+  //       totalDays = 3000;
+  //     }
+
+  //     // const totalDays = getTotalDays(patchedRules);
+  //     console.log("max days------------------", totalDays);
+  //     if (!totalDays || !timeframeValue) return;
+
+  //     const { data: result = {} } = await apiService.post(
+  //       `/api/scannerDetail?&interval=${timeframeValue}&day=${totalDays}`,
+  //       {
+  //         currencies: (debouncedCurrencies || []).map((c) => c.value),
+  //         rules: patchedRules, // ✅ use patched rules, not original formattedRules
+  //         logic: logic,
+  //       },
+  //     );
+
+  //     console.log("API Result:", result);
+
+  //     setDataSource(result);
+
+  //     const isEmpty =
+  //       !result ||
+  //       (Array.isArray(result) && result.length === 0) ||
+  //       (typeof result === "object" && !Object.keys(result).length);
+
+  //     if (isEmpty) {
+  //       toast.error("No data found ❌");
+  //     } else {
+  //       toast.success("Scan executed successfully ✅");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching data:", error);
+  //     setDataSource({});
+  //   } finally {
+  //     setLoading(false);
+  //     isFetching.current = false;
+  //   }
+  // };
+
+  /* ================= CONSTANTS ================= */
+
+  const OBJECT_KEYS = ["object1", "object2", "object3", "object4"];
+
+  /* ================= BUILD OBJECT ================= */
 
   const buildObject = ({
     indicator,
@@ -202,11 +587,10 @@ export default function OHLCVTable({
     params = {},
     value,
     source,
-    type,
   }) => {
-    const offset = convertToDays(timeframe);
-
     const indicatorKey = indicator?.toLowerCase();
+    const normalizedSource = (source || "close").toLowerCase();
+    const offset = convertToDays(timeframe);
     const isMA = MA_INDICATORS.includes(indicatorKey);
 
     const hasValue =
@@ -215,156 +599,106 @@ export default function OHLCVTable({
       value !== "" &&
       !(typeof value === "number" && isNaN(value));
 
+    // ✅ number shortcut
     if (indicatorKey === "number" && hasValue) {
       return {
-        obj: {
-          indicator: "number",
-          value,
-        },
+        obj: { indicator: "number", value },
         on: null,
       };
     }
 
-    if (hasValue && indicatorKey === "number") {
-      return {
-        obj: {
-          indicator: indicatorKey,
-          value,
-        },
-        on: null,
-      };
-    }
+    const obj = { indicator: indicatorKey };
 
-    const obj = {
-      indicator: indicatorKey,
-    };
-
+    // ✅ timeframe / offset
     if (offset !== null) {
       obj.offset = offset;
       obj.timeframe = "1d";
     } else if (timeframe) {
       obj.timeframe = timeframe;
     }
-    const normalizedSource = (source || "close").toLowerCase();
 
-    if (indicatorKey === "volume") {
-      // ✅ NO length for volume indicator
-    } else if (params && Object.keys(params).length > 0) {
+    // ✅ params handling
+    if (indicatorKey !== "volume" && params && Object.keys(params).length) {
       const isVolumeMA = isMA && normalizedSource === "volume";
 
-      let finalParams = { ...params };
+      let finalParams = params;
 
-      // ✅ ONLY modify params for VOLUME MA
-      if (isVolumeMA) {
-        finalParams = { ...params };
-
-        if (finalParams.length !== undefined) {
-          finalParams.maLength = finalParams.length;
-          delete finalParams.length;
-        }
+      if (isVolumeMA && params.length !== undefined) {
+        finalParams = { ...params, maLength: params.length };
+        delete finalParams.length;
       }
 
       obj.length = {
-        ...finalParams, // ✅ use modified OR original
-
-        // ✅ always attach source for MA
-        ...(isMA ? { source: normalizedSource } : {}),
-
-        // ✅ only for volume MA
-        ...(isVolumeMA ? { inputIndicator: "volume" } : {}),
+        ...finalParams,
+        ...(isMA && { source: normalizedSource }),
+        ...(isVolumeMA && { inputIndicator: "volume" }),
       };
     }
 
-    let on = null;
+    const on = isMA && normalizedSource === "volume" ? "volume" : null;
 
-    // ✅ keep this if your API still uses `on`
-    if (isMA && normalizedSource === "volume") {
-      on = "volume";
-    }
     return { obj, on };
   };
 
-  const fetchData = async () => {
-    if (isFetching.current) return;
-    isFetching.current = true;
-    setLoading(true);
+  /* ================= VALIDATION ================= */
 
-    try {
-      /* ================= VALIDATION ================= */
+  const validateRules = (rules) => {
+    for (let i = 0; i < rules.length; i++) {
+      const rule = rules[i];
+      const ruleNum = i + 1;
 
-      let errorMessage = "";
-      const hasInvalidRule = rules?.some((rule, index) => {
-        const ruleNum = index + 1;
+      const checks = [
+        [
+          !rule?.indicator || rule.indicator === "Select Scanner",
+          "Scanner not selected",
+        ],
+        [
+          !rule?.operator || rule.operator === "Select Operation",
+          "Operator not selected",
+        ],
+        [
+          !rule?.scanner || rule.scanner === "Select Scanner",
+          "Scanner not selected",
+        ],
+        [rule.operator2 === "Select Operation", "Operator not selected"],
+        [rule.scanner2 === "Select Scanner", "Scanner not selected"],
+        [rule.operator3 === "Select Operation", "Operator not selected"],
+        [rule.scanner3 === "Select Scanner", "Scanner not selected"],
+      ];
 
-        // 1. Basic field selection checks
-        if (!rule?.indicator || rule.indicator === "Select Scanner") {
-          errorMessage = `Rule ${ruleNum}: Scanner not selected`;
-          return true;
-        }
-
-        if (!rule?.operator || rule.operator === "Select Operation") {
-          errorMessage = `Rule ${ruleNum}: Operator not selected`;
-          return true;
-        }
-
-        if (!rule?.scanner || rule.scanner === "Select Scanner") {
-          errorMessage = `Rule ${ruleNum}: Scanner not selected`;
-          return true;
-        }
-
-        if (rule.operator2 === "Select Operation") {
-          errorMessage = `Rule ${ruleNum}: Operator not selected`;
-          return true;
-        }
-
-        if (rule.scanner2 === "Select Scanner") {
-          errorMessage = `Rule ${ruleNum}: Scanner not selected`;
-          return true;
-        }
-        if (rule.operator3 === "Select Operation") {
-          errorMessage = `Rule ${ruleNum}: Operator not selected`;
-          return true;
-        }
-
-        if (rule.scanner3 === "Select Scanner") {
-          errorMessage = `Rule ${ruleNum}: Scanner not selected`;
-          return true;
-        }
-
-        // 2. Comparison operator count check
-        let compCount = 0;
-        if (comparisonOps.has(rule.operator)) compCount++;
-        if (comparisonOps.has(rule.operator2)) compCount++;
-        if (comparisonOps.has(rule.operator3)) compCount++;
-
-        if (compCount === 0) {
-          errorMessage = `Rule ${ruleNum}: One comparison operator (<, >, =, etc.) is required`;
-          return true;
-        }
-        if (compCount > 1) {
-          errorMessage = `Rule ${ruleNum}: Only one comparison operator is allowed per rule`;
-          return true;
-        }
-
-        return false;
-      });
-
-      if (hasInvalidRule) {
-        setAlertMsg(errorMessage);
-        setShowAlert(true);
-        return;
+      for (const [condition, message] of checks) {
+        if (condition) return `Rule ${ruleNum}: ${message}`;
       }
-      const activeRules = rules.filter((r) => !r.disabled);
-      /* ================= FORMATTING ================= */
 
-      const formattedRules = activeRules.map((rule) => {
+      const compCount =
+        (comparisonOps.has(rule.operator) ? 1 : 0) +
+        (comparisonOps.has(rule.operator2) ? 1 : 0) +
+        (comparisonOps.has(rule.operator3) ? 1 : 0);
+
+      if (compCount === 0) {
+        return `Rule ${ruleNum}: One comparison operator required`;
+      }
+
+      if (compCount > 1) {
+        return `Rule ${ruleNum}: Only one comparison operator allowed`;
+      }
+    }
+
+    return null;
+  };
+
+  /* ================= TRANSFORM ================= */
+
+  const transformRules = (rules) => {
+    return rules
+      .filter((r) => !r.disabled)
+      .map((rule) => {
         const o1 = buildObject({
           indicator: rule.indicator,
           timeframe: rule.timeframe,
           params: rule.indicatorParams,
           value: rule.value,
           source: rule.source,
-          type: "object1",
         });
 
         const o2 = buildObject({
@@ -373,35 +707,29 @@ export default function OHLCVTable({
           params: rule.scannerParams,
           value: rule.compareValue,
           source: rule.scannerSource,
-          type: "object2",
         });
 
-        const o3 =
-          rule.scanner2 !== undefined
-            ? buildObject({
-                indicator: rule.scanner2,
-                timeframe: rule.timeframe2,
-                params: rule.params2,
-                value: rule.value2,
-                source: rule.source2,
-                type: "object3",
-              })
-            : null;
+        const o3 = rule.scanner2
+          ? buildObject({
+              indicator: rule.scanner2,
+              timeframe: rule.timeframe2,
+              params: rule.params2,
+              value: rule.value2,
+              source: rule.source2,
+            })
+          : null;
 
-             const o4 =
-          rule.scanner3 !== undefined
-            ? buildObject({
-                indicator: rule.scanner3,
-                timeframe: rule.timeframe3,
-                params: rule.params3,
-                value: rule.value3,
-                source: rule.source3,
-                type: "object4",
-              })
-            : null;
+        const o4 = rule.scanner3
+          ? buildObject({
+              indicator: rule.scanner3,
+              timeframe: rule.timeframe3,
+              params: rule.params3,
+              value: rule.value3,
+              source: rule.source3,
+            })
+          : null;
 
-        // ✅ pick first available "on"
-        const on = o1.on || o2.on || o3?.on || o4?.on || null;
+        const on = o1.on || o2.on || o3?.on || o4?.on;
 
         return {
           logic: rule.logic,
@@ -414,57 +742,86 @@ export default function OHLCVTable({
           ...(rule.operator3 && { operator3: rule.operator3 }),
           ...(o4?.obj && { object4: o4.obj }),
 
-          // ✅ 🔥 attach at ROOT LEVEL
           ...(on && { inputIndicator: on }),
         };
       });
+  };
 
-      const patchedRules = manualTfOverride.current
-        ? formattedRules.map((rule) => {
-            const { indicator, newTf } = manualTfOverride.current;
-            const updated = { ...rule };
-            ["object1", "object2", "object3"].forEach((key) => {
-              if (updated[key] && updated[key].indicator === indicator) {
-                updated[key] = { ...updated[key], timeframe: newTf };
-              }
-            });
-            return updated;
-          })
-        : formattedRules;
+  /* ================= PATCH ================= */
 
-      // ✅ Clear override AFTER applying — prevent it from sticking on next fetchData call
+  const applyTimeframeOverride = (rules, override) => {
+    if (!override) return rules;
+
+    const { indicator, newTf } = override;
+
+    return rules.map((rule) => {
+      const updated = { ...rule };
+
+      OBJECT_KEYS.forEach((key) => {
+        if (updated[key]?.indicator === indicator) {
+          updated[key] = { ...updated[key], timeframe: newTf };
+        }
+      });
+
+      return updated;
+    });
+  };
+
+  /* ================= FETCH ================= */
+
+  const fetchData = async () => {
+    if (isFetching.current) return;
+
+    isFetching.current = true;
+    setLoading(true);
+
+    try {
+      /* ===== VALIDATION ===== */
+      const error = validateRules(rules);
+      if (error) {
+        setAlertMsg(error);
+        setShowAlert(true);
+        return;
+      }
+
+      /* ===== TRANSFORM ===== */
+      const formattedRules = transformRules(rules);
+
+      /* ===== PATCH ===== */
+      const patchedRules = applyTimeframeOverride(
+        formattedRules,
+        manualTfOverride.current,
+      );
+
       manualTfOverride.current = null;
 
       setPayloadRules(patchedRules);
 
-      console.log(patchedRules, "patchedRules");
-
+      /* ===== TIMEFRAME ===== */
       const allTFs = getAllTimeframes(patchedRules);
       const maxTF = getMaxTimeframe(allTFs);
 
-      // ✅ Only auto-set maxTF if user hasn't manually picked a timeframe
       if (maxTF && !userPickedTf.current) {
         setTimeframeValue(maxTF);
       }
-      console.log("✅ Final Payload:", patchedRules);
 
-      /* ================= API ================= */
-
-      // ✅ cleaner calculation
-      const totalDays = days ? days : months ? Math.round(months * 30) : null;
+      /* ===== DAYS ===== */
+      const totalDays = getTotalDays(patchedRules);
+      console.log(totalDays, "------max days")
 
       if (!totalDays || !timeframeValue) return;
 
-      const { data: result = {} } = await apiService.post(
-        `/api/scannerDetail?&interval=${timeframeValue}&day=${totalDays}`,
-        {
-          currencies: (debouncedCurrencies || []).map((c) => c.value),
-          rules: patchedRules, // ✅ use patched rules, not original formattedRules
-          logic: logic,
-        },
-      );
+      /* ===== API ===== */
+      const payload = {
+        currencies: (debouncedCurrencies || []).map((c) => c.value),
+        rules: patchedRules,
+        logic,
+      };
 
-      console.log("API Result:", result);
+      const { data: result = {} } = await apiService.post(
+        `/api/scannerDetail?interval=${timeframeValue}&day=${totalDays}`,
+        payload,
+      );
 
       setDataSource(result);
 
@@ -481,6 +838,7 @@ export default function OHLCVTable({
     } catch (error) {
       console.error("Error fetching data:", error);
       setDataSource({});
+      // toast.error("Something went wrong ❌");
     } finally {
       setLoading(false);
       isFetching.current = false;
@@ -521,7 +879,7 @@ export default function OHLCVTable({
       });
     });
 
-    console.log(list, "list");
+    // console.log(list, "list");
 
     return list;
   }, [payloadRules]);
@@ -593,14 +951,10 @@ export default function OHLCVTable({
 
     // ✅ APPLY FILTER ONLY WHEN a specific (non-ALL) TF+indicator is selected
     if (timeframe?.tf && timeframe?.indicator && timeframe.tf !== "ALL") {
-      const indLower = timeframe.indicator.toLowerCase();
-      const tfLower = timeframe.tf.toLowerCase();
-
       data = data.filter((row) =>
-        Object.keys(row).some((k) => {
-          const lowerK = k.toLowerCase();
-          return lowerK.includes(indLower) && lowerK.includes(tfLower);
-        }),
+        Object.keys(row).some((k) =>
+          isIndicatorMatch(k, timeframe.indicator, timeframe.tf),
+        ),
       );
     }
 
@@ -689,11 +1043,7 @@ export default function OHLCVTable({
               timeframe?.indicator &&
               timeframe.tf !== "ALL"
             ) {
-              const lowerKey = key.toLowerCase();
-              return (
-                lowerKey.includes(timeframe.indicator.toLowerCase()) &&
-                lowerKey.includes(timeframe.tf.toLowerCase())
-              );
+              return isIndicatorMatch(key, timeframe.indicator, timeframe.tf);
             }
 
             return true;
@@ -722,7 +1072,7 @@ export default function OHLCVTable({
     if (!item?.indicator) return "";
 
     let label = item.indicator.toUpperCase();
-    console.log(item.params, "prams");
+    // console.log(item.params, "prams");
 
     // ✅ append params if present
     if (item.params && Object.keys(item.params).length > 0) {
@@ -767,109 +1117,6 @@ export default function OHLCVTable({
               style={{ maxWidth: 200 }}
             />
 
-            {/* <Dropdown
-              onSelect={(val) => {
-                const selected = JSON.parse(val);
-
-                // ✅ HANDLE ALL — show "ALL" in toggle, set dropdown 2 to max TF
-                if (selected.tf === "ALL") {
-                  setTimeframe({ tf: "ALL", indicator: "ALL" });
-                  // Set dropdown 2 to the current max timeframe from payloadRules
-                  const allTFs = getAllTimeframes(payloadRules);
-                  const maxTF = getMaxTimeframe(allTFs);
-                  if (maxTF) setTimeframeValue(maxTF);
-                  return;
-                }
-
-                setTimeframe(selected);
-
-                // ✅ Mark that user manually selected a TF — block auto-override
-                userPickedTf.current = true;
-
-                // ✅ Strip "_ago" suffix so it matches dropdown 2 option values
-                // e.g. "1h_ago" → "1h", "1d_ago" → "1d"
-                const normalizedTf = selected.tf
-                  ? selected.tf.replace(/_ago$/i, "")
-                  : selected.tf;
-                setTimeframeValue(normalizedTf); // sync with dropdown 2
-              }}
-            >
-              <Dropdown.Toggle
-                size="sm"
-                variant="light"
-                className="d-flex align-items-center justify-content-between"
-                style={{ height: 32, width: 135, fontSize: 13 }}
-              >
-                {!timeframe ? (
-                  "Select Timeframe"
-                ) : timeframe.tf === "ALL" ? (
-                  <span>ALL Timeframes</span>
-                ) : (
-                  <div className="d-flex align-items-center gap-2">
-                    <span>{timeframe.tf}</span>
-                  </div>
-                )}
-              </Dropdown.Toggle>
-
-              <Dropdown.Menu style={{ fontSize: 13, minWidth: 180 }}>
-                {/* ✅ ALL OPTION */}
-            {/* <Dropdown.Item
-                  eventKey={JSON.stringify({ tf: "ALL", indicator: "ALL" })}
-                >
-                  <div className="d-flex justify-content-between w-100">
-                    <span>ALL</span>
-                    <Badge
-                      bg=""
-                      style={{
-                        fontSize: 10,
-                        padding: "2px 5px",
-                        background: "var(--bs-secondary-bg)",
-                        color: "var(--bs-secondary-color)",
-                        border: "0.5px solid var(--bs-border-color)",
-                      }}
-                    >
-                      ALL
-                    </Badge>
-                  </div>
-                </Dropdown.Item> */}
-
-            {/* ✅ DYNAMIC OPTIONS — grouped by rule with dividers */}
-            {/* {flatTimeframes.map((item, i) => {
-                  const prevItem = flatTimeframes[i - 1];
-                  const showDivider =
-                    i > 0 && item.ruleIndex !== prevItem?.ruleIndex;
-
-                  return (
-                    <React.Fragment key={i}>
-                      {showDivider && <Dropdown.Divider />}
-                      <Dropdown.Item
-                        eventKey={JSON.stringify({
-                          tf: item.tf,
-                          indicator: item.indicator,
-                        })}
-                      >
-                        <div className="d-flex justify-content-between w-100">
-                          <span>{item.tf}</span>
-                          <Badge
-                            bg=""
-                            style={{
-                              fontSize: 10,
-                              padding: "2px 5px",
-                              background: "var(--bs-secondary-bg)",
-                              color: "var(--bs-secondary-color)",
-                              border: "0.5px solid var(--bs-border-color)",
-                            }}
-                          >
-                            {item.indicator?.toUpperCase()}
-                          </Badge>
-                        </div>
-                      </Dropdown.Item>
-                    </React.Fragment>
-                  );
-                })}
-              </Dropdown.Menu>
-            </Dropdown>  */}
-
             <Dropdown
               onSelect={(val) => {
                 const selected = JSON.parse(val);
@@ -900,15 +1147,20 @@ export default function OHLCVTable({
               <Dropdown.Toggle
                 size="sm"
                 variant="light"
-                className="d-flex align-items-center justify-content-between"
-                style={{ height: 32, width: 160, fontSize: 13 }}
+                className="d-inline-flex align-items-center justify-content-between"
+                style={{
+                  height: 32,
+                  minWidth: 160,
+                  width: "auto",
+                  fontSize: 13,
+                }}
               >
                 {!timeframe ? (
                   "Select Timeframe"
                 ) : timeframe.tf === "ALL" ? (
                   <span>ALL Timeframes</span>
                 ) : (
-                  <div className="d-flex align-items-center justify-content-between w-100">
+                  <div className="d-flex gap-2 align-items-center justify-content-between w-100">
                     <span>{timeframe.tf}</span>
 
                     {/* ✅ BADGE IN PLACEHOLDER */}
@@ -933,20 +1185,20 @@ export default function OHLCVTable({
                 <Dropdown.Item
                   eventKey={JSON.stringify({ tf: "ALL", indicator: "ALL" })}
                 >
-                  <div className="d-flex justify-content-between w-100">
+                  <div className="d-flex align-items-center justify-content-between w-100">
                     <span>ALL</span>
-                    <Badge
+                    {/* <Badge
                       bg=""
                       style={{
                         fontSize: 10,
-                        padding: "2px 5px",
+                        padding: "2px 4px",
                         background: "var(--bs-secondary-bg)",
                         color: "var(--bs-secondary-color)",
                         border: "0.5px solid var(--bs-border-color)",
                       }}
                     >
                       ALL
-                    </Badge>
+                    </Badge> */}
                   </div>
                 </Dropdown.Item>
 
@@ -967,14 +1219,14 @@ export default function OHLCVTable({
                           params: item.params, // ✅ PASS PARAMS
                         })}
                       >
-                        <div className="d-flex justify-content-between w-100">
+                        <div className="d-flex gap-2 align-items-center justify-content-between w-100">
                           <span>{item.tf}</span>
 
                           <Badge
                             bg=""
                             style={{
                               fontSize: 10,
-                              padding: "2px 5px",
+                              padding: "2px 4px",
                               background: "var(--bs-secondary-bg)",
                               color: "var(--bs-secondary-color)",
                               border: "0.5px solid var(--bs-border-color)",
