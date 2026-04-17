@@ -1879,6 +1879,17 @@ export const getAllTimeframes = (rules = []) => {
   return tfs;
 };
 
+ export const comparisonOps = new Set([
+        ">",
+        "<",
+        ">=",
+        "<=",
+        "==",
+        "!=",
+        "cross_above",
+        "cross_below",
+      ]);
+
 export const getMaxTimeframe = (tfs = []) => {
   if (!tfs.length) return null;
 

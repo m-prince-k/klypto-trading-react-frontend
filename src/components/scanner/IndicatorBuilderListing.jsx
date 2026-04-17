@@ -14,6 +14,7 @@ import {
   symbols,
   useDebounce,
   tfToMinutes,
+  comparisonOps,
 } from "../../util/common";
 import { toast } from "react-toastify";
 import { Spinner } from "../tradingModals/Spinner";
@@ -195,66 +196,6 @@ export default function OHLCVTable({
 
   const MA_INDICATORS = ["sma", "ema", "tema", "wma", "hma", "stddev", "wpr", "vwma", "rma"];
 
-  // const buildObject = ({
-  //   indicator,
-  //   timeframe,
-  //   params = {},
-  //   value,
-  //   source,
-  //   type,
-  // }) => {
-  //   const offset = convertToDays(timeframe);
-
-  //   const indicatorKey = indicator?.toLowerCase();
-  //   const isMA = MA_INDICATORS.includes(indicatorKey);
-
-  //   // ✅ STRICT VALUE CHECK (NO LEAK)
-  //   const hasValue =
-  //     value !== undefined &&
-  //     value !== null &&
-  //     value !== "" &&
-  //     !(typeof value === "number" && isNaN(value));
-
-  //   // 🚀 ONLY use value if indicator is number OR explicitly entered
-  //   if (indicatorKey === "number" && hasValue) {
-  //     return {
-  //       indicator: "number",
-  //       value,
-  //     };
-  //   }
-
-  //   // 🚀 DO NOT allow accidental value override
-  //   if (hasValue && indicatorKey === "number") {
-  //     return {
-  //       indicator: indicatorKey,
-  //       value,
-  //     };
-  //   }
-
-  //   // 🚀 NORMAL FLOW (RSI, SMA etc)
-  //   const obj = {
-  //     indicator: indicatorKey,
-  //   };
-
-  //   console.log(timeframeValue, "timeeeeeeeeeeeeeeeeeeeeeeee");
-
-  //   if (offset !== null) {
-  //     obj.offset = offset;
-  //     obj.timeframe = "1d"; // ✅ use global
-  //   } else if (timeframe) {
-  //     obj.timeframe = timeframe;
-  //   }
-
-  //   // if (params && Object.keys(params).length > 0) {
-  //   //   obj.length = {
-  //   //     ...params,
-  //   //     ...(isMA ? { source: (source || "close").toLowerCase() } : {}),
-  //   //   };
-  //   // }
-
-  //   return obj;
-  // };
-
   const buildObject = ({
     indicator,
     timeframe,
@@ -352,23 +293,12 @@ export default function OHLCVTable({
       /* ================= VALIDATION ================= */
 
       let errorMessage = "";
-      const comparisonOps = new Set([
-        ">",
-        "<",
-        ">=",
-        "<=",
-        "==",
-        "!=",
-        "cross_above",
-        "cross_below",
-      ]);
-
       const hasInvalidRule = rules?.some((rule, index) => {
         const ruleNum = index + 1;
 
         // 1. Basic field selection checks
         if (!rule?.indicator || rule.indicator === "Select Scanner") {
-          errorMessage = `Rule ${ruleNum}: Indicator not selected`;
+          errorMessage = `Rule ${ruleNum}: Scanner not selected`;
           return true;
         }
 
@@ -378,7 +308,7 @@ export default function OHLCVTable({
         }
 
         if (!rule?.scanner || rule.scanner === "Select Scanner") {
-          errorMessage = `Rule ${ruleNum}: Compare scanner not selected`;
+          errorMessage = `Rule ${ruleNum}: Scanner not selected`;
           return true;
         }
 
@@ -388,7 +318,16 @@ export default function OHLCVTable({
         }
 
         if (rule.scanner2 === "Select Scanner") {
-          errorMessage = `Rule ${ruleNum}: Compare scanner not selected`;
+          errorMessage = `Rule ${ruleNum}: Scanner not selected`;
+          return true;
+        }
+        if (rule.operator3 === "Select Operation") {
+          errorMessage = `Rule ${ruleNum}: Operator not selected`;
+          return true;
+        }
+
+        if (rule.scanner3 === "Select Scanner") {
+          errorMessage = `Rule ${ruleNum}: Scanner not selected`;
           return true;
         }
 
@@ -396,6 +335,7 @@ export default function OHLCVTable({
         let compCount = 0;
         if (comparisonOps.has(rule.operator)) compCount++;
         if (comparisonOps.has(rule.operator2)) compCount++;
+        if (comparisonOps.has(rule.operator3)) compCount++;
 
         if (compCount === 0) {
           errorMessage = `Rule ${ruleNum}: One comparison operator (<, >, =, etc.) is required`;
@@ -416,55 +356,6 @@ export default function OHLCVTable({
       }
       const activeRules = rules.filter((r) => !r.disabled);
       /* ================= FORMATTING ================= */
-
-      // const formattedRules = activeRules.map((rule) => {
-      //   // ✅ helper to avoid repetition
-      //   const createObject = (config, condition = true) =>
-      //     condition ? buildObject({ ...config }) : null;
-
-      //   const object1 = createObject({
-      //     indicator: rule.indicator,
-      //     timeframe: rule.timeframe,
-      //     params: rule.indicatorParams,
-      //     value: rule.value,
-      //     source: rule.source,
-      //     type: "object1",
-      //   });
-
-      //   const object2 = createObject({
-      //     indicator: rule.scanner,
-      //     timeframe: rule.compareTimeframe,
-      //     params: rule.scannerParams,
-      //     value: rule.compareValue,
-      //     source: rule.scannerSource,
-      //     type: "object2",
-      //   });
-
-      //   const object3 = createObject(
-      //     {
-      //       indicator: rule.scanner2,
-      //       timeframe: rule.timeframe2,
-      //       params: rule.params2,
-      //       value: rule.value2,
-      //       source: rule.source2,
-      //       type: "object3",
-      //     },
-      //     rule.scanner2 !== undefined,
-      //   );
-
-      //   return {
-      //     logic: rule.logic,
-      //     object1,
-      //     operator1: rule.operator,
-
-      //     ...(object2 && { object2 }),
-      //     ...(rule.operator2 && { operator2: rule.operator2 }),
-      //     ...(object3 && { object3 }),
-      //   };
-      // });
-
-      // ✅ Apply manual TF override BEFORE storing payloadRules
-      // Match by indicator only — oldTf goes stale when dropdown 2 is changed multiple times
 
       const formattedRules = activeRules.map((rule) => {
         const o1 = buildObject({
@@ -497,8 +388,20 @@ export default function OHLCVTable({
               })
             : null;
 
+             const o4 =
+          rule.scanner3 !== undefined
+            ? buildObject({
+                indicator: rule.scanner3,
+                timeframe: rule.timeframe3,
+                params: rule.params3,
+                value: rule.value3,
+                source: rule.source3,
+                type: "object4",
+              })
+            : null;
+
         // ✅ pick first available "on"
-        const on = o1.on || o2.on || o3?.on || null;
+        const on = o1.on || o2.on || o3?.on || o4?.on || null;
 
         return {
           logic: rule.logic,
@@ -508,6 +411,8 @@ export default function OHLCVTable({
           ...(o2?.obj && { object2: o2.obj }),
           ...(rule.operator2 && { operator2: rule.operator2 }),
           ...(o3?.obj && { object3: o3.obj }),
+          ...(rule.operator3 && { operator3: rule.operator3 }),
+          ...(o4?.obj && { object4: o4.obj }),
 
           // ✅ 🔥 attach at ROOT LEVEL
           ...(on && { inputIndicator: on }),
