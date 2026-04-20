@@ -6,8 +6,8 @@ const token = localStorage.getItem("session") && JSON.parse(localStorage.getItem
 // 🔹 Create axios instance
 const api = axios.create({
   // baseURL: "https://studios-publishers-promising-rosa.trycloudflare.com", 
-  baseURL: "http://192.168.1.15:5000", // change to your API
-  timeout: 200000,
+  baseURL: "http://192.168.1.7:5000", // change to your API
+  timeout: 500000,
   headers: {
     "Content-Type": "application/json",
   },

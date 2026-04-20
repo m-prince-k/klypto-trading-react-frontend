@@ -494,8 +494,8 @@ export default function IndicatorRuleBuilder({
       const extraTimeframes = [
         { label: "Weekly", value: "1w" },
         { label: "Monthly", value: "1M" },
-        //   { label: "Quarterly", value: "90d" },
-        //   { label: "Yearly", value: "365d" },
+        { label: "Quarterly", value: "90d" },
+        { label: "Yearly", value: "365d" },
       ];
 
       const mergedTimeframes = [...flattened, ...extraTimeframes];
@@ -718,39 +718,39 @@ export default function IndicatorRuleBuilder({
   }, []);
 
   const PRICE_FIELDS = [
-  "Open",
-  "High",
-  "Low",
-  "Close",
-  "Volume",
-  "Accumulation / Distribution",
-  "Volume Oscillator",
-  "Pivot Point",
-  "OBV",
-  "Session Volume Profile",
-];
+    "Open",
+    "High",
+    "Low",
+    "Close",
+    "Volume",
+    "Accumulation / Distribution",
+    "Volume Oscillator",
+    "Pivot Point",
+    "OBV",
+    "Session Volume Profile",
+  ];
 
-const getScannerMeta = (value) => {
-  const selected = scannerOptions.find((opt) => opt.value === value);
+  const getScannerMeta = (value) => {
+    const selected = scannerOptions.find((opt) => opt.value === value);
 
-  const meta = selected?.meta || {};
+    const meta = selected?.meta || {};
 
-  // ❌ remove timeframe from param check
-  const { timeframe, ...restMeta } = meta;
+    // ❌ remove timeframe from param check
+    const { timeframe, ...restMeta } = meta;
 
-  const hasParams = Object.keys(restMeta).length > 0;
+    const hasParams = Object.keys(restMeta).length > 0;
 
-  const isPriceField = PRICE_FIELDS.some(
-    (field) => field.toLowerCase() === (value || "").toLowerCase()
-  );
+    const isPriceField = PRICE_FIELDS.some(
+      (field) => field.toLowerCase() === (value || "").toLowerCase(),
+    );
 
-  return {
-    selected,
-    hasParams,
-    isPriceField,
-    timeframe: timeframe || null, // ✅ always available
+    return {
+      selected,
+      hasParams,
+      isPriceField,
+      timeframe: timeframe || null, // ✅ always available
+    };
   };
-};
 
   const MA_INDICATORS = [
     "sma",
@@ -869,102 +869,107 @@ const getScannerMeta = (value) => {
                           [timeframeField]: "1d",
                           [valueField]: 20,
                         }
-                      : r
-                  )
+                      : r,
+                  ),
                 );
               }
             }}
           />
         </div>
 
-        {hasParams && (isMA ? (
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              color: "#4a7fa5",
-              fontFamily: "'JetBrains Mono', monospace",
-            }}
-          >
-            <span style={{ color: "#2a5070" }}>(</span>
+        {hasParams &&
+          (isMA ? (
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                color: "#4a7fa5",
+                fontFamily: "'JetBrains Mono', monospace",
+              }}
+            >
+              <span style={{ color: "#2a5070" }}>(</span>
 
-            <span style={{ margin: "0 2px" }}>
-              {getTimeframeLabel(rule[timeframeField])}
-            </span>
-
-            <EditableSelect
-              value={rule[sourceField] || "Close"}
-              options={sourceOptions}
-              onChange={(v) => updateField(rule.id, sourceField, v)}
-            />
-
-            <EditableNumber
-              value={rule[paramsField]?.length ?? Object.values(selectedMeta)[0] ?? 20}
-              onChange={(v) =>
-                setRules((prev) =>
-                  prev.map((r) =>
-                    r.id === rule.id
-                      ? {
-                          ...r,
-                          [paramsField]: {
-                            ...r[paramsField],
-                            length: Math.max(0, v),
-                          },
-                        }
-                      : r
-                  )
-                )
-              }
-            />
-
-            <span style={{ color: "#2a5070" }}>)</span>
-          </span>
-        ) : (
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              color: "#4a7fa5",
-              fontFamily: "'JetBrains Mono', monospace",
-            }}
-          >
-            <span style={{ color: "#2a5070" }}>(</span>
-
-            {Object.entries(selectedMeta).map(([key], i, arr) => (
-              <span
-                key={key}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                }}
-              >
-                <EditableNumber
-                  value={rule[paramsField]?.[key] ?? ""}
-                  onChange={(v) =>
-                    setRules((prev) =>
-                      prev.map((r) =>
-                        r.id === rule.id
-                          ? {
-                              ...r,
-                              [paramsField]: {
-                                ...r[paramsField],
-                                [key]: Math.max(0, v),
-                              },
-                            }
-                          : r
-                      )
-                    )
-                  }
-                />
-                {i < arr.length - 1 && (
-                  <span style={{ color: "#2a5070" }}>,</span>
-                )}
+              <span style={{ margin: "0 2px" }}>
+                {getTimeframeLabel(rule[timeframeField])}
               </span>
-            ))}
 
-            <span style={{ color: "#2a5070" }}>)</span>
-          </span>
-        ))}
+              <EditableSelect
+                value={rule[sourceField] || "Close"}
+                options={sourceOptions}
+                onChange={(v) => updateField(rule.id, sourceField, v)}
+              />
+
+              <EditableNumber
+                value={
+                  rule[paramsField]?.length ??
+                  Object.values(selectedMeta)[0] ??
+                  20
+                }
+                onChange={(v) =>
+                  setRules((prev) =>
+                    prev.map((r) =>
+                      r.id === rule.id
+                        ? {
+                            ...r,
+                            [paramsField]: {
+                              ...r[paramsField],
+                              length: Math.max(0, v),
+                            },
+                          }
+                        : r,
+                    ),
+                  )
+                }
+              />
+
+              <span style={{ color: "#2a5070" }}>)</span>
+            </span>
+          ) : (
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                color: "#4a7fa5",
+                fontFamily: "'JetBrains Mono', monospace",
+              }}
+            >
+              <span style={{ color: "#2a5070" }}>(</span>
+
+              {Object.entries(selectedMeta).map(([key], i, arr) => (
+                <span
+                  key={key}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                  }}
+                >
+                  <EditableNumber
+                    value={rule[paramsField]?.[key] ?? ""}
+                    onChange={(v) =>
+                      setRules((prev) =>
+                        prev.map((r) =>
+                          r.id === rule.id
+                            ? {
+                                ...r,
+                                [paramsField]: {
+                                  ...r[paramsField],
+                                  [key]: Math.max(0, v),
+                                },
+                              }
+                            : r,
+                        ),
+                      )
+                    }
+                  />
+                  {i < arr.length - 1 && (
+                    <span style={{ color: "#2a5070" }}>,</span>
+                  )}
+                </span>
+              ))}
+
+              <span style={{ color: "#2a5070" }}>)</span>
+            </span>
+          ))}
         {String(currentVal).toLowerCase() === "number" && (
           <EditableNumber
             value={rule[valueField] !== undefined ? rule[valueField] : 0}

@@ -1954,7 +1954,7 @@ export const INDICATOR_DAYS_MAP = {
   "pivot s2": 50,
 
   // 🟢 Default fallback
-  default: 100,
+  default: 4000,
 };
 
 export const tfToMinutes = (tf = "") => {
@@ -1962,11 +1962,13 @@ export const tfToMinutes = (tf = "") => {
 
   const value = parseInt(clean);
 
-  if (clean.includes("m")) return value;
-  if (clean.includes("h")) return value * 60;
-  if (clean.includes("d")) return value * 60 * 24;
+  if (clean.includes("y") || clean.includes("yr")) return value * 60 * 24 * 365;
+  if (clean.includes("q")) return value * 60 * 24 * 90;
+  if (clean.includes("M") || clean.includes("mth") || clean.includes("month") || tf === "1M") return value * 60 * 24 * 30;
   if (clean.includes("w")) return value * 60 * 24 * 7;
-  if (clean.includes("mo")) return value * 60 * 24 * 30;
+  if (clean.includes("d")) return value * 60 * 24;
+  if (clean.includes("h")) return value * 60;
+  if (clean.includes("m")) return value;
 
   return 0;
 };

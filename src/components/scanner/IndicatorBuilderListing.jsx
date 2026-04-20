@@ -89,8 +89,6 @@ export default function OHLCVTable({
     debouncedCurrencies,
     timeframeValue,
     listingTimeframe,
-    days,
-    months,
   ]);
 
   async function fetchListingCurrencies() {
@@ -130,7 +128,6 @@ export default function OHLCVTable({
       const extendedData = {
         ...data,
 
-        // keep existing if present
         month: [
           ...(data.month || []),
           {
@@ -140,23 +137,23 @@ export default function OHLCVTable({
           },
         ],
 
-        //   quarter: [
-        //     ...(data.quarter || []),
-        //     {
-        //       label: "1 quarter",
-        //       value: "90d",
-        //       seconds: 7776000, // 90 days
-        //     },
-        //   ],
+        quarter: [
+          ...(data.quarter || []),
+          {
+            label: "1 quarter",
+            value: "1q",
+            seconds: 7776000, // 90 days
+          },
+        ],
 
-        //   year: [
-        //     ...(data.year || []),
-        //     {
-        //       label: "1 year",
-        //       value: "365d",
-        //       seconds: 31536000, // 365 days
-        //     },
-        //   ],
+        year: [
+          ...(data.year || []),
+          {
+            label: "1 year",
+            value: "1y",
+            seconds: 31536000, // 365 days
+          },
+        ],
       };
 
       setFetchTimeframe(extendedData);
@@ -178,7 +175,7 @@ export default function OHLCVTable({
   }, []);
 
   const convertToDays = (tf = "") => {
-    const match = tf.toLowerCase().match(/^(\d+)(d|w|m|mo|q|y)_ago$/);
+    const match = tf.toLowerCase().match(/^(\d+)(d|w|m|mo|mth|q|y)_ago$/);
     if (!match) return null;
 
     const value = Number(match[1]);
@@ -187,8 +184,9 @@ export default function OHLCVTable({
     const map = {
       d: 1,
       w: 7,
-      M: 30,
+      m: 30, // timeframe 'M' becomes 'm' after toLowerCase()
       mo: 30,
+      mth: 30,
       q: 90,
       y: 365,
     };
@@ -207,6 +205,24 @@ export default function OHLCVTable({
     "vwma",
     "rma",
   ];
+
+  const normalizeTfForDropdown = (tf) => {
+    if (!tf) return "";
+    const lower = tf.toLowerCase();
+
+    if (lower === "90d" || lower === "1q") return "1q";
+    if (lower === "365d" || lower === "1y") return "1y";
+
+    if (lower.includes("_ago")) {
+      if (/y|yr|year/i.test(lower)) return "1y";
+      if (/q|quarter/i.test(lower)) return "1q";
+      if (/mo|mth|month/i.test(lower) || tf.includes("M")) return "1M";
+      if (/w|week/i.test(lower)) return "1w";
+      if (/d|day/i.test(lower)) return "1d";
+      return tf.replace(/_ago$/i, "");
+    }
+    return tf.replace(/_ago$/i, "");
+  };
 
   const INDICATOR_ALIASES = {
     "bollinger bands upper": ["bbupper", "bb_upper", "upper"],
@@ -590,7 +606,12 @@ export default function OHLCVTable({
   }) => {
     const indicatorKey = indicator?.toLowerCase();
     const normalizedSource = (source || "close").toLowerCase();
-    const offset = convertToDays(timeframe);
+    let overrideOffset = null;
+    if (timeframe === "90d") overrideOffset = 90;
+    else if (timeframe === "365d") overrideOffset = 365;
+
+    const offset =
+      overrideOffset !== null ? overrideOffset : convertToDays(timeframe);
     const isMA = MA_INDICATORS.includes(indicatorKey);
 
     const hasValue =
@@ -612,9 +633,19 @@ export default function OHLCVTable({
     // ✅ timeframe / offset
     if (offset !== null) {
       obj.offset = offset;
+      
+      // The user requested that for quarterly and yearly with 'ago',
+      // timeframe should be '1d'. For monthly and weekly, we can also default to '1d' or keep specific handling.
+      // But preserving existing codebase logic, we pass "1d" when offset is present.
       obj.timeframe = "1d";
+      obj.originalTimeframe = timeframe;
     } else if (timeframe) {
-      obj.timeframe = timeframe;
+      if (typeof timeframe === "string" && (timeframe.toLowerCase() === "1q" || timeframe.toLowerCase() === "1y")) {
+        obj.timeframe = "1d";
+        obj.originalTimeframe = timeframe;
+      } else {
+        obj.timeframe = timeframe;
+      }
     }
 
     // ✅ params handling
@@ -752,16 +783,22 @@ export default function OHLCVTable({
   const applyTimeframeOverride = (rules, override) => {
     if (!override) return rules;
 
-    const { indicator, newTf } = override;
+    const { indicator, ruleIndex, objectKey, newTf } = override;
 
-    return rules.map((rule) => {
+    return rules.map((rule, idx) => {
+      if (ruleIndex !== undefined && idx !== ruleIndex) return rule;
+
       const updated = { ...rule };
 
-      OBJECT_KEYS.forEach((key) => {
-        if (updated[key]?.indicator === indicator) {
-          updated[key] = { ...updated[key], timeframe: newTf };
-        }
-      });
+      if (objectKey && updated[objectKey]) {
+        updated[objectKey] = { ...updated[objectKey], timeframe: newTf };
+      } else {
+        OBJECT_KEYS.forEach((key) => {
+          if (updated[key]?.indicator === indicator) {
+            updated[key] = { ...updated[key], timeframe: newTf };
+          }
+        });
+      }
 
       return updated;
     });
@@ -802,24 +839,49 @@ export default function OHLCVTable({
       const maxTF = getMaxTimeframe(allTFs);
 
       if (maxTF && !userPickedTf.current) {
-        setTimeframeValue(maxTF);
+        setTimeframeValue(normalizeTfForDropdown(maxTF));
       }
 
       /* ===== DAYS ===== */
-      const totalDays = getTotalDays(patchedRules);
-      console.log(totalDays, "------max days")
+      let totalDays = getTotalDays(patchedRules);
+
+      let apiInterval = timeframeValue;
+
+      if (apiInterval === "1q" || apiInterval === "90d") {
+        apiInterval = "1d";
+        totalDays = Math.max(totalDays, 90);
+      } else if (apiInterval === "1y" || apiInterval === "365d") {
+        apiInterval = "1d";
+        totalDays = Math.max(totalDays, 365);
+      } else if (apiInterval === "1M" || apiInterval === "30d") {
+        apiInterval = "1M";
+        totalDays = Math.max(totalDays, 30);
+      } else if (apiInterval === "1w" || apiInterval === "7d") {
+        apiInterval = "1w";
+        totalDays = Math.max(totalDays, 7);
+      }
+
+      console.log(totalDays, "------max days");
 
       if (!totalDays || !timeframeValue) return;
 
       /* ===== API ===== */
+
+      const cleanRules = JSON.parse(JSON.stringify(patchedRules));
+      cleanRules.forEach((rule) => {
+        ["object1", "object2", "object3", "object4"].forEach((key) => {
+          if (rule[key]) delete rule[key].originalTimeframe;
+        });
+      });
+
       const payload = {
         currencies: (debouncedCurrencies || []).map((c) => c.value),
-        rules: patchedRules,
+        rules: cleanRules,
         logic,
       };
 
       const { data: result = {} } = await apiService.post(
-        `/api/scannerDetail?interval=${timeframeValue}&day=${totalDays}`,
+        `/api/scannerDetail?interval=${apiInterval}&day=${totalDays}`,
         payload,
       );
 
@@ -871,10 +933,11 @@ export default function OHLCVTable({
         if (!obj.timeframe) return;
 
         list.push({
-          tf: obj.timeframe,
+          tf: obj.originalTimeframe || obj.timeframe,
           indicator: obj.indicator,
           params: obj.params || obj.length,
           ruleIndex, // ✅ track which rule this belongs to (for divider)
+          objectKey: key, // ✅ track which object it comes from
         });
       });
     });
@@ -949,6 +1012,18 @@ export default function OHLCVTable({
   const filteredData = useMemo(() => {
     let data = mergedData;
 
+    // ✅ APPLY DAYS/MONTHS FILTER (CLIENT-SIDE)
+    const limitDays = months ? months * 30 : (days ? days : 30);
+    if (data.length > 0) {
+      const isSeconds = data[0].time && data[0].time < 1e11;
+      const now = Date.now();
+      const cutoffTime = isSeconds 
+        ? Math.floor(now / 1000) - limitDays * 86400 
+        : now - limitDays * 86400 * 1000;
+
+      data = data.filter((row) => row.time >= cutoffTime);
+    }
+
     // ✅ APPLY FILTER ONLY WHEN a specific (non-ALL) TF+indicator is selected
     if (timeframe?.tf && timeframe?.indicator && timeframe.tf !== "ALL") {
       data = data.filter((row) =>
@@ -970,7 +1045,7 @@ export default function OHLCVTable({
           val.toString().toLowerCase().includes(q),
       ),
     );
-  }, [mergedData, search, timeframe]);
+  }, [mergedData, search, timeframe, days, months]);
 
   /* ================= SORTING ================= */
 
@@ -983,8 +1058,15 @@ export default function OHLCVTable({
     if (!sortConfig.key) return data;
 
     return data.sort((a, b) => {
-      const aVal = a[sortConfig.key];
-      const bVal = b[sortConfig.key];
+      let sortKey = sortConfig.key;
+
+      // ✅ Use numeric 'time' property instead of 'datetime' string when sorting by date
+      if (sortKey === "datetime" && a.time !== undefined && b.time !== undefined) {
+        sortKey = "time";
+      }
+
+      const aVal = a[sortKey];
+      const bVal = b[sortKey];
 
       if (aVal == null) return 1;
       if (bVal == null) return -1;
@@ -994,14 +1076,12 @@ export default function OHLCVTable({
       }
 
       return sortConfig.direction === "asc"
-        ? aVal.toString().localeCompare(bVal.toString())
-        : bVal.toString().localeCompare(aVal.toString());
+        ? aVal.toString().localeCompare(bVal.toString(), undefined, { numeric: true })
+        : bVal.toString().localeCompare(aVal.toString(), undefined, { numeric: true });
     });
-
-    return data; // ✅ no sorting at all
   }, [filteredData, sortConfig]);
 
-  const totalRecords = mergedData.length;
+  const totalRecords = sortedData.length;
   const totalPages = Math.ceil(totalRecords / limit);
 
   const paginatedData = useMemo(() => {
@@ -1085,7 +1165,7 @@ export default function OHLCVTable({
 
   useEffect(() => {
     setPage(0);
-  }, [limit, timeframe, search]);
+  }, [limit, timeframe, search, days, months]);
 
   return (
     <Container
@@ -1127,19 +1207,16 @@ export default function OHLCVTable({
 
                   const allTFs = getAllTimeframes(payloadRules);
                   const maxTF = getMaxTimeframe(allTFs);
-                  if (maxTF) setTimeframeValue(maxTF);
+                  if (maxTF) setTimeframeValue(normalizeTfForDropdown(maxTF));
                   return;
                 }
-
                 setTimeframe(selected);
 
                 // ✅ Mark that user manually selected a TF — block auto-override
                 userPickedTf.current = true;
 
                 // ✅ normalize tf
-                const normalizedTf = selected.tf
-                  ? selected.tf.replace(/_ago$/i, "")
-                  : selected.tf;
+                const normalizedTf = normalizeTfForDropdown(selected.tf);
 
                 setTimeframeValue(normalizedTf);
               }}
@@ -1217,6 +1294,8 @@ export default function OHLCVTable({
                           tf: item.tf,
                           indicator: item.indicator,
                           params: item.params, // ✅ PASS PARAMS
+                          ruleIndex: item.ruleIndex,
+                          objectKey: item.objectKey,
                         })}
                       >
                         <div className="d-flex gap-2 align-items-center justify-content-between w-100">
@@ -1336,6 +1415,8 @@ export default function OHLCVTable({
                   userPickedTf.current = true;
 
                   let targetIndicator = null;
+                  let targetRuleIndex = undefined;
+                  let targetObjectKey = null;
 
                   // ✅ CASE 1: Specific indicator selected
                   if (
@@ -1344,6 +1425,8 @@ export default function OHLCVTable({
                     timeframe.tf !== "ALL"
                   ) {
                     targetIndicator = timeframe.indicator;
+                    targetRuleIndex = timeframe.ruleIndex;
+                    targetObjectKey = timeframe.objectKey;
                   }
                   // ✅ CASE 2: "ALL Timeframes" selected — target the LARGEST timeframe indicator
                   else if (
@@ -1356,55 +1439,95 @@ export default function OHLCVTable({
                       if (mins > maxMins) {
                         maxMins = mins;
                         targetIndicator = item.indicator;
+                        targetRuleIndex = item.ruleIndex;
+                        targetObjectKey = item.objectKey;
                       }
                     });
                   }
 
-                  if (targetIndicator) {
+                  if (targetIndicator || targetObjectKey) {
                     // ✅ Save override so fetchData uses it when rebuilding payload
                     manualTfOverride.current = {
                       indicator: targetIndicator,
+                      ruleIndex: targetRuleIndex,
+                      objectKey: targetObjectKey,
                       newTf,
                     };
 
                     setPayloadRules((prev) =>
-                      prev.map((rule) => {
+                      prev.map((rule, idx) => {
+                        if (
+                          targetRuleIndex !== undefined &&
+                          idx !== targetRuleIndex
+                        )
+                          return rule;
+
                         const updated = { ...rule };
-                        ["object1", "object2", "object3"].forEach((key) => {
-                          if (
-                            updated[key] &&
-                            updated[key].indicator === targetIndicator
-                          ) {
-                            updated[key] = {
-                              ...updated[key],
-                              timeframe: newTf,
-                            };
-                          }
-                        });
+
+                        if (targetObjectKey && updated[targetObjectKey]) {
+                          updated[targetObjectKey] = {
+                            ...updated[targetObjectKey],
+                            timeframe: newTf,
+                          };
+                        } else {
+                          ["object1", "object2", "object3", "object4"].forEach(
+                            (key) => {
+                              if (
+                                updated[key] &&
+                                updated[key].indicator === targetIndicator
+                              ) {
+                                updated[key] = {
+                                  ...updated[key],
+                                  timeframe: newTf,
+                                };
+                              }
+                            },
+                          );
+                        }
                         return updated;
                       }),
                     );
 
                     // ✅ Sync dropdown 1 label to reflect the new TF (only if not in ALL mode)
                     if (timeframe.tf !== "ALL") {
-                      setTimeframe({ tf: newTf, indicator: targetIndicator });
+                      setTimeframe({ ...timeframe, tf: newTf });
                     }
 
                     // ✅ SYNC TO MASTER RULES (for IndicatorRuleBuilder UI)
                     if (setRules) {
                       setRules((prev) =>
-                        prev.map((r) => {
-                          const updated = { ...r };
-                          const matches = (v) =>
-                            v &&
-                            v.toLowerCase() === targetIndicator.toLowerCase();
+                        prev.map((r, idx) => {
+                          if (
+                            targetRuleIndex !== undefined &&
+                            idx !== targetRuleIndex
+                          )
+                            return r;
 
-                          if (matches(updated.indicator))
+                          const updated = { ...r };
+
+                          if (targetObjectKey === "object1") {
                             updated.timeframe = newTf;
-                          if (matches(updated.scanner))
+                          } else if (targetObjectKey === "object2") {
                             updated.compareTimeframe = newTf;
-                          if (matches(updated.scanner2))
+                          } else if (targetObjectKey === "object3") {
                             updated.timeframe2 = newTf;
+                          } else if (targetObjectKey === "object4") {
+                            updated.timeframe3 = newTf;
+                          } else {
+                            const matches = (v) =>
+                              v &&
+                              v.toLowerCase() ===
+                                targetIndicator?.toLowerCase();
+
+                            if (matches(updated.indicator))
+                              updated.timeframe = newTf;
+                            if (matches(updated.scanner))
+                              updated.compareTimeframe = newTf;
+                            if (matches(updated.scanner2))
+                              updated.timeframe2 = newTf;
+                            if (matches(updated.scanner3))
+                              updated.timeframe3 = newTf;
+                          }
 
                           return updated;
                         }),
