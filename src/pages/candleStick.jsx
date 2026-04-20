@@ -79,6 +79,7 @@ export default function Candlestick() {
   const prevCurrencyRef = useRef(selectedCurrency);
 
   const [rules, setRules] = useState([]);
+  const [finalRules, setFinalRules] = useState([]);
   const [runScanTrigger, setRunScanTrigger] = useState(false);
   const [listingTimeframe, setListingTimeframe] = useState("");
   const [selectedCurrencies, setSelectedCurrencies] = useState([]);
@@ -1090,7 +1091,7 @@ export default function Candlestick() {
             <div
               className="position-fixed top-0 end-0 vh-100 bg-white shadow"
               style={{
-                width: "1000px",
+                width: "1100px",
                 height: "100vh",
                 zIndex: 1050,
                 transform: openForm ? "translateX(0)" : "translateX(100%)",
@@ -1110,6 +1111,8 @@ export default function Candlestick() {
                 setSelectedCurrencies={setSelectedCurrencies}
                 scannerOptions={scannerOptions}
                 setScannerOptions={setScannerOptions}
+                finalRules={finalRules}
+                setFinalRules={setFinalRules}
               />
             </div>
             {openForm && (
@@ -1150,6 +1153,7 @@ export default function Candlestick() {
           listingTimeframe={listingTimeframe}
           selectedCurrencies={selectedCurrencies}
           setSelectedCurrencies={setSelectedCurrencies}
+          setFinalRules={setFinalRules}
         />
       </div>
     </>

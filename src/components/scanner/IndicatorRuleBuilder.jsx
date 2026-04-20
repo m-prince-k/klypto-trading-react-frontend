@@ -45,6 +45,7 @@ export default function IndicatorRuleBuilder({
   setSelectedCurrencies,
   scannerOptions,
   setScannerOptions,
+  finalRules,
 }) {
   const [timeframeOptions, setTimeframeOptions] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -189,41 +190,59 @@ export default function IndicatorRuleBuilder({
       return 0;
     };
 
-    for (const segment of parts) {
-      let trimmed = segment.trim();
+    const parseSide = (rawStr) => {
+      let sideStr = rawStr;
+      let op = null;
+      let obj2 = null;
+      let params = {};
+      let tf2 = "1d";
 
-      /* ================= STEP 1: EXTRACT OPERATOR2 ================= */
-      let operator2 = null;
-      let scanner2 = null;
-      let params2 = {};
-      let timeframe2 = "1d";
-
-      const mathMatch = trimmed.match(/([+\-*/])\s*(\w+)/);
+      const mathMatch = sideStr.match(/([+\-*/])\s*([a-z0-9_]+)/i);
 
       if (mathMatch) {
-        operator2 = mathMatch[1]; // + - * /
+        op = mathMatch[1];
         const word2 = mathMatch[2];
-
         const match2 = findIndicator(word2);
 
         if (match2) {
-          scanner2 = match2.slug || match2.label.toLowerCase();
-
-          params2 = {
-            length: getDefaultLength(match2.meta),
-          };
-
-          // ✅ MA source
-          if (MA_INDICATORS.includes(scanner2)) {
-            params2.source = "close";
+          obj2 = match2.slug || match2.label.toLowerCase();
+          params = { length: getDefaultLength(match2.meta) };
+          // assume MA_INDICATORS exists in outer scope or module
+          if (typeof MA_INDICATORS !== "undefined" && MA_INDICATORS.includes(obj2)) {
+            params.source = "close";
           }
         }
-
-        // ✅ REMOVE "+ sma" from string
-        trimmed = trimmed.replace(mathMatch[0], "").trim();
+        sideStr = sideStr.replace(mathMatch[0], "").trim();
       }
 
-      /* ================= STEP 2: NORMAL PARSING ================= */
+      const tfRes = extractTimeframe(sideStr);
+      let tf = tfRes.timeframe;
+      let rest = tfRes.rest;
+
+      let indicator = "number";
+      let length = 0;
+      let value = 0;
+
+      const num = extractNumber(rest);
+      const word = rest.split(" ")[0];
+      const match = findIndicator(word);
+
+      if (match) {
+        indicator = match.slug || match.label.toLowerCase();
+        length = getDefaultLength(match.meta);
+        if (num !== null) length = num;
+      } else if (num !== null) {
+        indicator = "number";
+        value = num;
+      }
+
+      return { indicator, tf, length, value, op, obj2, params, tf2 };
+    };
+
+    for (const segment of parts) {
+      let trimmed = segment.trim();
+
+      /* ================= STEP 1: FIND MAIN OPERATOR ================= */
       let operator = null;
       let leftRaw = "";
       let rightRaw = "";
@@ -243,62 +262,38 @@ export default function IndicatorRuleBuilder({
       if (!operator) continue;
 
       /* ================= LEFT ================= */
-      const leftTF = extractTimeframe(leftRaw);
-      let timeframe = leftTF.timeframe;
-      let leftRest = leftTF.rest;
-
-      let indicator = "number";
-      let length = 0;
-
-      const leftNum = extractNumber(leftRest);
-      const leftWord = leftRest.split(" ")[0];
-      const leftMatch = findIndicator(leftWord);
-
-      if (leftMatch) {
-        indicator = leftMatch.slug || leftMatch.label.toLowerCase();
-        length = getDefaultLength(leftMatch.meta);
-
-        if (leftNum !== null) length = leftNum;
-      }
+      const leftSide = parseSide(leftRaw);
 
       /* ================= RIGHT ================= */
-      const rightTF = extractTimeframe(rightRaw);
-      let compareTimeframe = rightTF.timeframe;
-      let rightRest = rightTF.rest;
-
-      let scanner = "number";
-      let compareValue = 0;
-
-      const rightNum = extractNumber(rightRest);
-      const rightWord = rightRest.split(" ")[0];
-      const rightMatch = findIndicator(rightWord);
-
-      if (rightMatch) {
-        scanner = rightMatch.slug || rightMatch.label.toLowerCase();
-      } else if (rightNum !== null) {
-        scanner = "number";
-        compareValue = rightNum;
-      }
+      const rightSide = parseSide(rightRaw);
 
       /* ================= FINAL ================= */
       results.push({
         id: Date.now() + Math.random(),
 
-        timeframe,
-        indicator,
-        indicatorParams: { length },
+        timeframe: leftSide.tf,
+        indicator: leftSide.indicator,
+        indicatorParams: { length: leftSide.length },
+        value: leftSide.value,
 
         operator,
 
-        compareTimeframe,
-        scanner,
-        compareValue,
+        compareTimeframe: rightSide.tf,
+        scanner: rightSide.indicator,
+        scannerParams: { length: rightSide.length },
+        compareValue: rightSide.value,
 
         // ✅ operator2 support
-        operator2,
-        scanner2,
-        params2,
-        timeframe2,
+        operator2: leftSide.op,
+        scanner2: leftSide.obj2,
+        params2: leftSide.params,
+        timeframe2: leftSide.tf2,
+
+        // ✅ operator3 support
+        operator3: rightSide.op,
+        scanner3: rightSide.obj2,
+        params3: rightSide.params,
+        timeframe3: rightSide.tf2,
       });
     }
 
@@ -866,6 +861,16 @@ export default function IndicatorRuleBuilder({
                   });
                 }
                 updateField(rule.id, paramsField, params);
+
+                // ✅ Initialize nested fields for Max/Min
+                if (v?.toLowerCase() === "max" || v?.toLowerCase() === "min") {
+                  updateField(rule.id, `${labelField}NestedIndicator`, "rsi");
+                  updateField(rule.id, `${labelField}NestedParams`, {
+                    length: 14,
+                  });
+                  updateField(rule.id, `${labelField}NestedTimeframe`, "1d");
+                }
+
                 if (isIndicatorField && sel) {
                   updateField(rule.id, "indicatorType", sel.type);
                 }
@@ -878,17 +883,28 @@ export default function IndicatorRuleBuilder({
                   });
                 }
                 setRules((prev) =>
-                  prev.map((r) =>
-                    r.id === rule.id
-                      ? {
-                          ...r,
-                          [labelField]: v,
-                          [paramsField]: params,
-                          [timeframeField]: "1d",
-                          [valueField]: 20,
-                        }
-                      : r,
-                  ),
+                  prev.map((r) => {
+                    if (r.id === rule.id) {
+                      const updated = {
+                        ...r,
+                        [labelField]: v,
+                        [paramsField]: params,
+                        [timeframeField]: "1d",
+                        [valueField]: 20,
+                      };
+                      // ✅ Initialize nested fields for Max/Min
+                      if (
+                        v?.toLowerCase() === "max" ||
+                        v?.toLowerCase() === "min"
+                      ) {
+                        updated[`${labelField}NestedIndicator`] = "rsi";
+                        updated[`${labelField}NestedParams`] = { length: 14 };
+                        updated[`${labelField}NestedTimeframe`] = "1d";
+                      }
+                      return updated;
+                    }
+                    return r;
+                  }),
                 );
               }
             }}
@@ -953,37 +969,66 @@ export default function IndicatorRuleBuilder({
             >
               <span style={{ color: "#2a5070" }}>(</span>
 
-              {Object.entries(selectedMeta).map(([key], i, arr) => (
-                <span
-                  key={key}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                  }}
-                >
+              {currentVal?.toLowerCase() === "max" ||
+              currentVal?.toLowerCase() === "min" ? (
+                <>
                   <EditableNumber
-                    value={rule[paramsField]?.[key] ?? ""}
+                    value={rule[paramsField]?.length ?? 20}
                     onChange={(v) =>
-                      setRules((prev) =>
-                        prev.map((r) =>
-                          r.id === rule.id
-                            ? {
-                                ...r,
-                                [paramsField]: {
-                                  ...r[paramsField],
-                                  [key]: Math.max(0, v),
-                                },
-                              }
-                            : r,
-                        ),
-                      )
+                      updateField(rule.id, paramsField, {
+                        ...rule[paramsField],
+                        length: Math.max(0, v),
+                      })
                     }
                   />
-                  {i < arr.length - 1 && (
-                    <span style={{ color: "#2a5070" }}>,</span>
-                  )}
-                </span>
-              ))}
+                  <span style={{ color: "#2a5070" }}>,</span>
+                  {renderScannerBlock(rule, {
+                    labelField: `${labelField}NestedIndicator`,
+                    paramsField: `${labelField}NestedParams`,
+                    timeframeField: `${labelField}NestedTimeframe`,
+                    sourceField: `${labelField}NestedSource`,
+                    valueField: `${labelField}NestedValue`,
+                    isIndicatorField: config.isIndicatorField,
+                    isRightSideMain: config.isRightSideMain,
+                    sourceOptions: config.sourceOptions,
+                    isNestedBlock: true,
+                  })}
+                </>
+              ) : (
+                <>
+                  {Object.entries(selectedMeta).map(([key], i, arr) => (
+                    <span
+                      key={key}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                      }}
+                    >
+                      <EditableNumber
+                        value={rule[paramsField]?.[key] ?? ""}
+                        onChange={(v) =>
+                          setRules((prev) =>
+                            prev.map((r) =>
+                              r.id === rule.id
+                                ? {
+                                    ...r,
+                                    [paramsField]: {
+                                      ...r[paramsField],
+                                      [key]: Math.max(0, v),
+                                    },
+                                  }
+                                : r,
+                            ),
+                          )
+                        }
+                      />
+                      {i < arr.length - 1 && (
+                        <span style={{ color: "#2a5070" }}>,</span>
+                      )}
+                    </span>
+                  ))}
+                </>
+              )}
 
               <span style={{ color: "#2a5070" }}>)</span>
             </span>
@@ -1578,7 +1623,7 @@ export default function IndicatorRuleBuilder({
             type={modalType}
             closeModal={closeModal}
             rules={rules}
-            conditions={conditions}
+            finalRules={finalRules}
             timeframeOptions={timeframeOptions}
             setRunScanTrigger={setRunScanTrigger}
             onClose={onClose}

@@ -34,6 +34,7 @@ export default function OHLCVTable({
   selectedCurrencies,
   setSelectedCurrencies,
   setRules,
+  setFinalRules,
 }) {
   const [timeframe, setTimeframe] = useState(null); // null = ALL
   const [limit, setLimit] = useState(10); // actual data limit
@@ -597,6 +598,7 @@ export default function OHLCVTable({
     params = {},
     value,
     source,
+    inputIndicator, // ✅ renamed from nested
   }) => {
     const indicatorKey = indicator?.toLowerCase();
     const normalizedSource = (source || "close").toLowerCase();
@@ -652,7 +654,7 @@ export default function OHLCVTable({
       let finalParams = params;
 
       if (isVolumeMA && params.length !== undefined) {
-        finalParams = { ...params, maLength: params.length };
+        finalParams = { ...params, length: params.length };
         delete finalParams.length;
       }
 
@@ -661,6 +663,15 @@ export default function OHLCVTable({
         ...(isMA && { source: normalizedSource }),
         ...(isVolumeMA && { inputIndicator: "volume" }),
       };
+    }
+
+    // ✅ Handle nesting for max/min using inputIndicator key
+    if (
+      (indicatorKey === "max" || indicatorKey === "min") &&
+      inputIndicator
+    ) {
+      const { obj: nestedObj, on: nestedOn } = buildObject(inputIndicator);
+      obj.inputIndicator = nestedObj;
     }
 
     const on = isMA && normalizedSource === "volume" ? "volume" : null;
@@ -727,6 +738,16 @@ export default function OHLCVTable({
           params: rule.indicatorParams,
           value: rule.value,
           source: rule.source,
+          // ✅ Pass nested fields as inputIndicator
+          inputIndicator: rule.indicatorNestedIndicator
+            ? {
+                indicator: rule.indicatorNestedIndicator,
+                timeframe: rule.indicatorNestedTimeframe,
+                params: rule.indicatorNestedParams,
+                source: rule.indicatorNestedSource,
+                value: rule.indicatorNestedValue,
+              }
+            : null,
         });
 
         const o2 = buildObject({
@@ -735,6 +756,15 @@ export default function OHLCVTable({
           params: rule.scannerParams,
           value: rule.compareValue,
           source: rule.scannerSource,
+          inputIndicator: rule.scannerNestedIndicator
+            ? {
+                indicator: rule.scannerNestedIndicator,
+                timeframe: rule.scannerNestedTimeframe,
+                params: rule.scannerNestedParams,
+                source: rule.scannerNestedSource,
+                value: rule.scannerNestedValue,
+              }
+            : null,
         });
 
         const o3 = rule.scanner2
@@ -744,6 +774,15 @@ export default function OHLCVTable({
               params: rule.params2,
               value: rule.value2,
               source: rule.source2,
+              inputIndicator: rule.scanner2NestedIndicator
+                ? {
+                    indicator: rule.scanner2NestedIndicator,
+                    timeframe: rule.scanner2NestedTimeframe,
+                    params: rule.scanner2NestedParams,
+                    source: rule.scanner2NestedSource,
+                    value: rule.scanner2NestedValue,
+                  }
+                : null,
             })
           : null;
 
@@ -754,6 +793,15 @@ export default function OHLCVTable({
               params: rule.params3,
               value: rule.value3,
               source: rule.source3,
+              inputIndicator: rule.scanner3NestedIndicator
+                ? {
+                    indicator: rule.scanner3NestedIndicator,
+                    timeframe: rule.scanner3NestedTimeframe,
+                    params: rule.scanner3NestedParams,
+                    source: rule.scanner3NestedSource,
+                    value: rule.scanner3NestedValue,
+                  }
+                : null,
             })
           : null;
 
@@ -855,11 +903,12 @@ export default function OHLCVTable({
         apiInterval = "1w";
       }
 
-      // console.log(totalDays, "------max days");
+      console.log(rules, "------rules");
 
       if (!totalDays || !timeframeValue) return;
 
       /* ===== API ===== */
+
 
       const cleanRules = JSON.parse(JSON.stringify(patchedRules));
       cleanRules.forEach((rule) => {
@@ -873,6 +922,8 @@ export default function OHLCVTable({
         rules: cleanRules,
         logic,
       };
+      setFinalRules(cleanRules);
+
 
       const { data: result = {} } = await apiService.post(
         `/api/scannerDetail?interval=${apiInterval}&day=${totalDays}`,
@@ -1113,29 +1164,29 @@ export default function OHLCVTable({
       "upperbandrsi",
     ]);
 
-    // const indicatorCols = Array.from(
-    //   new Set(
-    //     mergedData.flatMap((row) =>
-    //       Object.keys(row).filter((key) => {
-    //         if (ignore.has(key)) return false;
+    const indicatorCols = Array.from(
+      new Set(
+        mergedData.flatMap((row) =>
+          Object.keys(row).filter((key) => {
+            if (ignore.has(key)) return false;
 
-    //         // ✅ Filter columns to match selected timeframe/indicator (skip when ALL)
-    //         if (
-    //           timeframe?.tf &&
-    //           timeframe?.indicator &&
-    //           timeframe.tf !== "ALL"
-    //         ) {
-    //           return isIndicatorMatch(key, timeframe.indicator, timeframe.tf);
-    //         }
+            // ✅ Filter columns to match selected timeframe/indicator (skip when ALL)
+            if (
+              timeframe?.tf &&
+              timeframe?.indicator &&
+              timeframe.tf !== "ALL"
+            ) {
+              return isIndicatorMatch(key, timeframe.indicator, timeframe.tf);
+            }
 
-    //         return true;
-    //       }),
-    //     ),
-    //   ),
-    // );
+            return true;
+          }),
+        ),
+      ),
+    );
 
-    // return [...baseColumns, ...indicatorCols, "timeframe"];
-    return [...baseColumns];
+    return [...baseColumns, ...indicatorCols, "timeframe"];
+    // return [...baseColumns];
 
   }, [mergedData, timeframe]);
 

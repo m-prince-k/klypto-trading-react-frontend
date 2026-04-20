@@ -1,21 +1,27 @@
 import { useState, useEffect } from "react";
 import { LuX } from "react-icons/lu";
 import { Link } from "react-router-dom";
-import { ButtonGroup, ToggleButton, Button } from "react-bootstrap";
+import {
+  ButtonGroup,
+  ToggleButton,
+  Button,
+  Dropdown,
+  Form,
+} from "react-bootstrap";
 import { FaEnvelope, FaSms } from "react-icons/fa";
 import { toast } from "react-toastify";
 import apiService from "../../services/apiServices";
-import { scanCategories } from "../../util/common";
+import { scanCategories, tfToMinutes } from "../../util/common";
 
 export function IndicatorRuleModals({
   type,
- closeModal,
+  closeModal,
   categories,
   rules,
-  conditions,
   timeframeOptions,
   setRunScanTrigger,
-   onClose,
+  onClose,
+  finalRules,
 }) {
   const renderContent = () => {
     switch (type) {
@@ -37,7 +43,7 @@ export function IndicatorRuleModals({
           <BacktestResultContent
             closeModal={closeModal}
             timeframeOptions={timeframeOptions}
-            rules={rules}
+            rules={finalRules}
             setRunScanTrigger={setRunScanTrigger}
             onClose={onClose}
           />
@@ -48,7 +54,7 @@ export function IndicatorRuleModals({
           <CreateAlertContent
             closeModal={closeModal}
             rules={rules}
-            conditions={conditions}
+            finalRules={finalRules}
           />
         );
 
@@ -90,7 +96,12 @@ export function IndicatorRuleModals({
 /* SAVE SCAN CONTENT */
 /* ------------------------------------------------ */
 
-function SaveScanContent({ onSubmit, closeModal, categories = [], rules = [] }) {
+function SaveScanContent({
+  onSubmit,
+  closeModal,
+  categories = [],
+  rules = [],
+}) {
   const [errors, setErrors] = useState({});
   const [scannerPayload, setscannerPayload] = useState("");
   const [form, setForm] = useState({
@@ -347,6 +358,27 @@ function BacktestResultContent({
   function isActive(frame) {
     return activeFrames.includes(frame);
   }
+ const getMaxTfFromRule = (rule) => {
+  const tfs = [];
+
+  // ✅ case 1: direct timeframe (your old logic)
+  if (rule.timeframe) {
+    tfs.push(rule.timeframe);
+  }
+
+  // ✅ case 2: nested objects
+  ["object1", "object2", "object3"].forEach((key) => {
+    if (rule[key]?.timeframe) {
+      tfs.push(rule[key].timeframe);
+    }
+  });
+
+  if (!tfs.length) return null;
+
+  return tfs.reduce((max, curr) =>
+    tfToMinutes(curr) > tfToMinutes(max) ? curr : max
+  );
+};
 
   return (
     <div className="bg-white rounded-2xl text-left">
@@ -377,9 +409,11 @@ function BacktestResultContent({
         <div className="p-4 bg-light rounded-bottom">
           {/* Timeframe Buttons */}
           <div className="d-flex flex-wrap gap-2 mb-4">
-            {rules.map((rule, index) => {
-              const frame = rule.timeframe;
+            {rules?.map((rule, index) => {
+              const frame = getMaxTfFromRule(rule); // ✅ changed
               const active = isActive(frame);
+
+              if (!frame) return null;
 
               return (
                 <Link
@@ -406,7 +440,6 @@ function BacktestResultContent({
                 </Link>
               );
             })}
-
             {/* Show All Button */}
             <Button
               size="sm"
@@ -459,12 +492,14 @@ function BacktestResultContent({
 /* CREATE ALERT */
 /* ------------------------------------------------ */
 
-function CreateAlertContent({ onSubmit, closeModal, rules, conditions }) {
+function CreateAlertContent({ onSubmit, closeModal, rules, finalRules }) {
   const [mode, setMode] = useState("email");
 
   const [otpSent, setOtpSent] = useState(false);
   const [loadingOtp, setLoadingOtp] = useState(false);
   const [loadingSubmit, setLoadingSubmit] = useState(false);
+
+  const [alertName, setAlertName] = useState("");
 
   const [form, setForm] = useState({
     email: "",
@@ -485,6 +520,14 @@ function CreateAlertContent({ onSubmit, closeModal, rules, conditions }) {
     const email = (form.email ?? "").trim();
     const phone = (form.phone ?? "").trim();
     const otp = (form.otp ?? "").trim();
+
+    const name = (alertName ?? "").trim();
+
+    if (!name) {
+      errors.alertName = "Alert name is required";
+    } else if (name.length < 3) {
+      errors.alertName = "Alert name must be at least 3 characters";
+    }
 
     if (mode === "email") {
       if (!email) errors.email = "Email is required";
@@ -507,6 +550,8 @@ function CreateAlertContent({ onSubmit, closeModal, rules, conditions }) {
   };
 
   const handleGetOtp = async () => {
+    if (!validate()) return;
+
     if (!form.phone || errors.phone) {
       toast.error("Enter a valid phone number first");
       return;
@@ -541,19 +586,24 @@ function CreateAlertContent({ onSubmit, closeModal, rules, conditions }) {
 
   const handleSubmit = async () => {
     if (!validate()) return;
-
     setLoadingSubmit(true);
 
     try {
       let payload;
       if (mode === "email") {
-        payload = { type: "email", email: form.email, rule: conditions };
+        payload = {
+          name: alertName,
+          type: "email",
+          email: form.email,
+          rule: buildCondition({ rules: finalRules }),
+        };
       } else if (mode === "sms") {
         payload = {
+          name: alertName,
           type: "sms",
           mobile: form.phone,
           otp: form.otp,
-          rule: conditions,
+          rule: buildCondition({ rules: finalRules }),
         };
       }
       console.log(payload, "payloaddddddddd");
@@ -594,13 +644,111 @@ function CreateAlertContent({ onSubmit, closeModal, rules, conditions }) {
     updateField("phone", value);
   }
 
-  if (!rules?.length) {
-    return (
-      <div className="py-4 flex justify-center font-semibold text-slate-700">
-        At least add one condition
-      </div>
-    );
+  const TF_LABELS = {
+  "1m": "1 minute",
+  "5m": "5 minutes",
+  "15m": "15 minutes",
+  "30m": "30 minutes",
+  "1h": "1 hour",
+  "2h": "2 hours",
+  "4h": "4 hours",
+  "6h": "6 hours",
+  "1d": "daily",
+  "1w": "weekly",
+  "1M": "monthly",
+  "30d": "monthly",
+  "90d": "quarterly",
+  "365d": "yearly",
+};
+
+const OPERATOR_LABELS = {
+  ">": "is greater than",
+  "<": "is less than",
+  ">=": "is greater than or equal to",
+  "<=": "is less than or equal to",
+  "==": "is equal to",
+  "!=": "is not equal to",
+};
+
+/* ================= PARSER ================= */
+
+function parseObject(obj) {
+  if (!obj) return "";
+
+  // ✅ number
+  if (obj.indicator === "number") {
+    return obj.value;
   }
+
+  // ✅ string
+  if (typeof obj === "string") return obj;
+
+  if (!obj.indicator) return "";
+
+  // 🔥 extract length + source (NEW STRUCTURE)
+  let length = "";
+  let source = "";
+
+  if (typeof obj.length === "object") {
+    length = obj.length?.length;
+    source = obj.length?.source;
+  } else {
+    length = obj.length;
+  }
+
+  // fallback (older structure)
+  if (!source && obj.source) {
+    source = obj.source;
+  }
+
+  const params = [];
+
+  if (source) params.push(source);
+  if (length) params.push(length);
+
+  const tfMap = {
+    "1d": "daily",
+    "1w": "weekly",
+    "1M": "monthly",
+    "30d": "monthly",
+    "90d": "quarterly",
+    "365d": "yearly",
+  };
+
+  const tf = tfMap[obj.timeframe] || obj.timeframe || "";
+
+  return `${tf ? tf + " " : ""}${obj.indicator.toUpperCase()}(${params.join(", ")})`
+    .replace(/\(\)/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/* ================= CONDITION BUILDER ================= */
+function buildCondition(payload) {
+  if (!payload?.rules?.length) return "";
+
+  return payload.rules
+    .map((rule) => {
+      const left = parseObject(rule.object1);
+      const op1 = OPERATOR_LABELS[rule.operator1] || rule.operator1;
+      const right = parseObject(rule.object2);
+
+      let expression = `${left} ${op1} ${right}`;
+
+      // 🔥 handle chaining
+      if (rule.operator2 && rule.object3) {
+        expression += ` ${rule.operator2} ${parseObject(rule.object3)}`;
+      }
+
+      if (rule.operator3 && rule.object4) {
+        expression += ` ${rule.operator3} ${parseObject(rule.object4)}`;
+      }
+
+      return expression;
+    })
+    .join(" AND ");
+}
+console.log(buildCondition({ rules: finalRules }), "buildCondition");
 
   return (
     <div className="bg-white rounded-2xl text-left">
@@ -613,141 +761,175 @@ function CreateAlertContent({ onSubmit, closeModal, rules, conditions }) {
         </button>
       </div>
 
-      <div className="p-5 bg-slate-50 rounded-b-2xl">
-        <ButtonGroup
-          className="mb-4"
-          style={{
-            background: "#f0e6ff",
-            borderRadius: "50px",
-            padding: "4px",
-          }}
-        >
-          <ToggleButton
-            id="toggle-email"
-            type="radio"
-            name="mode"
-            value="email"
-            checked={mode === "email"}
-            onChange={() => setMode("email")}
-            style={{
-              borderRadius: "50px",
-              border: "none",
-              padding: "6px 20px",
-              background: mode === "email" ? "#7c3aed" : "transparent",
-              color: mode === "email" ? "#f8fafc" : "#7c3aed",
-              fontWeight: 500,
-              boxShadow:
-                mode === "email" ? "0 2px 8px rgba(124,58,237,0.3)" : "none",
-            }}
-          >
-            Email
-          </ToggleButton>
-          <ToggleButton
-            id="toggle-sms"
-            type="radio"
-            name="mode"
-            value="sms"
-            checked={mode === "sms"}
-            onChange={() => setMode("sms")}
-            style={{
-              borderRadius: "50px",
-              border: "none",
-              padding: "6px 20px",
-              background: mode === "sms" ? "#7c3aed" : "transparent",
-              color: mode === "sms" ? "#f8fafc" : "#7c3aed",
-              fontWeight: 500,
-              boxShadow:
-                mode === "sms" ? "0 2px 8px rgba(124,58,237,0.3)" : "none",
-            }}
-          >
-            SMS
-          </ToggleButton>
-        </ButtonGroup>
+      {rules.length === 0 ? (
+        /* ---------- EMPTY STATE ---------- */
 
-        {mode === "email" && (
+        <div className="py-4 flex justify-center font-semibold text-slate-700">
+          Atleast Add one Condition
+        </div>
+      ) : (
+        <div className="p-4 bg-slate-50 rounded-b-2xl">
+          {/* ALERT NAME */}
           <div className="mb-4">
-            <label className="text-xs font-semibold">EMAIL</label>
-            <input
-              value={form.email}
-              onChange={(e) => updateField("email", e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border"
+            <label className="text-xs font-semibold text-gray-600">
+              ALERT NAME:
+            </label>
+            <Form.Control
+              type="text"
+              value={alertName}
+              onChange={(e) => setAlertName(e.target.value)}
+              placeholder="Enter alert name"
+              className="mt-2"
             />
-            {errors.email && (
-              <div className="text-xs text-red-500 mt-1">{errors.email}</div>
-            )}
-          </div>
-        )}
-
-        {mode === "sms" && (
-          <>
-            {otpMessage && (
-              <div className="mb-2 text-green-700 font-medium">
-                {otpMessage}
+            {errors.alertName && (
+              <div className="text-xs text-red-500 mt-1">
+                {errors.alertName}
               </div>
             )}
+          </div>
+          <div>
+      <p style={{ fontSize: 14, color: "#334155" }}>
+        <p>{buildCondition({ rules: finalRules })}</p>
+      </p>
+    </div>
 
-            <div className="mb-2">
-              <label className="text-xs font-semibold">PHONE NUMBER</label>
-              <input
-                type="tel"
-                placeholder="+91XXXXXXXXXX"
-                value={form.phone}
-                onChange={(e) => handlePhoneChange(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border"
-                disabled={otpSent} // disable after OTP sent
-              />
-              {errors.phone && (
-                <div className="text-xs text-red-500 mt-1">{errors.phone}</div>
-              )}
-            </div>
+          <ButtonGroup
+            className="mb-4"
+            style={{
+              background: "#f0e6ff",
+              borderRadius: "50px",
+              padding: "4px",
+            }}
+          >
+            <ToggleButton
+              id="toggle-email"
+              type="radio"
+              name="mode"
+              value="email"
+              checked={mode === "email"}
+              onChange={() => setMode("email")}
+              style={{
+                borderRadius: "50px",
+                border: "none",
+                padding: "6px 20px",
+                background: mode === "email" ? "#7c3aed" : "transparent",
+                color: mode === "email" ? "#f8fafc" : "#7c3aed",
+                fontWeight: 500,
+                boxShadow:
+                  mode === "email" ? "0 2px 8px rgba(124,58,237,0.3)" : "none",
+              }}
+            >
+              Email
+            </ToggleButton>
+            <ToggleButton
+              id="toggle-sms"
+              type="radio"
+              name="mode"
+              value="sms"
+              checked={mode === "sms"}
+              onChange={() => setMode("sms")}
+              style={{
+                borderRadius: "50px",
+                border: "none",
+                padding: "6px 20px",
+                background: mode === "sms" ? "#7c3aed" : "transparent",
+                color: mode === "sms" ? "#f8fafc" : "#7c3aed",
+                fontWeight: 500,
+                boxShadow:
+                  mode === "sms" ? "0 2px 8px rgba(124,58,237,0.3)" : "none",
+              }}
+            >
+              SMS
+            </ToggleButton>
+          </ButtonGroup>
 
-            <div className="flex justify-end">
-              <button
-                onClick={handleGetOtp}
-                disabled={loadingOtp || otpSent}
-                className="px-4 py-2 mb-3 bg-purple-600 text-white rounded-3"
-              >
-                {loadingOtp
-                  ? "Sending OTP..."
-                  : otpSent
-                    ? "OTP Sent"
-                    : "Get OTP"}
-              </button>
-            </div>
-
+          {mode === "email" && (
             <div className="mb-4">
-              <label className="text-xs font-semibold">OTP VERIFY</label>
+              <label className="text-xs font-semibold">EMAIL</label>
               <input
-                value={form.otp}
-                onChange={(e) =>
-                  updateField("otp", e.target.value.replace(/\D/g, ""))
-                }
+                value={form.email}
+                onChange={(e) => updateField("email", e.target.value)}
                 className="w-full px-4 py-3 rounded-xl border"
-                disabled={!otpSent} // enable only after OTP sent
               />
-              {errors.otp && (
-                <div className="text-xs text-red-500 mt-1">{errors.otp}</div>
+              {errors.email && (
+                <div className="text-xs text-red-500 mt-1">{errors.email}</div>
               )}
             </div>
-          </>
-        )}
+          )}
 
-        <div className="flex justify-end gap-3 pt-2">
-          <button
-            onClick={closeModal}
-            className="px-5 rounded-3 py-2.5 bg-slate-200"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={loadingSubmit || (mode === "sms" && !otpSent)}
-            className="px-5 py-2.5 rounded-3 bg-purple-600 text-white"
-          >
-            {loadingSubmit ? "Submitting..." : "Create Alert"}
-          </button>
+          {mode === "sms" && (
+            <>
+              {otpMessage && (
+                <div className="mb-2 text-green-700 font-medium">
+                  {otpMessage}
+                </div>
+              )}
+
+              <div className="mb-2">
+                <label className="text-xs font-semibold">PHONE NUMBER</label>
+                <input
+                  type="tel"
+                  placeholder="+91XXXXXXXXXX"
+                  value={form.phone}
+                  onChange={(e) => handlePhoneChange(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border"
+                  disabled={otpSent} // disable after OTP sent
+                />
+                {errors.phone && (
+                  <div className="text-xs text-red-500 mt-1">
+                    {errors.phone}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  onClick={handleGetOtp}
+                  disabled={loadingOtp || otpSent}
+                  className="px-4 py-2 mb-3 bg-purple-600 text-white rounded-3"
+                >
+                  {loadingOtp
+                    ? "Sending OTP..."
+                    : otpSent
+                      ? "OTP Sent"
+                      : "Get OTP"}
+                </button>
+              </div>
+
+              <div className="mb-4">
+                <label className="text-xs font-semibold">OTP VERIFY</label>
+                <input
+                  value={form.otp}
+                  onChange={(e) =>
+                    updateField("otp", e.target.value.replace(/\D/g, ""))
+                  }
+                  className="w-full px-4 py-3 rounded-xl border"
+                  disabled={!otpSent} // enable only after OTP sent
+                />
+                {errors.otp && (
+                  <div className="text-xs text-red-500 mt-1">{errors.otp}</div>
+                )}
+              </div>
+            </>
+          )}
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              onClick={closeModal}
+              className="px-5 rounded-3 py-2.5 bg-slate-200"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={loadingSubmit || (mode === "sms" && !otpSent)}
+              className="px-5 py-2.5 rounded-3 bg-purple-600 text-white"
+            >
+              {loadingSubmit ? "Submitting..." : "Create Alert"}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
