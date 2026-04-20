@@ -1884,64 +1884,64 @@ export const INDICATOR_DAYS_MAP = {
   "volume oscillator": 500,
 
   // 🟢 Trend / MA based (buffer added)
-  sma: 200,
-  ema: 200,
-  wma: 200,
-  vwma: 200,
-  hma: 200,
-  rma: 200,
-  tema: 200,
-  tma: 200,
-  kama: 200,
+  // sma: 200,
+  // ema: 200,
+  // wma: 200,
+  // vwma: 200,
+  // hma: 200,
+  // rma: 200,
+  // tema: 200,
+  // tma: 200,
+  // kama: 200,
 
-  // 🟢 Volatility
-  atr: 150,
-  tr: 150,
-  stddev: 150,
+  // // 🟢 Volatility
+  // atr: 150,
+  // tr: 150,
+  // stddev: 150,
 
-  // 🟢 Momentum
-  rsi: 150,
-  cci: 150,
-  cmo: 150,
-  mom: 150,
-  roc: 150,
-  trix: 200,
-  ft: 4000,
+  // // 🟢 Momentum
+  // rsi: 150,
+  // cci: 150,
+  // cmo: 150,
+  // mom: 150,
+  // roc: 150,
+  // trix: 200,
+  // ft: 200,
 
-  // 🟢 Volume indicators (non cumulative)
-  cmf: 200,
-  eom: 200,
-  mfi: 200,
+  // // 🟢 Volume indicators (non cumulative)
+  // cmf: 200,
+  // eom: 200,
+  // mfi: 200,
 
-  // 🟢 MACD family
-  macd: 200,
+  // // 🟢 MACD family
+  // macd: 200,
 
-  // 🟢 ADX family
-  adx: 200,
+  // // 🟢 ADX family
+  // adx: 200,
 
-  // 🟢 Oscillators
-  ao: 150,
-  awo: 150,
-  aroon: 150,
-  stoch: 150,
-  stochrsi: 150,
-  wpr: 150,
+  // // 🟢 Oscillators
+  // ao: 150,
+  // awo: 150,
+  // aroon: 150,
+  // stoch: 150,
+  // stochrsi: 150,
+  // wpr: 150,
 
-  // 🟢 Bands / Channels
-  bb: 150,
-  bbw: 150,
-  dc: 150,
-  kc: 150,
+  // // 🟢 Bands / Channels
+  // bb: 150,
+  // bbw: 150,
+  // dc: 150,
+  // kc: 150,
 
-  // 🟢 Supertrend / PSAR
-  supertrend: 200,
-  psar: 150,
+  // // 🟢 Supertrend / PSAR
+  // supertrend: 200,
+  // psar: 150,
 
-  // 🟢 Ichimoku (IMPORTANT → max 52 lagging span)
-  ichimoku: 200,
+  // // 🟢 Ichimoku (IMPORTANT → max 52 lagging span)
+  // ichimoku: 200,
 
-  // 🟢 KVO (long EMA = 55 → needs more buffer)
-  kvo: 250,
+  // // 🟢 KVO (long EMA = 55 → needs more buffer)
+  // kvo: 250,
 
   // 🟢 Pivot (daily based, no history needed but safe buffer)
   pivot: 50,
@@ -1954,7 +1954,7 @@ export const INDICATOR_DAYS_MAP = {
   "pivot s2": 50,
 
   // 🟢 Default fallback
-  default: 4000,
+  default: 365,
 };
 
 export const tfToMinutes = (tf = "") => {

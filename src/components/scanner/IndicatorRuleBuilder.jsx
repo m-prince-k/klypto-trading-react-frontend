@@ -30,6 +30,7 @@ import {
   getTimeframeLabel,
 } from "../../util/common";
 import AlertModal from "./ScannerModals";
+import { toast } from "react-toastify";
 
 export default function IndicatorRuleBuilder({
   onClose,
@@ -405,56 +406,75 @@ export default function IndicatorRuleBuilder({
     );
   }
 
-  const handleTimeframeChange = (value) => {
+  const [timeframePromptConfig, setTimeframePromptConfig] = useState({
+    isOpen: false,
+  });
+  const [timeframePromptInput, setTimeframePromptInput] = useState("");
+
+  const handleTimeframeChange = (value, ruleId, field) => {
     if (!value) return;
 
-    // ✅ ONLY run for "n" options
     if (value.startsWith("n")) {
-      const short = value[1]; // d, w, m, q, y
-
+      const short = value[1];
       const labelMap = {
         d: "days",
         w: "weeks",
         m: "months",
-        q: "quarters",
-        y: "years",
+        // q: "quarters",
+        // y: "years",
       };
-
       const unit = labelMap[short];
 
-      const input = prompt(`Enter number of ${unit}:`);
-
-      if (!input || isNaN(input) || Number(input) <= 0) return;
-
-      const num = Number(input);
-
-      const newOption = {
-        label: `${num} ${unit} ago`,
-        value: `${num}${short}_ago`,
-      };
-
-      // ✅ Insert BEFORE "n option"
-      setTimeframeOptions((prev) => {
-        const exists = prev.some((opt) => opt.value === newOption.value);
-        if (exists) return prev;
-
-        const index = prev.findIndex((opt) => opt.value === value);
-
-        const updated = [...prev];
-        if (index !== -1) {
-          updated.splice(index, 0, newOption);
-        } else {
-          updated.push(newOption);
-        }
-
-        return updated;
+      setTimeframePromptConfig({
+        isOpen: true,
+        unit,
+        short,
+        value,
+        ruleId,
+        field,
       });
-
-      return newOption.value;
+      setTimeframePromptInput("");
+      return null;
     }
 
-    // ✅ normal values (1d_ago, 2d_ago etc.)
     return value;
+  };
+
+  const submitTimeframePrompt = () => {
+    const { unit, short, value, ruleId, field } = timeframePromptConfig;
+    if (
+      !timeframePromptInput ||
+      isNaN(timeframePromptInput) ||
+      Number(timeframePromptInput) <= 0
+    ) {
+      toast.info("Please enter a valid positive number");
+      return;
+    } else if (Number(timeframePromptInput) > 50) {
+      toast.info("Enter a number less than 50");
+      return;
+    }
+
+    const num = Number(timeframePromptInput);
+    const newOption = {
+      label: `${num} ${unit} ago`,
+      value: `${num}${short}_ago`,
+    };
+
+    setTimeframeOptions((prev) => {
+      const exists = prev.some((opt) => opt.value === newOption.value);
+      if (exists) return prev;
+      const index = prev.findIndex((opt) => opt.value === value);
+      const updated = [...prev];
+      if (index !== -1) {
+        updated.splice(index, 0, newOption);
+      } else {
+        updated.push(newOption);
+      }
+      return updated;
+    });
+
+    updateField(ruleId, field, newOption.value);
+    setTimeframePromptConfig({ isOpen: false });
   };
 
   /* ================= API CALLS ================= */
@@ -494,8 +514,6 @@ export default function IndicatorRuleBuilder({
       const extraTimeframes = [
         { label: "Weekly", value: "1w" },
         { label: "Monthly", value: "1M" },
-        { label: "Quarterly", value: "90d" },
-        { label: "Yearly", value: "365d" },
       ];
 
       const mergedTimeframes = [...flattened, ...extraTimeframes];
@@ -526,16 +544,16 @@ export default function IndicatorRuleBuilder({
       const daysAgoOptions = generateAgoOptions(3, "day", "d");
       const weeksAgoOptions = generateAgoOptions(3, "week", "w");
       const monthsAgoOptions = generateAgoOptions(3, "month", "m");
-      const quartersAgoOptions = generateAgoOptions(3, "quarter", "q");
-      const yearsAgoOptions = generateAgoOptions(3, "year", "y");
+      // const quartersAgoOptions = generateAgoOptions(3, "quarter", "q");
+      // const yearsAgoOptions = generateAgoOptions(3, "year", "y");
 
       const finalOptions = [
         ...uniqueTimeframes,
         ...daysAgoOptions,
         ...weeksAgoOptions,
         ...monthsAgoOptions,
-        ...quartersAgoOptions,
-        ...yearsAgoOptions,
+        // ...quartersAgoOptions,
+        // ...yearsAgoOptions,
       ];
 
       setTimeframeOptions(finalOptions);
@@ -827,7 +845,7 @@ export default function IndicatorRuleBuilder({
             options={timeframeOptions}
             onChange={(option) => {
               const raw = option?.value || option;
-              const final = handleTimeframeChange(raw);
+              const final = handleTimeframeChange(raw, rule.id, timeframeField);
               if (final) updateField(rule.id, timeframeField, final);
             }}
           />
@@ -1572,6 +1590,76 @@ export default function IndicatorRuleBuilder({
         message={modalMessage}
         onClose={() => setModalOpen(false)}
       />
+
+      <Modal
+        show={timeframePromptConfig.isOpen}
+        onHide={() => setTimeframePromptConfig({ isOpen: false })}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>
+            Enter Number of {timeframePromptConfig.unit || ""}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form.Group>
+            <Form.Label className="fw-medium">
+              Number of {timeframePromptConfig.unit || ""}:
+            </Form.Label>
+            <Form.Control
+              type="number"
+              min={1}
+              max={50}
+              value={timeframePromptInput}
+              onChange={(e) => {
+                let val = e.target.value;
+
+                // allow empty (for backspace)
+                if (val === "") {
+                  setTimeframePromptInput("");
+                  return;
+                }
+
+                val = Number(val);
+
+                // ❌ block > 50
+                if (val > 50) {
+                  setTimeframePromptInput(50);
+                  return;
+                }
+
+                // ❌ block < 1
+                if (val < 1) {
+                  setTimeframePromptInput(1);
+                  return;
+                }
+
+                setTimeframePromptInput(val);
+              }}
+              onKeyDown={(e) => e.key === "Enter" && submitTimeframePrompt()}
+              autoFocus
+            />
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setTimeframePromptConfig({ isOpen: false })}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            style={{
+              background: "linear-gradient(to right, #06b6d4, #3b82f6)",
+              border: "none",
+            }}
+            onClick={submitTimeframePrompt}
+          >
+            Confirm
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </>
   );
 }

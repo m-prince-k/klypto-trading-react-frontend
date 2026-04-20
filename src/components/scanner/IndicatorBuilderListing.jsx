@@ -67,12 +67,6 @@ export default function OHLCVTable({
   const manualTfOverride = useRef(null);
   const isFetching = useRef(false);
 
-  const timeframes = useMemo(() => {
-    return dataSource && typeof dataSource === "object"
-      ? Object.keys(dataSource)
-      : [];
-  }, [dataSource]);
-
   // ✅ Reset UI and tracking variables when a fresh scan is executed
   useEffect(() => {
     userPickedTf.current = false;
@@ -137,23 +131,23 @@ export default function OHLCVTable({
           },
         ],
 
-        quarter: [
-          ...(data.quarter || []),
-          {
-            label: "1 quarter",
-            value: "1q",
-            seconds: 7776000, // 90 days
-          },
-        ],
+        // quarter: [
+        //   ...(data.quarter || []),
+        //   {
+        //     label: "1 quarter",
+        //     value: "1q",
+        //     seconds: 7776000, // 90 days
+        //   },
+        // ],
 
-        year: [
-          ...(data.year || []),
-          {
-            label: "1 year",
-            value: "1y",
-            seconds: 31536000, // 365 days
-          },
-        ],
+        // year: [
+        //   ...(data.year || []),
+        //   {
+        //     label: "1 year",
+        //     value: "1y",
+        //     seconds: 31536000, // 365 days
+        //   },
+        // ],
       };
 
       setFetchTimeframe(extendedData);
@@ -209,13 +203,13 @@ export default function OHLCVTable({
   const normalizeTfForDropdown = (tf) => {
     if (!tf) return "";
     const lower = tf.toLowerCase();
-
-    if (lower === "90d" || lower === "1q") return "1q";
-    if (lower === "365d" || lower === "1y") return "1y";
+    //
+    // if (lower === "90d" || lower === "1q") return "1q";
+    // if (lower === "365d" || lower === "1y") return "1y";
 
     if (lower.includes("_ago")) {
-      if (/y|yr|year/i.test(lower)) return "1y";
-      if (/q|quarter/i.test(lower)) return "1q";
+      // if (/y|yr|year/i.test(lower)) return "1y";
+      // if (/q|quarter/i.test(lower)) return "1q";
       if (/mo|mth|month/i.test(lower) || tf.includes("M")) return "1M";
       if (/w|week/i.test(lower)) return "1w";
       if (/d|day/i.test(lower)) return "1d";
@@ -633,14 +627,17 @@ export default function OHLCVTable({
     // ✅ timeframe / offset
     if (offset !== null) {
       obj.offset = offset;
-      
+
       // The user requested that for quarterly and yearly with 'ago',
       // timeframe should be '1d'. For monthly and weekly, we can also default to '1d' or keep specific handling.
       // But preserving existing codebase logic, we pass "1d" when offset is present.
       obj.timeframe = "1d";
       obj.originalTimeframe = timeframe;
     } else if (timeframe) {
-      if (typeof timeframe === "string" && (timeframe.toLowerCase() === "1q" || timeframe.toLowerCase() === "1y")) {
+      if (
+        typeof timeframe === "string" &&
+        (timeframe.toLowerCase() === "1q" || timeframe.toLowerCase() === "1y")
+      ) {
         obj.timeframe = "1d";
         obj.originalTimeframe = timeframe;
       } else {
@@ -847,21 +844,18 @@ export default function OHLCVTable({
 
       let apiInterval = timeframeValue;
 
-      if (apiInterval === "1q" || apiInterval === "90d") {
-        apiInterval = "1d";
-        totalDays = Math.max(totalDays, 90);
-      } else if (apiInterval === "1y" || apiInterval === "365d") {
-        apiInterval = "1d";
-        totalDays = Math.max(totalDays, 365);
-      } else if (apiInterval === "1M" || apiInterval === "30d") {
+      // if (apiInterval === "1q" || apiInterval === "90d") {
+      //   apiInterval = "1d";
+      // } else if (apiInterval === "1y" || apiInterval === "365d") {
+      //   apiInterval = "1d";
+      // }
+      if (apiInterval === "1M" || apiInterval === "30d") {
         apiInterval = "1M";
-        totalDays = Math.max(totalDays, 30);
       } else if (apiInterval === "1w" || apiInterval === "7d") {
         apiInterval = "1w";
-        totalDays = Math.max(totalDays, 7);
       }
 
-      console.log(totalDays, "------max days");
+      // console.log(totalDays, "------max days");
 
       if (!totalDays || !timeframeValue) return;
 
@@ -1013,12 +1007,12 @@ export default function OHLCVTable({
     let data = mergedData;
 
     // ✅ APPLY DAYS/MONTHS FILTER (CLIENT-SIDE)
-    const limitDays = months ? months * 30 : (days ? days : 30);
+    const limitDays = months ? months * 30 : days ? days : 30;
     if (data.length > 0) {
       const isSeconds = data[0].time && data[0].time < 1e11;
       const now = Date.now();
-      const cutoffTime = isSeconds 
-        ? Math.floor(now / 1000) - limitDays * 86400 
+      const cutoffTime = isSeconds
+        ? Math.floor(now / 1000) - limitDays * 86400
         : now - limitDays * 86400 * 1000;
 
       data = data.filter((row) => row.time >= cutoffTime);
@@ -1061,7 +1055,11 @@ export default function OHLCVTable({
       let sortKey = sortConfig.key;
 
       // ✅ Use numeric 'time' property instead of 'datetime' string when sorting by date
-      if (sortKey === "datetime" && a.time !== undefined && b.time !== undefined) {
+      if (
+        sortKey === "datetime" &&
+        a.time !== undefined &&
+        b.time !== undefined
+      ) {
         sortKey = "time";
       }
 
@@ -1076,8 +1074,12 @@ export default function OHLCVTable({
       }
 
       return sortConfig.direction === "asc"
-        ? aVal.toString().localeCompare(bVal.toString(), undefined, { numeric: true })
-        : bVal.toString().localeCompare(aVal.toString(), undefined, { numeric: true });
+        ? aVal
+            .toString()
+            .localeCompare(bVal.toString(), undefined, { numeric: true })
+        : bVal
+            .toString()
+            .localeCompare(aVal.toString(), undefined, { numeric: true });
     });
   }, [filteredData, sortConfig]);
 
@@ -1111,28 +1113,30 @@ export default function OHLCVTable({
       "upperbandrsi",
     ]);
 
-    const indicatorCols = Array.from(
-      new Set(
-        mergedData.flatMap((row) =>
-          Object.keys(row).filter((key) => {
-            if (ignore.has(key)) return false;
+    // const indicatorCols = Array.from(
+    //   new Set(
+    //     mergedData.flatMap((row) =>
+    //       Object.keys(row).filter((key) => {
+    //         if (ignore.has(key)) return false;
 
-            // ✅ Filter columns to match selected timeframe/indicator (skip when ALL)
-            if (
-              timeframe?.tf &&
-              timeframe?.indicator &&
-              timeframe.tf !== "ALL"
-            ) {
-              return isIndicatorMatch(key, timeframe.indicator, timeframe.tf);
-            }
+    //         // ✅ Filter columns to match selected timeframe/indicator (skip when ALL)
+    //         if (
+    //           timeframe?.tf &&
+    //           timeframe?.indicator &&
+    //           timeframe.tf !== "ALL"
+    //         ) {
+    //           return isIndicatorMatch(key, timeframe.indicator, timeframe.tf);
+    //         }
 
-            return true;
-          }),
-        ),
-      ),
-    );
+    //         return true;
+    //       }),
+    //     ),
+    //   ),
+    // );
 
-    return [...baseColumns, ...indicatorCols, "timeframe"];
+    // return [...baseColumns, ...indicatorCols, "timeframe"];
+    return [...baseColumns];
+
   }, [mergedData, timeframe]);
 
   const handleSort = (key) => {
@@ -1331,6 +1335,11 @@ export default function OHLCVTable({
               onSelect={(val) => {
                 const num = Number(val);
                 setDays(num === 0 ? null : num);
+                if (num > 0) {
+                  toast.success(
+                    `Records filtered for ${num} Day${num > 1 ? "s" : ""}`,
+                  );
+                }
               }}
             >
               <Dropdown.Toggle
@@ -1368,6 +1377,11 @@ export default function OHLCVTable({
               onSelect={(val) => {
                 const num = Number(val);
                 setMonths(num === 0 ? null : num);
+                if (num > 0) {
+                  toast.success(
+                    `Records filtered for ${num} Month${num > 1 ? "s" : ""}`,
+                  );
+                }
               }}
             >
               <Dropdown.Toggle

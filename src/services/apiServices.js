@@ -1,11 +1,13 @@
 import axios from "axios";
 
-const token = localStorage.getItem("session") && JSON.parse(localStorage.getItem("session"));
+const token =
+  localStorage.getItem("session") &&
+  JSON.parse(localStorage.getItem("session"));
 // console.log(localStorage.getItem("session"), "tokennnnnnn kkkkkkkkkkkkkkkkkkkkk")
 
 // 🔹 Create axios instance
 const api = axios.create({
-  // baseURL: "https://studios-publishers-promising-rosa.trycloudflare.com", 
+  // baseURL: "https://studios-publishers-promising-rosa.trycloudflare.com",
   baseURL: "http://192.168.1.7:5000", // change to your API
   timeout: 500000,
   headers: {
@@ -25,14 +27,15 @@ api.interceptors.request.use(
 );
 
 // 🔹 Response Interceptor
-api.interceptors.response.use((response) => response?.data,(error) => {
+api.interceptors.response.use(
+  (response) => response?.data,
+  (error) => {
     const message =
       error?.response?.data?.message ||
       error?.message ||
       "Something went wrong";
     // console.log("API Error:", error?.response?.data?.message);
     // console.log("API Error Details:", error?.message);
-
 
     return Promise.reject(error);
   },
@@ -53,7 +56,6 @@ const getAuthHeaders = () => {
 };
 
 // console.log(localStorage.getItem("session"), "tokennnnnnn kkkkkkkkkkkkkkkkkkkkk")
-
 
 const apiService = {
   get: (url, params = {}) =>
