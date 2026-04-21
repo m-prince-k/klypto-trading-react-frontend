@@ -6,7 +6,6 @@ export default function useChartFunctions({
   indicatorSeriesRef,
   latestIndicatorValuesRef,
   indicatorConfigs,
-  setIndicatorLoading,
 }) {
   /* ================= FETCH INDICATOR API ================= */
 
@@ -39,7 +38,6 @@ export default function useChartFunctions({
           selectedCurrency,
           indicator,
           timeframeValue,
-          setIndicatorLoading,
         );
 
         if (!result) continue;
@@ -996,10 +994,8 @@ async function fetchDataForIndicators(
   selectedCurrency,
   type,
   timeframeValue,
-  setIndicatorLoading,
 ) {
   try {
-    setIndicatorLoading(true);
 
     const response = await apiService.post(
       `/api/indicatorDetails?symbol=${selectedCurrency}&interval=${timeframeValue}&type=${type}`,
@@ -2202,7 +2198,5 @@ async function fetchDataForIndicators(
   } catch (error) {
     console.error("Indicator fetch error:", error);
     return { type: "error", data: [] };
-  } finally {
-    setIndicatorLoading(false);
-  }
+  } 
 }

@@ -71,6 +71,7 @@ export default function Candlestick() {
   const [showAlertForm, setShowAlertForm] = useState(false);
   const [indicatorProperty, setIndicatorProperty] = useState(false);
   const [indicatorLoading, setIndicatorLoading] = useState(false);
+  const [mainChartLoading, setMainChartLoading] = useState(false);
   const [showSourcePanel, setShowSourcePanel] = useState(false);
   const [activeSourceIndicator, setActiveSourceIndicator] = useState(null);
   const [indicatorVisibility, setIndicatorVisibility] = useState({});
@@ -289,6 +290,7 @@ export default function Candlestick() {
   // ----------Main chart------------
   useEffect(() => {
     if (!containerRef.current) return;
+    if (chartRef.current) return; // Prevent recreating the chart on every render
 
     const chart = createChart(containerRef.current, {
       ...ChartProprties,
@@ -296,6 +298,14 @@ export default function Candlestick() {
     });
     chartRef.current = chart;
     attachSync(chart);
+
+    return () => {
+      chart.remove();
+      chartRef.current = null;
+    };
+  }, []); // Run only once
+
+  useEffect(() => {
     //   WebSocket Trades
     const socket = new WebSocket("wss://socket.delta.exchange");
     socket.onopen = () => {
@@ -343,7 +353,6 @@ export default function Candlestick() {
 
     return () => {
       socket.close();
-      chart.remove();
     };
   }, [selectedCurrency, timeframeValue]);
 
@@ -629,6 +638,16 @@ export default function Candlestick() {
 
     const loadChart = async () => {
       try {
+        setMainChartLoading(true);
+
+        // remove previous series immediately to avoid showing old data
+        if (seriesRef.current) {
+          try {
+            chartRef.current.removeSeries(seriesRef.current);
+          } catch (e) {}
+          seriesRef.current = null;
+        }
+
         const response = await fetchDataByCurrency(
           selectedCurrency,
           timeframeValue,
@@ -638,14 +657,6 @@ export default function Candlestick() {
         const data = response?.data || [];
 
         if (!Array.isArray(data) || !data.length) return;
-
-        // remove previous series
-        if (seriesRef.current) {
-          try {
-            chartRef.current.removeSeries(seriesRef.current);
-          } catch (e) {}
-          seriesRef.current = null;
-        }
 
         switch (chartType) {
           case "line":
@@ -760,6 +771,8 @@ export default function Candlestick() {
         chartRef.current.timeScale().fitContent();
       } catch (err) {
         console.error("Chart load error", err);
+      } finally {
+        setMainChartLoading(false);
       }
     };
 
@@ -773,7 +786,6 @@ export default function Candlestick() {
     indicatorStyle,
     latestIndicatorValuesRef,
     indicatorConfigs,
-    setIndicatorLoading,
   });
 
   const zoomCharts = (delta) => {
@@ -866,6 +878,19 @@ export default function Candlestick() {
                 flexDirection: "column",
               }}
             >
+              {mainChartLoading && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    zIndex: 1000,
+                  }}
+                >
+                  <Spinner />
+                </div>
+              )}
               {/* -------------------------------sub-header live Values----------------------- */}
               <div className="flex px-2 top-2 z-10 absolute items-center gap-2 bg-slate-100 justify-start">
                 {/* LEFT: Symbol */}
@@ -1039,41 +1064,180 @@ export default function Candlestick() {
           <div className="row">
             <div className="d-flex align-items-center position-relative">
               <div className="mx-auto d-flex align-items-center gap-2">
+                {/* Zoom In */}
                 <button
                   onClick={zoomIn}
-                  className="group relative flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-slate-50 to-slate-100 hover:from-purple-50 hover:to-indigo-50 text-slate-700 hover:text-purple-700 font-semibold rounded-xl shadow-sm hover:shadow-md border border-slate-200/50 hover:border-purple-300/50 transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
+                  title="Zoom in"
+                  className="d-flex align-items-center gap-2 fw-semibold"
+                  style={{
+                    borderColor: "#e9d5ff",
+                    color: "#7c3aed",
+                    background: "#faf5ff",
+                    borderRadius: "10px",
+                    borderWidth: "1.5px",
+                    borderStyle: "solid",
+                    fontSize: "0.8rem",
+                    letterSpacing: "0.01em",
+                    padding: "6px 14px",
+                    boxShadow:
+                      "0 1px 3px rgba(124,58,237,0.08), inset 0 1px 0 rgba(255,255,255,0.9)",
+                    transition: "all 0.22s cubic-bezier(0.4, 0, 0.2, 1)",
+                    cursor: "pointer",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = "#a855f7";
+                    e.currentTarget.style.color = "#6d28d9";
+                    e.currentTarget.style.background = "#f3e8ff";
+                    e.currentTarget.style.boxShadow =
+                      "0 4px 14px rgba(124,58,237,0.18), inset 0 1px 0 rgba(255,255,255,0.9)";
+                    e.currentTarget.querySelector("svg").style.transform =
+                      "scale(1.15) rotate(90deg)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = "#e9d5ff";
+                    e.currentTarget.style.color = "#7c3aed";
+                    e.currentTarget.style.background = "#faf5ff";
+                    e.currentTarget.style.boxShadow =
+                      "0 1px 3px rgba(124,58,237,0.08), inset 0 1px 0 rgba(255,255,255,0.9)";
+                    e.currentTarget.querySelector("svg").style.transform =
+                      "scale(1) rotate(0deg)";
+                  }}
+                  onMouseDown={(e) =>
+                    (e.currentTarget.style.transform = "scale(0.97)")
+                  }
+                  onMouseUp={(e) =>
+                    (e.currentTarget.style.transform = "scale(1)")
+                  }
                 >
-                  <LuCirclePlus className="w-4 h-4 group-hover:scale-110 group-hover:rotate-90 transition-all duration-300" />
-                  <span className="text-sm">Zoom In</span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-100 to-indigo-100 opacity-0 group-hover:opacity-30 transition-opacity duration-200" />
+                  <LuCirclePlus
+                    size={14}
+                    style={{ transition: "transform 0.3s ease" }}
+                  />
+                  Zoom In
                 </button>
 
                 {/* Divider */}
-                <div className="h-6 w-px bg-gradient-to-b from-transparent via-slate-300 to-transparent" />
+                <div
+                  style={{
+                    width: "1px",
+                    height: "22px",
+                    background: "#d1d5db",
+                  }}
+                />
 
+                {/* Zoom Out */}
                 <button
                   onClick={zoomOut}
-                  className="group relative flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-slate-50 to-slate-100 hover:from-purple-50 hover:to-indigo-50 text-slate-700 hover:text-purple-700 font-semibold rounded-xl shadow-sm hover:shadow-md border border-slate-200/50 hover:border-purple-300/50 transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
+                  title="Zoom out"
+                  className="d-flex align-items-center gap-2 fw-semibold"
+                  style={{
+                    borderColor: "#e9d5ff",
+                    color: "#7c3aed",
+                    background: "#faf5ff",
+                    borderRadius: "10px",
+                    borderWidth: "1.5px",
+                    borderStyle: "solid",
+                    fontSize: "0.8rem",
+                    letterSpacing: "0.01em",
+                    padding: "6px 14px",
+                    boxShadow:
+                      "0 1px 3px rgba(124,58,237,0.08), inset 0 1px 0 rgba(255,255,255,0.9)",
+                    transition: "all 0.22s cubic-bezier(0.4, 0, 0.2, 1)",
+                    cursor: "pointer",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = "#a855f7";
+                    e.currentTarget.style.color = "#6d28d9";
+                    e.currentTarget.style.background = "#f3e8ff";
+                    e.currentTarget.style.boxShadow =
+                      "0 4px 14px rgba(124,58,237,0.18), inset 0 1px 0 rgba(255,255,255,0.9)";
+                    e.currentTarget.querySelector("svg").style.transform =
+                      "scale(1.15) rotate(90deg)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = "#e9d5ff";
+                    e.currentTarget.style.color = "#7c3aed";
+                    e.currentTarget.style.background = "#faf5ff";
+                    e.currentTarget.style.boxShadow =
+                      "0 1px 3px rgba(124,58,237,0.08), inset 0 1px 0 rgba(255,255,255,0.9)";
+                    e.currentTarget.querySelector("svg").style.transform =
+                      "scale(1) rotate(0deg)";
+                  }}
+                  onMouseDown={(e) =>
+                    (e.currentTarget.style.transform = "scale(0.97)")
+                  }
+                  onMouseUp={(e) =>
+                    (e.currentTarget.style.transform = "scale(1)")
+                  }
                 >
-                  <LuCircleMinus className="w-4 h-4 group-hover:scale-110 group-hover:rotate-90 transition-all duration-300" />
-                  <span className="text-sm">Zoom Out</span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-100 to-indigo-100 opacity-0 group-hover:opacity-30 transition-opacity duration-200" />
+                  <LuCircleMinus
+                    size={14}
+                    style={{ transition: "transform 0.3s ease" }}
+                  />
+                  Zoom Out
                 </button>
 
                 {/* Divider */}
-                <div className="h-6 w-px bg-gradient-to-b from-transparent via-slate-300 to-transparent" />
+                <div
+                  style={{
+                    width: "1px",
+                    height: "22px",
+                    background: "#d1d5db",
+                  }}
+                />
 
+                {/* Reset — filled/primary style */}
                 <button
                   onClick={resetZoom}
-                  className="group relative flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
+                  title="Reset zoom"
+                  className="d-flex align-items-center gap-2 fw-semibold"
+                  style={{
+                    borderColor: "#7c3aed",
+                    color: "#ffffff",
+                    background: "#7c3aed",
+                    borderRadius: "10px",
+                    borderWidth: "1.5px",
+                    borderStyle: "solid",
+                    fontSize: "0.8rem",
+                    letterSpacing: "0.01em",
+                    padding: "6px 14px",
+                    boxShadow:
+                      "0 1px 3px rgba(124,58,237,0.25), 0 4px 12px rgba(124,58,237,0.15)",
+                    transition: "all 0.22s cubic-bezier(0.4, 0, 0.2, 1)",
+                    cursor: "pointer",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "#6d28d9";
+                    e.currentTarget.style.borderColor = "#6d28d9";
+                    e.currentTarget.style.boxShadow =
+                      "0 4px 14px rgba(124,58,237,0.4)";
+                    e.currentTarget.querySelector("svg").style.transform =
+                      "rotate(360deg)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "#7c3aed";
+                    e.currentTarget.style.borderColor = "#7c3aed";
+                    e.currentTarget.style.boxShadow =
+                      "0 1px 3px rgba(124,58,237,0.25), 0 4px 12px rgba(124,58,237,0.15)";
+                    e.currentTarget.querySelector("svg").style.transform =
+                      "rotate(0deg)";
+                  }}
+                  onMouseDown={(e) =>
+                    (e.currentTarget.style.transform = "scale(0.97)")
+                  }
+                  onMouseUp={(e) =>
+                    (e.currentTarget.style.transform = "scale(1)")
+                  }
                 >
-                  <RiResetRightLine className="w-4 h-4 group-hover:rotate-[360deg] transition-transform duration-500" />
-                  <span className="text-sm">Reset</span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-indigo-400 opacity-0 group-hover:opacity-20 transition-opacity duration-200" />
+                  <RiResetRightLine
+                    size={14}
+                    style={{ transition: "transform 0.5s ease" }}
+                  />
+                  Reset
                 </button>
               </div>
 
-              {/* Floating Open Button */}
+              {/*-------------------------------------------- Floating Open Button----------- */}
               {!openForm && (
                 <div className="d-flex justify-content-end position-sticky top-0 ">
                   <button

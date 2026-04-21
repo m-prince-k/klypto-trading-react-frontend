@@ -8,6 +8,7 @@ import {
   MdStackedLineChart,
   MdWaterfallChart,
 } from "react-icons/md";
+import { toast } from "react-toastify";
 
 export const ChartProprties = {
   width: 1350,
@@ -519,71 +520,91 @@ export const scanCategories = [
   { id: 8, key: "other", label: "Other Scans" },
 ];
 
-export function handleExcelDownload(rows) {
-  if (!rows || rows.length === 0) {
-    alert("No data to export");
-    return;
-  }
+export const normalizeData = (data) => {
+  if (!data || typeof data !== "object") return [];
 
-  const worksheet = XLSX.utils.json_to_sheet(rows);
+  const result = [];
 
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Stocks");
+  Object.entries(data).forEach(([tf, symbols]) => {
+    if (!symbols || typeof symbols !== "object") return;
 
-  XLSX.writeFile(workbook, "stocks.xlsx");
-}
+    Object.entries(symbols).forEach(([symbol, rows]) => {
+      if (!Array.isArray(rows)) return;
 
-export function handleCSVDownload(rows) {
-  if (!rows || rows.length === 0) {
-    alert("No data to export");
-    return;
-  }
-
-  const headers = Object.keys(rows[0]);
-
-  const csvContent = [
-    headers.join(","),
-
-    ...rows.map((row) =>
-      headers
-        .map((key) => {
-          const value = row[key] ?? "";
-          return `"${String(value).replace(/"/g, '""')}"`;
-        })
-        .join(","),
-    ),
-  ].join("\n");
-
-  const blob = new Blob([csvContent], {
-    type: "text/csv;charset=utf-8;",
+      rows.forEach((row) => {
+        result.push({
+          timeframe: tf,
+          symbol,
+          ...row,
+        });
+      });
+    });
   });
 
-  const url = window.URL.createObjectURL(blob);
+  return result;
+};
+
+export const handleExcelDownload = (data) => {
+  const flat = normalizeData(data);
+
+  if (!flat.length) {
+    alert("No data available");
+    return;
+  }
+
+  const worksheet = XLSX.utils.json_to_sheet(flat);
+  const workbook = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
+
+  XLSX.writeFile(workbook, "data.xlsx");
+};
+
+
+export const handleCSVDownload = (data) => {
+  const flat = normalizeData(data);
+
+  if (!flat.length) {
+    alert("No data available");
+    return;
+  }
+
+  const headers = Object.keys(flat[0]);
+
+  const csv = [
+    headers.join(","),
+    ...flat.map((row) => headers.map((key) => row[key]).join(",")),
+  ].join("\n");
+
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
 
   const a = document.createElement("a");
   a.href = url;
-  a.download = "stocks.csv";
-  document.body.appendChild(a);
+  a.download = "data.csv";
   a.click();
+};
 
-  document.body.removeChild(a);
-  window.URL.revokeObjectURL(url);
-}
+export const handleCopy = async (data) => {
+  const flat = normalizeData(data);
 
-export function handleCopy(rows = null) {
-  if (!rows.length) return;
+  if (!flat.length) {
+    toast.error("No data available");
+    return;
+  }
 
-  const headers = Object.keys(rows[0]).join("\t");
+  const text = flat
+    .map((row) => Object.values(row).join("\t"))
+    .join("\n");
 
-  const body = rows.map((row) => Object.values(row).join("\t")).join("\n");
-
-  const text = headers + "\n" + body;
-
-  navigator.clipboard.writeText(text);
-
-  alert("Copied to clipboard ✔");
-}
-
+  try {
+    await navigator.clipboard.writeText(text);
+    toast.success("Copied to clipboard ✅");
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to copy");
+  }
+};
 export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
   const baseIndicator = indicator.startsWith("CUSTOM_")
     ? indicator.replace("CUSTOM_", "")
@@ -1964,7 +1985,13 @@ export const tfToMinutes = (tf = "") => {
 
   if (clean.includes("y") || clean.includes("yr")) return value * 60 * 24 * 365;
   if (clean.includes("q")) return value * 60 * 24 * 90;
-  if (clean.includes("M") || clean.includes("mth") || clean.includes("month") || tf === "1M") return value * 60 * 24 * 30;
+  if (
+    clean.includes("M") ||
+    clean.includes("mth") ||
+    clean.includes("month") ||
+    tf === "1M"
+  )
+    return value * 60 * 24 * 30;
   if (clean.includes("w")) return value * 60 * 24 * 7;
   if (clean.includes("d")) return value * 60 * 24;
   if (clean.includes("h")) return value * 60;
@@ -1985,16 +2012,16 @@ export const getAllTimeframes = (rules = []) => {
   return tfs;
 };
 
- export const comparisonOps = new Set([
-        ">",
-        "<",
-        ">=",
-        "<=",
-        "==",
-        "!=",
-        "cross_above",
-        "cross_below",
-      ]);
+export const comparisonOps = new Set([
+  ">",
+  "<",
+  ">=",
+  "<=",
+  "==",
+  "!=",
+  "cross_above",
+  "cross_below",
+]);
 
 export const getMaxTimeframe = (tfs = []) => {
   if (!tfs.length) return null;

@@ -595,7 +595,7 @@ function CreateAlertContent({ onSubmit, closeModal, rules, finalRules }) {
           name: alertName,
           type: "email",
           email: form.email,
-          rule: buildCondition({ rules: finalRules }),
+          condition: buildCondition({ rules: finalRules }),
         };
       } else if (mode === "sms") {
         payload = {

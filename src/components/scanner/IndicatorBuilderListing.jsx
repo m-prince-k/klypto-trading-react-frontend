@@ -3,7 +3,8 @@ import ReactPaginate from "react-paginate";
 import apiService from "../../services/apiServices";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Dropdown, Badge } from "react-bootstrap";
-import { Container, Table, Card, Form } from "react-bootstrap";
+import { Container, Table, Card, Form, Button } from "react-bootstrap";
+import { FiCopy, FiDownload } from "react-icons/fi";
 import { FaSortUp, FaSortDown } from "react-icons/fa";
 import {
   getAllTimeframes,
@@ -17,6 +18,7 @@ import {
   comparisonOps,
   normalizeIndicator,
   INDICATOR_DAYS_MAP,
+  normalizeData,
 } from "../../util/common";
 import { toast } from "react-toastify";
 import { Spinner } from "../tradingModals/Spinner";
@@ -59,6 +61,9 @@ export default function OHLCVTable({
   const [showAlert, setShowAlert] = useState(false);
   const [alertMsg, setAlertMsg] = useState("");
 
+  console.log(dataSource, "dataSource");
+
+  const hasData = normalizeData(dataSource).length > 0;
   // ✅ Tracks whether the user manually picked a TF from dropdown 1
   // When true, fetchData will NOT override timeframeValue with maxTF
   const userPickedTf = useRef(false);
@@ -666,10 +671,7 @@ export default function OHLCVTable({
     }
 
     // ✅ Handle nesting for max/min using inputIndicator key
-    if (
-      (indicatorKey === "max" || indicatorKey === "min") &&
-      inputIndicator
-    ) {
+    if ((indicatorKey === "max" || indicatorKey === "min") && inputIndicator) {
       const { obj: nestedObj, on: nestedOn } = buildObject(inputIndicator);
       obj.inputIndicator = nestedObj;
     }
@@ -909,7 +911,6 @@ export default function OHLCVTable({
 
       /* ===== API ===== */
 
-
       const cleanRules = JSON.parse(JSON.stringify(patchedRules));
       cleanRules.forEach((rule) => {
         ["object1", "object2", "object3", "object4"].forEach((key) => {
@@ -923,7 +924,6 @@ export default function OHLCVTable({
         logic,
       };
       setFinalRules(cleanRules);
-
 
       const { data: result = {} } = await apiService.post(
         `/api/scannerDetail?interval=${apiInterval}&day=${totalDays}`,
@@ -1164,30 +1164,29 @@ export default function OHLCVTable({
       "upperbandrsi",
     ]);
 
-    const indicatorCols = Array.from(
-      new Set(
-        mergedData.flatMap((row) =>
-          Object.keys(row).filter((key) => {
-            if (ignore.has(key)) return false;
+    // const indicatorCols = Array.from(
+    //   new Set(
+    //     mergedData.flatMap((row) =>
+    //       Object.keys(row).filter((key) => {
+    //         if (ignore.has(key)) return false;
 
-            // ✅ Filter columns to match selected timeframe/indicator (skip when ALL)
-            if (
-              timeframe?.tf &&
-              timeframe?.indicator &&
-              timeframe.tf !== "ALL"
-            ) {
-              return isIndicatorMatch(key, timeframe.indicator, timeframe.tf);
-            }
+    //         // ✅ Filter columns to match selected timeframe/indicator (skip when ALL)
+    //         if (
+    //           timeframe?.tf &&
+    //           timeframe?.indicator &&
+    //           timeframe.tf !== "ALL"
+    //         ) {
+    //           return isIndicatorMatch(key, timeframe.indicator, timeframe.tf);
+    //         }
 
-            return true;
-          }),
-        ),
-      ),
-    );
+    //         return true;
+    //       }),
+    //     ),
+    //   ),
+    // );
 
-    return [...baseColumns, ...indicatorCols, "timeframe"];
-    // return [...baseColumns];
-
+    // return [...baseColumns, ...indicatorCols, "timeframe"];
+    return [...baseColumns];
   }, [mergedData, timeframe]);
 
   const handleSort = (key) => {
@@ -1233,9 +1232,155 @@ export default function OHLCVTable({
         <h4 className="mb-0 fw-semibold text-dark">OHLCV Data</h4>
 
         <div className="d-flex gap-2">
-          <button onClick={() => handleCopy(dataSource)}>Copy</button>
-          <button onClick={() => handleCSVDownload(dataSource)}>CSV</button>
-          <button onClick={() => handleExcelDownload(dataSource)}>Excel</button>
+          <Button
+            size="sm"
+            title="Copy data to clipboard"
+            onClick={() => handleCopy(dataSource)}
+            className="d-flex align-items-center gap-2 px-3 py-2 fw-semibold"
+            style={{
+              borderColor: "#d8b4fe",
+              color: "#7c3aed",
+              background: "#faf5ff",
+              borderRadius: "10px",
+              borderWidth: "1.5px",
+              fontSize: "0.8rem",
+              letterSpacing: "0.01em",
+              cursor: !dataSource ? "not-allowed" : "pointer", // 👈
+              opacity: !dataSource ? 0.55 : 1,
+              boxShadow:
+                "0 1px 3px rgba(124,58,237,0.08), inset 0 1px 0 rgba(255,255,255,0.9)",
+              transition: "all 0.22s cubic-bezier(0.4, 0, 0.2, 1)",
+            }}
+            onMouseEnter={(e) => {
+              if (!dataSource.length) return;
+              e.currentTarget.style.borderColor = "#a855f7";
+              e.currentTarget.style.color = "#6d28d9";
+              e.currentTarget.style.background = "#f3e8ff";
+              e.currentTarget.style.boxShadow =
+                "0 4px 14px rgba(124,58,237,0.18), inset 0 1px 0 rgba(255,255,255,0.9)";
+              e.currentTarget.querySelector("svg").style.transform =
+                "scale(1.2)";
+            }}
+            onMouseLeave={(e) => {
+              if (!dataSource.length) return;
+              e.currentTarget.style.borderColor = "#d8b4fe";
+              e.currentTarget.style.color = "#7c3aed";
+              e.currentTarget.style.background = "#faf5ff";
+              e.currentTarget.style.boxShadow =
+                "0 1px 3px rgba(124,58,237,0.08), inset 0 1px 0 rgba(255,255,255,0.9)";
+              e.currentTarget.querySelector("svg").style.transform = "scale(1)";
+            }}
+            onMouseDown={(e) =>
+              (e.currentTarget.style.transform = "scale(0.97)")
+            }
+            onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+          >
+            <FiCopy size={13} style={{ transition: "transform 0.22s ease" }} />
+            Copy
+          </Button>
+
+          <Button
+            size="sm"
+            title="Download as CSV"
+            disabled={!dataSource}
+            onClick={() => handleCSVDownload(dataSource)}
+            className="d-flex align-items-center gap-2 px-3 py-2 fw-semibold"
+            style={{
+              borderColor: "#6ee7b7",
+              color: "#065f46",
+              background: "#f0fdf9",
+              borderRadius: "10px",
+              borderWidth: "1.5px",
+              fontSize: "0.8rem",
+              letterSpacing: "0.01em",
+              boxShadow:
+                "0 1px 3px rgba(6,95,70,0.08), inset 0 1px 0 rgba(255,255,255,0.9)",
+              transition: "all 0.22s cubic-bezier(0.4, 0, 0.2, 1)",
+              cursor: !dataSource ? "not-allowed" : "pointer", // 👈
+              opacity: !dataSource ? 0.55 : 1, // 👈 optional but recommended
+            }}
+            onMouseEnter={(e) => {
+              if (!dataSource) return; // 👈 guard hover when disabled
+              e.currentTarget.style.borderColor = "#34d399";
+              e.currentTarget.style.color = "#064e3b";
+              e.currentTarget.style.background = "#d1fae5";
+              e.currentTarget.style.boxShadow =
+                "0 4px 14px rgba(6,95,70,0.16), inset 0 1px 0 rgba(255,255,255,0.9)";
+              e.currentTarget.querySelector("svg").style.transform =
+                "translateY(2px)";
+            }}
+            onMouseLeave={(e) => {
+              if (!dataSource) return; // 👈 guard hover when disabled
+              e.currentTarget.style.borderColor = "#6ee7b7";
+              e.currentTarget.style.color = "#065f46";
+              e.currentTarget.style.background = "#f0fdf9";
+              e.currentTarget.style.boxShadow =
+                "0 1px 3px rgba(6,95,70,0.08), inset 0 1px 0 rgba(255,255,255,0.9)";
+              e.currentTarget.querySelector("svg").style.transform =
+                "translateY(0px)";
+            }}
+            onMouseDown={(e) =>
+              (e.currentTarget.style.transform = "scale(0.97)")
+            }
+            onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+          >
+            <FiDownload
+              size={13}
+              style={{ transition: "transform 0.22s ease" }}
+            />
+            CSV
+          </Button>
+
+          <Button
+            size="sm"
+            title="Download as Excel"
+            onClick={() => handleExcelDownload(dataSource)}
+            className="d-flex align-items-center gap-2 px-3 py-2 fw-semibold"
+            style={{
+              borderColor: "#93c5fd",
+              color: "#1d4ed8",
+              background: "#eff6ff",
+              borderRadius: "10px",
+              borderWidth: "1.5px",
+              fontSize: "0.8rem",
+              letterSpacing: "0.01em",
+              cursor: !dataSource ? "not-allowed" : "pointer", // 👈
+              opacity: !dataSource ? 0.55 : 1,
+              boxShadow:
+                "0 1px 3px rgba(29,78,216,0.08), inset 0 1px 0 rgba(255,255,255,0.9)",
+              transition: "all 0.22s cubic-bezier(0.4, 0, 0.2, 1)",
+            }}
+            onMouseEnter={(e) => {
+              if (!dataSource) return;
+              e.currentTarget.style.borderColor = "#60a5fa";
+              e.currentTarget.style.color = "#1e40af";
+              e.currentTarget.style.background = "#dbeafe";
+              e.currentTarget.style.boxShadow =
+                "0 4px 14px rgba(29,78,216,0.16), inset 0 1px 0 rgba(255,255,255,0.9)";
+              e.currentTarget.querySelector("svg").style.transform =
+                "translateY(2px)";
+            }}
+            onMouseLeave={(e) => {
+              if (!dataSource) return;
+              e.currentTarget.style.borderColor = "#93c5fd";
+              e.currentTarget.style.color = "#1d4ed8";
+              e.currentTarget.style.background = "#eff6ff";
+              e.currentTarget.style.boxShadow =
+                "0 1px 3px rgba(29,78,216,0.08), inset 0 1px 0 rgba(255,255,255,0.9)";
+              e.currentTarget.querySelector("svg").style.transform =
+                "translateY(0px)";
+            }}
+            onMouseDown={(e) =>
+              (e.currentTarget.style.transform = "scale(0.97)")
+            }
+            onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+          >
+            <FiDownload
+              size={13}
+              style={{ transition: "transform 0.22s ease" }}
+            />
+            Excel
+          </Button>
         </div>
       </div>
 
