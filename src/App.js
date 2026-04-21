@@ -11,6 +11,7 @@ import { ProtectedRoute } from "./pages/auth/ProtectedRoute";
 import Signup from "./pages/auth/signup";
 import { Navigate } from "react-router-dom";
 import Home from "./pages/Home";
+import ScannerBuilder from "./pages/scanner/ScannerBuilder";
 
 function App() {
   return (
@@ -23,6 +24,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <CandleStick />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/scannerBuilder"
+            element={
+              <ProtectedRoute>
+                <ScannerBuilder />
               </ProtectedRoute>
             }
           />
@@ -40,7 +49,6 @@ function App() {
 
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-
 
           <Route path="/" element={<Navigate to="/login" />} />
         </Routes>

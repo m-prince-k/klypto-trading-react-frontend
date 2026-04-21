@@ -5,6 +5,7 @@ import apiService from "../../services/apiServices";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { isAuthenticated } from "./protected";
+import SEO from "../../components/SEO";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -49,10 +50,7 @@ export default function Login() {
   };
 
   const handleSubmit = async (e) => {
-
-
     try {
-
       e.preventDefault();
 
       const validationErrors = validate();
@@ -62,8 +60,8 @@ export default function Login() {
 
       // setLoading(true);
 
-      const payload = {email: form.email,password: form.password};
-  
+      const payload = { email: form.email, password: form.password };
+
       const response = await apiService.post("/api/login", payload);
       console.log(response);
 
@@ -78,77 +76,87 @@ export default function Login() {
       await toast.success("Login successful!");
       navigate("/candleStick");
     } catch (error) {
-         await toast.error(error?.message);
+      await toast.error(error?.message);
     }
   };
   return (
-    <Container
-      fluid
-      className="vh-100 d-flex justify-content-center align-items-center bg-dark"
-    >
-      <Card style={{ width: 380 }} className="shadow-lg border-0">
-        <Card.Body className="p-4">
-          <h4 className="text-center mb-4">Login</h4>
+    <>
+      <SEO
+        title="Best Crypto Trading Platform"
+        description="Trade crypto instantly with low fees"
+        keywords="crypto, trading, bitcoin, ethereum"
+        url="https://yourdomain.com/"
+        image="https://yourdomain.com/banner.jpg"
+      />
 
-          <Form onSubmit={handleSubmit} noValidate>
-            <Form.Group className="mb-3">
-              <Form.Control
-                name="email"
-                placeholder="Email Address"
-                value={form.email}
-                onChange={handleChange}
-                isInvalid={!!errors.email}
-              />
-              <Form.Control.Feedback type="invalid">
-                {errors.email}
-              </Form.Control.Feedback>
-            </Form.Group>
+      <Container
+        fluid
+        className="vh-100 d-flex justify-content-center align-items-center bg-dark"
+      >
+        <Card style={{ width: 380 }} className="shadow-lg border-0">
+          <Card.Body className="p-4">
+            <h4 className="text-center mb-4">Login</h4>
 
-            <Form.Group className="mb-3 position-relative">
-              <Form.Control
-                name="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="Password"
-                value={form.password}
-                onChange={handleChange}
-                isInvalid={!!errors.password}
-              />
+            <Form onSubmit={handleSubmit} noValidate>
+              <Form.Group className="mb-3">
+                <Form.Control
+                  name="email"
+                  placeholder="Email Address"
+                  value={form.email}
+                  onChange={handleChange}
+                  isInvalid={!!errors.email}
+                />
+                <Form.Control.Feedback type="invalid">
+                  {errors.email}
+                </Form.Control.Feedback>
+              </Form.Group>
 
-              <span
-                onClick={() => setShowPassword((s) => !s)}
-                className="position-absolute top-50 end-0 translate-middle-y me-3 text-muted"
-                style={{ cursor: "pointer", fontSize: 18 }}
+              <Form.Group className="mb-3 position-relative">
+                <Form.Control
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                  value={form.password}
+                  onChange={handleChange}
+                  isInvalid={!!errors.password}
+                />
+
+                <span
+                  onClick={() => setShowPassword((s) => !s)}
+                  className="position-absolute top-50 end-0 translate-middle-y me-3 text-muted"
+                  style={{ cursor: "pointer", fontSize: 18 }}
+                >
+                  {showPassword ? <FiEyeOff /> : <FiEye />}
+                </span>
+
+                <Form.Control.Feedback type="invalid">
+                  {errors.password}
+                </Form.Control.Feedback>
+              </Form.Group>
+
+              <Form.Group className="mb-3">
+                <Form.Check
+                  type="checkbox"
+                  label="Remember Me"
+                  name="remember"
+                  checked={form.remember}
+                  onChange={handleChange}
+                />
+              </Form.Group>
+
+              <Button
+                type="submit"
+                className="w-100"
+                variant="dark"
+                onClick={handleSubmit}
+                disabled={loading}
               >
-                {showPassword ? <FiEyeOff /> : <FiEye />}
-              </span>
-
-              <Form.Control.Feedback type="invalid">
-                {errors.password}
-              </Form.Control.Feedback>
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Check
-                type="checkbox"
-                label="Remember Me"
-                name="remember"
-                checked={form.remember}
-                onChange={handleChange}
-              />
-            </Form.Group>
-
-            <Button
-              type="submit"
-              className="w-100"
-              variant="dark"
-              onClick={handleSubmit}
-              disabled={loading}
-            >
-              {loading ? "Signing in..." : "Login"}
-            </Button>
-          </Form>
-        </Card.Body>
-      </Card>
-    </Container>
+                {loading ? "Signing in..." : "Login"}
+              </Button>
+            </Form>
+          </Card.Body>
+        </Card>
+      </Container>
+    </>
   );
 }

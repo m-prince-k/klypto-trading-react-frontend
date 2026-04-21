@@ -14,7 +14,8 @@ import { RiResetRightLine } from "react-icons/ri";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { FaCode } from "react-icons/fa6";
 import ChartHeader from "../components/tradingModals/ChartHeader";
-import IndicatorBuildingListing from "../components/scanner/IndicatorBuilderListing";
+
+import SEO from "../components/SEO";
 import {
   ChartProprties,
   TIMEFRAME_TO_SECONDS,
@@ -814,6 +815,13 @@ export default function Candlestick() {
   };
   return (
     <>
+      <SEO
+        title="Best Crypto Trading Platform"
+        description="Trade crypto instantly with low fees"
+        keywords="crypto, trading, bitcoin, ethereum"
+        url="https://yourdomain.com/"
+        image="https://yourdomain.com/banner.jpg"
+      />
       <section className="trading-view-wrapper overflow-x-hidden">
         <div className="container-fluid p-0 m-0">
           <div className="row">
@@ -1238,7 +1246,7 @@ export default function Candlestick() {
               </div>
 
               {/*-------------------------------------------- Floating Open Button----------- */}
-              {!openForm && (
+              {/* {!openForm && (
                 <div className="d-flex justify-content-end position-sticky top-0 ">
                   <button
                     onClick={() => setOpenForm(true)}
@@ -1248,7 +1256,7 @@ export default function Candlestick() {
                     <IoLink />
                   </button>
                 </div>
-              )}
+              )} */}
             </div>
 
             {/* Sliding Panel */}
@@ -1305,7 +1313,7 @@ export default function Candlestick() {
       </section>
       <div className="">
         {/* <IndicatorRuleBuilder /> */}
-        <IndicatorBuildingListing
+        {/* <IndicatorBuildingListing
           selectedCurrency={selectedCurrency}
           timeframeValue={timeframeValue}
           rules={rules}
@@ -1318,7 +1326,7 @@ export default function Candlestick() {
           selectedCurrencies={selectedCurrencies}
           setSelectedCurrencies={setSelectedCurrencies}
           setFinalRules={setFinalRules}
-        />
+        /> */}
       </div>
     </>
   );

@@ -1,6 +1,5 @@
 import apiService from "../services/apiServices";
 import { getRowsByIndicator } from "./common";
-import { useRef } from "react";
 
 export default function useChartFunctions({
   indicatorSeriesRef,

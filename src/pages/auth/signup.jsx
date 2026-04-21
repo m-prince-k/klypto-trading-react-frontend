@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import apiService from "../../services/apiServices";
 import { toast } from "react-toastify";
 import { isAuthenticated } from "./protected";
+import SEO from "../../components/SEO";
 
 const EyeIcon = ({ open }) => (
   <svg
@@ -54,11 +55,11 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
-    useEffect(() => {
-      if (isAuthenticated()) {
-        navigate("/candleStick", { replace: true }); // redirect if already logged in
-      }
-    }, [navigate]);
+  useEffect(() => {
+    if (isAuthenticated()) {
+      navigate("/candleStick", { replace: true }); // redirect if already logged in
+    }
+  }, [navigate]);
 
   const validate = () => {
     const err = {};
@@ -123,194 +124,203 @@ const Signup = () => {
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        backgroundColor: "#2b2d2f",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "2rem 1rem",
-        fontFamily: "'Segoe UI', sans-serif",
-      }}
-    >
-      <Container>
-        <Row className="justify-content-center">
-          <Col xs={12} sm={9} md={7} lg={5}>
-            <Card
-              className="border-0"
-              style={{
-                borderRadius: "10px",
-                boxShadow: "0 10px 40px rgba(0,0,0,0.4)",
-              }}
-            >
-              <Card.Body style={{ padding: "2rem 1.8rem" }}>
-                <h4
-                  className="fw-bold text-center mb-4"
-                  style={{ color: "#1a1a1a", fontSize: "1.35rem" }}
-                >
-                  Sign Up
-                </h4>
-
-                <Form onSubmit={handleSubmit} noValidate>
-                  <Row className="g-2 mb-2">
-                    <Col xs={6}>
-                      <Form.Control
-                        name="firstName"
-                        placeholder="First Name"
-                        value={form.firstName}
-                        onChange={handleChange}
-                        isInvalid={!!errors.firstName}
-                        style={field}
-                      />
-                      <Form.Control.Feedback
-                        type="invalid"
-                        style={{ fontSize: "0.76rem" }}
-                      >
-                        {errors.firstName}
-                      </Form.Control.Feedback>
-                    </Col>
-                    <Col xs={6}>
-                      <Form.Control
-                        name="lastName"
-                        placeholder="Last Name"
-                        value={form.lastName}
-                        onChange={handleChange}
-                        isInvalid={!!errors.lastName}
-                        style={field}
-                      />
-                      <Form.Control.Feedback
-                        type="invalid"
-                        style={{ fontSize: "0.76rem" }}
-                      >
-                        {errors.lastName}
-                      </Form.Control.Feedback>
-                    </Col>
-                  </Row>
-
-                  <Form.Group className="mb-2">
-                    <Form.Control
-                      name="email"
-                      type="email"
-                      placeholder="Email Address"
-                      value={form.email}
-                      onChange={handleChange}
-                      isInvalid={!!errors.email}
-                      style={field}
-                    />
-                    <Form.Control.Feedback
-                      type="invalid"
-                      style={{ fontSize: "0.76rem" }}
-                    >
-                      {errors.email}
-                    </Form.Control.Feedback>
-                  </Form.Group>
-
-                  <Form.Group className="mb-2">
-                    <InputGroup>
-                      <Form.Control
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Password"
-                        value={form.password}
-                        onChange={handleChange}
-                        isInvalid={!!errors.password}
-                        style={{
-                          ...field,
-                          borderRight: "none",
-                          borderRadius: "6px 0 0 6px",
-                        }}
-                      />
-                      <InputGroup.Text
-                        onClick={() => setShowPassword(!showPassword)}
-                        style={{
-                          background: "#f5f5f5",
-                          border: "1px solid #e8e8e8",
-                          borderLeft: "none",
-                          borderRadius: "0 6px 6px 0",
-                          cursor: "pointer",
-                        }}
-                      >
-                        <EyeIcon open={showPassword} />
-                      </InputGroup.Text>
-                      <Form.Control.Feedback
-                        type="invalid"
-                        style={{ fontSize: "0.76rem" }}
-                      >
-                        {errors.password}
-                      </Form.Control.Feedback>
-                    </InputGroup>
-                  </Form.Group>
-
-                  <Row className="g-2 mb-3">
-                    <Col xs={6}>
-                      <Form.Control
-                        name="mobile"
-                        placeholder="Mobile"
-                        value={form.mobile}
-                        onChange={handleChange}
-                        isInvalid={!!errors.mobile}
-                        style={field}
-                      />
-                      <Form.Control.Feedback
-                        type="invalid"
-                        style={{ fontSize: "0.76rem" }}
-                      >
-                        {errors.mobile}
-                      </Form.Control.Feedback>
-                    </Col>
-                    <Col xs={6}>
-                      <Form.Control
-                        name="country"
-                        placeholder="Country"
-                        value={form.country}
-                        onChange={handleChange}
-                        isInvalid={!!errors.country}
-                        style={field}
-                      />
-                      <Form.Control.Feedback
-                        type="invalid"
-                        style={{ fontSize: "0.76rem" }}
-                      >
-                        {errors.country}
-                      </Form.Control.Feedback>
-                    </Col>
-                  </Row>
-
-                  <Button
-                    type="submit"
-                    disabled={loading}
-                    className="w-100 fw-semibold border-0"
-                    style={{
-                      backgroundColor: "#1c1c1c",
-                      borderRadius: "6px",
-                      padding: "0.68rem",
-                      fontSize: "0.95rem",
-                      color: "#fff",
-                      letterSpacing: "0.2px",
-                    }}
+    <>
+      <SEO
+        title="Best Crypto Trading Platform"
+        description="Trade crypto instantly with low fees"
+        keywords="crypto, trading, bitcoin, ethereum"
+        url="https://yourdomain.com/"
+        image="https://yourdomain.com/banner.jpg"
+      />
+      <div
+        style={{
+          minHeight: "100vh",
+          backgroundColor: "#2b2d2f",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "2rem 1rem",
+          fontFamily: "'Segoe UI', sans-serif",
+        }}
+      >
+        <Container>
+          <Row className="justify-content-center">
+            <Col xs={12} sm={9} md={7} lg={5}>
+              <Card
+                className="border-0"
+                style={{
+                  borderRadius: "10px",
+                  boxShadow: "0 10px 40px rgba(0,0,0,0.4)",
+                }}
+              >
+                <Card.Body style={{ padding: "2rem 1.8rem" }}>
+                  <h4
+                    className="fw-bold text-center mb-4"
+                    style={{ color: "#1a1a1a", fontSize: "1.35rem" }}
                   >
-                    {loading ? (
-                      <>
-                        <Spinner
-                          as="span"
-                          animation="border"
-                          size="sm"
-                          className="me-2"
+                    Sign Up
+                  </h4>
+
+                  <Form onSubmit={handleSubmit} noValidate>
+                    <Row className="g-2 mb-2">
+                      <Col xs={6}>
+                        <Form.Control
+                          name="firstName"
+                          placeholder="First Name"
+                          value={form.firstName}
+                          onChange={handleChange}
+                          isInvalid={!!errors.firstName}
+                          style={field}
                         />
-                        Signing up...
-                      </>
-                    ) : (
-                      "Sign Up"
-                    )}
-                  </Button>
-                </Form>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-      </Container>
-    </div>
+                        <Form.Control.Feedback
+                          type="invalid"
+                          style={{ fontSize: "0.76rem" }}
+                        >
+                          {errors.firstName}
+                        </Form.Control.Feedback>
+                      </Col>
+                      <Col xs={6}>
+                        <Form.Control
+                          name="lastName"
+                          placeholder="Last Name"
+                          value={form.lastName}
+                          onChange={handleChange}
+                          isInvalid={!!errors.lastName}
+                          style={field}
+                        />
+                        <Form.Control.Feedback
+                          type="invalid"
+                          style={{ fontSize: "0.76rem" }}
+                        >
+                          {errors.lastName}
+                        </Form.Control.Feedback>
+                      </Col>
+                    </Row>
+
+                    <Form.Group className="mb-2">
+                      <Form.Control
+                        name="email"
+                        type="email"
+                        placeholder="Email Address"
+                        value={form.email}
+                        onChange={handleChange}
+                        isInvalid={!!errors.email}
+                        style={field}
+                      />
+                      <Form.Control.Feedback
+                        type="invalid"
+                        style={{ fontSize: "0.76rem" }}
+                      >
+                        {errors.email}
+                      </Form.Control.Feedback>
+                    </Form.Group>
+
+                    <Form.Group className="mb-2">
+                      <InputGroup>
+                        <Form.Control
+                          name="password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Password"
+                          value={form.password}
+                          onChange={handleChange}
+                          isInvalid={!!errors.password}
+                          style={{
+                            ...field,
+                            borderRight: "none",
+                            borderRadius: "6px 0 0 6px",
+                          }}
+                        />
+                        <InputGroup.Text
+                          onClick={() => setShowPassword(!showPassword)}
+                          style={{
+                            background: "#f5f5f5",
+                            border: "1px solid #e8e8e8",
+                            borderLeft: "none",
+                            borderRadius: "0 6px 6px 0",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <EyeIcon open={showPassword} />
+                        </InputGroup.Text>
+                        <Form.Control.Feedback
+                          type="invalid"
+                          style={{ fontSize: "0.76rem" }}
+                        >
+                          {errors.password}
+                        </Form.Control.Feedback>
+                      </InputGroup>
+                    </Form.Group>
+
+                    <Row className="g-2 mb-3">
+                      <Col xs={6}>
+                        <Form.Control
+                          name="mobile"
+                          placeholder="Mobile"
+                          value={form.mobile}
+                          onChange={handleChange}
+                          isInvalid={!!errors.mobile}
+                          style={field}
+                        />
+                        <Form.Control.Feedback
+                          type="invalid"
+                          style={{ fontSize: "0.76rem" }}
+                        >
+                          {errors.mobile}
+                        </Form.Control.Feedback>
+                      </Col>
+                      <Col xs={6}>
+                        <Form.Control
+                          name="country"
+                          placeholder="Country"
+                          value={form.country}
+                          onChange={handleChange}
+                          isInvalid={!!errors.country}
+                          style={field}
+                        />
+                        <Form.Control.Feedback
+                          type="invalid"
+                          style={{ fontSize: "0.76rem" }}
+                        >
+                          {errors.country}
+                        </Form.Control.Feedback>
+                      </Col>
+                    </Row>
+
+                    <Button
+                      type="submit"
+                      disabled={loading}
+                      className="w-100 fw-semibold border-0"
+                      style={{
+                        backgroundColor: "#1c1c1c",
+                        borderRadius: "6px",
+                        padding: "0.68rem",
+                        fontSize: "0.95rem",
+                        color: "#fff",
+                        letterSpacing: "0.2px",
+                      }}
+                    >
+                      {loading ? (
+                        <>
+                          <Spinner
+                            as="span"
+                            animation="border"
+                            size="sm"
+                            className="me-2"
+                          />
+                          Signing up...
+                        </>
+                      ) : (
+                        "Sign Up"
+                      )}
+                    </Button>
+                  </Form>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        </Container>
+      </div>
+    </>
   );
 };
 

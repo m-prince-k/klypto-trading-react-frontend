@@ -1512,11 +1512,4 @@ export let indicatorStyleDefault = {
       value: -1.5,
     },
   },
-  VP: {
-    enabled: true,
-    width: 120, // width of profile on right
-    color: "rgba(33,150,243,1)",
-    pocColor: "rgba(239,83,80,1)",
-    vaColor: "rgba(38,166,154,1)",
-  },
 };

@@ -24,11 +24,11 @@ import { toast } from "react-toastify";
 import { Spinner } from "../tradingModals/Spinner";
 import EditableMultiSelect from "../indicator/EditTableLabel";
 import AlertModal from "./ScannerModals";
+import { INDICATOR_ALIASES, MA_INDICATORS } from "../../util/scannerFunctions";
 
 /* ================= SYMBOL LIST ================= */
 
-export default function OHLCVTable({
-  selectedCurrency,
+export default function IndicatorBuilderListing({
   rules,
   logic,
   runScanTrigger,
@@ -37,13 +37,14 @@ export default function OHLCVTable({
   setSelectedCurrencies,
   setRules,
   setFinalRules,
+  dataSource,
+  setDataSource,
 }) {
   const [timeframe, setTimeframe] = useState(null); // null = ALL
   const [limit, setLimit] = useState(10); // actual data limit
   const [selectedLimit, setSelectedLimit] = useState(""); // dropdown UI
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [dataSource, setDataSource] = useState({});
   const [search, setSearch] = useState("");
   const [days, setDays] = useState(30);
   const [currencies, setCurrencies] = useState([]);
@@ -85,7 +86,6 @@ export default function OHLCVTable({
     fetchData();
   }, [
     runScanTrigger,
-    selectedCurrency,
     debouncedCurrencies,
     timeframeValue,
     listingTimeframe,
@@ -194,17 +194,6 @@ export default function OHLCVTable({
     return value * (map[unit] || 1);
   };
 
-  const MA_INDICATORS = [
-    "sma",
-    "ema",
-    "tema",
-    "wma",
-    "hma",
-    "stddev",
-    "wpr",
-    "vwma",
-    "rma",
-  ];
 
   const normalizeTfForDropdown = (tf) => {
     if (!tf) return "";
@@ -224,39 +213,7 @@ export default function OHLCVTable({
     return tf.replace(/_ago$/i, "");
   };
 
-  const INDICATOR_ALIASES = {
-    "bollinger bands upper": ["bbupper", "bb_upper", "upper"],
-    "bollinger bands lower": ["bblower", "bb_lower", "lower"],
-    "bollinger bands basis": ["bbbasis", "bbmiddle", "bb_basis", "basis"],
-    "bollinger bands percentage b": ["bb%b", "bbpb", "bb_pb"],
-    "bollinger bands width": ["bbwidth", "bb_width"],
-    "keltner channels upper": ["kcupper", "UPPERBANDKELTNER"],
-    "keltner channels lower": ["kclower", "LOWERBANDKELTNER"],
-    "keltner channels middle": [
-      "kcmiddle",
-      "MIDDLELINEKELTNER",
-      "kc_middle",
-      "kc_basis",
-    ],
-    "donchian channels upper": ["dcupper", "UPPERDC"],
-    "donchian channels lower": ["dclower", "LOWERDC"],
-    "donchian channels middle": ["MIDDLEDC"],
-    "macd line": ["macd", "MACD"],
-    "macd histogram": ["macd_h", "MACDHISTOGRAM", "macdhist", "histogram"],
-    "macd signal": ["MACDSIGNAL", "macdsignal", "signal"],
-    "plus di": ["plus_di", "pdi", "+di", "plus"],
-    "minus di": ["minus_di", "mdi", "-di", "minus"],
-    "ichimoku base line": ["kijun", "BASELINEICHIMOKU"],
-    "ichimoku conversion line": ["tenkan", "CONVERSIONLINEICHIMOKU"],
-    "ichimoku lead line 1": ["spana", "LEADLINE1ICHIMOKU"],
-    "ichimoku lead line 2": ["LEADLINE2ICHIMOKU"],
-    "ichimoku cloud bottom": ["cloud", "CLOUDBOTTOMICHIMOKU"],
-    "ichimoku cloud top": ["cloud", "CLOUDTOPICHIMOKU"],
-    "slow stochastic %k": ["SLOWSTOCHASTICK", "stochk", "%k"],
-    "slow stochastic %d": ["SLOWSTOCHASTICD", "stochd", "%d"],
-    "fast stochastic %k": ["FASTSTOCHASTICK", "stochk", "%k"],
-    "fast stochastic %d": ["FASTSTOCHASTICD", "stochd", "%d"],
-  };
+ 
 
   const isIndicatorMatch = (key, indicator, tf) => {
     if (!key || !indicator || !tf) return false;
@@ -304,292 +261,6 @@ export default function OHLCVTable({
       : INDICATOR_DAYS_MAP.default;
   };
 
-  // const buildObject = ({
-  //   indicator,
-  //   timeframe,
-  //   params = {},
-  //   value,
-  //   source,
-  //   type,
-  // }) => {
-  //   const offset = convertToDays(timeframe);
-
-  //   const indicatorKey = indicator?.toLowerCase();
-  //   const isMA = MA_INDICATORS.includes(indicatorKey);
-
-  //   const hasValue =
-  //     value !== undefined &&
-  //     value !== null &&
-  //     value !== "" &&
-  //     !(typeof value === "number" && isNaN(value));
-
-  //   if (indicatorKey === "number" && hasValue) {
-  //     return {
-  //       obj: {
-  //         indicator: "number",
-  //         value,
-  //       },
-  //       on: null,
-  //     };
-  //   }
-
-  //   if (hasValue && indicatorKey === "number") {
-  //     return {
-  //       obj: {
-  //         indicator: indicatorKey,
-  //         value,
-  //       },
-  //       on: null,
-  //     };
-  //   }
-
-  //   const obj = {
-  //     indicator: indicatorKey,
-  //   };
-
-  //   if (offset !== null) {
-  //     obj.offset = offset;
-  //     obj.timeframe = "1d";
-  //   } else if (timeframe) {
-  //     obj.timeframe = timeframe;
-  //   }
-  //   const normalizedSource = (source || "close").toLowerCase();
-
-  //   if (indicatorKey === "volume") {
-  //     // ✅ NO length for volume indicator
-  //   } else if (params && Object.keys(params).length > 0) {
-  //     const isVolumeMA = isMA && normalizedSource === "volume";
-
-  //     let finalParams = { ...params };
-
-  //     // ✅ ONLY modify params for VOLUME MA
-  //     if (isVolumeMA) {
-  //       finalParams = { ...params };
-
-  //       if (finalParams.length !== undefined) {
-  //         finalParams.maLength = finalParams.length;
-  //         delete finalParams.length;
-  //       }
-  //     }
-
-  //     obj.length = {
-  //       ...finalParams, // ✅ use modified OR original
-
-  //       // ✅ always attach source for MA
-  //       ...(isMA ? { source: normalizedSource } : {}),
-
-  //       // ✅ only for volume MA
-  //       ...(isVolumeMA ? { inputIndicator: "volume" } : {}),
-  //     };
-  //   }
-
-  //   let on = null;
-
-  //   // ✅ keep this if your API still uses `on`
-  //   if (isMA && normalizedSource === "volume") {
-  //     on = "volume";
-  //   }
-  //   return { obj, on };
-  // };
-
-  // const fetchData = async () => {
-  //   if (isFetching.current) return;
-  //   isFetching.current = true;
-  //   setLoading(true);
-
-  //   try {
-  //     /* ================= VALIDATION ================= */
-
-  //     let errorMessage = "";
-
-  //     const hasInvalidRule = rules?.some((rule, index) => {
-  //       const ruleNum = index + 1;
-
-  //       const checks = [
-  //         [!rule?.indicator || rule.indicator === "Select Scanner","Scanner not selected"],
-  //         [!rule?.operator || rule.operator === "Select Operation","Operator not selected"],
-  //         [!rule?.scanner || rule.scanner === "Select Scanner","Scanner not selected"],
-  //         [rule.operator2 === "Select Operation", "Operator not selected"],
-  //         [rule.scanner2 === "Select Scanner", "Scanner not selected"],
-  //         [rule.operator3 === "Select Operation", "Operator not selected"],
-  //         [rule.scanner3 === "Select Scanner", "Scanner not selected"],
-  //       ];
-
-  //       for (const [condition, message] of checks) {
-  //         if (condition) {
-  //           errorMessage = `Rule ${ruleNum}: ${message}`;
-  //           return true;
-  //         }
-  //       }
-  //       const compCount =
-  //         (comparisonOps.has(rule.operator) ? 1 : 0) +
-  //         (comparisonOps.has(rule.operator2) ? 1 : 0) +
-  //         (comparisonOps.has(rule.operator3) ? 1 : 0);
-
-  //       if (compCount === 0) {
-  //         errorMessage = `Rule ${ruleNum}: One comparison operator required`;
-  //         return true;
-  //       }
-
-  //       if (compCount > 1) {
-  //         errorMessage = `Rule ${ruleNum}: Only one comparison operator allowed`;
-  //         return true;
-  //       }
-
-  //       return false;
-  //     });
-
-  //     if (hasInvalidRule) {
-  //       setAlertMsg(errorMessage);
-  //       setShowAlert(true);
-  //       return;
-  //     }
-  //     const activeRules = rules.filter((r) => !r.disabled);
-  //     /* ================= FORMATTING ================= */
-
-  //     const formattedRules = activeRules.map((rule) => {
-  //       const o1 = buildObject({
-  //         indicator: rule.indicator,
-  //         timeframe: rule.timeframe,
-  //         params: rule.indicatorParams,
-  //         value: rule.value,
-  //         source: rule.source,
-  //         type: "object1",
-  //       });
-
-  //       const o2 = buildObject({
-  //         indicator: rule.scanner,
-  //         timeframe: rule.compareTimeframe,
-  //         params: rule.scannerParams,
-  //         value: rule.compareValue,
-  //         source: rule.scannerSource,
-  //         type: "object2",
-  //       });
-
-  //       const o3 =
-  //         rule.scanner2 !== undefined
-  //           ? buildObject({
-  //               indicator: rule.scanner2,
-  //               timeframe: rule.timeframe2,
-  //               params: rule.params2,
-  //               value: rule.value2,
-  //               source: rule.source2,
-  //               type: "object3",
-  //             })
-  //           : null;
-
-  //       const o4 =
-  //         rule.scanner3 !== undefined
-  //           ? buildObject({
-  //               indicator: rule.scanner3,
-  //               timeframe: rule.timeframe3,
-  //               params: rule.params3,
-  //               value: rule.value3,
-  //               source: rule.source3,
-  //               type: "object4",
-  //             })
-  //           : null;
-
-  //       // ✅ pick first available "on"
-  //       const on = o1.on || o2.on || o3?.on || o4?.on || null;
-
-  //       return {
-  //         logic: rule.logic,
-  //         object1: o1.obj,
-  //         operator1: rule.operator,
-
-  //         ...(o2?.obj && { object2: o2.obj }),
-  //         ...(rule.operator2 && { operator2: rule.operator2 }),
-  //         ...(o3?.obj && { object3: o3.obj }),
-  //         ...(rule.operator3 && { operator3: rule.operator3 }),
-  //         ...(o4?.obj && { object4: o4.obj }),
-
-  //         // ✅ 🔥 attach at ROOT LEVEL
-  //         ...(on && { inputIndicator: on }),
-  //       };
-  //     });
-
-  //     const patchedRules = manualTfOverride.current
-  //       ? formattedRules.map((rule) => {
-  //           const { indicator, newTf } = manualTfOverride.current;
-  //           const updated = { ...rule };
-  //           ["object1", "object2", "object3"].forEach((key) => {
-  //             if (updated[key] && updated[key].indicator === indicator) {
-  //               updated[key] = { ...updated[key], timeframe: newTf };
-  //             }
-  //           });
-  //           return updated;
-  //         })
-  //       : formattedRules;
-
-  //     // ✅ Clear override AFTER applying — prevent it from sticking on next fetchData call
-  //     manualTfOverride.current = null;
-
-  //     setPayloadRules(patchedRules);
-
-  //     console.log(patchedRules, "patchedRules");
-
-  //     const allTFs = getAllTimeframes(patchedRules);
-  //     const maxTF = getMaxTimeframe(allTFs);
-
-  //     // ✅ Only auto-set maxTF if user hasn't manually picked a timeframe
-  //     if (maxTF && !userPickedTf.current) {
-  //       setTimeframeValue(maxTF);
-  //     }
-  //     console.log("✅ Final Payload:", patchedRules);
-
-  //     /* ================= API ================= */
-
-  //     // ✅ cleaner calculation
-  //     let totalDays = days ? days : months ? Math.round(months * 30) : null;
-  //     const LONG_RANGE_INDICATORS = ["nvi", "pvi", "vwap", "obv", "ad"];
-
-  //     const hasLongRangeIndicator = patchedRules.some((rule) => {
-  //       return ["object1", "object2", "object3", "object4"].some((key) => {
-  //         const indicator = (rule[key]?.indicator || "").toLowerCase();
-  //         return LONG_RANGE_INDICATORS.includes(indicator);
-  //       });
-  //     });
-
-  //     if (hasLongRangeIndicator) {
-  //       totalDays = 3000;
-  //     }
-
-  //     // const totalDays = getTotalDays(patchedRules);
-  //     console.log("max days------------------", totalDays);
-  //     if (!totalDays || !timeframeValue) return;
-
-  //     const { data: result = {} } = await apiService.post(
-  //       `/api/scannerDetail?&interval=${timeframeValue}&day=${totalDays}`,
-  //       {
-  //         currencies: (debouncedCurrencies || []).map((c) => c.value),
-  //         rules: patchedRules, // ✅ use patched rules, not original formattedRules
-  //         logic: logic,
-  //       },
-  //     );
-
-  //     console.log("API Result:", result);
-
-  //     setDataSource(result);
-
-  //     const isEmpty =
-  //       !result ||
-  //       (Array.isArray(result) && result.length === 0) ||
-  //       (typeof result === "object" && !Object.keys(result).length);
-
-  //     if (isEmpty) {
-  //       toast.error("No data found ❌");
-  //     } else {
-  //       toast.success("Scan executed successfully ✅");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching data:", error);
-  //     setDataSource({});
-  //   } finally {
-  //     setLoading(false);
-  //     isFetching.current = false;
-  //   }
-  // };
 
   /* ================= CONSTANTS ================= */
 
@@ -1224,8 +895,8 @@ export default function OHLCVTable({
   return (
     <Container
       fluid
-      className="py-4 px-4"
-      style={{ background: "#f0f2f5", minHeight: "100vh" }}
+      className="py-4 px-4 bg-slate-50"
+      style={{ minHeight: "100vh" }}
     >
       {/* Header */}
       <div className="d-flex align-items-center justify-content-between mb-4">

@@ -1,254 +1,272 @@
-import React, { useState, useMemo } from "react";
-import ReactPaginate from "react-paginate";
+import React, { useState, useRef, useEffect } from "react";
+import {
+  AreaSeries,
+  BarSeries,
+  CandlestickSeries,
+  createChart,
+  LineSeries,
+} from "lightweight-charts";
 
-/* ================= DATA ================= */
+const chartTypes = ["Candlestick", "Line", "Bar", "Area"];
 
-const dataSource = {
-  "1d": [
-    {
-      symbol: "BTCUSDT",
-      base: "BTC",
-      time: 1618531200,
-      open: 63158.74,
-      high: 63520.61,
-      low: 60000,
-      close: 61334.8,
-      volume: 91764.13,
-      rsi: 56.84,
-      status: true,
-    },
-    {
-      symbol: "BTCUSDT",
-      base: "BTC",
-      time: 1618617600,
-      open: 61334.81,
-      high: 62506.05,
-      low: 59580.91,
-      close: 60006.66,
-      volume: 58912.25,
-      rsi: 52.38,
-      status: true,
-    }
-  ],
+export default function App() {
+  const [rawData, setRawData] = useState({});
 
-  "6h": [
-    {
-      symbol: "BTCUSDT",
-      base: "BTC",
-      time: 1617364800,
-      open: 59542.78,
-      high: 59624.86,
-      low: 58827.66,
-      close: 59180.02,
-      volume: 11557.49,
-      ema: 58982.35,
-      status: true,
-    },
-    {
-      symbol: "BTCUSDT",
-      base: "BTC",
-      time: 1617386400,
-      open: 59180.02,
-      high: 59280.45,
-      low: 58428.57,
-      close: 58950.01,
-      volume: 9445.69,
-      ema: 58975.88,
-      status: true,
-    }
-  ]
-};
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await fetch(
+          "http://192.168.1.7:5000/api/scannerDetail?interval=1d&day=300",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              rules: [
+                {
+                  object1: {
+                    indicator: "max",
+                    length: 20,
+                    timeframe: "1d",
+                    inputIndicator: {
+                      indicator: "sma",
+                      length: 9,
+                      timeframe: "1d",
+                      inputIndicator: "volume",
+                    },
+                  },
+                  operator1: ">",
+                  object2: {
+                    indicator: "number",
+                    value: 20,
+                  },
+                },
+              ],
+            }),
+          }
+        );
 
-/* ================= SYMBOL LIST (🔥 ADD THIS) ================= */
+        const data = await res.json();
 
-const symbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT"];
+        setRawData(data.data?.["1d"] || {});
+      } catch (err) {
+        console.error("API Error:", err);
+      }
+    };
 
-/* ================= COMPONENT ================= */
+    fetchData();
+  }, []);
 
-export default function OHLCVTable() {
-  const [timeframe, setTimeframe] = useState("1d");
-  const [limit, setLimit] = useState(5);
-  const [page, setPage] = useState(0);
+  const [hovered, setHovered] = useState(null);
+  const [meta, setMeta] = useState(null);
+  const [chartType, setChartType] = useState("Candlestick");
 
-  const timeframes = Object.keys(dataSource);
+  const chartRef = useRef(null);
+  const containerRef = useRef(null);
+  const seriesRef = useRef(null);
 
-  /* ================= MERGE + MULTI SYMBOL ================= */
+  // ---------------- CREATE CHART ONCE ----------------
+  useEffect(() => {
+    const chart = createChart(containerRef.current, {
+      width: 750,
+      height: 420,
+      layout: {
+        background: { color: "#0F0F0F" },
+        textColor: "#DDD",
+      },
+      grid: {
+        vertLines: { color: "#222" },
+        horzLines: { color: "#222" },
+      },
+      rightPriceScale: { borderColor: "#333" },
+      timeScale: { borderColor: "#333" },
+    });
 
-  const mergedData = useMemo(() => {
-    let finalData = [];
+    chartRef.current = chart;
 
-    const process = (arr, tf) =>
-      arr.flatMap((item) =>
-        symbols.map((sym) => ({
-          ...item,
-          symbol: sym, // 🔥 override symbol
-          base: sym.replace("USDT", ""),
-          timeframe: tf,
-        }))
-      );
+    return () => chart.remove();
+  }, []);
 
-    if (timeframe === "ALL") {
-      timeframes.forEach((tf) => {
-        finalData = [...finalData, ...process(dataSource[tf], tf)];
-      });
-    } else {
-      finalData = process(dataSource[timeframe], timeframe);
-    }
+  // ---------------- SERIES ----------------
+  const renderSeries = (type, data) => {
+    const chart = chartRef.current;
 
-    return finalData.sort((a, b) => b.time - a.time);
-  }, [timeframe]);
+    if (seriesRef.current) {
+      chart.removeSeries(seriesRef.current);
+    }
 
-  /* ================= PAGINATION ================= */
+    let series;
 
-  const totalRecords = mergedData.length;
-  const totalPages = Math.ceil(totalRecords / limit);
+    if (type === "Candlestick") {
+      series = chart.addSeries(CandlestickSeries, {
+        upColor: "#00FF88",
+        downColor: "#FF4D4F",
+        borderVisible: false,
+      });
 
-  const paginatedData = useMemo(() => {
-    const start = page * limit;
-    return mergedData.slice(start, start + limit);
-  }, [mergedData, page, limit]);
+      series.setData(data);
+    }
 
-  /* ================= DYNAMIC COLUMNS ================= */
+    if (type === "Line") {
+      series = chart.addSeries(LineSeries, { color: "#00FF88" });
+      series.setData(data.map((d) => ({ time: d.time, value: d.close })));
+    }
 
-  const columns = useMemo(() => {
-    const allKeys = new Set();
+    if (type === "Bar") {
+      series = chart.addSeries(BarSeries, {
+        upColor: "#00FF88",
+        downColor: "#FF4D4F",
+        borderVisible: false,
+      });
+      series.setData(data);
+    }
 
-    mergedData.forEach((row) => {
-      Object.keys(row).forEach((key) => allKeys.add(key));
-    });
+    if (type === "Area") {
+      series = chart.addSeries(AreaSeries, {
+        topColor: "rgba(0,255,136,0.3)",
+        bottomColor: "rgba(0,255,136,0.0)",
+        lineColor: "#00FF88",
+      });
 
-    return Array.from(allKeys);
-  }, [mergedData]);
+      series.setData(data.map((d) => ({ time: d.time, value: d.close })));
+    }
 
-  /* ================= UI ================= */
+    seriesRef.current = series;
+  };
 
-  return (
-    <div style={{ padding: "20px", fontFamily: "Arial" }}>
+  // ---------------- HOVER LOGIC ----------------
+  useEffect(() => {
+    if (!hovered) return;
 
-      <style>{`
-        .table {
-          width: 100%;
-          border-collapse: collapse;
-        }
-        .table th, .table td {
-          border: 1px solid #ddd;
-          padding: 8px;
-          text-align: center;
-        }
-        .table th {
-          background: #f5f5f5;
-        }
-        .controls {
-          display: flex;
-          gap: 10px;
-          margin-bottom: 15px;
-        }
-        .pagination {
-          display: flex;
-          list-style: none;
-          gap: 5px;
-          padding: 0;
-        }
-        .page-link {
-          padding: 6px 12px;
-          border: 1px solid #ccc;
-          cursor: pointer;
-          background: white;
-        }
-        .active .page-link {
-          background: #007bff;
-          color: white;
-        }
-        .disabled .page-link {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-      `}</style>
+    const data = rawData[hovered];
 
-      <h2>OHLCV Data (Chartink Style)</h2>
+    if (!data) return;
 
-      {/* CONTROLS */}
-      <div className="controls">
-        <select
-          value={timeframe}
-          onChange={(e) => {
-            setTimeframe(e.target.value);
-            setPage(0);
-          }}
-        >
-          <option value="ALL">ALL</option>
-          {timeframes.map((tf) => (
-            <option key={tf} value={tf}>
-              {tf}
-            </option>
-          ))}
-        </select>
+    const formatted = data.map((d) => ({
+      time: d.time,
+      open: d.open,
+      high: d.high,
+      low: d.low,
+      close: d.close,
+    }));
 
-        <select
-          value={limit}
-          onChange={(e) => {
-            setLimit(Number(e.target.value));
-            setPage(0);
-          }}
-        >
-          <option value={5}>5</option>
-          <option value={10}>10</option>
-          <option value={20}>20</option>
-        </select>
-      </div>
+    renderSeries(chartType, formatted);
 
-      {/* TABLE */}
-      <table className="table">
-        <thead>
-          <tr>
-            {columns.map((col) => (
-              <th key={col}>{col.toUpperCase()}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {paginatedData.map((row, i) => (
-            <tr
-              key={i}
-              style={{
-                color: row.close > row.open ? "green" : "red",
-              }}
-            >
-              {columns.map((col) => (
-                <td key={col}>
-                  {col === "time"
-                    ? new Date(row[col] * 1000).toLocaleString()
-                    : row[col] !== undefined && row[col] !== null
-                    ? typeof row[col] === "number"
-                      ? row[col].toFixed(2)
-                      : row[col].toString()
-                    : "-"}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    const last = data[data.length - 1];
 
-      {/* INFO */}
-      <div style={{ marginTop: "10px" }}>
-        Page <b>{page + 1}</b> of <b>{totalPages}</b> | Total:{" "}
-        <b>{totalRecords}</b>
-      </div>
+    setMeta({
+      symbol: hovered,
+      open: last.open,
+      high: last.high,
+      low: last.low,
+      close: last.close,
+      volume: last.volume,
+      interval: "1D",
+    });
+  }, [hovered, chartType]);
 
-      {/* PAGINATION */}
-      <ReactPaginate
-        previousLabel={"Prev"}
-        nextLabel={"Next"}
-        breakLabel={"..."}
-        pageCount={totalPages}
-        onPageChange={(e) => setPage(e.selected)}
-        forcePage={page}
-        containerClassName={"pagination"}
-        pageLinkClassName={"page-link"}
-        activeClassName={"active"}
-        disabledClassName={"disabled"}
-      />
-    </div>
-  );
+  // :white_check_mark: NEW: CLEAR CHART ON MOUSE LEAVE
+  const handleLeave = () => {
+    setHovered(null);
+    setMeta(null);
+
+    const chart = chartRef.current;
+    if (seriesRef.current && chart) {
+      chart.removeSeries(seriesRef.current);
+      seriesRef.current = null;
+    }
+  };
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        padding: 20,
+        fontFamily: "Arial",
+        background: "#FFFFFF",
+        height: "100vh",
+      }}
+    >
+      {/* LEFT SCANNER */}
+      <div style={{ width: 200, color: "#fff" }}>
+        <h3>Scanner</h3>
+
+        {Object.keys(rawData).map((sym) => (
+          <div
+            key={sym}
+            onMouseEnter={() => setHovered(sym)}
+            onMouseLeave={handleLeave}   // :white_check_mark: ONLY ADDITION
+            style={{
+              padding: 10,
+              border: "1px solid #333",
+              marginBottom: 8,
+              cursor: "pointer",
+              background: hovered === sym ? "#1A1A1A" : "#111",
+              color: "#fff",
+            }}
+          >
+            {sym}
+          </div>
+        ))}
+      </div>
+
+      {/* RIGHT PANEL */}
+      <div style={{ marginLeft: 20 }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 10,
+            marginBottom: 10,
+            alignItems: "center",
+          }}
+        >
+          <select
+            value={chartType}
+            onChange={(e) => setChartType(e.target.value)}
+            style={{ padding: 6 }}
+          >
+            {chartTypes.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+
+          <select style={{ padding: 6 }}>
+            <option>1D</option>
+            <option>1H</option>
+            <option>15m</option>
+          </select>
+
+          <button style={{ padding: "6px 10px" }}>+ Add indicator</button>
+        </div>
+
+        {meta && (
+          <div
+            style={{
+              background: "#111",
+              color: "#fff",
+              padding: 10,
+              marginBottom: 10,
+              borderRadius: 6,
+              display: "flex",
+              gap: 15,
+              fontSize: 13,
+            }}
+          >
+            <b>{meta.symbol}</b>
+            <span>O:{meta.open}</span>
+            <span>H:{meta.high}</span>
+            <span>L:{meta.low}</span>
+            <span>C:{meta.close}</span>
+            <span>V:{meta.volume}</span>
+            <span>{meta.interval}</span>
+          </div>
+        )}
+
+        <div ref={containerRef} />
+      </div>
+    </div>
+  );
 }

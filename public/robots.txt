@@ -1,3 +1,15 @@
-# https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow:
+Allow: /
+
+# Important pages
+Allow: /chart
+Allow: /scanner
+Allow: /pricing
+
+# Block private or admin pages
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /profile
+
+# Sitemap location
+Sitemap: https://yourdomain.com/sitemap.xml

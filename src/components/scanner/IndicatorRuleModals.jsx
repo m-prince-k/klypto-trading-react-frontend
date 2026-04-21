@@ -12,25 +12,28 @@ import { FaEnvelope, FaSms } from "react-icons/fa";
 import { toast } from "react-toastify";
 import apiService from "../../services/apiServices";
 import { scanCategories, tfToMinutes } from "../../util/common";
+import AlertModal from "./ScannerModals";
 
 export function IndicatorRuleModals({
   type,
   closeModal,
-  categories,
   rules,
+  setSaveScan,
+  saveScan,
+  finalRules,
   timeframeOptions,
   setRunScanTrigger,
-  onClose,
-  finalRules,
+  dataSource,
 }) {
   const renderContent = () => {
     switch (type) {
       case "saveScan":
         return (
           <SaveScanContent
-            categories={categories}
             closeModal={closeModal}
             rules={rules}
+            setSaveScan={setSaveScan}
+            dataSource={dataSource}
             onSubmit={(data) => {
               console.log("SAVE SCAN:", data);
               closeModal();
@@ -45,7 +48,8 @@ export function IndicatorRuleModals({
             timeframeOptions={timeframeOptions}
             rules={finalRules}
             setRunScanTrigger={setRunScanTrigger}
-            onClose={onClose}
+            setSaveScan={setSaveScan}
+            saveScan={saveScan}
           />
         );
 
@@ -55,6 +59,8 @@ export function IndicatorRuleModals({
             closeModal={closeModal}
             rules={rules}
             finalRules={finalRules}
+            setSaveScan={setSaveScan}
+            saveScan={saveScan}
           />
         );
 
@@ -96,12 +102,7 @@ export function IndicatorRuleModals({
 /* SAVE SCAN CONTENT */
 /* ------------------------------------------------ */
 
-function SaveScanContent({
-  onSubmit,
-  closeModal,
-  categories = [],
-  rules = [],
-}) {
+function SaveScanContent({ onSubmit, closeModal, rules = [], setSaveScan,dataSource }) {
   const [errors, setErrors] = useState({});
   const [scannerPayload, setscannerPayload] = useState("");
   const [form, setForm] = useState({
@@ -174,6 +175,11 @@ function SaveScanContent({
       );
 
       console.log("API RESPONSE:", response);
+
+      if (response.statusCode === 200) {
+        setSaveScan(true);
+      }
+
       toast?.success?.("Scanner saved successfully ✅");
       closeModal();
     } catch (error) {
@@ -184,6 +190,32 @@ function SaveScanContent({
       );
     }
   };
+  // ✅ Guard: Block saving if scan hasn't been run (dataSource is empty)
+  const isDataEmpty = 
+    !dataSource || 
+    (Array.isArray(dataSource) && dataSource.length === 0) || 
+    (typeof dataSource === "object" && !Array.isArray(dataSource) && Object.keys(dataSource).length === 0);
+
+  if (isDataEmpty) {
+    return (
+      <div className="bg-white rounded-2xl text-left">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
+          <h4 className="font-semibold text-slate-800">Save Scan</h4>
+          <button
+            onClick={closeModal}
+            className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+          >
+            <LuX size={18} />
+          </button>
+        </div>
+        <div className="py-6 flex justify-center font-semibold text-slate-700">
+          Please run the scan first!
+        </div>
+      </div>
+    );
+  }
+
+
 
   return (
     <div className=" bg-white rounded-2xl text-left ">
@@ -337,9 +369,21 @@ function BacktestResultContent({
   rules = [],
   timeframeOptions = [],
   setRunScanTrigger,
-  onClose,
+  saveScan,
 }) {
   const [activeFrames, setActiveFrames] = useState([]);
+  const [modalMessage, setModalMessage] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
+
+  // ✅ Guard: trigger alert if scan not saved
+  useEffect(() => {
+    if (saveScan === false) {
+      setModalMessage(
+        "Please save the scan first before viewing backtest results!",
+      );
+      setModalOpen(true);
+    }
+  }, [saveScan]);
 
   function resolveTimeframeLabel(value) {
     const match = timeframeOptions.find((tf) => tf.value === value);
@@ -358,27 +402,47 @@ function BacktestResultContent({
   function isActive(frame) {
     return activeFrames.includes(frame);
   }
- const getMaxTfFromRule = (rule) => {
-  const tfs = [];
+  const getMaxTfFromRule = (rule) => {
+    const tfs = [];
 
-  // ✅ case 1: direct timeframe (your old logic)
-  if (rule.timeframe) {
-    tfs.push(rule.timeframe);
-  }
-
-  // ✅ case 2: nested objects
-  ["object1", "object2", "object3"].forEach((key) => {
-    if (rule[key]?.timeframe) {
-      tfs.push(rule[key].timeframe);
+    // ✅ case 1: direct timeframe (your old logic)
+    if (rule.timeframe) {
+      tfs.push(rule.timeframe);
     }
-  });
 
-  if (!tfs.length) return null;
+    // ✅ case 2: nested objects
+    ["object1", "object2", "object3"].forEach((key) => {
+      if (rule[key]?.timeframe) {
+        tfs.push(rule[key].timeframe);
+      }
+    });
 
-  return tfs.reduce((max, curr) =>
-    tfToMinutes(curr) > tfToMinutes(max) ? curr : max
-  );
-};
+    if (!tfs.length) return null;
+
+    return tfs.reduce((max, curr) =>
+      tfToMinutes(curr) > tfToMinutes(max) ? curr : max,
+    );
+  };
+
+  // ✅ When scan not saved: show blocking message
+  if (!saveScan) {
+    return (
+      <div className="bg-white rounded-2xl text-left">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
+          <h4 className="font-semibold text-slate-800">Back Test Result</h4>
+          <button
+            onClick={closeModal}
+            className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+          >
+            <LuX size={18} />
+          </button>
+        </div>
+        <div className="py-6 flex justify-center font-semibold text-slate-700">
+          Please save the scan first before viewing backtest results!
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-2xl text-left">
@@ -476,7 +540,6 @@ function BacktestResultContent({
               onClick={() => {
                 setRunScanTrigger(true);
                 closeModal();
-                onClose();
               }}
             >
               Submit
@@ -492,12 +555,29 @@ function BacktestResultContent({
 /* CREATE ALERT */
 /* ------------------------------------------------ */
 
-function CreateAlertContent({ onSubmit, closeModal, rules, finalRules }) {
+function CreateAlertContent({
+  onSubmit,
+  closeModal,
+  rules,
+  finalRules,
+  setSaveScan,
+  saveScan,
+}) {
   const [mode, setMode] = useState("email");
 
   const [otpSent, setOtpSent] = useState(false);
   const [loadingOtp, setLoadingOtp] = useState(false);
   const [loadingSubmit, setLoadingSubmit] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
+
+  // ✅ Guard: show alert if scan not saved yet
+  useEffect(() => {
+    if (saveScan === false) {
+      setModalMessage("Please save the scan first before creating an alert!");
+      setModalOpen(true);
+    }
+  }, [saveScan]);
 
   const [alertName, setAlertName] = useState("");
 
@@ -645,68 +725,14 @@ function CreateAlertContent({ onSubmit, closeModal, rules, finalRules }) {
   }
 
   const TF_LABELS = {
-  "1m": "1 minute",
-  "5m": "5 minutes",
-  "15m": "15 minutes",
-  "30m": "30 minutes",
-  "1h": "1 hour",
-  "2h": "2 hours",
-  "4h": "4 hours",
-  "6h": "6 hours",
-  "1d": "daily",
-  "1w": "weekly",
-  "1M": "monthly",
-  "30d": "monthly",
-  "90d": "quarterly",
-  "365d": "yearly",
-};
-
-const OPERATOR_LABELS = {
-  ">": "is greater than",
-  "<": "is less than",
-  ">=": "is greater than or equal to",
-  "<=": "is less than or equal to",
-  "==": "is equal to",
-  "!=": "is not equal to",
-};
-
-/* ================= PARSER ================= */
-
-function parseObject(obj) {
-  if (!obj) return "";
-
-  // ✅ number
-  if (obj.indicator === "number") {
-    return obj.value;
-  }
-
-  // ✅ string
-  if (typeof obj === "string") return obj;
-
-  if (!obj.indicator) return "";
-
-  // 🔥 extract length + source (NEW STRUCTURE)
-  let length = "";
-  let source = "";
-
-  if (typeof obj.length === "object") {
-    length = obj.length?.length;
-    source = obj.length?.source;
-  } else {
-    length = obj.length;
-  }
-
-  // fallback (older structure)
-  if (!source && obj.source) {
-    source = obj.source;
-  }
-
-  const params = [];
-
-  if (source) params.push(source);
-  if (length) params.push(length);
-
-  const tfMap = {
+    "1m": "1 minute",
+    "5m": "5 minutes",
+    "15m": "15 minutes",
+    "30m": "30 minutes",
+    "1h": "1 hour",
+    "2h": "2 hours",
+    "4h": "4 hours",
+    "6h": "6 hours",
     "1d": "daily",
     "1w": "weekly",
     "1M": "monthly",
@@ -715,40 +741,112 @@ function parseObject(obj) {
     "365d": "yearly",
   };
 
-  const tf = tfMap[obj.timeframe] || obj.timeframe || "";
+  const OPERATOR_LABELS = {
+    ">": "is greater than",
+    "<": "is less than",
+    ">=": "is greater than or equal to",
+    "<=": "is less than or equal to",
+    "==": "is equal to",
+    "!=": "is not equal to",
+  };
 
-  return `${tf ? tf + " " : ""}${obj.indicator.toUpperCase()}(${params.join(", ")})`
-    .replace(/\(\)/, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
+  /* ================= PARSER ================= */
 
-/* ================= CONDITION BUILDER ================= */
-function buildCondition(payload) {
-  if (!payload?.rules?.length) return "";
+  function parseObject(obj) {
+    if (!obj) return "";
 
-  return payload.rules
-    .map((rule) => {
-      const left = parseObject(rule.object1);
-      const op1 = OPERATOR_LABELS[rule.operator1] || rule.operator1;
-      const right = parseObject(rule.object2);
+    // ✅ number
+    if (obj.indicator === "number") {
+      return obj.value;
+    }
 
-      let expression = `${left} ${op1} ${right}`;
+    // ✅ string
+    if (typeof obj === "string") return obj;
 
-      // 🔥 handle chaining
-      if (rule.operator2 && rule.object3) {
-        expression += ` ${rule.operator2} ${parseObject(rule.object3)}`;
-      }
+    if (!obj.indicator) return "";
 
-      if (rule.operator3 && rule.object4) {
-        expression += ` ${rule.operator3} ${parseObject(rule.object4)}`;
-      }
+    // 🔥 extract length + source (NEW STRUCTURE)
+    let length = "";
+    let source = "";
 
-      return expression;
-    })
-    .join(" AND ");
-}
-console.log(buildCondition({ rules: finalRules }), "buildCondition");
+    if (typeof obj.length === "object") {
+      length = obj.length?.length;
+      source = obj.length?.source;
+    } else {
+      length = obj.length;
+    }
+
+    // fallback (older structure)
+    if (!source && obj.source) {
+      source = obj.source;
+    }
+
+    const params = [];
+
+    if (source) params.push(source);
+    if (length) params.push(length);
+
+    const tfMap = {
+      "1d": "daily",
+      "1w": "weekly",
+      "1M": "monthly",
+      "30d": "monthly",
+      "90d": "quarterly",
+      "365d": "yearly",
+    };
+
+    const tf = tfMap[obj.timeframe] || obj.timeframe || "";
+
+    return `${tf ? tf + " " : ""}${obj.indicator.toUpperCase()}(${params.join(", ")})`
+      .replace(/\(\)/, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  /* ================= CONDITION BUILDER ================= */
+  function buildCondition(payload) {
+    if (!payload?.rules?.length) return "";
+
+    return payload.rules
+      .map((rule) => {
+        const left = parseObject(rule.object1);
+        const op1 = OPERATOR_LABELS[rule.operator1] || rule.operator1;
+        const right = parseObject(rule.object2);
+
+        let expression = `${left} ${op1} ${right}`;
+
+        // 🔥 handle chaining
+        if (rule.operator2 && rule.object3) {
+          expression += ` ${rule.operator2} ${parseObject(rule.object3)}`;
+        }
+
+        if (rule.operator3 && rule.object4) {
+          expression += ` ${rule.operator3} ${parseObject(rule.object4)}`;
+        }
+
+        return expression;
+      })
+      .join(" AND ");
+  }
+  // ✅ When scan not saved: show only the alert modal + close button
+  if (!saveScan) {
+    return (
+      <div className="bg-white rounded-2xl text-left">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
+          <h6 className="font-semibold text-slate-800">Create Alert</h6>
+          <button
+            onClick={closeModal}
+            className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+          >
+            <LuX size={18} />
+          </button>
+        </div>
+        <div className="py-6 flex justify-center font-semibold text-slate-700">
+          Please save the scan first before creating an alert!
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-2xl text-left">
@@ -761,11 +859,11 @@ console.log(buildCondition({ rules: finalRules }), "buildCondition");
         </button>
       </div>
 
-      {rules.length === 0 ? (
+      {finalRules.length === 0 ? (
         /* ---------- EMPTY STATE ---------- */
 
         <div className="py-4 flex justify-center font-semibold text-slate-700">
-          Atleast Add one Condition
+          Atleast Add one Condition and Save it to create an alert!
         </div>
       ) : (
         <div className="p-4 bg-slate-50 rounded-b-2xl">
@@ -788,10 +886,10 @@ console.log(buildCondition({ rules: finalRules }), "buildCondition");
             )}
           </div>
           <div>
-      <p style={{ fontSize: 14, color: "#334155" }}>
-        <p>{buildCondition({ rules: finalRules })}</p>
-      </p>
-    </div>
+            <p style={{ fontSize: 14, color: "#334155" }}>
+              <p>{buildCondition({ rules: finalRules })}</p>
+            </p>
+          </div>
 
           <ButtonGroup
             className="mb-4"
