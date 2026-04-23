@@ -231,12 +231,12 @@ export const ListingModal = ({
                     {filteredIndicators?.map((item, index) => (
                       <li key={index}>
                         <label className="d-flex align-items-center gap-2 px-2 py-1 rounded">
-                          <input
+                          {/* <input
                             type="checkbox"
                             checked={selectedIndicator.includes(item.slug)}
                             onChange={() => toggleIndicator(item.slug)}
                             className="form-check-input cursor-pointer"
-                          />
+                          /> */}
                           <span>{item.label} -- {item.slug} </span>
                         </label>
                       </li>
