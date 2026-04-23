@@ -1,49 +1,7 @@
 import React, { useState, useEffect } from "react";
+import { indicatorConfig } from "./CustomIndicatorConfig";
 import { Container, Row, Col, Form, Button } from "react-bootstrap";
 import { BsLightningChargeFill, BsRocketTakeoffFill } from "react-icons/bs";
-import { indicatorConfig } from "./CustomIndicatorConfig";
-
-const darkCard = {
-  background: "rgba(255,255,255,0.05)",
-  border: "1px solid rgba(255,255,255,0.1)",
-  borderRadius: 12,
-  padding: "1rem",
-};
-
-const darkControl = {
-  background: "rgba(0,0,0,0.4)",
-  border: "1px solid #374151",
-  color: "#fff",
-  borderRadius: 8,
-};
-
-// 🔥 operator symbol helper
-const getOperatorSymbol = (type) => {
-  switch (type) {
-    case "Addition":
-      return "+";
-    case "Subtraction":
-      return "-";
-    case "Multiplication":
-      return "×";
-    case "Division":
-      return "÷";
-    case "Min/Max":
-      return "+";
-    case "GreaterThan":
-      return ">";
-    case "LessThan":
-      return "<";
-    case "NotEqual":
-      return "≠";
-    case "GreaterThanOrEqual":
-      return ">=";
-    case "LessThanOrEqual":
-      return "<=";
-    default:
-      return "+";
-  }
-};
 
 export default function ProIndicatorBuilder() {
   const [name, setName] = useState("");
@@ -55,6 +13,10 @@ export default function ProIndicatorBuilder() {
 
   const current = indicatorConfig[type];
 
+  // 🔥 dynamic grid layout
+  const gridCols = "grid-cols-1 md:grid-cols-5";
+
+  // 🔥 sync inputs
   useEffect(() => {
     setInputs(Array(current.inputCount).fill(""));
   }, [type]);
@@ -66,7 +28,7 @@ export default function ProIndicatorBuilder() {
   };
 
   const handleDeploy = () => {
-    setPayload({
+    const finalPayload = {
       name,
       source: type,
       inputCount: current.inputCount,
@@ -74,7 +36,9 @@ export default function ProIndicatorBuilder() {
       operation: op,
       output,
       timestamp: new Date().toISOString(),
-    });
+    };
+
+    setPayload(finalPayload);
   };
 
   return (
@@ -86,49 +50,48 @@ export default function ProIndicatorBuilder() {
           "linear-gradient(135deg, #000000 0%, #1a1a2e 50%, #2d2d2d 100%)",
       }}
     >
-      <div className="w-100" style={{ maxWidth: 1600 }}>
+      <div className="w-100" style={{ maxWidth: 1200 }}>
         <div
-          className="rounded-4 p-4 p-md-5"
+          className="p-4 p-md-5 rounded-4"
           style={{
             background: "rgba(255,255,255,0.05)",
             border: "1px solid rgba(255,255,255,0.1)",
-            boxShadow: "0 25px 50px rgba(0,0,0,0.5)",
             backdropFilter: "blur(20px)",
+            boxShadow: "0 25px 50px rgba(0,0,0,0.5)",
           }}
         >
+          {/* Header */}
           <h1
-            className="fw-bold mb-4 d-flex align-items-center gap-2"
-            style={{ fontSize: "1.75rem", color: "#fff" }}
+            className="fw-bold mb-4 d-flex align-items-center gap-2 text-white"
+            style={{ fontSize: "1.75rem" }}
           >
-            <BsLightningChargeFill style={{ color: "#facc15", fontSize: 22 }} />
+            <BsLightningChargeFill style={{ color: "#facc15" }} />
             Custom Indicator
           </h1>
 
-          {/* 🔥 SINGLE ROW */}
-          <Row
-            className="g-3 mb-4 align-items-stretch"
-            style={{ flexWrap: "nowrap", overflowX: "auto" }}
-          >
+          {/* Grid */}
+          <Row className="g-3 mb-4">
+
             {/* Name */}
-            <Col style={{ minWidth: 200 }}>
-              <div style={darkCard}>
-                <p className="mb-2" style={{ fontSize: 13, color: "#9ca3af" }}>
-                  Name
-                </p>
+            <Col>
+              <div className="bg-white bg-opacity-5 p-3 rounded border border-white border-opacity-10">
+                <p className="text-muted small mb-2">Name</p>
                 <Form.Control
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  style={darkControl}
+                  style={{
+                    background: "rgba(0,0,0,0.4)",
+                    border: "1px solid #374151",
+                    color: "#fff",
+                  }}
                 />
               </div>
             </Col>
 
             {/* Source */}
-            <Col style={{ minWidth: 220 }}>
-              <div style={darkCard}>
-                <p className="mb-2" style={{ fontSize: 13, color: "#9ca3af" }}>
-                  Source
-                </p>
+            <Col>
+              <div className="bg-white bg-opacity-5 p-3 rounded border border-white border-opacity-10">
+                <p className="text-muted small mb-2">Source</p>
                 <Form.Select
                   value={type}
                   onChange={(e) => {
@@ -136,7 +99,11 @@ export default function ProIndicatorBuilder() {
                     setOp("");
                     setOutput("");
                   }}
-                  style={darkControl}
+                  style={{
+                    background: "rgba(0,0,0,0.4)",
+                    border: "1px solid #374151",
+                    color: "#fff",
+                  }}
                 >
                   {Object.keys(indicatorConfig).map((k) => (
                     <option key={k}>{k}</option>
@@ -145,87 +112,44 @@ export default function ProIndicatorBuilder() {
               </div>
             </Col>
 
-            {/* Input */}
+            {/* Inputs */}
             {current.inputCount > 0 && (
-              <Col style={{ minWidth: 500, flex: 1 }}>
-                <div style={darkCard}>
-                  <p
-                    className="mb-2"
-                    style={{ fontSize: 13, color: "#9ca3af" }}
-                  >
-                    Input
-                  </p>
+              <Col>
+                <div className="bg-white bg-opacity-5 p-3 rounded border border-white border-opacity-10">
+                  <p className="text-muted small mb-2">Input</p>
 
-                  {current.inputCount === 2 ? (
-                    <div className="d-flex align-items-center gap-3">
-                      <Form.Select
-                        value={inputs[0] || ""}
-                        onChange={(e) => handleInputChange(e.target.value, 0)}
-                        style={{ ...darkControl, flex: 1 }}
-                      >
-                        <option value="">Select</option>
-                        {current.accepts.map((item, i) => (
-                          <option key={i}>{item}</option>
-                        ))}
-                      </Form.Select>
-
-                      <div
-                        style={{
-                          color: "#facc15",
-                          fontWeight: "bold",
-                          fontSize: 20,
-                        }}
-                      >
-                        {getOperatorSymbol(type)}
-                      </div>
-
-                      <Form.Select
-                        value={inputs[1] || ""}
-                        onChange={(e) => handleInputChange(e.target.value, 1)}
-                        style={{ ...darkControl, flex: 1 }}
-                      >
-                        <option value="">Select</option>
-                        {current.accepts
-                          .filter((item) => item !== inputs[0])
-                          .map((item, i) => (
-                            <option key={i}>{item}</option>
-                          ))}
-                      </Form.Select>
-                    </div>
-                  ) : (
-                    inputs.map((val, i) => (
-                      <Form.Select
-                        key={i}
-                        value={val}
-                        onChange={(e) => handleInputChange(e.target.value, i)}
-                        className="mb-2"
-                        style={darkControl}
-                      >
-                        <option value="">Select</option>
-                        {current.accepts
-                          .filter(
-                            (item) => !inputs.includes(item) || item === val,
-                          )
-                          .map((item, j) => (
-                            <option key={j}>{item}</option>
-                          ))}
-                      </Form.Select>
-                    ))
-                  )}
+                  {inputs.map((val, i) => (
+                    <Form.Control
+                      key={i}
+                      value={val}
+                      placeholder={`${current.inputPlaceholder} ${i + 1}`}
+                      onChange={(e) =>
+                        handleInputChange(e.target.value, i)
+                      }
+                      className="mb-2"
+                      style={{
+                        background: "rgba(0,0,0,0.4)",
+                        border: "1px solid #374151",
+                        color: "#fff",
+                      }}
+                    />
+                  ))}
                 </div>
               </Col>
             )}
 
             {/* Operation */}
-            <Col style={{ minWidth: 220 }}>
-              <div style={darkCard}>
-                <p className="mb-2" style={{ fontSize: 13, color: "#9ca3af" }}>
-                  Operation
-                </p>
+            <Col>
+              <div className="bg-white bg-opacity-5 p-3 rounded border border-white border-opacity-10">
+                <p className="text-muted small mb-2">Operation</p>
                 <Form.Select
                   value={op}
                   onChange={(e) => setOp(e.target.value)}
-                  style={darkControl}
+                  style={{
+                    background: "rgba(0,0,0,0.4)",
+                    border: "1px solid #374151",
+                    color: "#fff",
+                  }}
                 >
                   <option value="">Select</option>
                   {current.col3.map((item, i) => (
@@ -236,15 +160,17 @@ export default function ProIndicatorBuilder() {
             </Col>
 
             {/* Output */}
-            <Col style={{ minWidth: 220 }}>
-              <div style={darkCard}>
-                <p className="mb-2" style={{ fontSize: 13, color: "#9ca3af" }}>
-                  Output
-                </p>
+            <Col>
+              <div className="bg-white bg-opacity-5 p-3 rounded border border-white border-opacity-10">
+                <p className="text-muted small mb-2">Output</p>
                 <Form.Select
                   value={output}
                   onChange={(e) => setOutput(e.target.value)}
-                  style={darkControl}
+                  style={{
+                    background: "rgba(0,0,0,0.4)",
+                    border: "1px solid #374151",
+                    color: "#fff",
+                  }}
                 >
                   <option value="">Select</option>
                   {current.col4.map((item, i) => (
@@ -253,6 +179,7 @@ export default function ProIndicatorBuilder() {
                 </Form.Select>
               </div>
             </Col>
+
           </Row>
 
           {/* Preview */}
@@ -268,21 +195,22 @@ export default function ProIndicatorBuilder() {
               style={{ fontSize: "1rem", color: "#60a5fa" }}
             >
               {name || "Unnamed"} → {type} →{" "}
-              {inputs.length ? inputs.join(", ") : "source"} → {op || "..."} →{" "}
-              {output || "..."}
+              {inputs.length ? inputs.join(", ") : "source"} →{" "}
+              {op || "..."} → {output || "..."}
             </p>
           </div>
 
           {/* Deploy */}
           <Button
             onClick={handleDeploy}
-            className="w-100 py-2 fw-semibold border-0 rounded-3 d-flex align-items-center justify-content-center gap-2"
+            className="w-100 py-2 d-flex align-items-center justify-content-center gap-2"
             style={{
-              background: "linear-gradient(90deg, #3b82f6 0%, #9333ea 100%)",
-              fontSize: 15,
+              background:
+                "linear-gradient(90deg, #3b82f6 0%, #9333ea 100%)",
+              border: "none",
             }}
           >
-            <BsRocketTakeoffFill style={{ fontSize: 15 }} />
+            <BsRocketTakeoffFill />
             Deploy Indicator
           </Button>
 

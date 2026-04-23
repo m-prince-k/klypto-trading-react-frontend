@@ -206,9 +206,16 @@ export const indicatorConfig = {
     outputs: ["Table"],
   }),
 
-  //////////////////////////////////////////////////
-  // 🔴 BLOCK-3 (BINARY OPERATIONS)
-  //////////////////////////////////////////////////
+  Addition: createNode({
+    stage: "transform",
+    inputCount: 2,
+    inputPlaceholder: "Mean + band width / Score1 + Score2 / Signal components",
+    accepts: ["Mean + band width", "Score1 + Score2", "Signal components"],
+    operations: ["Normalize", "Compare", "Threshold"],
+    outputs: ["Overlay", "Oscillator", "Table"],
+  }),
+
+  // -----------------------------------------------------3rd Blob   K STARTS HERE------------------------------
 
   Addition: createNode({
     stage: "transform",
@@ -324,7 +331,7 @@ export const indicatorConfig = {
     operations: ["Signal markers", "Table"],
     outputs: ["Signal", "Table"],
   }),
-  
+
   LessThanOrEqual: createNode({
     stage: "transform",
     inputCount: 2,
@@ -404,5 +411,991 @@ export const indicatorConfig = {
     accepts: ["X", "Y"],
     operations: ["Residual", "Overlay", "Table"],
     outputs: ["Overlay", "Table"],
+  }),
+
+  // ----------------------------------------------------------------4TH BLOCK STARTS HERE------------------------------
+  ColumnSelect: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "OHLC -> Close/High/Low/Open/Volume",
+    accepts: ["OHLC"],
+    operations: ["Returns", "EMA", "Mean", "Std Dev", "RSI", "FFT", "AUC"],
+    outputs: ["Overlay", "Oscillator", "Signal", "Table"],
+  }),
+
+  TypicalPrice: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "OHLC",
+    accepts: ["OHLC"],
+    operations: ["EMA", "Mean", "RSI", "Returns"],
+    outputs: ["Overlay", "Oscillator"],
+  }),
+
+  WeightedPrice: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "OHLC",
+    accepts: ["OHLC"],
+    operations: ["EMA", "Compare", "Returns"],
+    outputs: ["Overlay", "Oscillator"],
+  }),
+
+  MedianPrice: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "OHLC",
+    accepts: ["OHLC"],
+    operations: ["EMA", "Threshold", "Returns"],
+    outputs: ["Overlay", "Oscillator"],
+  }),
+
+  HL2_HLC3_OHLC4: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "OHLC",
+    accepts: ["OHLC"],
+    operations: ["EMA", "Mean", "RSI", "ATR relations"],
+    outputs: ["Overlay", "Oscillator"],
+  }),
+
+  ReturnsExtended: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "Price series",
+    accepts: ["Price series"],
+    operations: [
+      "Std Dev",
+      "Historical Vol",
+      "Realized Vol",
+      "GARCH",
+      "AUC",
+      "Normalize",
+      "Threshold",
+    ],
+    outputs: ["Oscillator", "Overlay", "Signal", "Table"],
+  }),
+
+  CumulativeReturns: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "Returns",
+    accepts: ["Returns"],
+    operations: ["Overlay", "Compare", "Threshold"],
+    outputs: ["Overlay", "Table", "Signal"],
+  }),
+
+  TrueRange: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "OHLC",
+    accepts: ["OHLC"],
+    operations: ["ATR", "AUC", "Compare"],
+    outputs: ["Overlay", "Oscillator"],
+  }),
+
+  GapCalculation: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "OHLC",
+    accepts: ["OHLC"],
+    operations: ["Threshold", "Signal", "Event count"],
+    outputs: ["Signal", "Table"],
+  }),
+
+  RollingNormalization: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS",
+    accepts: ["TS"],
+    operations: ["Threshold", "Oscillator", "Signal"],
+    outputs: ["Oscillator", "Signal"],
+  }),
+
+  RankPercentile: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS / matrix",
+    accepts: ["TS", "matrix"],
+    operations: ["Threshold", "Heatmap", "Oscillator"],
+    outputs: ["Oscillator", "Heatmap", "Table", "Signal"],
+  }),
+
+  Detrending: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS",
+    accepts: ["TS"],
+    operations: ["FFT", "Volatility", "Regression", "Oscillator"],
+    outputs: ["Oscillator", "Overlay", "Regime"],
+  }),
+
+  Deseasonalization: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS",
+    accepts: ["TS"],
+    operations: ["ARIMA", "FFT", "Compare"],
+    outputs: ["Overlay", "Oscillator", "Table"],
+  }),
+
+  // ---------------------------------------------5th BLOCK START HERE-------------------------------
+
+  SMA: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "Close, Typical Price, HLC3, RSI",
+    accepts: ["Close", "Typical Price", "HLC3", "RSI"],
+    operations: ["Crossovers", "Compare", "Overlay"],
+    outputs: ["Overlay", "Signal"],
+  }),
+
+  EMA: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "Close, RSI, MACD, other TS",
+    accepts: ["Close", "RSI", "MACD", "TS"],
+    operations: ["Crossovers", "Subtract", "Overlay", "Threshold"],
+    outputs: ["Overlay", "Signal", "Oscillator"],
+  }),
+
+  WMA: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS",
+    accepts: ["TS"],
+    operations: ["Crossovers", "Compare", "Overlay"],
+    outputs: ["Overlay", "Signal"],
+  }),
+
+  VWMA: createNode({
+    stage: "transform",
+    inputCount: 2,
+    inputPlaceholder: "Price + Volume",
+    accepts: ["Price", "Volume"],
+    operations: ["Compare", "Crossovers", "Overlay"],
+    outputs: ["Overlay", "Signal"],
+  }),
+
+  RollingMean: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS",
+    accepts: ["TS"],
+    operations: ["Std Dev", "Subtract", "Crossovers", "Overlay"],
+    outputs: ["Overlay", "Oscillator"],
+  }),
+
+  MovingMedian: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS",
+    accepts: ["TS"],
+    operations: ["Compare", "Threshold", "Overlay"],
+    outputs: ["Overlay", "Oscillator", "Signal"],
+  }),
+
+  ExponentialSmoothing: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS",
+    accepts: ["TS"],
+    operations: ["Compare", "Overlay"],
+    outputs: ["Overlay", "Oscillator"],
+  }),
+
+  GaussianSmoothing: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS",
+    accepts: ["TS"],
+    operations: ["Derivative", "Compare", "Overlay"],
+    outputs: ["Overlay", "Oscillator"],
+  }),
+
+  KernelSmoothing: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS",
+    accepts: ["TS"],
+    operations: ["Derivative", "Compare", "Overlay"],
+    outputs: ["Overlay", "Oscillator"],
+  }),
+
+  SavitzkyGolay: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS",
+    accepts: ["TS"],
+    operations: ["Derivative", "Threshold", "Overlay"],
+    outputs: ["Overlay", "Oscillator", "Signal"],
+  }),
+
+  HMA: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS",
+    accepts: ["TS"],
+    operations: ["Crossovers", "Overlay"],
+    outputs: ["Overlay", "Signal"],
+  }),
+
+  KAMA: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS",
+    accepts: ["TS"],
+    operations: ["Compare", "Threshold", "Overlay"],
+    outputs: ["Overlay", "Signal"],
+  }),
+
+  ALMA: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS",
+    accepts: ["TS"],
+    operations: ["Crossovers", "Overlay"],
+    outputs: ["Overlay", "Signal"],
+  }),
+
+  TMA: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS",
+    accepts: ["TS"],
+    operations: ["Compare", "Overlay"],
+    outputs: ["Overlay"],
+  }),
+
+  DEMA_TEMA: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS",
+    accepts: ["TS"],
+    operations: ["Crossovers", "Compare", "Overlay"],
+    outputs: ["Overlay", "Signal"],
+  }),
+
+  LowPassFilter: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS",
+    accepts: ["TS"],
+    operations: ["Compare", "Derivative", "Overlay"],
+    outputs: ["Overlay", "Oscillator"],
+  }),
+
+  KalmanFilter: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS / matrix",
+    accepts: ["TS", "matrix"],
+    operations: ["Forecast", "Regime", "Overlay"],
+    outputs: ["Overlay", "Regime", "Table"],
+  }),
+
+  MedianFilter: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS",
+    accepts: ["TS"],
+    operations: ["Compare", "Threshold", "Overlay"],
+    outputs: ["Overlay", "Signal"],
+  }),
+
+  AdaptiveSmoothing: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS",
+    accepts: ["TS"],
+    operations: ["Crossovers", "Compare"],
+    outputs: ["Overlay", "Signal"],
+  }),
+
+  LWRegressionSmoothing: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS",
+    accepts: ["TS"],
+    operations: ["Derivative", "Overlay"],
+    outputs: ["Overlay", "Oscillator"],
+  }),
+
+  // ---------------------------------------------6th BLOCK START HERE-------------------------------
+
+  Variance: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "Returns / Price / Vector",
+    accepts: ["Returns", "Price", "Vector"],
+    operations: ["Root", "Normalize", "Threshold"],
+    outputs: ["Oscillator", "Table", "Signal"],
+  }),
+
+  StandardDeviation: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "Close / Returns / TS / Vector / Matrix",
+    accepts: ["Close", "Returns", "TS", "Vector", "Matrix"],
+    operations: ["Subtract", "Divide", "Multiply Const", "Bands", "Threshold"],
+    outputs: ["Overlay", "Oscillator", "Signal", "Table"],
+  }),
+
+  MeanAbsoluteDeviation: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS",
+    accepts: ["TS"],
+    operations: ["Normalize", "Threshold", "Oscillator"],
+    outputs: ["Oscillator", "Signal", "Table"],
+  }),
+
+  BollingerBands: createNode({
+    stage: "transform",
+    inputCount: 3,
+    inputPlaceholder: "Price + Mean + Std Dev",
+    accepts: ["Price", "Mean", "Std Dev"],
+    operations: ["Overlay", "Threshold", "Band Width"],
+    outputs: ["Overlay", "Signal"],
+  }),
+
+  ATR: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "OHLC / True Range",
+    accepts: ["OHLC", "True Range"],
+    operations: ["Overlay", "Threshold", "Position Sizing"],
+    outputs: ["Overlay", "Signal", "Table"],
+  }),
+
+  HistoricalVolatility: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "Returns",
+    accepts: ["Returns"],
+    operations: ["Oscillator", "Threshold", "VaR"],
+    outputs: ["Oscillator", "Table", "Signal"],
+  }),
+
+  RealizedVolatility: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "Returns",
+    accepts: ["Returns"],
+    operations: ["Oscillator", "Threshold", "Risk Blocks"],
+    outputs: ["Oscillator", "Table", "Signal"],
+  }),
+
+  ImpliedVolatility: createNode({
+    stage: "transform",
+    inputCount: 4, // (you can allow dynamic later)
+    inputPlaceholder: "Price / Strike / Time / Rate",
+    accepts: ["Price", "Strike", "Time", "Rate"],
+    operations: ["Table", "Surface", "Compare"],
+    outputs: ["Table", "Heatmap"],
+  }),
+
+  CoefficientOfVariation: createNode({
+    stage: "transform",
+    inputCount: 2,
+    inputPlaceholder: "Mean + Spread",
+    accepts: ["Mean", "Spread"],
+    operations: ["Compare", "Threshold"],
+    outputs: ["Oscillator", "Table", "Signal"],
+  }),
+
+  Range: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS / OHLC",
+    accepts: ["TS", "OHLC"],
+    operations: ["Threshold", "Compare", "Overlay"],
+    outputs: ["Overlay", "Signal", "Table"],
+  }),
+
+  InterquartileRange: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS",
+    accepts: ["TS"],
+    operations: ["Threshold", "Table"],
+    outputs: ["Table", "Oscillator"],
+  }),
+
+  ParkinsonGKRS: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "OHLC",
+    accepts: ["OHLC"],
+    operations: ["Threshold", "Compare", "Vol Rank"],
+    outputs: ["Oscillator", "Table", "Signal"],
+  }),
+
+  VolatilityPercentile: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "Volatility TS",
+    accepts: ["Volatility"],
+    operations: ["Threshold", "Oscillator", "Heatmap"],
+    outputs: ["Oscillator", "Heatmap", "Signal"],
+  }),
+
+  EntropyDispersion: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS / Distribution",
+    accepts: ["TS", "Distribution"],
+    operations: ["Threshold", "Table"],
+    outputs: ["Table", "Oscillator", "Signal"],
+  }),
+
+  RollingVarianceRatio: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS",
+    accepts: ["TS"],
+    operations: ["Threshold", "Regime"],
+    outputs: ["Oscillator", "Regime", "Signal"],
+  }),
+
+  // --------------------------------------------------------7TH BLOCK STARTS HERE------------------------------
+
+  //////////////////////////////////////////////////
+  // BLOCK-2 (MOMENTUM + OSCILLATORS - FIXED)
+  //////////////////////////////////////////////////
+
+  ROC: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "Price TS",
+    accepts: ["Price TS"],
+    operations: ["Threshold", "Normalize", "Oscillator"],
+    outputs: ["Oscillator", "Signal"],
+  }),
+
+  Momentum: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "Price TS",
+    accepts: ["Price TS"],
+    operations: ["Threshold", "Normalize"],
+    outputs: ["Oscillator", "Signal"],
+  }),
+
+  RSI: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "Price TS",
+    accepts: ["Price TS"],
+    operations: ["Threshold", "Divergence", "Oscillator", "Signal"],
+    outputs: ["Oscillator", "Signal"],
+  }),
+
+  StochasticOscillator: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "OHLC / Price TS",
+    accepts: ["OHLC", "Price TS"],
+    operations: ["Threshold", "Crossovers"],
+    outputs: ["Oscillator", "Signal"],
+  }),
+
+  MACD: createNode({
+    stage: "transform",
+    inputCount: 2,
+    inputPlaceholder: "EMA Fast + EMA Slow (or Price TS)",
+    accepts: ["EMA Fast", "EMA Slow", "Price TS"],
+    operations: ["Signal EMA", "Histogram", "Threshold"],
+    outputs: ["Oscillator", "Signal"],
+  }),
+
+  Acceleration: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "Derivative / TS",
+    accepts: ["TS", "Derivative"],
+    operations: ["Threshold", "Oscillator"],
+    outputs: ["Oscillator", "Signal"],
+  }),
+
+  Jerk: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "Acceleration / TS",
+    accepts: ["Acceleration", "TS"],
+    operations: ["Threshold", "Oscillator"],
+    outputs: ["Oscillator", "Signal"],
+  }),
+
+  SlopeAngle: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS",
+    accepts: ["TS"],
+    operations: ["Threshold", "Compare"],
+    outputs: ["Oscillator", "Signal"],
+  }),
+
+  VelocityNormalization: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS",
+    accepts: ["TS"],
+    operations: ["Threshold", "Oscillator"],
+    outputs: ["Oscillator", "Signal"],
+  }),
+
+  MomentumDivergenceDetector: createNode({
+    stage: "transform",
+    inputCount: 2,
+    inputPlaceholder: "Price TS + RSI / MACD",
+    accepts: ["Price TS", "RSI", "MACD"],
+    operations: ["Signal markers", "Compare"],
+    outputs: ["Signal", "Table"],
+  }),
+
+  RelativeMomentumRatio: createNode({
+    stage: "transform",
+    inputCount: 2,
+    inputPlaceholder: "Momentum A + Momentum B",
+    accepts: ["Momentum", "Momentum TS"],
+    operations: ["Threshold", "Oscillator"],
+    outputs: ["Oscillator", "Signal"],
+  }),
+
+  MultiTimeframeMomentumFusion: createNode({
+    stage: "transform",
+    inputCount: 3,
+    inputPlaceholder: "Momentum (TF1 + TF2 + TF3)",
+    accepts: ["Momentum", "TS"],
+    operations: ["Threshold", "Oscillator", "Signal"],
+    outputs: ["Oscillator", "Signal"],
+  }),
+
+  ElasticMomentumScore: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS",
+    accepts: ["TS"],
+    operations: ["Normalize", "Threshold"],
+    outputs: ["Oscillator", "Signal"],
+  }),
+
+  MeanReversionDistanceScore: createNode({
+    stage: "transform",
+    inputCount: 3,
+    inputPlaceholder: "Price + Mean + Spread",
+    accepts: ["Price TS", "Mean", "Spread"],
+    operations: ["Threshold", "Oscillator"],
+    outputs: ["Oscillator", "Signal"],
+  }),
+
+  ImpulseStrength: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS",
+    accepts: ["TS"],
+    operations: ["Threshold", "Signal"],
+    outputs: ["Oscillator", "Signal"],
+  }),
+
+  MomentumDecay: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS",
+    accepts: ["TS"],
+    operations: ["Threshold", "Regime"],
+    outputs: ["Oscillator", "Signal", "Regime"],
+  }),
+
+  // ------------------------------------------------------8th BLOCK STARTS HERE------------------------------
+
+  FirstDerivative: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "Smoothed Price / TS",
+    accepts: ["TS", "Smoothed Price"],
+    operations: ["Threshold", "Oscillator", "Overlay"],
+    outputs: ["Oscillator", "Overlay", "Signal"],
+  }),
+
+  SecondDerivative: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "Derivative / TS",
+    accepts: ["TS", "Derivative"],
+    operations: ["Threshold", "Oscillator"],
+    outputs: ["Oscillator", "Signal"],
+  }),
+
+  GradientCalculation: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "Matrix / Surface",
+    accepts: ["matrix", "surface"],
+    operations: ["Table", "Heatmap", "Surface"],
+    outputs: ["Table", "Heatmap", "3D"],
+  }),
+
+  AUC: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS / Vector (usually after Abs)",
+    accepts: ["TS", "vector"],
+    operations: ["Normalize", "Threshold", "Oscillator"],
+    outputs: ["Oscillator", "Signal", "Table"],
+  }),
+
+  CumulativeIntegration: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS / Vector",
+    accepts: ["TS", "vector"],
+    operations: ["Overlay", "Oscillator"],
+    outputs: ["Overlay", "Oscillator"],
+  }),
+
+  DefiniteIndefiniteIntegrals: createNode({
+    stage: "transform",
+    inputCount: 2,
+    inputPlaceholder: "Function Pack + Limits",
+    accepts: ["function pack", "limits"],
+    operations: ["Table", "Surface"],
+    outputs: ["Table", "3D"],
+  }),
+
+  ODE: createNode({
+    stage: "transform",
+    inputCount: 3,
+    inputPlaceholder: "State + Parameters + Time",
+    accepts: ["state", "parameters", "time"],
+    operations: ["Solve", "Table", "Overlay projection"],
+    outputs: ["Table", "Overlay"],
+  }),
+
+  PDE: createNode({
+    stage: "transform",
+    inputCount: 3,
+    inputPlaceholder: "Surface + Parameters + Time",
+    accepts: ["surface", "parameters", "time"],
+    operations: ["Surface", "Heatmap", "Table"],
+    outputs: ["Heatmap", "3D", "Table"],
+  }),
+
+  HeatEquation: createNode({
+    stage: "transform",
+    inputCount: 3,
+    inputPlaceholder: "Parameter Pack + TS/Matrix",
+    accepts: ["parameters", "TS", "matrix"],
+    operations: ["Surface", "Heatmap", "Overlay projection"],
+    outputs: ["Heatmap", "3D", "Overlay"],
+  }),
+
+  BlackScholesPDE: createNode({
+    stage: "transform",
+    inputCount: 3,
+    inputPlaceholder: "Pricing Pack",
+    accepts: ["pricing inputs", "parameters", "market data"],
+    operations: ["Surface", "Table", "Greeks"],
+    outputs: ["Table", "Heatmap", "3D"],
+  }),
+
+  PartialDerivatives: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "Function Pack",
+    accepts: ["function pack"],
+    operations: ["Table", "Surface"],
+    outputs: ["Table", "3D"],
+  }),
+
+  DirectionalDerivatives: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "Function Pack",
+    accepts: ["function pack"],
+    operations: ["Table", "Surface"],
+    outputs: ["Table", "3D"],
+  }),
+
+  Laplacian: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "Surface / Matrix",
+    accepts: ["surface", "matrix"],
+    operations: ["Heatmap", "Surface"],
+    outputs: ["Heatmap", "3D"],
+  }),
+
+  Jacobian: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "Function Pack",
+    accepts: ["function pack"],
+    operations: ["Table"],
+    outputs: ["Table"],
+  }),
+
+  Hessian: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "Function Pack",
+    accepts: ["function pack"],
+    operations: ["Table", "Heatmap"],
+    outputs: ["Table", "Heatmap"],
+  }),
+
+  Curvature: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS / Surface",
+    accepts: ["TS", "surface"],
+    operations: ["Threshold", "Oscillator"],
+    outputs: ["Oscillator", "Signal"],
+  }),
+
+  InflectionPointDetector: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS",
+    accepts: ["TS"],
+    operations: ["Signal markers", "Threshold"],
+    outputs: ["Signal", "Table"],
+  }),
+
+  NumericalDifferentiation: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS / Vector",
+    accepts: ["TS", "vector"],
+    operations: ["Threshold", "Oscillator"],
+    outputs: ["Oscillator", "Signal"],
+  }),
+
+  NumericalIntegration: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "TS / Vector",
+    accepts: ["TS", "vector"],
+    operations: ["Normalize", "Threshold"],
+    outputs: ["Oscillator", "Signal", "Table"],
+  }),
+
+  TaylorSeriesExpansion: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "Function Pack",
+    accepts: ["function pack"],
+    operations: ["Table"],
+    outputs: ["Table"],
+  }),
+
+  GradientFlow: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "Parameter Pack",
+    accepts: ["parameters"],
+    operations: ["Table", "Surface"],
+    outputs: ["Table", "3D"],
+  }),
+
+  GradientDescent: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "Objective + Parameters",
+    accepts: ["objective", "parameters"],
+    operations: ["Table"],
+    outputs: ["Table"],
+  }),
+
+  EulerMethod: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "ODE Parameter Pack",
+    accepts: ["ODE parameters"],
+    operations: ["Table", "Overlay projection"],
+    outputs: ["Table", "Overlay"],
+  }),
+
+  RungeKuttaMethods: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "ODE Parameter Pack",
+    accepts: ["ODE parameters"],
+    operations: ["Table", "Overlay projection"],
+    outputs: ["Table", "Overlay"],
+  }),
+
+  // ------------------------------------------------------10th BLOCK STARTS HERE------------------------------
+
+  Vectors: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "feature vector",
+    accepts: ["feature vector"],
+    operations: ["Dot", "Norm", "Projection", "Table"],
+    outputs: ["Table"],
+  }),
+
+  Matrices: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "feature matrix",
+    accepts: ["feature matrix"],
+    operations: ["PCA", "SVD", "Inverse", "Heatmap"],
+    outputs: ["Heatmap", "Table"],
+  }),
+
+  EigenvaluesEigenvectors: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "matrix",
+    accepts: ["matrix"],
+    operations: ["Table", "PCA-like analysis"],
+    outputs: ["Table", "Heatmap"],
+  }),
+
+  MatrixMultiplication: createNode({
+    stage: "transform",
+    inputCount: 2,
+    inputPlaceholder: "matrix A + matrix B",
+    accepts: ["matrix A", "matrix B"],
+    operations: ["Projection", "Transform", "Table"],
+    outputs: ["Table"],
+  }),
+
+  CovarianceMatrix: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "matrix",
+    accepts: ["matrix"],
+    operations: ["PCA", "Heatmap", "Inverse"],
+    outputs: ["Heatmap", "Table"],
+  }),
+
+  PCA: createNode({
+    stage: "transform",
+    inputCount: 4,
+    inputPlaceholder: "Feature1 + Feature2 + Feature3",
+    accepts: ["Feature1", "Feature2", "Feature3"],
+    operations: ["PC extraction", "Clustering", "Heatmap"],
+    outputs: ["Oscillator", "Heatmap", "Table", "3D"],
+  }),
+
+  DotProduct: createNode({
+    stage: "transform",
+    inputCount: 2,
+    inputPlaceholder: "vector A + vector B",
+    accepts: ["vector A", "vector B"],
+    operations: ["Compare", "Table"],
+    outputs: ["Table"],
+  }),
+
+  CrossProduct: createNode({
+    stage: "transform",
+    inputCount: 2,
+    inputPlaceholder: "vector A + vector B",
+    accepts: ["vector A", "vector B"],
+    operations: ["Table"],
+    outputs: ["Table"],
+  }),
+
+  VectorNorm: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "vector",
+    accepts: ["vector"],
+    operations: ["Threshold", "Table"],
+    outputs: ["Table", "Signal"],
+  }),
+
+  Projection: createNode({
+    stage: "transform",
+    inputCount: 2,
+    inputPlaceholder: "vector/matrix + axis/basis",
+    accepts: ["vector", "matrix", "axis", "basis"],
+    operations: ["Oscillator", "Table"],
+    outputs: ["Oscillator", "Table"],
+  }),
+
+  Orthogonality: createNode({
+    stage: "transform",
+    inputCount: 2,
+    inputPlaceholder: "vectors / matrix",
+    accepts: ["vector", "matrix"],
+    operations: ["Table"],
+    outputs: ["Table"],
+  }),
+
+  MatrixInverse: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "matrix",
+    accepts: ["matrix"],
+    operations: ["Portfolio blocks", "Table"],
+    outputs: ["Table", "Heatmap"],
+  }),
+
+  Determinant: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "matrix",
+    accepts: ["matrix"],
+    operations: ["Table"],
+    outputs: ["Table"],
+  }),
+
+  Trace: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "matrix",
+    accepts: ["matrix"],
+    operations: ["Table"],
+    outputs: ["Table"],
+  }),
+
+  SVD: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "matrix",
+    accepts: ["matrix"],
+    operations: ["Table", "Heatmap", "Feature reduction"],
+    outputs: ["Table", "Heatmap"],
+  }),
+
+  QRDecomposition: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "matrix",
+    accepts: ["matrix"],
+    operations: ["Table"],
+    outputs: ["Table"],
+  }),
+
+  LinearSystemSolver: createNode({
+    stage: "transform",
+    inputCount: 2,
+    inputPlaceholder: "matrix + vector",
+    accepts: ["matrix", "vector"],
+    operations: ["Table"],
+    outputs: ["Table"],
+  }),
+
+  TensorOperations: createNode({
+    stage: "transform",
+    inputCount: 2,
+    inputPlaceholder: "tensor pack",
+    accepts: ["tensor"],
+    operations: ["Table", "Heatmap"],
+    outputs: ["Table", "Heatmap"],
+  }),
+
+  FeatureSpaceTransformation: createNode({
+    stage: "transform",
+    inputCount: 1,
+    inputPlaceholder: "matrix",
+    accepts: ["matrix"],
+    operations: ["PCA", "ML", "Heatmap"],
+    outputs: ["Heatmap", "Table", "Oscillator"],
   }),
 };
