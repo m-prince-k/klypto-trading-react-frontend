@@ -25,6 +25,7 @@ import { Spinner } from "../tradingModals/Spinner";
 import EditableMultiSelect from "../indicator/EditTableLabel";
 import AlertModal from "./ScannerModals";
 import { INDICATOR_ALIASES, MA_INDICATORS } from "../../util/scannerFunctions";
+import { CandlestickSeries, createChart } from "lightweight-charts";
 
 /* ================= SYMBOL LIST ================= */
 
@@ -62,7 +63,216 @@ export default function IndicatorBuilderListing({
   const [showAlert, setShowAlert] = useState(false);
   const [alertMsg, setAlertMsg] = useState("");
 
-  console.log(dataSource, "dataSource");
+  const [activeSymbol, setActiveSymbol] = useState(null); // chart stays on this
+  const [hoveredSymbol, setHoveredSymbol] = useState(null);
+  const [chartData, setChartData] = useState(null);
+  const containerRef = useRef(null);
+  const chartCache = useRef({}); // ✅ store fetched data
+  const inFlight = useRef({}); // ✅ prevent duplicate calls
+  const [chartPosition, setChartPosition] = useState("right");
+  const rowRef = useRef(null);
+  const [verticalAdjust, setVerticalAdjust] = useState(0);
+
+  // const handleHover = (symbol) => {
+  //   setHoveredSymbol(symbol);
+  //   setActiveSymbol(symbol);
+
+  //   try {
+  //     const tf = timeframeValue || "1d"; // current selected TF
+  //     const symbolData = dataSource?.[tf]?.[symbol];
+
+  //     if (!symbolData) {
+  //       setChartData(null);
+  //       return;
+  //     }
+
+  //     const formatted = symbolData.map((d) => ({
+  //       time: d.time,
+  //       open: d.open,
+  //       high: d.high,
+  //       low: d.low,
+  //       close: d.close,
+  //     }));
+
+  //     setChartData(formatted);
+  //   } catch (err) {
+  //     console.error(err);
+  //   }
+  // };
+
+ const handleHover = async (symbol, e) => {
+  if (!e?.currentTarget) return;
+
+  setHoveredSymbol(symbol);
+  setActiveSymbol(symbol);
+
+  const rect = e.currentTarget.getBoundingClientRect();
+
+  const chartWidth = 600;
+  const chartHeight = 300;
+
+  /* ================= POSITIONING ================= */
+
+  // 👉 LEFT / RIGHT
+  if (window.innerWidth - rect.right < chartWidth) {
+    setChartPosition("left");
+  } else {
+    setChartPosition("right");
+  }
+
+  // 👉 TOP / BOTTOM (prevent overflow)
+  if (window.innerHeight - rect.top < chartHeight) {
+    const overflow = chartHeight - (window.innerHeight - rect.top);
+    setVerticalAdjust(overflow);
+  } else {
+    setVerticalAdjust(0);
+  }
+
+  /* ================= DATA ================= */
+
+  const tf = timeframeValue || "1m";
+  const cacheKey = `${symbol}_${tf}`;
+
+  // ✅ 1. CACHE HIT
+  if (chartCache.current[cacheKey]) {
+    setChartData(chartCache.current[cacheKey]);
+    return;
+  }
+
+  // ✅ 2. PREVENT DUPLICATE CALLS
+  if (inFlight.current[cacheKey]) return;
+
+  setChartData(null); // loading state
+
+  try {
+    inFlight.current[cacheKey] = true;
+
+    const response = await apiService.post(
+      `/api/listing?symbol=${symbol}&interval=${tf}&day=4000`
+    );
+
+    const result = response?.data;
+
+    if (!result || !Array.isArray(result)) {
+      setChartData(null);
+      return;
+    }
+
+    const formatted = result.map((d) => ({
+      time: d.time,
+      open: d.open,
+      high: d.high,
+      low: d.low,
+      close: d.close,
+    }));
+
+    // ✅ CACHE SAVE
+    chartCache.current[cacheKey] = formatted;
+
+    setChartData(formatted);
+  } catch (err) {
+    console.error("Hover API Error:", err);
+    setChartData(null);
+  } finally {
+    delete inFlight.current[cacheKey];
+  }
+};
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!containerRef.current) return;
+
+      if (!containerRef.current.contains(e.target)) {
+        setActiveSymbol(null);
+        setHoveredSymbol(null); // ✅ FIX
+        setChartData(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+  useEffect(() => {
+    if (!activeSymbol || !chartData) return;
+
+    const container = containerRef.current;
+    if (!container) return;
+
+    container.innerHTML = ""; // ✅ clear old chart completely
+
+    const chart = createChart(container, {
+      width: 600,
+      height: 400,
+      layout: {
+        background: { color: "#0F0F0F" },
+        textColor: "#DDD",
+      },
+      grid: {
+        vertLines: { color: "#222" },
+        horzLines: { color: "#222" },
+      },
+      timeScale: {
+        barSpacing: 12, // ✅ 🔥 increases candle width
+      },
+    });
+
+    const series = chart.addSeries(CandlestickSeries, {
+      upColor: "#00FF88",
+      downColor: "#FF4D4F",
+      borderVisible: false,
+      wickUpColor: "#00FF88",
+      wickDownColor: "#FF4D4F",
+    });
+
+    series.setData(chartData);
+
+    // ✅ LEGEND (NOW ABOVE CHART)
+    const legend = document.createElement("div");
+    legend.style.position = "absolute";
+    legend.style.top = "6px";
+    legend.style.left = "10px";
+    legend.style.zIndex = "10"; // ✅ IMPORTANT
+    legend.style.background = "rgba(0,0,0,0.7)";
+    legend.style.padding = "4px 8px";
+    legend.style.borderRadius = "4px";
+    legend.style.color = "#fff";
+    legend.style.fontSize = "12px";
+    legend.style.fontFamily = "monospace";
+
+    container.appendChild(legend);
+
+    // ✅ CROSSHAIR MOVE
+    chart.subscribeCrosshairMove((param) => {
+      if (!param.time) return;
+
+      const data = param.seriesData.get(series);
+      if (!data) return;
+
+      legend.innerHTML = `
+      <b>${activeSymbol}</b> &nbsp;
+      <b>${timeframeValue}</b> &nbsp;
+      O: ${data.open ?? "-"} 
+      H: ${data.high ?? "-"} 
+      L: ${data.low ?? "-"} 
+      C: ${data.close ?? "-"}
+    `;
+    });
+
+    // ✅ DEFAULT LAST CANDLE
+    const last = chartData[chartData.length - 1];
+    if (last) {
+      legend.innerHTML = `
+      <b>${activeSymbol}</b> &nbsp;
+      O: ${last.open} 
+      H: ${last.high} 
+      L: ${last.low} 
+      C: ${last.close}
+    `;
+    }
+
+    return () => {
+      chart.remove();
+    };
+  }, [activeSymbol, chartData]);
 
   const hasData = normalizeData(dataSource).length > 0;
   // ✅ Tracks whether the user manually picked a TF from dropdown 1
@@ -84,12 +294,7 @@ export default function IndicatorBuilderListing({
 
   useEffect(() => {
     fetchData();
-  }, [
-    runScanTrigger,
-    debouncedCurrencies,
-    timeframeValue,
-    listingTimeframe,
-  ]);
+  }, [runScanTrigger, debouncedCurrencies, timeframeValue, listingTimeframe]);
 
   async function fetchListingCurrencies() {
     setLoading(true);
@@ -194,7 +399,6 @@ export default function IndicatorBuilderListing({
     return value * (map[unit] || 1);
   };
 
-
   const normalizeTfForDropdown = (tf) => {
     if (!tf) return "";
     const lower = tf.toLowerCase();
@@ -212,8 +416,6 @@ export default function IndicatorBuilderListing({
     }
     return tf.replace(/_ago$/i, "");
   };
-
- 
 
   const isIndicatorMatch = (key, indicator, tf) => {
     if (!key || !indicator || !tf) return false;
@@ -260,7 +462,6 @@ export default function IndicatorBuilderListing({
       ? Math.max(...daysArray)
       : INDICATOR_DAYS_MAP.default;
   };
-
 
   /* ================= CONSTANTS ================= */
 
@@ -595,9 +796,10 @@ export default function IndicatorBuilderListing({
         logic,
       };
       setFinalRules(cleanRules);
+      
 
       const { data: result = {} } = await apiService.post(
-        `/api/scannerDetail?interval=${apiInterval}&day=${totalDays}`,
+        `/api/scannerDetail?interval=${apiInterval}&limit=${totalDays}`,
         payload,
       );
 
@@ -835,29 +1037,29 @@ export default function IndicatorBuilderListing({
       "upperbandrsi",
     ]);
 
-    // const indicatorCols = Array.from(
-    //   new Set(
-    //     mergedData.flatMap((row) =>
-    //       Object.keys(row).filter((key) => {
-    //         if (ignore.has(key)) return false;
+    const indicatorCols = Array.from(
+      new Set(
+        mergedData.flatMap((row) =>
+          Object.keys(row).filter((key) => {
+            if (ignore.has(key)) return false;
 
-    //         // ✅ Filter columns to match selected timeframe/indicator (skip when ALL)
-    //         if (
-    //           timeframe?.tf &&
-    //           timeframe?.indicator &&
-    //           timeframe.tf !== "ALL"
-    //         ) {
-    //           return isIndicatorMatch(key, timeframe.indicator, timeframe.tf);
-    //         }
+            // ✅ Filter columns to match selected timeframe/indicator (skip when ALL)
+            if (
+              timeframe?.tf &&
+              timeframe?.indicator &&
+              timeframe.tf !== "ALL"
+            ) {
+              return isIndicatorMatch(key, timeframe.indicator, timeframe.tf);
+            }
 
-    //         return true;
-    //       }),
-    //     ),
-    //   ),
-    // );
+            return true;
+          }),
+        ),
+      ),
+    );
 
-    // return [...baseColumns, ...indicatorCols, "timeframe"];
-    return [...baseColumns];
+    return [...baseColumns, ...indicatorCols, "timeframe"];
+    // return [...baseColumns];
   }, [mergedData, timeframe]);
 
   const handleSort = (key) => {
@@ -895,8 +1097,8 @@ export default function IndicatorBuilderListing({
   return (
     <Container
       fluid
-      className="py-4 px-4 bg-slate-50"
-      style={{ minHeight: "100vh" }}
+      className="pt-4 px-4 bg-slate-50"
+      style={{ minHeight: "80vh" }}
     >
       {/* Header */}
       <div className="d-flex align-items-center justify-content-between mb-4">
@@ -1481,7 +1683,7 @@ export default function IndicatorBuilderListing({
               <Table
                 hover
                 className="mb-0 align-middle"
-                style={{ fontSize: "0.875rem" }}
+                style={{ fontSize: "0.875rem", zIndex: 0 }}
               >
                 <thead style={{ background: "#212529", color: "#fff" }}>
                   <tr>
@@ -1557,16 +1759,70 @@ export default function IndicatorBuilderListing({
                         <td>{page * limit + i + 1}</td>
 
                         {columns.map((col) => (
-                          <td key={col}>
-                            {col === "time"
-                              ? new Date(row[col] * 1000).toLocaleString()
-                              : typeof row[col] === "boolean"
-                                ? row[col]
-                                  ? "True"
-                                  : "False"
-                                : typeof row[col] === "object"
-                                  ? JSON.stringify(row[col])
-                                  : row[col]}
+                          <td
+                            key={col}
+                            style={
+                              col === "symbol" ? { position: "relative" } : {}
+                            }
+                            onMouseEnter={
+                              col === "symbol"
+                                ? (e) => handleHover(row.symbol, e) // ✅ pass event
+                                : undefined
+                            }
+                          >
+                            {/* ✅ SYMBOL COLUMN WITH HOVER */}
+                            {col === "symbol" ? (
+                              <div style={{ overflow: "visible" }}>
+                                {row[col]}
+
+                                {hoveredSymbol === row.symbol && (
+                                  <div
+                                    style={{
+                                      position: "absolute",
+                                      top: "50%",
+                                      transform: "translateY(-50%)",
+                                      zIndex: 9999,
+                                      background: "#111",
+                                      padding: 10,
+                                      borderRadius: 6,
+                                      boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
+
+                                      // ✅ dynamic side
+                                      left:
+                                        chartPosition === "right"
+                                          ? "100%"
+                                          : "auto",
+                                      right:
+                                        chartPosition === "left"
+                                          ? "100%"
+                                          : "auto",
+
+                                      marginLeft:
+                                        chartPosition === "right" ? 8 : 0,
+                                      marginRight:
+                                        chartPosition === "left" ? 8 : 0,
+                                    }}
+                                  >
+                                    <div
+                                      ref={containerRef}
+                                      style={{ position: "relative" }}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            ) : col === "time" ? (
+                              new Date(row[col] * 1000).toLocaleString()
+                            ) : typeof row[col] === "boolean" ? (
+                              row[col] ? (
+                                "True"
+                              ) : (
+                                "False"
+                              )
+                            ) : typeof row[col] === "object" ? (
+                              JSON.stringify(row[col])
+                            ) : (
+                              row[col]
+                            )}
                           </td>
                         ))}
                       </tr>
@@ -1577,7 +1833,7 @@ export default function IndicatorBuilderListing({
             </div>
           </div>
 
-          <div className="d-flex align-items-center gap-2 justify-content-end px-3 py-2">
+          <div className="d-flex z-0 align-items-center gap-2 justify-content-end px-3 py-2">
             <Form.Select
               size="sm"
               value={selectedLimit}
@@ -1635,6 +1891,8 @@ export default function IndicatorBuilderListing({
         message={alertMsg}
         onClose={() => setShowAlert(false)}
       />
+
+
     </Container>
   );
 }

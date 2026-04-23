@@ -1,144 +1,239 @@
-import React, { useEffect, useRef, useState } from "react";
-import { createChart, HistogramSeries } from "lightweight-charts";
+import React, { useState, useMemo, useRef } from "react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+} from "recharts";
+import html2canvas from "html2canvas";
 
-const MACDHistogramChart = () => {
-  const chartContainerRef = useRef();
-  const [chartObj, setChartObj] = useState(null); // Dynamic MACD-like palette
+// sectors
+const sectors = [
+  { key: "industrials", color: "#6EC1E4" },
+  { key: "indices", color: "#FF6F91" },
+  { key: "financials", color: "#7ED957" },
+  { key: "reality", color: "#F6A623" },
+  { key: "metals", color: "#7B7FD1" },
+  { key: "fmcg", color: "#FF4D6D" },
+  { key: "chemicals", color: "#F8E16C" },
+  { key: "services", color: "#4DB6AC" },
+  { key: "energy", color: "#2ECC71" },
+  { key: "bank", color: "#5DADE2" },
+];
 
-  const [palette, setPalette] = useState({
-    positiveRising: "#26A69A", // green
-    positiveFalling: "#A5D6A7", // light green
-    negativeRising: "#EF5350", // red
-    negativeFalling: "#F8BBD0", // pink
-  });
+// large dataset
+const generateData = () => {
+  const data = [];
+  const start = new Date("2023-08-26");
 
-  useEffect(() => {
-    const chart = createChart(chartContainerRef.current, {
-      width: 900,
-      height: 500,
-      layout: { backgroundColor: "#FFFFFF", textColor: "#000" },
-      grid: {
-        vertLines: { color: "#F0F0F0" },
-        horzLines: { color: "#F0F0F0" },
-      },
-      rightPriceScale: { visible: true },
-      timeScale: { visible: true },
-    }); // Sample data
+  for (let i = 0; i < 200; i++) {
+    const d = new Date(start);
+    d.setDate(d.getDate() + i);
 
-    const rawData = Array.from({ length: 30 }, (_, i) => ({
-      time: `2026-03-${(i + 1).toString().padStart(2, "0")}`,
-      value: Math.floor(Math.random() * 40 - 20), // -20 to +20
-    })); // Function to apply MACD-style colors
+    const base =
+      Math.sin(i / 6) * 25 +
+      Math.cos(i / 12) * 10 +
+      60 +
+      Math.random() * 10;
 
-    const coloredData = rawData.map((d, i, arr) => {
-      let color = palette.positiveRising;
+    data.push({
+      date: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      industrials: Math.round(base * 0.12),
+      indices: Math.round(base + Math.random() * 30),
+      financials: Math.round(base * 0.08),
+      reality: Math.round(base * 0.05),
+      metals: Math.round(base * 0.06),
+      fmcg: Math.round(base * 0.1),
+      chemicals: Math.round(base * 0.05),
+      services: Math.round(base * 0.06),
+      energy: Math.round(base * 0.07),
+      bank: Math.round(base * 0.15),
+    });
+  }
 
-      if (d.value >= 0) {
-        if (i === 0 || d.value >= arr[i - 1].value)
-          color = palette.positiveRising;
-        else color = palette.positiveFalling;
-      } else {
-        if (i === 0 || d.value >= arr[i - 1].value)
-          color = palette.negativeRising;
-        else color = palette.negativeFalling;
-      }
-
-      return { ...d, color };
-    });
-
-    const histogramSeries = chart.addSeries(HistogramSeries, {
-      priceFormat: { type: "volume" },
-      priceScaleId: "",
-      scaleMargins: { top: 0.1, bottom: 0.1 },
-    });
-
-    histogramSeries.setData(coloredData);
-
-    setChartObj({ chart, histogramSeries, rawData });
-
-    return () => chart.remove();
-  }, []); // Update colors dynamically
-
-  useEffect(() => {
-    if (!chartObj) return;
-
-    const coloredData = chartObj.rawData.map((d, i, arr) => {
-      let color = palette.positiveRising;
-
-      if (d.value >= 0) {
-        if (i === 0 || d.value >= arr[i - 1].value)
-          color = palette.positiveRising;
-        else color = palette.positiveFalling;
-      } else {
-        if (i === 0 || d.value >= arr[i - 1].value)
-          color = palette.negativeRising;
-        else color = palette.negativeFalling;
-      }
-
-      return { ...d, color };
-    });
-
-    chartObj.histogramSeries.setData(coloredData);
-  }, [palette, chartObj]);
-
-  return (
-    <div>
-            
-      <div style={{ marginBottom: 10 }}>
-                
-        <label>
-                    Positive Rising:           
-          <input
-            type="color"
-            value={palette.positiveRising}
-            onChange={(e) =>
-              setPalette({ ...palette, positiveRising: e.target.value })
-            }
-          />
-                  
-        </label>{" "}
-                
-        <label>
-                    Positive Falling:           
-          <input
-            type="color"
-            value={palette.positiveFalling}
-            onChange={(e) =>
-              setPalette({ ...palette, positiveFalling: e.target.value })
-            }
-          />
-                  
-        </label>{" "}
-                
-        <label>
-                    Negative Rising:           
-          <input
-            type="color"
-            value={palette.negativeRising}
-            onChange={(e) =>
-              setPalette({ ...palette, negativeRising: e.target.value })
-            }
-          />
-                  
-        </label>{" "}
-                
-        <label>
-                    Negative Falling:           
-          <input
-            type="color"
-            value={palette.negativeFalling}
-            onChange={(e) =>
-              setPalette({ ...palette, negativeFalling: e.target.value })
-            }
-          />
-                  
-        </label>
-              
-      </div>
-            <div ref={chartContainerRef}></div>
-          
-    </div>
-  );
+  return data;
 };
 
-export default MACDHistogramChart;
+const rawData = generateData();
+
+const BacktestChart = () => {
+  const [selectedSector, setSelectedSector] = useState(null);
+  const [openDropdown, setOpenDropdown] = useState(false);
+  const chartRef = useRef();
+
+  // filter logic
+  const chartData = useMemo(() => {
+    if (!selectedSector) return rawData;
+
+    return rawData.map((item) => ({
+      date: item.date,
+      [selectedSector]: item[selectedSector],
+    }));
+  }, [selectedSector]);
+
+  // :small_blue_diamond: CSV DOWNLOAD
+  const downloadCSV = () => {
+    const headers = Object.keys(chartData[0]);
+    const rows = chartData.map((row) =>
+      headers.map((h) => row[h]).join(",")
+    );
+
+    const csvContent = [headers.join(","), ...rows].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "backtest.csv";
+    a.click();
+  };
+
+  // :small_blue_diamond: TIMELINE JSON DOWNLOAD
+  const downloadTimeline = () => {
+    const blob = new Blob([JSON.stringify(chartData, null, 2)], {
+      type: "application/json",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "timeline.json";
+    a.click();
+  };
+
+  // :small_blue_diamond: CHART IMAGE DOWNLOAD
+  const downloadChartImage = async () => {
+    const canvas = await html2canvas(chartRef.current);
+    const link = document.createElement("a");
+    link.download = "chart.png";
+    link.href = canvas.toDataURL();
+    link.click();
+  };
+
+  return (
+    <div style={{ width: "100%", height: 500 }}>
+
+      {/* :small_blue_diamond: Top Bar */}
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 15 }}>
+
+        {/* Chips */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+          {sectors.map((s) => (
+            <div
+              key={s.key}
+              onClick={() =>
+                setSelectedSector(selectedSector === s.key ? null : s.key)
+              }
+              style={{
+                cursor: "pointer",
+                padding: "6px 12px",
+                borderRadius: "20px",
+                background:
+                  selectedSector === s.key ? s.color : "#F1F1F1",
+                color: selectedSector === s.key ? "#fff" : "#000",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <span
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: "50%",
+                  background: s.color,
+                }}
+              />
+              {s.key}
+            </div>
+          ))}
+        </div>
+
+        {/* :arrow_down_small: Download Dropdown */}
+        <div style={{ position: "relative" }}>
+          <button
+            onClick={() => setOpenDropdown(!openDropdown)}
+            style={{
+              padding: "6px 12px",
+              borderRadius: 6,
+              border: "1px solid #ccc",
+              cursor: "pointer",
+              background: "#fff",
+            }}
+          >
+            Download :arrow_down:
+          </button>
+
+          {openDropdown && (
+            <div
+              style={{
+                position: "absolute",
+                right: 0,
+                top: "110%",
+                background: "#fff",
+                border: "1px solid #ddd",
+                borderRadius: 6,
+                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                zIndex: 10,
+                minWidth: 150,
+              }}
+            >
+              <div
+                onClick={downloadCSV}
+                style={{ padding: 10, cursor: "pointer" }}
+              >
+                :page_facing_up: Download CSV
+              </div>
+              <div
+                onClick={downloadChartImage}
+                style={{ padding: 10, cursor: "pointer" }}
+              >
+                :bar_chart: Download Chart
+              </div>
+              <div
+                onClick={downloadTimeline}
+                style={{ padding: 10, cursor: "pointer" }}
+              >
+                :clock3: Download Timeline
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* :small_blue_diamond: Chart */}
+      <div ref={chartRef} style={{ width: "100%", height: "100%" }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={chartData} barSize={4}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" interval={20} tick={{ fontSize: 10 }} />
+            <YAxis />
+            <Tooltip />
+
+            {selectedSector ? (
+              <Bar
+                dataKey={selectedSector}
+                fill={sectors.find((s) => s.key === selectedSector).color}
+              />
+            ) : (
+              sectors.map((s) => (
+                <Bar
+                  key={s.key}
+                  dataKey={s.key}
+                  stackId="a"
+                  fill={s.color}
+                />
+              ))
+            )}
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+};
+
+export default BacktestChart;

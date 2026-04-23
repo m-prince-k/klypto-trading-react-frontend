@@ -785,18 +785,6 @@ export default function IndicatorRuleBuilder({
     { label: "Volume", value: "volume" },
   ];
 
-  // const PRICE_OPTIONS = [
-  // //   { label: "Open", value: "open" },
-  // //   { label: "High", value: "high" },
-  // //   { label: "Low", value: "low" },
-  // //   { label: "Close", value: "close" },
-  //   { label: "Volume", value: "volume" },
-  //   { label: "VWAP", value: "VWAP" },
-  //   { label: "Accumulation / Distribution", value: "ad" },
-  //   { label: "Pivot Point", value: "pivot point p" },
-  //   { label: "OBV", value: "obv" },
-  //   { label: "Session Volume Profile", value: "svp" },
-  // ];
 
   const isMATypeFn = (value = "") =>
     MA_INDICATORS.includes(value.toLowerCase());

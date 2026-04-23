@@ -8,7 +8,7 @@ const token =
 // 🔹 Create axios instance
 const api = axios.create({
   // baseURL: "https://studios-publishers-promising-rosa.trycloudflare.com",
-  baseURL: "http://192.168.1.7:5000", // change to your API
+  baseURL: "http://192.168.1.5:5000", // change to your API
   timeout: 500000,
   headers: {
     "Content-Type": "application/json",

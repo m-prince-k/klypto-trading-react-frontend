@@ -1244,56 +1244,8 @@ export default function Candlestick() {
                   Reset
                 </button>
               </div>
-
-              {/*-------------------------------------------- Floating Open Button----------- */}
-              {/* {!openForm && (
-                <div className="d-flex justify-content-end position-sticky top-0 ">
-                  <button
-                    onClick={() => setOpenForm(true)}
-                    className="btn btn-primary d-flex align-items-center gap-1 mx-3"
-                    style={{ zIndex: 1050 }}
-                  >
-                    <IoLink />
-                  </button>
-                </div>
-              )} */}
             </div>
 
-            {/* Sliding Panel */}
-            <div
-              className="position-fixed top-0 end-0 vh-100 bg-white shadow"
-              style={{
-                width: "1100px",
-                height: "100vh",
-                zIndex: 1050,
-                transform: openForm ? "translateX(0)" : "translateX(100%)",
-                transition: "transform 0.6s ease-out",
-              }}
-            >
-              <IndicatorRuleBuilder
-                onOpen={() => setOpenForm(true)}
-                onClose={() => setOpenForm(false)}
-                rules={rules}
-                setRules={setRules}
-                logic={logic}
-                setLogic={setLogic}
-                setRunScanTrigger={setRunScanTrigger}
-                runScanTrigger={runScanTrigger}
-                selectedCurrencies={selectedCurrencies}
-                setSelectedCurrencies={setSelectedCurrencies}
-                scannerOptions={scannerOptions}
-                setScannerOptions={setScannerOptions}
-                finalRules={finalRules}
-                setFinalRules={setFinalRules}
-              />
-            </div>
-            {openForm && (
-              <div
-                className="position-fixed top-0 start-0 w-100 vh-100 bg-dark bg-opacity-25"
-                style={{ zIndex: 1040 }}
-                onClick={() => setOpenForm(false)}
-              />
-            )}
             {/* --------------indicator sub part property show in modal-------------- */}
             <IndicatorPropertyDialog
               setIndicatorProperty={setIndicatorProperty}
@@ -1311,23 +1263,6 @@ export default function Candlestick() {
           </div>
         </div>
       </section>
-      <div className="">
-        {/* <IndicatorRuleBuilder /> */}
-        {/* <IndicatorBuildingListing
-          selectedCurrency={selectedCurrency}
-          timeframeValue={timeframeValue}
-          rules={rules}
-          logic={logic}
-          setRules={setRules}
-          scannerOptions={scannerOptions}
-          runScanTrigger={runScanTrigger}
-          setRunScanTrigger={setRunScanTrigger}
-          listingTimeframe={listingTimeframe}
-          selectedCurrencies={selectedCurrencies}
-          setSelectedCurrencies={setSelectedCurrencies}
-          setFinalRules={setFinalRules}
-        /> */}
-      </div>
     </>
   );
 }

@@ -31,6 +31,7 @@ import {
   ohlcv_dropdown,
   PRICE_FIELDS,
 } from "../../util/scannerFunctions";
+import BacktestResults from "../../components/scanner/BacktestResults";
 
 export default function ScannerBuilder() {
   const [rules, setRules] = useState([]);
@@ -759,7 +760,7 @@ export default function ScannerBuilder() {
     const currentVal = rule[labelField];
     if (currentVal === undefined) return null;
 
-    const { selected, hasParams, isPriceField } = getScannerMeta(currentVal);
+    const { selected, hasParams } = getScannerMeta(currentVal);
     const isMA = isMATypeFn(currentVal);
     const selectedMeta = selected?.meta || {};
 
@@ -1486,6 +1487,8 @@ export default function ScannerBuilder() {
         dataSource={dataSource}
         setDataSource={setDataSource}
       />
+
+      {saveScan && <BacktestResults />}
 
       <Modal
         show={timeframePromptConfig.isOpen}

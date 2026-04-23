@@ -12,7 +12,7 @@ import { toast } from "react-toastify";
 
 export const ChartProprties = {
   width: 1350,
-  height: 600,
+  height: 515,
 
   layout: {
     background: { type: "solid", color: "#ffffff" },
