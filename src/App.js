@@ -12,6 +12,7 @@ import Signup from "./pages/auth/signup";
 import { Navigate } from "react-router-dom";
 import Home from "./pages/Home";
 import ScannerBuilder from "./pages/scanner/ScannerBuilder";
+import CustomIndicator from "./pages/customIndicator/CustomIndicator";
 
 function App() {
   return (
@@ -32,6 +33,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <ScannerBuilder />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/customIndicator"
+            element={
+              <ProtectedRoute>
+                <CustomIndicator />
               </ProtectedRoute>
             }
           />
