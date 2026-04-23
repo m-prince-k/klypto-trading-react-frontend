@@ -1,239 +1,216 @@
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
 } from "recharts";
 import html2canvas from "html2canvas";
+import { Dropdown, Container, Card } from "react-bootstrap";
 
-// sectors
-const sectors = [
-  { key: "industrials", color: "#6EC1E4" },
-  { key: "indices", color: "#FF6F91" },
-  { key: "financials", color: "#7ED957" },
-  { key: "reality", color: "#F6A623" },
-  { key: "metals", color: "#7B7FD1" },
-  { key: "fmcg", color: "#FF4D6D" },
-  { key: "chemicals", color: "#F8E16C" },
-  { key: "services", color: "#4DB6AC" },
-  { key: "energy", color: "#2ECC71" },
-  { key: "bank", color: "#5DADE2" },
-];
-
-// large dataset
-const generateData = () => {
-  const data = [];
-  const start = new Date("2023-08-26");
-
-  for (let i = 0; i < 200; i++) {
-    const d = new Date(start);
-    d.setDate(d.getDate() + i);
-
-    const base =
-      Math.sin(i / 6) * 25 +
-      Math.cos(i / 12) * 10 +
-      60 +
-      Math.random() * 10;
-
-    data.push({
-      date: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-      industrials: Math.round(base * 0.12),
-      indices: Math.round(base + Math.random() * 30),
-      financials: Math.round(base * 0.08),
-      reality: Math.round(base * 0.05),
-      metals: Math.round(base * 0.06),
-      fmcg: Math.round(base * 0.1),
-      chemicals: Math.round(base * 0.05),
-      services: Math.round(base * 0.06),
-      energy: Math.round(base * 0.07),
-      bank: Math.round(base * 0.15),
-    });
-  }
-
-  return data;
+// 🔥 Color map (fallback safe)
+const sectorColors = {
+  store: "#F5B041",
+  l1: "#5DADE2",
+  exchange: "#FF6F91",
+  payments: "#58D68D",
+  l2: "#AF7AC5",
+  defi: "#F4D03F",
+  infra: "#48C9B0",
+  gaming: "#EB984E",
+  alt: "#85929E",
 };
 
-const rawData = generateData();
+const getColor = (key) => sectorColors[key] || "#999";
 
-const BacktestChart = () => {
-  const [selectedSector, setSelectedSector] = useState(null);
-  const [openDropdown, setOpenDropdown] = useState(false);
-  const chartRef = useRef();
+const BacktestResults = () => {
+  const [selectedSectors, setSelectedSectors] = useState([]);
+  const [isAllSelected, setIsAllSelected] = useState(true);
+  const [rawData, setRawData] = useState([]);
+  const chartRef = useRef();
 
-  // filter logic
-  const chartData = useMemo(() => {
-    if (!selectedSector) return rawData;
+  // ===============================
+  // 🔥 FETCH API
+  // ===============================
+  useEffect(() => {
+    fetch("http://localhost:5000/api/backtest")
+      .then((res) => res.json())
+      .then((data) => {
+        setRawData(data.chart || []);
+      })
+      .catch((err) => console.error("API Error:", err));
+  }, []);
 
-    return rawData.map((item) => ({
-      date: item.date,
-      [selectedSector]: item[selectedSector],
-    }));
-  }, [selectedSector]);
+  // ===============================
+  // 🔥 AUTO-DETECT SECTORS
+  // ===============================
+  const allSectors = useMemo(() => {
+    if (!rawData.length) return [];
 
-  // :small_blue_diamond: CSV DOWNLOAD
-  const downloadCSV = () => {
-    const headers = Object.keys(chartData[0]);
-    const rows = chartData.map((row) =>
-      headers.map((h) => row[h]).join(",")
-    );
+    return Object.keys(rawData[0]).filter((k) => k !== "date");
+  }, [rawData]);
 
-    const csvContent = [headers.join(","), ...rows].join("\n");
+  // ===============================
+  // 🔥 TOGGLE LOGIC (Chartink style)
+  // ===============================
+  const toggleSector = (key) => {
+    if (isAllSelected) {
+      setSelectedSectors([key]);
+      setIsAllSelected(false);
+      return;
+    }
 
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
+    setSelectedSectors((prev) => {
+      if (prev.includes(key)) {
+        const updated = prev.filter((s) => s !== key);
 
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "backtest.csv";
-    a.click();
-  };
+        if (updated.length === 0) {
+          setIsAllSelected(true);
+          return [];
+        }
 
-  // :small_blue_diamond: TIMELINE JSON DOWNLOAD
-  const downloadTimeline = () => {
-    const blob = new Blob([JSON.stringify(chartData, null, 2)], {
-      type: "application/json",
-    });
+        return updated;
+      }
 
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "timeline.json";
-    a.click();
-  };
+      return [...prev, key];
+    });
+  };
 
-  // :small_blue_diamond: CHART IMAGE DOWNLOAD
-  const downloadChartImage = async () => {
-    const canvas = await html2canvas(chartRef.current);
-    const link = document.createElement("a");
-    link.download = "chart.png";
-    link.href = canvas.toDataURL();
-    link.click();
-  };
+  // ===============================
+  // 🔥 ACTIVE SECTORS
+  // ===============================
+  const activeSectors = isAllSelected ? allSectors : selectedSectors;
 
-  return (
-    <div style={{ width: "100%", height: 500 }}>
+  // ===============================
+  // 🔥 CHART DATA
+  // ===============================
+  const chartData = useMemo(() => {
+    return rawData.map((d) => {
+      const obj = { date: d.date };
 
-      {/* :small_blue_diamond: Top Bar */}
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 15 }}>
+      activeSectors.forEach((s) => {
+        const val = d[s];
 
-        {/* Chips */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-          {sectors.map((s) => (
-            <div
-              key={s.key}
-              onClick={() =>
-                setSelectedSector(selectedSector === s.key ? null : s.key)
-              }
-              style={{
-                cursor: "pointer",
-                padding: "6px 12px",
-                borderRadius: "20px",
-                background:
-                  selectedSector === s.key ? s.color : "#F1F1F1",
-                color: selectedSector === s.key ? "#fff" : "#000",
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-              }}
-            >
-              <span
-                style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: "50%",
-                  background: s.color,
-                }}
-              />
-              {s.key}
-            </div>
-          ))}
-        </div>
+        // ❗ hide negative values (your requirement)
+        obj[s] = val > 0 ? val : 0;
+      });
 
-        {/* :arrow_down_small: Download Dropdown */}
-        <div style={{ position: "relative" }}>
-          <button
-            onClick={() => setOpenDropdown(!openDropdown)}
-            style={{
-              padding: "6px 12px",
-              borderRadius: 6,
-              border: "1px solid #ccc",
-              cursor: "pointer",
-              background: "#fff",
-            }}
-          >
-            Download :arrow_down:
-          </button>
+      return obj;
+    });
+  }, [rawData, activeSectors]);
 
-          {openDropdown && (
-            <div
-              style={{
-                position: "absolute",
-                right: 0,
-                top: "110%",
-                background: "#fff",
-                border: "1px solid #ddd",
-                borderRadius: 6,
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                zIndex: 10,
-                minWidth: 150,
-              }}
-            >
-              <div
-                onClick={downloadCSV}
-                style={{ padding: 10, cursor: "pointer" }}
-              >
-                :page_facing_up: Download CSV
-              </div>
-              <div
-                onClick={downloadChartImage}
-                style={{ padding: 10, cursor: "pointer" }}
-              >
-                :bar_chart: Download Chart
-              </div>
-              <div
-                onClick={downloadTimeline}
-                style={{ padding: 10, cursor: "pointer" }}
-              >
-                :clock3: Download Timeline
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+  // ===============================
+  // 🔹 DOWNLOAD
+  // ===============================
+  const downloadChartImage = async () => {
+    const canvas = await html2canvas(chartRef.current);
+    const link = document.createElement("a");
+    link.download = "chart.png";
+    link.href = canvas.toDataURL();
+    link.click();
+  };
 
-      {/* :small_blue_diamond: Chart */}
-      <div ref={chartRef} style={{ width: "100%", height: "100%" }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} barSize={4}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" interval={20} tick={{ fontSize: 10 }} />
-            <YAxis />
-            <Tooltip />
+  return (
+    <Container fluid className="pb-4 px-4" style={{ background: "#F8F9FA" }}>
+      {/* HEADER */}
+      <div className="d-flex justify-content-between mb-4">
+        <h4>Backtest Results</h4>
 
-            {selectedSector ? (
-              <Bar
-                dataKey={selectedSector}
-                fill={sectors.find((s) => s.key === selectedSector).color}
-              />
-            ) : (
-              sectors.map((s) => (
-                <Bar
-                  key={s.key}
-                  dataKey={s.key}
-                  stackId="a"
-                  fill={s.color}
-                />
-              ))
-            )}
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  );
+        <Dropdown align="end">
+          <Dropdown.Toggle size="sm">Download</Dropdown.Toggle>
+          <Dropdown.Menu>
+            <Dropdown.Item onClick={downloadChartImage}>
+              Download Chart
+            </Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown>
+      </div>
+
+      <Card className="border-0 shadow-sm">
+        <Card.Body>
+          {/* 🔥 LEGEND */}
+          <div className="d-flex flex-wrap gap-2 mb-3">
+            {allSectors.map((key) => {
+              const isActive = activeSectors.includes(key);
+              const color = getColor(key);
+
+              return (
+                <span
+                  key={key}
+                  onClick={() => toggleSector(key)}
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: 999,
+                    cursor: "pointer",
+                    background: isActive ? color : "#eee",
+                    color: isActive ? "#fff" : "#444",
+                    fontSize: 13,
+                  }}
+                >
+                  ● {key}
+                </span>
+              );
+            })}
+          </div>
+
+          {/* 🔥 CHART */}
+          <div ref={chartRef} style={{ height: 420 }}>
+            <ResponsiveContainer>
+              <BarChart data={chartData} barSize={8}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis domain={[0, "auto"]} />
+                
+
+                {/* 🔥 TOOLTIP (ONLY HOVERED BAR) */}
+                <Tooltip
+                  shared={false}
+                  cursor={false}
+                  content={({ active, payload }) => {
+                    if (!active || !payload || payload.length === 0)
+                      return null;
+
+                    // 🔥 Find the bar actually hovered (value > 0)
+                    const item = payload.find((p) => p.value > 0);
+
+                    if (!item) return null; // no bar hovered
+
+                    return (
+                      <div
+                        style={{
+                          background: "#fff",
+                          border: "1px solid #ddd",
+                          padding: "8px 12px",
+                          borderRadius: 6,
+                          fontSize: 12,
+                        }}
+                      >
+                        <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                          {item.payload.date}
+                        </div>
+
+                        <div style={{ color: item.color }}>
+                          {item.name}: {item.value.toFixed(2)}%
+                        </div>
+                      </div>
+                    );
+                  }}
+                />
+
+                {/* 🔥 BARS */}
+                {activeSectors.map((s) => (
+                  <Bar key={s} dataKey={s} isAnimationActive={false} stackId="a" fill={getColor(s)} />
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card.Body>
+      </Card>
+    </Container>
+  );
 };
 
-export default BacktestChart;
+export default BacktestResults;

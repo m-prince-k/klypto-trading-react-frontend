@@ -1,136 +1,123 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+import React, { useState, useMemo } from "react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+} from "recharts";
 
-export default function OBVTable() {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(false);
+// 🔥 BULK STATIC DATA GENERATOR (realistic pattern)
+const generateBacktestData = () => {
+  const data = [];
+  const start = new Date("2024-01-01");
 
-  const symbol = "BTCUSDT";
-  const interval = "1m";
+  const sectors = ["defi", "bank", "energy", "fmcg"];
 
-  const fetchFullData = async () => {
-    setLoading(true);
-
-    let startTime = new Date("2020-08-01").getTime();
-    const endTime = Date.now();
-
-    let allData = [];
-
-    try {
-      while (startTime < endTime) {
-        const url = `https://api.binance.com/api/v3/klines`;
-
-        const res = await axios.get(url, {
-          params: {
-            symbol,
-            interval,
-            startTime,
-            limit: 1000,
-          },
-        });
-
-        const chunk = res.data;
-
-        if (!chunk.length) break;
-
-        allData = [...allData, ...chunk];
-
-        // move startTime forward
-        startTime = chunk[chunk.length - 1][0] + 1;
-
-        console.log("Fetched:", allData.length);
-
-        // 🔥 prevent UI freeze (important)
-        await new Promise((r) => setTimeout(r, 100));
-      }
-
-      console.log("Total candles:", allData.length);
-
-      const formatted = formatAndCalculateOBV(allData);
-      setData(formatted);
-    } catch (err) {
-      console.error("Fetch error:", err);
-    } finally {
-      setLoading(false);
-    }
+  let base = {
+    defi: 0,
+    bank: 0,
+    energy: 0,
+    fmcg: 0,
   };
 
-  // ✅ OBV CALCULATION
-  const formatAndCalculateOBV = (raw) => {
-    let obv = 0;
+  for (let i = 0; i < 120; i++) {
+    const d = new Date(start);
+    d.setDate(d.getDate() + i);
 
-    return raw.map((candle, i) => {
-      const currentClose = parseFloat(candle[4]);
-      const volume = parseFloat(candle[5]);
+    // simulate pnl movement (trend + noise)
+    base.defi += Math.sin(i / 5) * 0.8 + (Math.random() - 0.5);
+    base.bank += Math.cos(i / 6) * 0.6 + (Math.random() - 0.5);
+    base.energy += Math.sin(i / 8) * 0.5 + (Math.random() - 0.5);
+    base.fmcg += Math.cos(i / 10) * 0.4 + (Math.random() - 0.5);
 
-      if (i > 0) {
-        const prevClose = parseFloat(raw[i - 1][4]);
-
-        if (currentClose > prevClose) obv += volume;
-        else if (currentClose < prevClose) obv -= volume;
-      }
-
-      return {
-        time: new Date(candle[0]).toLocaleString(),
-        open: candle[1],
-        high: candle[2],
-        low: candle[3],
-        close: candle[4],
-        volume: candle[5],
-        obv: obv.toFixed(2),
-      };
+    data.push({
+      date: d.toISOString().split("T")[0],
+      defi: Number(base.defi.toFixed(2)),
+      bank: Number(base.bank.toFixed(2)),
+      energy: Number(base.energy.toFixed(2)),
+      fmcg: Number(base.fmcg.toFixed(2)),
     });
-  };
+  }
 
-  useEffect(() => {
-    fetchFullData();
-  }, []);
+  return data;
+};
+const sectorColors = {
+  defi: "#6EC1E4",
+  bank: "#5DADE2",
+  energy: "#2ECC71",
+  fmcg: "#FF4D6D",
+};
+const rawData = generateBacktestData();
+
+const BacktestResults = () => {
+  const [selectedSector, setSelectedSector] = useState(null);
+
+  const sectors = ["defi", "bank", "energy", "fmcg"];
+
+  const chartData = useMemo(() => {
+    if (!selectedSector) return rawData;
+
+    return rawData.map((d) => ({
+      date: d.date,
+      [selectedSector]: d[selectedSector],
+    }));
+  }, [selectedSector]);
 
   return (
     <div style={{ padding: 20 }}>
-      <h2>
-        OBV Table ({symbol} - {interval})
-      </h2>
+      <h3>Backtest Results (Static Data)</h3>
 
-      {loading && <p>Loading full history... ⏳</p>}
+      {/* 🔹 Filters */}
+      <div style={{ marginBottom: 15 }}>
+        <button onClick={() => setSelectedSector(null)}>All</button>
 
-      <div style={{ maxHeight: "600px", overflowY: "auto" }}>
-        <table
-          border="1"
-          cellPadding="6"
-          style={{
-            borderCollapse: "collapse",
-            width: "100%",
-            fontSize: "12px",
-          }}
-        >
-          <thead style={{ position: "sticky", top: 0, background: "#eee" }}>
-            <tr>
-              <th>Time</th>
-              <th>Open</th>
-              <th>High</th>
-              <th>Low</th>
-              <th>Close</th>
-              <th>Volume</th>
-              <th>OBV</th>
-            </tr>
-          </thead>
+        {sectors.map((s) => (
+          <button
+            key={s}
+            onClick={() => setSelectedSector(s)}
+            style={{
+              marginLeft: 8,
+              background: selectedSector === s ? "#333" : "#eee",
+              color: selectedSector === s ? "#fff" : "#000",
+            }}
+          >
+            {s}
+          </button>
+        ))}
+      </div>
 
-          <tbody>
-            {data.map((row, i) => (
-              <tr key={i}>
-                <td>{row.time}</td>
-                <td>{row.open}</td>
-                <td>{row.high}</td>
-                <td>{row.low}</td>
-                <td>{row.close}</td>
-                <td>{row.volume}</td>
-                <td>{row.obv}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* 🔹 Chart */}
+      <div style={{ width: "100%", height: 400 }}>
+        <ResponsiveContainer>
+          <BarChart data={chartData} barSize={6}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" interval={15} />
+            <YAxis />
+            <Tooltip />
+
+           {selectedSector ? (
+  <Bar
+    dataKey={selectedSector}
+    fill={sectorColors[selectedSector]}
+  />
+) : (
+  Object.keys(sectorColors).map((sector) => (
+    <Bar
+      key={sector}
+      dataKey={sector}
+      stackId="a"
+      fill={sectorColors[sector]}
+    />
+  ))
+)}
+          </BarChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );
-}
+};
+
+export default BacktestResults;
