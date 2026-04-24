@@ -15,6 +15,7 @@ export default function ProIndicatorBuilder() {
   const [indicatorConfig, setIndicatorConfig] = useState({});
   const [loadingConfig, setLoadingConfig] = useState(false);
   const [configError, setConfigError] = useState(null);
+  const [errors, setErrors] = useState({});
 
   async function fetchIndicatorConfig() {
     setLoadingConfig(true);
@@ -39,10 +40,13 @@ export default function ProIndicatorBuilder() {
 
   const current = indicatorConfig?.[type] || {};
 
-  const sourceOptions = Object.keys(indicatorConfig).map((k) => ({
-    label: k,
-    value: k,
-  }));
+  const sourceOptions = [
+    { label: "Select", value: "" },
+    ...Object.keys(indicatorConfig).map((k) => ({
+      label: k,
+      value: k,
+    })),
+  ];
 
   // 🔥 dynamic grid layout
   const gridCols = "grid-cols-1 md:grid-cols-5";
@@ -50,15 +54,75 @@ export default function ProIndicatorBuilder() {
   // 🔥 sync inputs
   useEffect(() => {
     setInputs(Array(current.inputCount).fill(""));
+    setErrors((prev) => ({ ...prev, inputs: [] }));
   }, [type]);
 
   const handleInputChange = (value, index) => {
     const updated = [...inputs];
     updated[index] = value;
     setInputs(updated);
+
+    // clear that input's error
+    const updatedErrors = [...(errors.inputs || [])];
+    updatedErrors[index] = "";
+    setErrors((prev) => ({ ...prev, inputs: updatedErrors }));
+  };
+
+  /* ================= VALIDATE ================= */
+  const validate = () => {
+    // Name
+    if (!name.trim()) {
+      setErrors({ name: "Name is required." });
+      return false;
+    }
+    if (name.trim().length < 3) {
+      setErrors({ name: "Name must be at least 3 characters." });
+      return false;
+    }
+    if (name.trim().length > 100) {
+      setErrors({ name: "Name cannot exceed 100 characters." });
+      return false;
+    }
+
+    // Source
+    if (!type) {
+      setErrors({ type: "Please select a source." });
+      return false;
+    }
+
+    // Inputs
+    if (current.inputCount > 0) {
+      for (let i = 0; i < inputs.length; i++) {
+        if (!inputs[i] || inputs[i] === "") {
+          setErrors({
+            inputs: inputs.map((_, j) =>
+              j === i ? `Input ${i + 1} is required.` : "",
+            ),
+          });
+          return false;
+        }
+      }
+    }
+
+    // Operation
+    if (!op) {
+      setErrors({ op: "Please select an operation." });
+      return false;
+    }
+
+    // Output
+    if (!output) {
+      setErrors({ output: "Please select an output." });
+      return false;
+    }
+
+    setErrors({});
+    return true;
   };
 
   const handleDeploy = () => {
+    if (!validate()) return;
+
     const finalPayload = {
       name,
       source: type,
@@ -72,6 +136,21 @@ export default function ProIndicatorBuilder() {
 
     setPayload(finalPayload);
   };
+
+  const errText = (msg) =>
+    msg ? (
+      <p
+        style={{
+          color: "#f87171",
+          fontSize: 11,
+          marginTop: 4,
+          marginBottom: 0,
+        }}
+      >
+        {msg}
+      </p>
+    ) : null;
+
   const darkCard = {
     background: "rgba(255,255,255,0.05)",
     border: "1px solid rgba(255,255,255,0.1)",
@@ -134,11 +213,18 @@ export default function ProIndicatorBuilder() {
                   </p>
                   <Form.Control
                     value={name}
-                    placeholder="Indicator Name"
-                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Name"
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      setErrors((prev) => ({ ...prev, name: "" }));
+                    }}
                     className="white-placeholder"
-                    style={darkControl}
+                    style={{
+                      ...darkControl,
+                      borderColor: errors.name ? "#f87171" : "#374151",
+                    }}
                   />
+                  {errText(errors.name)}
                 </div>
               </Col>
 
@@ -155,32 +241,41 @@ export default function ProIndicatorBuilder() {
                     options={sourceOptions}
                     value={type ? { label: type, value: type } : null}
                     onChange={(opt) => {
+                      if (!opt.value) return; // ignore "Select"
                       setType(opt.value);
-                      setOp("");
-                      setOutput("");
                     }}
                     isSearchable
-                    placeholder="Select"
-                    menuPortalTarget={document.body} // ✅ renders at body level
-                    menuPosition="fixed" // ✅ prevents clipping
+                    menuPortalTarget={document.body}
+                    menuPosition="fixed"
                     styles={{
                       control: (b) => ({
                         ...b,
                         background: darkControl.background,
-                        borderColor: "#374151",
+                        borderColor: errors.type ? "#f87171" : "#374151",
+                        justifyContent: "flex-start",
+                        textAlign: "left",
+                        boxShadow: "none", // 🔥 removes blue glow
+                        "&:hover": {
+                          borderColor: errors.type ? "#f87171" : "#374151", // 🔥 same border on hover
+                        },
+                        borderRadius:8,
+                      }),
+                      placeholder: (b) => ({
+                        ...b,
+                        color: "#e5e7eb",
                       }),
 
                       menu: (b) => ({
                         ...b,
                         background: "#1f2937",
-                        overflowX: "hidden", 
+                        overflowX: "hidden",
                       }),
 
                       menuList: (b) => ({
                         ...b,
                         maxHeight: 200,
                         scrollbarWidth: "thin",
-                        scrollbarColor: "#4b5563 #1f2937", 
+                        scrollbarColor: "#4b5563 #1f2937",
                         background: "#1f2937",
                       }),
 
@@ -188,9 +283,9 @@ export default function ProIndicatorBuilder() {
                         ...b,
                         background: s.isFocused ? "#374151" : "#1f2937",
                         color: "#e5e7eb",
-                        whiteSpace: "nowrap", // keep text in one line
+                        whiteSpace: "nowrap",
                         overflow: "hidden",
-                        textOverflow: "ellipsis", // 🔥 truncate instead of scroll
+                        textOverflow: "ellipsis",
                       }),
 
                       singleValue: (b) => ({
@@ -211,6 +306,7 @@ export default function ProIndicatorBuilder() {
                       }),
                     }}
                   />
+                  {errText(errors.type)}
                 </div>
               </Col>
 
@@ -232,74 +328,126 @@ export default function ProIndicatorBuilder() {
                     {/* CASE 1: operator exists → use SELECT + operator UI */}
                     {current.operator ? (
                       current.inputCount === 2 ? (
-                        <div className="d-flex align-items-center gap-3">
-                          <Form.Select
-                            value={inputs[0] || ""}
-                            onChange={(e) =>
-                              handleInputChange(e.target.value, 0)
-                            }
-                            style={{ ...darkControl, flex: 1 }}
-                          >
-                            <option value="">Select</option>
-                            {current.accepts.map((item, i) => (
-                              <option key={i}>{item}</option>
-                            ))}
-                          </Form.Select>
+                        <>
+                          <div className="d-flex align-items-start gap-3">
+                            <div style={{ flex: 1 }}>
+                              <Form.Select
+                                value={inputs[0] || ""}
+                                onChange={(e) =>
+                                  handleInputChange(e.target.value, 0)
+                                }
+                                style={{
+                                  ...darkControl,
+                                  borderColor: errors.inputs?.[0]
+                                    ? "#f87171"
+                                    : "#374151",
+                                }}
+                              >
+                                <option
+                                  value=""
+                                  disabled
+                                  style={{ color: "#fafafaff" }}
+                                >
+                                  Select…
+                                </option>
+                                {current.accepts.map((item, i) => (
+                                  <option key={i}>{item}</option>
+                                ))}
+                              </Form.Select>
+                              {errText(errors.inputs?.[0])}
+                            </div>
 
-                          <div
-                            style={{
-                              color: "#facc15",
-                              fontWeight: "bold",
-                              fontSize: 20,
-                            }}
-                          >
-                            {current.operator}
+                            <div
+                              style={{
+                                color: "#facc15",
+                                fontWeight: "bold",
+                                fontSize: 20,
+                              }}
+                            >
+                              {current.operator}
+                            </div>
+
+                            <div style={{ flex: 1 }}>
+                              <Form.Select
+                                value={inputs[1] || ""}
+                                onChange={(e) =>
+                                  handleInputChange(e.target.value, 1)
+                                }
+                                style={{
+                                  ...darkControl,
+                                  borderColor: errors.inputs?.[1]
+                                    ? "#f87171"
+                                    : "#374151",
+                                }}
+                              >
+                                <option
+                                  value=""
+                                  disabled
+                                  style={{ color: "#fafafaff" }}
+                                >
+                                  Select…
+                                </option>
+                                {current.accepts
+                                  .filter((item) => item !== inputs[0])
+                                  .map((item, i) => (
+                                    <option key={i}>{item}</option>
+                                  ))}
+                              </Form.Select>
+                              {errText(errors.inputs?.[1])}
+                            </div>
                           </div>
-
-                          <Form.Select
-                            value={inputs[1] || ""}
-                            onChange={(e) =>
-                              handleInputChange(e.target.value, 1)
-                            }
-                            style={{ ...darkControl, flex: 1 }}
-                          >
-                            <option value="">Select</option>
-                            {current.accepts
-                              .filter((item) => item !== inputs[0])
-                              .map((item, i) => (
-                                <option key={i}>{item}</option>
-                              ))}
-                          </Form.Select>
-                        </div>
+                        </>
                       ) : (
                         inputs.map((val, i) => (
-                          <Form.Select
-                            key={i}
-                            value={val}
-                            onChange={(e) =>
-                              handleInputChange(e.target.value, i)
-                            }
-                            className="mb-2"
-                            style={darkControl}
-                          >
-                            <option value="">Select</option>
-                            {current.accepts.map((item, j) => (
-                              <option key={j}>{item}</option>
-                            ))}
-                          </Form.Select>
+                          <div key={i}>
+                            <Form.Select
+                              value={val}
+                              onChange={(e) =>
+                                handleInputChange(e.target.value, i)
+                              }
+                              className="mb-1"
+                              style={{
+                                ...darkControl,
+                                borderColor: errors.inputs?.[i]
+                                  ? "#f87171"
+                                  : "#374151",
+                              }}
+                            >
+                              <option
+                                value=""
+                                disabled
+                                style={{ color: "#fafafaff" }}
+                              >
+                                Select…
+                              </option>
+                              {current.accepts.map((item, j) => (
+                                <option key={j}>{item}</option>
+                              ))}
+                            </Form.Select>
+                            {errText(errors.inputs?.[i])}
+                          </div>
                         ))
                       )
                     ) : (
                       /* CASE 2: NO operator → normal input boxes */
                       inputs.map((val, i) => (
-                        <Form.Control
-                          key={i}
-                          value={val}
-                          placeholder={`${current.inputPlaceholder} ${i + 1}`}
-                          onChange={(e) => handleInputChange(e.target.value, i)}
-                          className="mb-2 white-placeholder"
-                          style={darkControl}
-                        />
+                        <div key={i}>
+                          <Form.Control
+                            value={val}
+                            placeholder={`${current.inputPlaceholder} ${i + 1}`}
+                            onChange={(e) =>
+                              handleInputChange(e.target.value, i)
+                            }
+                            className="mb-1 white-placeholder"
+                            style={{
+                              ...darkControl,
+                              borderColor: errors.inputs?.[i]
+                                ? "#f87171"
+                                : "#374151",
+                            }}
+                          />
+                          {errText(errors.inputs?.[i])}
+                        </div>
                       ))
                     )}
                   </div>
@@ -317,22 +465,31 @@ export default function ProIndicatorBuilder() {
                   </p>
                   <Form.Select
                     value={op}
-                    onChange={(e) => setOp(e.target.value)}
-                    style={darkControl}
+                    onChange={(e) => {
+                      setOp(e.target.value);
+                      setErrors((prev) => ({ ...prev, op: "" }));
+                    }}
+                    style={{
+                      ...darkControl,
+                      borderColor: errors.op ? "#f87171" : "#374151",
+                    }}
                   >
-                    <option value="">Select</option>
+                    <option value="" disabled style={{ color: "#fafafaff" }}>
+                      Select…
+                    </option>
                     {(current.operations || []).map((item, i) => (
                       <option key={i} value={item}>
                         {item}
                       </option>
                     ))}
                   </Form.Select>
+                  {errText(errors.op)}
                 </div>
               </Col>
 
               {/* Output */}
               <Col style={{ minWidth: 200 }}>
-                <div style={darkCard} className="h-100">
+                <div style={darkCard} className="h-100 pb-3">
                   <p
                     className="mb-2"
                     style={{ fontSize: 13, color: "#9ca3af" }}
@@ -341,16 +498,25 @@ export default function ProIndicatorBuilder() {
                   </p>
                   <Form.Select
                     value={output}
-                    onChange={(e) => setOutput(e.target.value)}
-                    style={darkControl}
+                    onChange={(e) => {
+                      setOutput(e.target.value);
+                      setErrors((prev) => ({ ...prev, output: "" }));
+                    }}
+                    style={{
+                      ...darkControl,
+                      borderColor: errors.output ? "#f87171" : "#374151",
+                    }}
                   >
-                    <option value="">Select</option>
+                    <option value="" disabled style={{ color: "#fafafaff" }}>
+                      Select…
+                    </option>
                     {(current.outputs || []).map((item, i) => (
                       <option key={i} value={item}>
                         {item}
                       </option>
                     ))}
                   </Form.Select>
+                  {errText(errors.output)}
                 </div>
               </Col>
             </Row>

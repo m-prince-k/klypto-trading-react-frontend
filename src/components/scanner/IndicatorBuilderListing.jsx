@@ -26,6 +26,7 @@ import EditableMultiSelect from "../indicator/EditTableLabel";
 import AlertModal from "./ScannerModals";
 import { INDICATOR_ALIASES, MA_INDICATORS } from "../../util/scannerFunctions";
 import { CandlestickSeries, createChart } from "lightweight-charts";
+import MiniChart from "./MiniChart";
 
 /* ================= SYMBOL LIST ================= */
 
@@ -77,14 +78,14 @@ export default function IndicatorBuilderListing({
   const handleHover = async (symbol, e) => {
     if (!e?.currentTarget) return;
 
-    setHoveredSymbol(symbol);
     setActiveSymbol(symbol);
+    setHoveredSymbol(symbol);
 
     const rect = e.currentTarget.getBoundingClientRect();
     setHoverRect(rect);
 
     const chartWidth = 600;
-    const chartHeight = 300;
+    const chartHeight = 350;
 
     /* ================= POSITIONING ================= */
 
@@ -152,104 +153,106 @@ export default function IndicatorBuilderListing({
       delete inFlight.current[cacheKey];
     }
   };
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (!containerRef.current) return;
 
-      if (!containerRef.current.contains(e.target)) {
-        setActiveSymbol(null);
-        setHoveredSymbol(null); // ✅ FIX
-        setChartData(null);
-        setHoverRect(null);
-      }
-    };
+  // useEffect(() => {
+  //   const handleClickOutside = (e) => {
+  //     if (!containerRef.current) return;
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-  useEffect(() => {
-    if (!activeSymbol || !chartData) return;
+  //     if (!containerRef.current.contains(e.target)) {
+  //       setActiveSymbol(null);
+  //       setHoveredSymbol(null); // ✅ FIX
+  //       setChartData(null);
+  //       setHoverRect(null);
+  //     }
+  //   };
 
-    const container = containerRef.current;
-    if (!container) return;
+  //   document.addEventListener("mousedown", handleClickOutside);
+  //   return () => document.removeEventListener("mousedown", handleClickOutside);
+  // }, []);
 
-    container.innerHTML = ""; // ✅ clear old chart completely
+  // useEffect(() => {
+  //   if (!activeSymbol || !chartData) return;
 
-    const chart = createChart(container, {
-      width: 500,
-      height: 250,
-      layout: {
-        background: { color: "#0F0F0F" },
-        textColor: "#DDD",
-      },
-      grid: {
-        vertLines: { color: "#222" },
-        horzLines: { color: "#222" },
-      },
-      timeScale: {
-        barSpacing: 12, // ✅ 🔥 increases candle width
-      },
-      zIndex: 9999,
-    });
+  //   const container = containerRef.current;
+  //   if (!container) return;
 
-    const series = chart.addSeries(CandlestickSeries, {
-      upColor: "#00FF88",
-      downColor: "#FF4D4F",
-      borderVisible: false,
-      wickUpColor: "#00FF88",
-      wickDownColor: "#FF4D4F",
-    });
+  //   container.innerHTML = ""; // ✅ clear old chart completely
 
-    series.setData(chartData);
+  //   const chart = createChart(container, {
+  //     width: 500,
+  //     height: 250,
+  //     layout: {
+  //       background: { color: "#0F0F0F" },
+  //       textColor: "#DDD",
+  //     },
+  //     grid: {
+  //       vertLines: { color: "#222" },
+  //       horzLines: { color: "#222" },
+  //     },
+  //     timeScale: {
+  //       barSpacing: 12, // ✅ 🔥 increases candle width
+  //     },
+  //     zIndex: 9999,
+  //   });
 
-    // ✅ LEGEND (NOW ABOVE CHART)
-    const legend = document.createElement("div");
-    legend.style.position = "absolute";
-    legend.style.top = "6px";
-    legend.style.left = "10px";
-    legend.style.zIndex = "10"; // ✅ IMPORTANT
-    legend.style.background = "rgba(0,0,0,0.7)";
-    legend.style.padding = "4px 8px";
-    legend.style.borderRadius = "4px";
-    legend.style.color = "#fff";
-    legend.style.fontSize = "12px";
-    legend.style.fontFamily = "monospace";
+  //   const series = chart.addSeries(CandlestickSeries, {
+  //     upColor: "#00FF88",
+  //     downColor: "#FF4D4F",
+  //     borderVisible: false,
+  //     wickUpColor: "#00FF88",
+  //     wickDownColor: "#FF4D4F",
+  //   });
 
-    container.appendChild(legend);
+  //   series.setData(chartData);
 
-    // ✅ CROSSHAIR MOVE
-    chart.subscribeCrosshairMove((param) => {
-      if (!param.time) return;
+  //   // ✅ LEGEND (NOW ABOVE CHART)
+  //   const legend = document.createElement("div");
+  //   legend.style.position = "absolute";
+  //   legend.style.top = "6px";
+  //   legend.style.left = "10px";
+  //   legend.style.zIndex = "10"; // ✅ IMPORTANT
+  //   legend.style.background = "rgba(0,0,0,0.7)";
+  //   legend.style.padding = "4px 8px";
+  //   legend.style.borderRadius = "4px";
+  //   legend.style.color = "#fff";
+  //   legend.style.fontSize = "12px";
+  //   legend.style.fontFamily = "monospace";
 
-      const data = param.seriesData.get(series);
-      if (!data) return;
+  //   container.appendChild(legend);
 
-      legend.innerHTML = `
-      <b>${activeSymbol}</b> &nbsp;
-      <b>${timeframeValue}</b> &nbsp;
-      O: ${data.open ?? "-"} 
-      H: ${data.high ?? "-"} 
-      L: ${data.low ?? "-"} 
-      C: ${data.close ?? "-"}
-    `;
-    });
+  //   // ✅ CROSSHAIR MOVE
+  //   chart.subscribeCrosshairMove((param) => {
+  //     if (!param.time) return;
 
-    // ✅ DEFAULT LAST CANDLE
-    const last = chartData[chartData.length - 1];
-    if (last) {
-      legend.innerHTML = `
-      <b>${activeSymbol}</b> &nbsp;
-      O: ${last.open} 
-      H: ${last.high} 
-      L: ${last.low} 
-      C: ${last.close}
-    `;
-    }
+  //     const data = param.seriesData.get(series);
+  //     if (!data) return;
 
-    return () => {
-      chart.remove();
-    };
-  }, [activeSymbol, chartData]);
+  //     legend.innerHTML = `
+  //     <b>${activeSymbol}</b> &nbsp;
+  //     <b>${timeframeValue}</b> &nbsp;
+  //     O: ${data.open ?? "-"}
+  //     H: ${data.high ?? "-"}
+  //     L: ${data.low ?? "-"}
+  //     C: ${data.close ?? "-"}
+  //   `;
+  //   });
+
+  //   // ✅ DEFAULT LAST CANDLE
+  //   const last = chartData[chartData.length - 1];
+  //   if (last) {
+  //     legend.innerHTML = `
+  //     <b>${activeSymbol}</b> &nbsp;
+  //     O: ${last.open}
+  //     H: ${last.high}
+  //     L: ${last.low}
+  //     C: ${last.close}
+  //   `;
+  //   }
+
+  //   return () => {
+  //     chart.remove();
+  //   };
+  // }, [activeSymbol, chartData]);
 
   const hasData = normalizeData(dataSource).length > 0;
   // ✅ Tracks whether the user manually picked a TF from dropdown 1
@@ -1741,7 +1744,9 @@ export default function IndicatorBuilderListing({
                               col === "symbol" ? row.symbol : undefined
                             }
                             style={
-                              col === "symbol" ? { position: "relative" ,cursor: "pointer",} : {}
+                              col === "symbol"
+                                ? { position: "relative", cursor: "pointer" }
+                                : {}
                             }
                             onMouseEnter={
                               col === "symbol"
@@ -1774,17 +1779,26 @@ export default function IndicatorBuilderListing({
                                       padding: 10,
                                       borderRadius: 8,
                                       boxShadow: "0 8px 8px rgba(0,0,0,0.2)",
-                                      
                                     }}
                                   >
-                                    <div
+                                    <MiniChart
+                                      activeSymbol={activeSymbol}
+                                      setActiveSymbol={setActiveSymbol}
+                                      chartData={chartData}
+                                      setChartData={setChartData}
+                                      timeframeValue={timeframeValue}
+                                      setHoverRect={setHoverRect}
+                                      setHoveredSymbol={setHoveredSymbol}
+                                      containerRef={containerRef}
+                                    />
+                                    {/* <div
                                       ref={containerRef}
                                       style={{
                                         position: "relative",
                                         width: 500,
                                         height: 250,
                                       }}
-                                    />
+                                    /> */}
                                   </div>
                                 )}
                               </div>

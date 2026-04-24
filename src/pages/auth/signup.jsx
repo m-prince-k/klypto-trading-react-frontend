@@ -96,12 +96,16 @@ const Signup = () => {
       const payload = {
         ...form,
       };
-      console.log(payload, "payoaddddddd");
-      const response = await apiService.post("/api/signUp", payload);
+      const response = await apiService.post("/api/register", payload);
 
-      // console.log(response, "resssssssssss");
+      // ✅ store token (IMPORTANT)
+      const token = await response.data?.token; // adjust based on API
+      if (token) {
+        localStorage.setItem("token", token);
+      }
 
-      await toast.success("Signup successful!");
+      // ✅ now user is authenticated
+      toast.success("Signup successful!");
       navigate("/candleStick");
     } catch (error) {
       const message =

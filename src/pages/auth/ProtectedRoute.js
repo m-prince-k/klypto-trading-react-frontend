@@ -3,19 +3,19 @@ import { Navigate } from "react-router-dom";
 import { isAuthenticated } from "./protected";
 
 export function ProtectedRoute({ children }) {
-  const [authChecked, setAuthChecked] = useState(false);
-  const [loggedIn, setLoggedIn] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(isAuthenticated());
 
   useEffect(() => {
-    const auth = isAuthenticated();
-    setLoggedIn(auth);
-    setAuthChecked(true);
-  }, []);
+    const checkAuth = () => {
+      setLoggedIn(isAuthenticated());
+    };
 
-  if (!authChecked) {
-    // while checking auth, render nothing or a loader
-    return <div>Loading...</div>;
-  }
+    window.addEventListener("storage", checkAuth);
+
+    return () => {
+      window.removeEventListener("storage", checkAuth);
+    };
+  }, []);
 
   if (!loggedIn) {
     return <Navigate to="/login" replace />;

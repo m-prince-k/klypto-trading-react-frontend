@@ -89,19 +89,42 @@ export default function Login() {
         image="https://yourdomain.com/banner.jpg"
       />
 
-      <Container
-        fluid
-        className="vh-100 d-flex justify-content-center align-items-center bg-dark"
-      >
-        <Card style={{ width: 380 }} className="shadow-lg border-0">
-          <Card.Body className="p-4">
-            <h4 className="text-center mb-4">Login</h4>
+      <div className="min-vh-100 d-flex align-items-center justify-content-center bg-body-secondary">
+        <div
+          className="card border-0 shadow-sm"
+          style={{ width: 400, borderRadius: 16 }}
+        >
+          <div className="card-body p-4">
+            {/* Logo */}
+            <div
+              className="d-flex align-items-center justify-content-center mx-auto mb-3"
+              style={{
+                width: 40,
+                height: 40,
+                background: "#185FA5",
+                borderRadius: 10,
+              }}
+            >
+              <svg width="20" height="20" fill="white" viewBox="0 0 24 24">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+              </svg>
+            </div>
 
-            <Form onSubmit={handleSubmit} noValidate>
+            <h5 className="text-center fw-semibold mb-1">Welcome back</h5>
+            <p className="text-center text-muted small mb-4">
+              Sign in to your account to continue
+            </p>
+
+            <Form noValidate onSubmit={handleSubmit}>
+              {/* Email */}
               <Form.Group className="mb-3">
+                <Form.Label className="small fw-medium text-secondary">
+                  Email address
+                </Form.Label>
                 <Form.Control
                   name="email"
-                  placeholder="Email Address"
+                  type="email"
+                  placeholder="you@example.com"
                   value={form.email}
                   onChange={handleChange}
                   isInvalid={!!errors.email}
@@ -111,52 +134,84 @@ export default function Login() {
                 </Form.Control.Feedback>
               </Form.Group>
 
-              <Form.Group className="mb-3 position-relative">
-                <Form.Control
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Password"
-                  value={form.password}
-                  onChange={handleChange}
-                  isInvalid={!!errors.password}
-                />
-
-                <span
-                  onClick={() => setShowPassword((s) => !s)}
-                  className="position-absolute top-50 end-0 translate-middle-y me-3 text-muted"
-                  style={{ cursor: "pointer", fontSize: 18 }}
-                >
-                  {showPassword ? <FiEyeOff /> : <FiEye />}
-                </span>
-
-                <Form.Control.Feedback type="invalid">
-                  {errors.password}
-                </Form.Control.Feedback>
+              {/* Password */}
+              <Form.Group className="mb-3">
+                <Form.Label className="small fw-medium text-secondary">
+                  Password
+                </Form.Label>
+                <div className="position-relative">
+                  <Form.Control
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={form.password}
+                    onChange={handleChange}
+                    isInvalid={!!errors.password}
+                    style={{ paddingRight: 40 }}
+                  />
+                  <span
+                    onClick={() => setShowPassword((s) => !s)}
+                    className="position-absolute top-50 end-0 translate-middle-y me-3 text-muted"
+                    style={{ cursor: "pointer", fontSize: 16, zIndex: 5 }}
+                  >
+                    {showPassword ? <FiEyeOff /> : <FiEye />}
+                  </span>
+                  <Form.Control.Feedback type="invalid">
+                    {errors.password}
+                  </Form.Control.Feedback>
+                </div>
               </Form.Group>
 
-              <Form.Group className="mb-3">
+              {/* Remember + Forgot */}
+              <div className="d-flex justify-content-between align-items-center mb-3">
                 <Form.Check
                   type="checkbox"
-                  label="Remember Me"
                   name="remember"
+                  label={
+                    <span className="small text-secondary">Remember me</span>
+                  }
                   checked={form.remember}
                   onChange={handleChange}
                 />
-              </Form.Group>
+                <a
+                  href="/forgot-password"
+                  className="small text-primary text-decoration-none"
+                >
+                  Forgot password?
+                </a>
+              </div>
 
+              {/* Submit */}
               <Button
                 type="submit"
-                className="w-100"
-                variant="dark"
-                onClick={handleSubmit}
+                className="w-100 fw-medium"
+                style={{ background: "#185FA5", border: "none" }}
                 disabled={loading}
               >
-                {loading ? "Signing in..." : "Login"}
+                {loading ? "Signing in…" : "Sign in"}
               </Button>
+
+              {/* Divider */}
+              <div className="d-flex align-items-center gap-2 my-3">
+                <hr className="flex-grow-1 m-0" />
+                <span className="text-muted small">or</span>
+                <hr className="flex-grow-1 m-0" />
+              </div>
+
+              {/* Sign up link */}
+              <p className="text-center small text-muted mb-0">
+                Don't have an account?{" "}
+                <a
+                  href="/signup"
+                  className="text-primary fw-medium text-decoration-none"
+                >
+                  Create one
+                </a>
+              </p>
             </Form>
-          </Card.Body>
-        </Card>
-      </Container>
+          </div>
+        </div>
+      </div>
     </>
   );
 }

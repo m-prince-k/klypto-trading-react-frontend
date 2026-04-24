@@ -155,7 +155,7 @@ export default function ChartHeader({
         {/* Action Buttons */}
         <div className="d-flex align-items-center w-full gap-2">
           {/* Range */}
-          <div className="d-flex align-items-center gap-2">
+          {/* <div className="d-flex align-items-center gap-2">
             <label className="mb-0">Range:</label>
             <input
               type="number"
@@ -164,7 +164,7 @@ export default function ChartHeader({
               className="form-control form-control-sm"
               style={{ width: 90, height: 40 }}
             />
-          </div>
+          </div> */}
 
           {/* Indicators */}
           <button

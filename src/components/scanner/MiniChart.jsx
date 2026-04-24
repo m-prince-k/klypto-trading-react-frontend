@@ -1,145 +1,285 @@
 import React, { useEffect, useRef, useState } from "react";
-import { CandlestickSeries, createChart } from "lightweight-charts";
-import {MiniChartProprties} from "../../util/common"
-/* ---------------- BINANCE HELPERS ---------------- */
+import {
+  createChart,
+  CandlestickSeries,
+  LineSeries,
+  AreaSeries,
+  BarSeries,
+  BaselineSeries,
+  HistogramSeries,
+} from "lightweight-charts";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { BsArrowUpRight } from "react-icons/bs";
+import { FiChevronDown } from "react-icons/fi";
+import { chartOptions, convertToHeikinAshi } from "../../util/common";
 
-const BASE = "https://api.binance.com/api/v3";
-
-async function fetchOHLC(symbol) {
-  const res = await fetch(`${BASE}/klines?symbol=${symbol}&interval=5m&limit=40`);
-  const data = await res.json();
- 
-
-  return data.map(c => ({
-    time: c[0] / 1000,
-    open: +c[1],
-    high: +c[2],
-    low: +c[3],
-    close: +c[4],
-  }));
-}
-/* ---------------- MINI CHART ---------------- */
-
-export default function MiniChart( {symbol} ) {
-
-console.log(symbol, "selectedddddddddddddddddddd")
-
-  const ref = useRef(null);
+export default function MiniChart({
+  activeSymbol,
+  chartData,
+  timeframeValue,
+  containerRef,
+}) {
   const chartRef = useRef(null);
+  const seriesRef = useRef(null);
 
+  const [chartType, setChartType] = useState("candlestick");
+  const [ohlc, setOhlc] = useState(null);
+
+  const active = chartOptions.find((c) => c.value === chartType);
+
+  // ✅ Create chart once
   useEffect(() => {
-    if (!ref.current) return; // 🔴 IMPORTANT GUARD
+    if (!containerRef.current) return;
 
-    let isMounted = true;
-
-    fetchOHLC(symbol).then(candles => {
-      if (!isMounted || !ref.current) return;
-
-      chartRef.current = createChart(ref.current, MiniChartProprties);
-
-      const series = chartRef.current.addSeries(CandlestickSeries);
-      series.setData(candles);
+    const chart = createChart(containerRef.current, {
+      width: 600,
+      height: 350,
+      layout: {
+        background: { color: "#0F0F0F" },
+        textColor: "#DDD",
+      },
+      grid: {
+        vertLines: { color: "#222" },
+        horzLines: { color: "#222" },
+      },
+      timeScale: {
+        barSpacing: 10,
+      },
     });
 
-    return () => {
-      isMounted = false;
-      if (chartRef.current) {
-        chartRef.current.remove();
-        chartRef.current = null;
-      }
+    chartRef.current = chart;
+
+    return () => chart.remove();
+  }, []);
+
+  // ✅ Update series + legend logic
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart || !chartData) return;
+
+    // remove old series
+    if (seriesRef.current) {
+      chart.removeSeries(seriesRef.current);
+    }
+
+    let series;
+
+    switch (chartType) {
+      case "line":
+        series = chart.addSeries(LineSeries, { color: "#60a5fa" });
+        series.setData(chartData.map(d => ({ time: d.time, value: d.close })));
+        break;
+
+      case "area":
+        series = chart.addSeries(AreaSeries, {
+          lineColor: "#60a5fa",
+          topColor: "rgba(96,165,250,0.4)",
+          bottomColor: "rgba(96,165,250,0.05)",
+        });
+        series.setData(chartData.map(d => ({ time: d.time, value: d.close })));
+        break;
+
+      case "bar":
+        series = chart.addSeries(BarSeries, {
+          upColor: "#00FF88",
+          downColor: "#FF4D4F",
+        });
+        series.setData(chartData);
+        break;
+
+      case "baseline":
+        series = chart.addSeries(BaselineSeries, {
+          baseValue: { type: "price", price: chartData[0]?.close },
+          topLineColor: "#22c55e",
+          bottomLineColor: "#ef4444",
+        });
+        series.setData(chartData.map(d => ({ time: d.time, value: d.close })));
+        break;
+
+      case "hollowcandles":
+        series = chart.addSeries(CandlestickSeries, {
+          upColor: "transparent",
+          downColor: "#FF4D4F",
+          borderUpColor: "#00FF88",
+          borderDownColor: "#FF4D4F",
+          wickUpColor: "#00FF88",
+          wickDownColor: "#FF4D4F",
+          borderVisible: true,
+        });
+        series.setData(chartData);
+        break;
+
+      case "histogram":
+        series = chart.addSeries(HistogramSeries, {
+          color: "#60a5fa",
+        });
+        series.setData(chartData.map(d => ({ time: d.time, value: d.close })));
+        break;
+
+      case "heikin":
+        series = chart.addSeries(CandlestickSeries, {
+          upColor: "#00FF88",
+          downColor: "#FF4D4F",
+        });
+        series.setData(convertToHeikinAshi(chartData));
+        break;
+
+      default:
+        series = chart.addSeries(CandlestickSeries, {
+          upColor: "#00FF88",
+          downColor: "#FF4D4F",
+        });
+        series.setData(chartData);
+    }
+
+    seriesRef.current = series;
+
+    // ✅ Default OHLC (last candle)
+    const last = chartData[chartData.length - 1];
+    if (last) {
+      setOhlc({
+        open: last.open,
+        high: last.high,
+        low: last.low,
+        close: last.close,
+      });
+    }
+
+    // ✅ Crosshair move
+    const handler = (param) => {
+      if (!param.time || !seriesRef.current) return;
+
+      const data = param.seriesData.get(seriesRef.current);
+      if (!data) return;
+
+      setOhlc({
+        open: data.open ?? data.value,
+        high: data.high ?? data.value,
+        low: data.low ?? data.value,
+        close: data.close ?? data.value,
+      });
     };
-  }, [symbol]);
+
+    chart.subscribeCrosshairMove(handler);
+
+    return () => {
+      chart.unsubscribeCrosshairMove(handler);
+    };
+  }, [chartData, chartType, activeSymbol, timeframeValue]);
+
+  const isUp = ohlc?.close >= ohlc?.open;
+  const ohlcColor = isUp ? "#22c55e" : "#ef4444";
 
   return (
-    <div
-      ref={ref}
-      style={{
-        position: "absolute",
-        top: 0,
-        left: "120px",
-        zIndex: 10,
-        width: 220,
-        height: 120,
-        border: "1px solid #ccc",
-        background: "#fff",
-      }}
-    />
+    <div style={{ width: 600 }}>
+      
+      {/* 🔥 TOP BAR */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "6px 10px",
+          background: "#0b1220",
+          borderBottom: "1px solid #1f2937",
+          borderTopLeftRadius: 8,
+          borderTopRightRadius: 8,
+        }}
+      >
+        {/* LEFT → SYMBOL + OHLC */}
+        <div style={{ fontSize: 12, color: "#9ca3af" }}>
+          <b style={{ color: "#e5e7eb" }}>{activeSymbol}</b>{" "}
+          {timeframeValue && `(${timeframeValue})`} &nbsp;
+          {ohlc && (
+            <span style={{ color: ohlcColor }}>
+              O: {ohlc.open} H: {ohlc.high} L: {ohlc.low} C: {ohlc.close}
+            </span>
+          )}
+        </div>
+
+        {/* RIGHT → DROPDOWN */}
+        <div style={{ display: "flex", gap: 8 }}>
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild>
+              <button
+                style={{
+                  background: "#111827",
+                  border: "1px solid #1f2937",
+                  color: "#e5e7eb",
+                  padding: "4px 8px",
+                  borderRadius: 6,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                {active?.icon && <active.icon size={14} />}
+                <span>{active?.label}</span>
+                <FiChevronDown size={14} />
+              </button>
+            </DropdownMenu.Trigger>
+
+            <DropdownMenu.Portal>
+              <DropdownMenu.Content
+                sideOffset={8}
+                style={{
+                  background: "#1f2937",
+                  border: "1px solid #374151",
+                  borderRadius: 8,
+                  padding: 6,
+                  minWidth: 180,
+                  zIndex: 99999,
+                }}
+              >
+                {chartOptions.map((item) => (
+                  <DropdownMenu.Item
+                    key={item.value}
+                    onClick={() => setChartType(item.value)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      padding: "6px 10px",
+                      borderRadius: 6,
+                      cursor: "pointer",
+                      color: "#e5e7eb",
+                    }}
+                  >
+                    <item.icon size={14} />
+                    <span style={{ flex: 1 }}>{item.label}</span>
+                    {chartType === item.value && "✓"}
+                  </DropdownMenu.Item>
+                ))}
+              </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
+
+          {/* Expand */}
+          <button
+            style={{
+              background: "#111827",
+              border: "1px solid #1f2937",
+              color: "#e5e7eb",
+              padding: "4px 6px",
+              borderRadius: 6,
+            }}
+          >
+            <BsArrowUpRight size={14} />
+          </button>
+        </div>
+      </div>
+
+      {/* 🔥 CHART */}
+      <div
+        ref={containerRef}
+        style={{
+          width: 600,
+          height: 350,
+          borderBottomLeftRadius: 8,
+          borderBottomRightRadius: 8,
+          overflow: "hidden",
+        }}
+      />
+    </div>
   );
 }
-
-
-/* ---------------- MAIN SCANNER ---------------- */
-
-// export default function Testing() {
-//   const [rows, setRows] = useState([]);
-//   const [hover, setHover] = useState(null);
-
-//   useEffect(() => {
-//     async function scan() {
-//       const symbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT"];
-//       const out = [];
-
-//       for (let s of symbols) {
-//         const candles = await fetchOHLC(s);
-//         const closes = candles.map(c => c.close);
-//         const rsi = calcRSI(closes);
-
-//         if (rsi >= 10) {
-//           const last = candles[candles.length - 1];
-//           out.push({
-//             symbol: s,
-//             rsi: rsi.toFixed(2),
-//             ...last,
-//           });
-//          }
-//       }
-//       setRows(out);
-//     }
-//     scan();
-//   }, []);
-
-//   console.log(rows)
-
-//   return (
-//     <div style={{ padding: 20 }}>
-//       <h2>RSI ≥ 60 Scanner</h2>
-
-//       <table width="100%" cellPadding="8" border="1">
-//         <thead>
-//           <tr>
-//             <th>Symbol</th>
-//             <th>RSI</th>
-//             <th>Open</th>
-//             <th>High</th>
-//             <th>Low</th>
-//             <th>Close</th>
-//           </tr>
-//         </thead>
-
-//         <tbody>
-//           {rows?.map(row => (
-//             <tr key={row.symbol}>
-//               <td
-//                 style={{ position: "relative", cursor: "pointer" }}
-//                 onMouseEnter={() => setHover(row?.symbol)}
-//                 onMouseLeave={() => setHover(null)}
-//               >
-//                 {row.symbol}
-
-//                 {hover === row.symbol && (
-//                   <MiniChart symbol={row.symbol} />
-//                 )}
-//               </td>
-
-//               <td>{row.rsi}</td>
-//               <td>{row.open}</td>
-//               <td>{row.high}</td>
-//               <td>{row.low}</td>
-//               <td>{row.close}</td>
-//             </tr>
-//           ))}
-//         </tbody>
-//       </table>
-//     </div>
-//   );
-// }

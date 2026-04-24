@@ -102,7 +102,13 @@ export function IndicatorRuleModals({
 /* SAVE SCAN CONTENT */
 /* ------------------------------------------------ */
 
-function SaveScanContent({ onSubmit, closeModal, rules = [], setSaveScan,dataSource }) {
+function SaveScanContent({
+  onSubmit,
+  closeModal,
+  rules = [],
+  setSaveScan,
+  dataSource,
+}) {
   const [errors, setErrors] = useState({});
   const [scannerPayload, setscannerPayload] = useState("");
   const [form, setForm] = useState({
@@ -191,10 +197,12 @@ function SaveScanContent({ onSubmit, closeModal, rules = [], setSaveScan,dataSou
     }
   };
   // ✅ Guard: Block saving if scan hasn't been run (dataSource is empty)
-  const isDataEmpty = 
-    !dataSource || 
-    (Array.isArray(dataSource) && dataSource.length === 0) || 
-    (typeof dataSource === "object" && !Array.isArray(dataSource) && Object.keys(dataSource).length === 0);
+  const isDataEmpty =
+    !dataSource ||
+    (Array.isArray(dataSource) && dataSource.length === 0) ||
+    (typeof dataSource === "object" &&
+      !Array.isArray(dataSource) &&
+      Object.keys(dataSource).length === 0);
 
   if (isDataEmpty) {
     return (
@@ -214,8 +222,6 @@ function SaveScanContent({ onSubmit, closeModal, rules = [], setSaveScan,dataSou
       </div>
     );
   }
-
-
 
   return (
     <div className=" bg-white rounded-2xl text-left ">
@@ -617,8 +623,8 @@ function CreateAlertContent({
 
     if (mode === "sms") {
       if (!phone) errors.phone = "Phone number required";
-      else if (!/^\+91\d{10}$/.test(phone))
-        errors.phone = "Enter valid number (+91XXXXXXXXXX)";
+      // else if (!/^\+91\d{10}$/.test(phone))
+      //   errors.phone = "Enter valid number (+91XXXXXXXXXX)";
 
       if (otpSent && (!otp || !/^\d{6}$/.test(otp))) {
         errors.otp = "OTP must be 6 digits";
@@ -672,15 +678,15 @@ function CreateAlertContent({
       let payload;
       if (mode === "email") {
         payload = {
-          name: alertName,
+          alert_name: alertName,
           type: "email",
           email: form.email,
           condition: buildCondition({ rules: finalRules }),
         };
       } else if (mode === "sms") {
         payload = {
-          name: alertName,
-          type: "sms",
+          alert_name: alertName,
+          type: "verified",
           mobile: form.phone,
           otp: form.otp,
           rule: buildCondition({ rules: finalRules }),
@@ -690,7 +696,7 @@ function CreateAlertContent({
 
       const response = await apiService.post("/api/indicatorAlert", payload);
 
-      if (response?.success) {
+      if (response.statusCode==200) {
         toast.success("Alert created ✅");
         closeModal();
         onSubmit?.({ ...form, mode, rules });
