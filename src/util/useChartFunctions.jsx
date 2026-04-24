@@ -9,16 +9,13 @@ export default function useChartFunctions({
   /* ================= FETCH INDICATOR API ================= */
 
   async function fetchDataByCurrency(selectedCurrency, timeframeValue) {
-    let response;
-    if (selectedCurrency && timeframeValue) {
-      response = await apiService.post(
-        `api/listing?symbol=${selectedCurrency || "BTCUSD"}&interval=${timeframeValue || "1m"}&limit=1000`,
-      );
-    } else {
-      response = await apiService.post(
-        `api/listing?symbol=${selectedCurrency || "BTCUSD"}&limit=1000&interval=${timeframeValue || "1m"}`,
-      );
-    }
+    const symbol = selectedCurrency || "BTCUSD";
+    const interval = timeframeValue || "1m";
+
+    const response = await apiService.post(
+      `api/listing?symbol=${symbol}&interval=${interval}&limit=1000`,
+    );
+
     return response;
   }
 
@@ -989,13 +986,8 @@ export default function useChartFunctions({
     fetchIndicatorData,
   };
 }
-async function fetchDataForIndicators(
-  selectedCurrency,
-  type,
-  timeframeValue,
-) {
+async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
   try {
-
     const response = await apiService.post(
       `/api/indicatorDetails?symbol=${selectedCurrency}&interval=${timeframeValue}&type=${type}`,
     );
@@ -1114,7 +1106,6 @@ async function fetchDataForIndicators(
                 }))) ?? [],
           },
         };
-     
 
       case "VP":
         return {
@@ -2197,5 +2188,5 @@ async function fetchDataForIndicators(
   } catch (error) {
     console.error("Indicator fetch error:", error);
     return { type: "error", data: [] };
-  } 
+  }
 }

@@ -72,111 +72,86 @@ export default function IndicatorBuilderListing({
   const [chartPosition, setChartPosition] = useState("right");
   const rowRef = useRef(null);
   const [verticalAdjust, setVerticalAdjust] = useState(0);
+  const [hoverRect, setHoverRect] = useState(null);
 
-  // const handleHover = (symbol) => {
-  //   setHoveredSymbol(symbol);
-  //   setActiveSymbol(symbol);
+  const handleHover = async (symbol, e) => {
+    if (!e?.currentTarget) return;
 
-  //   try {
-  //     const tf = timeframeValue || "1d"; // current selected TF
-  //     const symbolData = dataSource?.[tf]?.[symbol];
+    setHoveredSymbol(symbol);
+    setActiveSymbol(symbol);
 
-  //     if (!symbolData) {
-  //       setChartData(null);
-  //       return;
-  //     }
+    const rect = e.currentTarget.getBoundingClientRect();
+    setHoverRect(rect);
 
-  //     const formatted = symbolData.map((d) => ({
-  //       time: d.time,
-  //       open: d.open,
-  //       high: d.high,
-  //       low: d.low,
-  //       close: d.close,
-  //     }));
+    const chartWidth = 600;
+    const chartHeight = 300;
 
-  //     setChartData(formatted);
-  //   } catch (err) {
-  //     console.error(err);
-  //   }
-  // };
+    /* ================= POSITIONING ================= */
 
- const handleHover = async (symbol, e) => {
-  if (!e?.currentTarget) return;
+    // 👉 LEFT / RIGHT
+    if (window.innerWidth - rect.right < chartWidth) {
+      setChartPosition("left");
+    } else {
+      setChartPosition("right");
+    }
 
-  setHoveredSymbol(symbol);
-  setActiveSymbol(symbol);
+    // 👉 TOP / BOTTOM (prevent overflow)
+    if (window.innerHeight - rect.top < chartHeight) {
+      const overflow = chartHeight - (window.innerHeight - rect.top);
+      setVerticalAdjust(overflow);
+    } else {
+      setVerticalAdjust(0);
+    }
 
-  const rect = e.currentTarget.getBoundingClientRect();
+    /* ================= DATA ================= */
 
-  const chartWidth = 600;
-  const chartHeight = 300;
+    const tf = timeframeValue || "1m";
+    const cacheKey = `${symbol}_${tf}`;
 
-  /* ================= POSITIONING ================= */
-
-  // 👉 LEFT / RIGHT
-  if (window.innerWidth - rect.right < chartWidth) {
-    setChartPosition("left");
-  } else {
-    setChartPosition("right");
-  }
-
-  // 👉 TOP / BOTTOM (prevent overflow)
-  if (window.innerHeight - rect.top < chartHeight) {
-    const overflow = chartHeight - (window.innerHeight - rect.top);
-    setVerticalAdjust(overflow);
-  } else {
-    setVerticalAdjust(0);
-  }
-
-  /* ================= DATA ================= */
-
-  const tf = timeframeValue || "1m";
-  const cacheKey = `${symbol}_${tf}`;
-
-  // ✅ 1. CACHE HIT
-  if (chartCache.current[cacheKey]) {
-    setChartData(chartCache.current[cacheKey]);
-    return;
-  }
-
-  // ✅ 2. PREVENT DUPLICATE CALLS
-  if (inFlight.current[cacheKey]) return;
-
-  setChartData(null); // loading state
-
-  try {
-    inFlight.current[cacheKey] = true;
-
-    const response = await apiService.post(
-      `/api/listing?symbol=${symbol}&interval=${tf}&day=4000`
-    );
-
-    const result = response?.data;
-
-    if (!result || !Array.isArray(result)) {
-      setChartData(null);
+    // ✅ 1. CACHE HIT
+    if (chartCache.current[cacheKey]) {
+      setChartData(chartCache.current[cacheKey]);
       return;
     }
 
-    const formatted = result.map((d) => ({
-      time: d.time,
-      open: d.open,
-      high: d.high,
-      low: d.low,
-      close: d.close,
-    }));
+    // ✅ 2. PREVENT DUPLICATE CALLS
+    if (inFlight.current[cacheKey]) return;
 
-    // ✅ CACHE SAVE
-    chartCache.current[cacheKey] = formatted;
+    setChartData(null); // loading state
 
-    setChartData(formatted);
-  } catch (err) {
-    console.error("Hover API Error:", err);
-    setChartData(null);
-  } finally {
-    delete inFlight.current[cacheKey];
-  }
-};
+    try {
+      inFlight.current[cacheKey] = true;
+
+      const response = await apiService.post(
+        `/api/listing?symbol=${symbol}&interval=${tf}&limit=4000`,
+      );
+
+      const result = response?.data;
+
+      if (!result || !Array.isArray(result)) {
+        setChartData(null);
+        return;
+      }
+
+      const formatted = result.map((d) => ({
+        time: d.time,
+        open: d.open,
+        high: d.high,
+        low: d.low,
+        close: d.close,
+      }));
+
+      // ✅ CACHE SAVE
+      chartCache.current[cacheKey] = formatted;
+
+      setChartData(formatted);
+    } catch (err) {
+      console.error("Hover API Error:", err);
+      setChartData(null);
+    } finally {
+      delete inFlight.current[cacheKey];
+    }
+  };
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (!containerRef.current) return;
@@ -185,6 +160,7 @@ export default function IndicatorBuilderListing({
         setActiveSymbol(null);
         setHoveredSymbol(null); // ✅ FIX
         setChartData(null);
+        setHoverRect(null);
       }
     };
 
@@ -200,8 +176,8 @@ export default function IndicatorBuilderListing({
     container.innerHTML = ""; // ✅ clear old chart completely
 
     const chart = createChart(container, {
-      width: 600,
-      height: 400,
+      width: 500,
+      height: 250,
       layout: {
         background: { color: "#0F0F0F" },
         textColor: "#DDD",
@@ -213,6 +189,7 @@ export default function IndicatorBuilderListing({
       timeScale: {
         barSpacing: 12, // ✅ 🔥 increases candle width
       },
+      zIndex: 9999,
     });
 
     const series = chart.addSeries(CandlestickSeries, {
@@ -796,7 +773,6 @@ export default function IndicatorBuilderListing({
         logic,
       };
       setFinalRules(cleanRules);
-      
 
       const { data: result = {} } = await apiService.post(
         `/api/scannerDetail?interval=${apiInterval}&limit=${totalDays}`,
@@ -1761,12 +1737,15 @@ export default function IndicatorBuilderListing({
                         {columns.map((col) => (
                           <td
                             key={col}
+                            data-symbol={
+                              col === "symbol" ? row.symbol : undefined
+                            }
                             style={
-                              col === "symbol" ? { position: "relative" } : {}
+                              col === "symbol" ? { position: "relative" ,cursor: "pointer",} : {}
                             }
                             onMouseEnter={
                               col === "symbol"
-                                ? (e) => handleHover(row.symbol, e) // ✅ pass event
+                                ? (e) => handleHover(row.symbol, e)
                                 : undefined
                             }
                           >
@@ -1775,37 +1754,36 @@ export default function IndicatorBuilderListing({
                               <div style={{ overflow: "visible" }}>
                                 {row[col]}
 
-                                {hoveredSymbol === row.symbol && (
+                                {/* ✅ MINI CHART POPUP — outside table, fixed to viewport */}
+                                {hoveredSymbol && hoverRect && (
                                   <div
                                     style={{
-                                      position: "absolute",
-                                      top: "50%",
-                                      transform: "translateY(-50%)",
-                                      zIndex: 9999,
-                                      background: "#111",
-                                      padding: 10,
-                                      borderRadius: 6,
-                                      boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
-
-                                      // ✅ dynamic side
+                                      position: "fixed",
+                                      cursor: "pointer",
+                                      zIndex: 999999,
                                       left:
                                         chartPosition === "right"
-                                          ? "100%"
-                                          : "auto",
-                                      right:
-                                        chartPosition === "left"
-                                          ? "100%"
-                                          : "auto",
-
-                                      marginLeft:
-                                        chartPosition === "right" ? 8 : 0,
-                                      marginRight:
-                                        chartPosition === "left" ? 8 : 0,
+                                          ? hoverRect.right + 12
+                                          : hoverRect.left - 532, // 500px chart + 20px padding + 12 gap
+                                      top: Math.min(
+                                        hoverRect.top - 10,
+                                        window.innerHeight - 290, // clamp: 270px chart height + padding
+                                      ),
+                                      background: "#111",
+                                      border: "1px solid #333",
+                                      padding: 10,
+                                      borderRadius: 8,
+                                      boxShadow: "0 8px 8px rgba(0,0,0,0.2)",
+                                      
                                     }}
                                   >
                                     <div
                                       ref={containerRef}
-                                      style={{ position: "relative" }}
+                                      style={{
+                                        position: "relative",
+                                        width: 500,
+                                        height: 250,
+                                      }}
                                     />
                                   </div>
                                 )}
@@ -1891,8 +1869,6 @@ export default function IndicatorBuilderListing({
         message={alertMsg}
         onClose={() => setShowAlert(false)}
       />
-
-
     </Container>
   );
 }

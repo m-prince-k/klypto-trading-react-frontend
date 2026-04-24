@@ -276,7 +276,7 @@ export const indicatorConfig = {
     outputs: ["Oscillator", "Table", "Signal"],
   }),
 
-  "Min/Max": createNode({
+  MinMax: createNode({
     stage: "transform",
     operator: "+",
     inputCount: 2,
