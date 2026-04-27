@@ -233,7 +233,7 @@ export default function MiniChart({ activeSymbol, chartData, timeframeValue }) {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "6px 10px",
+          padding: "6px 6px",
           background: "#0b1220",
           borderBottom: "1px solid #1f2937",
           borderTopLeftRadius: 8,

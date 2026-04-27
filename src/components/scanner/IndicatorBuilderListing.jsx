@@ -25,7 +25,6 @@ import { Spinner } from "../tradingModals/Spinner";
 import EditableMultiSelect from "../indicator/EditTableLabel";
 import AlertModal from "./ScannerModals";
 import { INDICATOR_ALIASES, MA_INDICATORS } from "../../util/scannerFunctions";
-import { CandlestickSeries, createChart } from "lightweight-charts";
 import MiniChart from "./MiniChart";
 
 /* ================= SYMBOL LIST ================= */
@@ -74,8 +73,10 @@ export default function IndicatorBuilderListing({
   const isHoveringPopup = useRef(false);
   const [verticalAdjust, setVerticalAdjust] = useState(0);
   const [hoverRect, setHoverRect] = useState(null);
+  const [showPreview, setShowPreview] = useState(true);
 
   const handleHover = async (symbol, e) => {
+    if (!showPreview) return;
     if (isHoveringPopup.current) return;
     if (!e?.currentTarget) return;
     //  if (e.target.closest("[data-symbol]")) return;
@@ -1549,6 +1550,39 @@ export default function IndicatorBuilderListing({
                   ))}
               </select>
             </div>
+
+            <div
+              className="d-flex align-items-center gap-2 px-3 py-1.5"
+              style={{
+                background: "#f8fafc",
+                border: "1px solid #e5e7eb",
+                borderRadius: 5,
+              }}
+            >
+              {/* LABEL (LEFT) */}
+              <span
+                style={{
+                  fontSize: "0.85rem",
+                  fontWeight: 500,
+                  color: "#374151",
+                  userSelect: "none",
+                }}
+              >
+                Show Chart Preview
+              </span>
+
+              {/* SWITCH (RIGHT) */}
+              <Form.Check
+                type="switch"
+                id="chart-preview-toggle"
+                checked={showPreview}
+                onChange={(e) => setShowPreview(e.target.checked)}
+                className="ms-2"
+                style={{
+                  transform: "scale(1.1)", // slightly bigger
+                }}
+              />
+            </div>
           </div>
 
           {/* TABLE */}
@@ -1674,8 +1708,6 @@ export default function IndicatorBuilderListing({
                             {col === "symbol" ? (
                               <div style={{ overflow: "visible" }}>
                                 {row[col]}
-
-                               
                               </div>
                             ) : col === "time" ? (
                               new Date(row[col] * 1000).toLocaleString()
@@ -1697,46 +1729,39 @@ export default function IndicatorBuilderListing({
                   )}
                 </tbody>
               </Table>
-               {/* ✅ MINI CHART POPUP — outside table, fixed to viewport */}
-                                {hoveredSymbol && hoverRect && (
-                                  <div
-                                    ref={popupRef}
-                                    onMouseEnter={() =>
-                                      (isHoveringPopup.current = true)
-                                    }
-                                    onMouseLeave={() =>
-                                      (isHoveringPopup.current = false)
-                                    }
-                                    style={{
-                                      position: "fixed",
-                                      cursor: "pointer",
-                                      zIndex: 999999,
-                                      left:
-                                        chartPosition === "right"
-                                          ? hoverRect.right + 5
-                                          : hoverRect.left - 632, // 500px chart + 20px padding + 12 gap
-                                      top: Math.min(
-                                        hoverRect.top - 10,
-                                        window.innerHeight - 450,
-                                      ), // clamp: 270px chart height + padding ),
-                                      background: "#111",
-                                      border: "1px solid #333",
-                                      padding: 10,
-                                      borderRadius: 8,
-                                      boxShadow: "0 8px 8px rgba(0,0,0,0.2)",
-                                    }}
-                                  >
-                                    <MiniChart
-                                      visible={!!hoveredSymbol}
-                                      activeSymbol={activeSymbol}
-                                      setActiveSymbol={setActiveSymbol}
-                                      chartData={chartData}
-                                      setChartData={setChartData}
-                                      timeframeValue={timeframeValue}
-                                      setHoverRect={setHoverRect}
-                                      setHoveredSymbol={setHoveredSymbol}
-                                    />
-                                    {/* <div
+              {/* ✅ MINI CHART POPUP — outside table, fixed to viewport */}
+              {showPreview && hoveredSymbol && hoverRect && (
+                <div
+                  ref={popupRef}
+                  onMouseEnter={() => (isHoveringPopup.current = true)}
+                  onMouseLeave={() => (isHoveringPopup.current = false)}
+                  style={{
+                    position: "fixed",
+                    cursor: "pointer",
+                    zIndex: 999999,
+                    left:
+                      chartPosition === "right"
+                        ? hoverRect.right + 5
+                        : hoverRect.left - 632, // 500px chart + 20px padding + 12 gap
+                    top: Math.min(hoverRect.top - 10, window.innerHeight - 450), // clamp: 270px chart height + padding ),
+                    background: "#111",
+                    border: "1px solid #333",
+                    padding: 10,
+                    borderRadius: 8,
+                    boxShadow: "0 8px 8px rgba(0,0,0,0.2)",
+                  }}
+                >
+                  <MiniChart
+                    visible={!!hoveredSymbol}
+                    activeSymbol={activeSymbol}
+                    setActiveSymbol={setActiveSymbol}
+                    chartData={chartData}
+                    setChartData={setChartData}
+                    timeframeValue={timeframeValue}
+                    setHoverRect={setHoverRect}
+                    setHoveredSymbol={setHoveredSymbol}
+                  />
+                  {/* <div
                                       ref={containerRef}
                                       style={{
                                         position: "relative",
@@ -1744,8 +1769,8 @@ export default function IndicatorBuilderListing({
                                         height: 250,
                                       }}
                                     /> */}
-                                  </div>
-                                )}
+                </div>
+              )}
             </div>
           </div>
 
