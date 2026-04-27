@@ -12,15 +12,13 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { BsArrowUpRight } from "react-icons/bs";
 import { FiChevronDown } from "react-icons/fi";
 import { chartOptions, convertToHeikinAshi } from "../../util/common";
+import { useNavigate } from "react-router-dom";
 
-export default function MiniChart({
-  activeSymbol,
-  chartData,
-  timeframeValue,
-  containerRef,
-}) {
+export default function MiniChart({ activeSymbol, chartData, timeframeValue }) {
   const chartRef = useRef(null);
   const seriesRef = useRef(null);
+  const containerRef = useRef(null);
+  const navigate = useNavigate();
 
   const [chartType, setChartType] = useState("candlestick");
   const [ohlc, setOhlc] = useState(null);
@@ -44,6 +42,45 @@ export default function MiniChart({
       },
       timeScale: {
         barSpacing: 10,
+
+        timeVisible: true,
+        secondsVisible: false,
+
+        tickMarkFormatter: (time, tickMarkType, locale) => {
+          const date = new Date(time * 1000);
+
+          // 👇 dynamic formatting
+          if (
+            timeframeValue === "1m" ||
+            timeframeValue === "5m" ||
+            timeframeValue === "30m"
+          ) {
+            return date.toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+          }
+
+          if (timeframeValue === "1h") {
+            return date.toLocaleString([], {
+              day: "2-digit",
+              month: "short",
+              hour: "2-digit",
+            });
+          }
+
+          if (timeframeValue === "1d") {
+            return date.toLocaleDateString([], {
+              day: "2-digit",
+              month: "short",
+            });
+          }
+
+          return date.toLocaleDateString([], {
+            month: "short",
+            year: "numeric",
+          });
+        },
       },
     });
 
@@ -57,9 +94,19 @@ export default function MiniChart({
     const chart = chartRef.current;
     if (!chart || !chartData) return;
 
+      chart.applyOptions({
+    timeScale: {
+      timeVisible: timeframeValue !== "1d",
+      secondsVisible: false,
+    },
+  });
+
     // remove old series
-    if (seriesRef.current) {
-      chart.removeSeries(seriesRef.current);
+    if (chart && seriesRef.current) {
+      try {
+        chart.removeSeries(seriesRef.current);
+      } catch (e) {}
+      seriesRef.current = null;
     }
 
     let series;
@@ -67,7 +114,9 @@ export default function MiniChart({
     switch (chartType) {
       case "line":
         series = chart.addSeries(LineSeries, { color: "#60a5fa" });
-        series.setData(chartData.map(d => ({ time: d.time, value: d.close })));
+        series.setData(
+          chartData.map((d) => ({ time: d.time, value: d.close })),
+        );
         break;
 
       case "area":
@@ -76,7 +125,9 @@ export default function MiniChart({
           topColor: "rgba(96,165,250,0.4)",
           bottomColor: "rgba(96,165,250,0.05)",
         });
-        series.setData(chartData.map(d => ({ time: d.time, value: d.close })));
+        series.setData(
+          chartData.map((d) => ({ time: d.time, value: d.close })),
+        );
         break;
 
       case "bar":
@@ -93,7 +144,9 @@ export default function MiniChart({
           topLineColor: "#22c55e",
           bottomLineColor: "#ef4444",
         });
-        series.setData(chartData.map(d => ({ time: d.time, value: d.close })));
+        series.setData(
+          chartData.map((d) => ({ time: d.time, value: d.close })),
+        );
         break;
 
       case "hollowcandles":
@@ -113,7 +166,9 @@ export default function MiniChart({
         series = chart.addSeries(HistogramSeries, {
           color: "#60a5fa",
         });
-        series.setData(chartData.map(d => ({ time: d.time, value: d.close })));
+        series.setData(
+          chartData.map((d) => ({ time: d.time, value: d.close })),
+        );
         break;
 
       case "heikin":
@@ -172,7 +227,6 @@ export default function MiniChart({
 
   return (
     <div style={{ width: 600 }}>
-      
       {/* 🔥 TOP BAR */}
       <div
         style={{
@@ -256,6 +310,9 @@ export default function MiniChart({
 
           {/* Expand */}
           <button
+            onClick={() =>
+              navigate(`/chart?symbol=${activeSymbol}&tf=${timeframeValue}`)
+            }
             style={{
               background: "#111827",
               border: "1px solid #1f2937",

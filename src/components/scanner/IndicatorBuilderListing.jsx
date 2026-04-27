@@ -67,16 +67,18 @@ export default function IndicatorBuilderListing({
   const [activeSymbol, setActiveSymbol] = useState(null); // chart stays on this
   const [hoveredSymbol, setHoveredSymbol] = useState(null);
   const [chartData, setChartData] = useState(null);
-  const containerRef = useRef(null);
   const chartCache = useRef({}); // ✅ store fetched data
   const inFlight = useRef({}); // ✅ prevent duplicate calls
   const [chartPosition, setChartPosition] = useState("right");
-  const rowRef = useRef(null);
+  const popupRef = useRef(null);
+  const isHoveringPopup = useRef(false);
   const [verticalAdjust, setVerticalAdjust] = useState(0);
   const [hoverRect, setHoverRect] = useState(null);
 
   const handleHover = async (symbol, e) => {
+    if (isHoveringPopup.current) return;
     if (!e?.currentTarget) return;
+    //  if (e.target.closest("[data-symbol]")) return;
 
     setActiveSymbol(symbol);
     setHoveredSymbol(symbol);
@@ -153,107 +155,21 @@ export default function IndicatorBuilderListing({
       delete inFlight.current[cacheKey];
     }
   };
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      // if popup exists and click is outside
+      if (popupRef.current && !popupRef.current.contains(e.target)) {
+        setHoveredSymbol(null);
+        setHoverRect(null);
+      }
+    };
 
-  // useEffect(() => {
-  //   const handleClickOutside = (e) => {
-  //     if (!containerRef.current) return;
+    document.addEventListener("mousedown", handleClickOutside);
 
-  //     if (!containerRef.current.contains(e.target)) {
-  //       setActiveSymbol(null);
-  //       setHoveredSymbol(null); // ✅ FIX
-  //       setChartData(null);
-  //       setHoverRect(null);
-  //     }
-  //   };
-
-  //   document.addEventListener("mousedown", handleClickOutside);
-  //   return () => document.removeEventListener("mousedown", handleClickOutside);
-  // }, []);
-
-  // useEffect(() => {
-  //   if (!activeSymbol || !chartData) return;
-
-  //   const container = containerRef.current;
-  //   if (!container) return;
-
-  //   container.innerHTML = ""; // ✅ clear old chart completely
-
-  //   const chart = createChart(container, {
-  //     width: 500,
-  //     height: 250,
-  //     layout: {
-  //       background: { color: "#0F0F0F" },
-  //       textColor: "#DDD",
-  //     },
-  //     grid: {
-  //       vertLines: { color: "#222" },
-  //       horzLines: { color: "#222" },
-  //     },
-  //     timeScale: {
-  //       barSpacing: 12, // ✅ 🔥 increases candle width
-  //     },
-  //     zIndex: 9999,
-  //   });
-
-  //   const series = chart.addSeries(CandlestickSeries, {
-  //     upColor: "#00FF88",
-  //     downColor: "#FF4D4F",
-  //     borderVisible: false,
-  //     wickUpColor: "#00FF88",
-  //     wickDownColor: "#FF4D4F",
-  //   });
-
-  //   series.setData(chartData);
-
-  //   // ✅ LEGEND (NOW ABOVE CHART)
-  //   const legend = document.createElement("div");
-  //   legend.style.position = "absolute";
-  //   legend.style.top = "6px";
-  //   legend.style.left = "10px";
-  //   legend.style.zIndex = "10"; // ✅ IMPORTANT
-  //   legend.style.background = "rgba(0,0,0,0.7)";
-  //   legend.style.padding = "4px 8px";
-  //   legend.style.borderRadius = "4px";
-  //   legend.style.color = "#fff";
-  //   legend.style.fontSize = "12px";
-  //   legend.style.fontFamily = "monospace";
-
-  //   container.appendChild(legend);
-
-  //   // ✅ CROSSHAIR MOVE
-  //   chart.subscribeCrosshairMove((param) => {
-  //     if (!param.time) return;
-
-  //     const data = param.seriesData.get(series);
-  //     if (!data) return;
-
-  //     legend.innerHTML = `
-  //     <b>${activeSymbol}</b> &nbsp;
-  //     <b>${timeframeValue}</b> &nbsp;
-  //     O: ${data.open ?? "-"}
-  //     H: ${data.high ?? "-"}
-  //     L: ${data.low ?? "-"}
-  //     C: ${data.close ?? "-"}
-  //   `;
-  //   });
-
-  //   // ✅ DEFAULT LAST CANDLE
-  //   const last = chartData[chartData.length - 1];
-  //   if (last) {
-  //     legend.innerHTML = `
-  //     <b>${activeSymbol}</b> &nbsp;
-  //     O: ${last.open}
-  //     H: ${last.high}
-  //     L: ${last.low}
-  //     C: ${last.close}
-  //   `;
-  //   }
-
-  //   return () => {
-  //     chart.remove();
-  //   };
-  // }, [activeSymbol, chartData]);
-
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
   const hasData = normalizeData(dataSource).length > 0;
   // ✅ Tracks whether the user manually picked a TF from dropdown 1
   // When true, fetchData will NOT override timeframeValue with maxTF
@@ -1759,48 +1675,7 @@ export default function IndicatorBuilderListing({
                               <div style={{ overflow: "visible" }}>
                                 {row[col]}
 
-                                {/* ✅ MINI CHART POPUP — outside table, fixed to viewport */}
-                                {hoveredSymbol && hoverRect && (
-                                  <div
-                                    style={{
-                                      position: "fixed",
-                                      cursor: "pointer",
-                                      zIndex: 999999,
-                                      left:
-                                        chartPosition === "right"
-                                          ? hoverRect.right + 12
-                                          : hoverRect.left - 532, // 500px chart + 20px padding + 12 gap
-                                      top: Math.min(
-                                        hoverRect.top - 10,
-                                        window.innerHeight - 290, // clamp: 270px chart height + padding
-                                      ),
-                                      background: "#111",
-                                      border: "1px solid #333",
-                                      padding: 10,
-                                      borderRadius: 8,
-                                      boxShadow: "0 8px 8px rgba(0,0,0,0.2)",
-                                    }}
-                                  >
-                                    <MiniChart
-                                      activeSymbol={activeSymbol}
-                                      setActiveSymbol={setActiveSymbol}
-                                      chartData={chartData}
-                                      setChartData={setChartData}
-                                      timeframeValue={timeframeValue}
-                                      setHoverRect={setHoverRect}
-                                      setHoveredSymbol={setHoveredSymbol}
-                                      containerRef={containerRef}
-                                    />
-                                    {/* <div
-                                      ref={containerRef}
-                                      style={{
-                                        position: "relative",
-                                        width: 500,
-                                        height: 250,
-                                      }}
-                                    /> */}
-                                  </div>
-                                )}
+                               
                               </div>
                             ) : col === "time" ? (
                               new Date(row[col] * 1000).toLocaleString()
@@ -1822,6 +1697,55 @@ export default function IndicatorBuilderListing({
                   )}
                 </tbody>
               </Table>
+               {/* ✅ MINI CHART POPUP — outside table, fixed to viewport */}
+                                {hoveredSymbol && hoverRect && (
+                                  <div
+                                    ref={popupRef}
+                                    onMouseEnter={() =>
+                                      (isHoveringPopup.current = true)
+                                    }
+                                    onMouseLeave={() =>
+                                      (isHoveringPopup.current = false)
+                                    }
+                                    style={{
+                                      position: "fixed",
+                                      cursor: "pointer",
+                                      zIndex: 999999,
+                                      left:
+                                        chartPosition === "right"
+                                          ? hoverRect.right + 5
+                                          : hoverRect.left - 632, // 500px chart + 20px padding + 12 gap
+                                      top: Math.min(
+                                        hoverRect.top - 10,
+                                        window.innerHeight - 450,
+                                      ), // clamp: 270px chart height + padding ),
+                                      background: "#111",
+                                      border: "1px solid #333",
+                                      padding: 10,
+                                      borderRadius: 8,
+                                      boxShadow: "0 8px 8px rgba(0,0,0,0.2)",
+                                    }}
+                                  >
+                                    <MiniChart
+                                      visible={!!hoveredSymbol}
+                                      activeSymbol={activeSymbol}
+                                      setActiveSymbol={setActiveSymbol}
+                                      chartData={chartData}
+                                      setChartData={setChartData}
+                                      timeframeValue={timeframeValue}
+                                      setHoverRect={setHoverRect}
+                                      setHoveredSymbol={setHoveredSymbol}
+                                    />
+                                    {/* <div
+                                      ref={containerRef}
+                                      style={{
+                                        position: "relative",
+                                        width: 500,
+                                        height: 250,
+                                      }}
+                                    /> */}
+                                  </div>
+                                )}
             </div>
           </div>
 
