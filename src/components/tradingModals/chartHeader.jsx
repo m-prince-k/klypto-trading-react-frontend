@@ -220,11 +220,7 @@ export default function ChartHeader({
             </button>
           )}
         </div>
-
-          
           <ProfileDropDown />
-
-
       </div>
 
       {/* MODAL (UNCHANGED) */}

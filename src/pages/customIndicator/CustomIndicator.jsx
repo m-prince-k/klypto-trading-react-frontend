@@ -213,6 +213,8 @@ export default function ProIndicatorBuilder() {
                   </p>
                   <Form.Control
                     value={name}
+                    maxLength={100}
+                    minLength={3}
                     placeholder="Name"
                     onChange={(e) => {
                       setName(e.target.value);

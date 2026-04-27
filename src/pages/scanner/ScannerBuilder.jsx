@@ -55,6 +55,9 @@ export default function ScannerBuilder() {
   const [modalMessage, setModalMessage] = useState("");
   const [saveScan, setSaveScan] = useState(false);
 
+  const scanResultRef = useRef(null);
+  const backtestRef = useRef(null);
+
   const [timeframePromptConfig, setTimeframePromptConfig] = useState({
     isOpen: false,
   });
@@ -139,6 +142,17 @@ export default function ScannerBuilder() {
 
   /* ================= CLICK LOCK ================= */
   const clickLockRef = useRef(false);
+
+  useEffect(() => {
+    if (saveScan) {
+      setTimeout(() => {
+        backtestRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 100);
+    }
+  }, [saveScan]);
 
   /* ================= OPERATOR MAP ================= */
 
@@ -1007,7 +1021,16 @@ export default function ScannerBuilder() {
       label: "Run Scan",
       icon: <FaCirclePlay style={{ transition: "transform 0.25s ease" }} />,
       title: "Execute the scan with current rules",
-      onClick: () => setRunScanTrigger((prev) => !prev),
+      onClick: () => {
+        setRunScanTrigger((prev) => !prev);
+
+        setTimeout(() => {
+          scanResultRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }, 100); // small delay to ensure render
+      },
       style: {
         background: "linear-gradient(135deg, #9333ea, #4f46e5)",
         boxShadow: "0 4px 15px rgba(147,51,234,0.3)",
@@ -1043,7 +1066,16 @@ export default function ScannerBuilder() {
       label: "Backtest Results",
       icon: <RiLoopLeftLine style={{ transition: "transform 0.35s ease" }} />,
       title: "View historical backtest results",
-      onClick: () => openModal("backtestResult"),
+      onClick: () => {
+        openModal("backtestResult");
+
+        setTimeout(() => {
+          backtestRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }, 100);
+      },
       style: {
         borderColor: "#c7d2fe",
         color: "#4338ca",
@@ -1473,22 +1505,28 @@ export default function ScannerBuilder() {
         message={modalMessage}
         onClose={() => setModalOpen(false)}
       />
-      <IndicatorBuilderListing
-        rules={rules}
-        logic={logic}
-        setRules={setRules}
-        scannerOptions={scannerOptions}
-        runScanTrigger={runScanTrigger}
-        setRunScanTrigger={setRunScanTrigger}
-        listingTimeframe={listingTimeframe}
-        selectedCurrencies={selectedCurrencies}
-        setSelectedCurrencies={setSelectedCurrencies}
-        setFinalRules={setFinalRules}
-        dataSource={dataSource}
-        setDataSource={setDataSource}
-      />
+      <div ref={scanResultRef}>
+        <IndicatorBuilderListing
+          rules={rules}
+          logic={logic}
+          setRules={setRules}
+          scannerOptions={scannerOptions}
+          runScanTrigger={runScanTrigger}
+          setRunScanTrigger={setRunScanTrigger}
+          listingTimeframe={listingTimeframe}
+          selectedCurrencies={selectedCurrencies}
+          setSelectedCurrencies={setSelectedCurrencies}
+          setFinalRules={setFinalRules}
+          dataSource={dataSource}
+          setDataSource={setDataSource}
+        />
+      </div>
 
-      {saveScan && <BacktestResults />}
+      {saveScan && (
+        <div ref={backtestRef}>
+          <BacktestResults />
+        </div>
+      )}
 
       <Modal
         show={timeframePromptConfig.isOpen}

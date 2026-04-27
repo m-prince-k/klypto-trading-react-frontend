@@ -29,41 +29,52 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const validate = () => {
-    const newErrors = {};
+  // Returns the first error found as { field, message }, or null if all valid
+  const validateOneByOne = () => {
+    if (!form.firstName.trim())
+      return { field: "firstName", message: "First name is required" };
 
-    if (!form.firstName.trim()) newErrors.firstName = "First name is required";
-    if (!form.lastName.trim()) newErrors.lastName = "Last name is required";
+    if (!form.lastName.trim())
+      return { field: "lastName", message: "Last name is required" };
 
-    if (!form.email) newErrors.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(form.email))
-      newErrors.email = "Invalid email format";
+    if (!form.email)
+      return { field: "email", message: "Email is required" };
+    if (!/\S+@\S+\.\S+/.test(form.email))
+      return { field: "email", message: "Invalid email format" };
 
-    if (!form.password) newErrors.password = "Password is required";
-    else if (form.password.length < 6)
-      newErrors.password = "Minimum 6 characters required";
+    if (!form.password)
+      return { field: "password", message: "Password is required" };
+    if (form.password.length < 6)
+      return { field: "password", message: "Minimum 6 characters required" };
 
-    if (!form.mobile) newErrors.mobile = "Mobile is required";
-    else if (!/^\d{10,15}$/.test(form.mobile))
-      newErrors.mobile = "Invalid mobile number";
+    if (!form.mobile)
+      return { field: "mobile", message: "Mobile is required" };
+    if (!/^\d{10,15}$/.test(form.mobile))
+      return { field: "mobile", message: "Invalid mobile number" };
 
-    if (!form.country.trim()) newErrors.country = "Country is required";
+    if (!form.country.trim())
+      return { field: "country", message: "Country is required" };
 
-    return newErrors;
+    return null;
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    // Clear error for this field as user types
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const validationErrors = validate();
-    setErrors(validationErrors);
-    if (Object.keys(validationErrors).length > 0) return;
+    const firstError = validateOneByOne();
+    if (firstError) {
+      setErrors({ [firstError.field]: firstError.message });
+      return;
+    }
 
+    setErrors({});
     setLoading(true);
     try {
       const response = await apiService.post("/api/register", { ...form });
@@ -118,12 +129,12 @@ export default function Signup() {
               Start trading crypto in minutes
             </p>
 
-            <Form noValidate onSubmit={handleSubmit} className="text-start align-items-start">
+            <Form noValidate onSubmit={handleSubmit} className="text-start">
 
               {/* First Name + Last Name */}
               <div className="d-flex gap-2 mb-3">
                 <Form.Group style={{ flex: 1 }}>
-                  <Form.Label className="small fw-medium  text-secondary">
+                  <Form.Label className="small fw-medium text-secondary">
                     First Name
                   </Form.Label>
                   <Form.Control

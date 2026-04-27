@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Form, Button, Card, Container } from "react-bootstrap";
+import { Form, Button } from "react-bootstrap";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import apiService from "../../services/apiServices";
 import { toast } from "react-toastify";
@@ -12,73 +12,78 @@ export default function Login() {
 
   useEffect(() => {
     if (isAuthenticated()) {
-      navigate("/candleStick", { replace: true }); // redirect if already logged in
+      navigate("/candleStick", { replace: true });
     }
   }, [navigate]);
 
   const [form, setForm] = useState({
     email: "",
     password: "",
-    remember: false,
+    remember: true,
   });
 
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const validate = () => {
-    const newErrors = {};
+  // Returns the first error found as { field, message }, or null if all valid
+  const validateOneByOne = () => {
+    if (!form.email)
+      return { field: "email", message: "Email is required" };
+    if (!/\S+@\S+\.\S+/.test(form.email))
+      return { field: "email", message: "Invalid email format" };
 
-    if (!form.email) newErrors.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(form.email))
-      newErrors.email = "Invalid email format";
+    if (!form.password)
+      return { field: "password", message: "Password is required" };
+    if (form.password.length < 6)
+      return { field: "password", message: "Minimum 6 characters required" };
 
-    if (!form.password) newErrors.password = "Password is required";
-    else if (form.password.length < 6)
-      newErrors.password = "Minimum 6 characters required";
-
-    return newErrors;
+    return null;
   };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-
     setForm((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+    // Clear error for this field as user types
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const firstError = validateOneByOne();
+    if (firstError) {
+      setErrors({ [firstError.field]: firstError.message });
+      return;
+    }
+
+    setErrors({});
+    setLoading(true);
     try {
-      e.preventDefault();
-
-      const validationErrors = validate();
-      setErrors(validationErrors);
-
-      if (Object.keys(validationErrors)?.length > 0) return;
-
-      // setLoading(true);
-
       const payload = { email: form.email, password: form.password };
-
       const response = await apiService.post("/api/login", payload);
       console.log(response);
 
-      const data = await response?.user;
+      const data = response?.user;
 
-      if (form?.remember) {
+      if (form.remember) {
         localStorage.setItem("session", JSON.stringify(data));
       } else {
         sessionStorage.setItem("session", JSON.stringify(data));
       }
 
-      await toast.success("Login successful!");
+      toast.success("Login successful!");
       navigate("/candleStick");
     } catch (error) {
-      await toast.error(error?.message);
+      toast.error(error?.message);
+    } finally {
+      setLoading(false);
     }
   };
+
   return (
     <>
       <SEO
@@ -95,6 +100,7 @@ export default function Login() {
           style={{ width: 400, borderRadius: 16 }}
         >
           <div className="card-body p-4">
+
             {/* Logo */}
             <div
               className="d-flex align-items-center justify-content-center mx-auto mb-3"
@@ -115,7 +121,8 @@ export default function Login() {
               Sign in to your account to continue
             </p>
 
-            <Form noValidate onSubmit={handleSubmit}>
+            <Form noValidate onSubmit={handleSubmit} className="text-left align-items-start">
+
               {/* Email */}
               <Form.Group className="mb-3">
                 <Form.Label className="small fw-medium text-secondary">
@@ -208,6 +215,7 @@ export default function Login() {
                   Create one
                 </a>
               </p>
+
             </Form>
           </div>
         </div>

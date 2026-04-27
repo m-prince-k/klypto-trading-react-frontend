@@ -161,8 +161,6 @@ function SaveScanContent({
     }
 
     try {
-     
-
       const payload = {
         label: form?.name?.trim?.(),
         description: form?.description?.trim?.(),
@@ -343,7 +341,7 @@ function SaveScanContent({
             </button>
           </div>
 
-          {/* PAYLOAD PREVIEW */}
+          {/* PAYLOAD PREVIEW
           {scannerPayload && (
             <div className="mt-4 p-3 rounded-xl bg-white border border-slate-200">
               <div className="text-sm">
@@ -362,7 +360,7 @@ function SaveScanContent({
                 </pre>
               </div>
             </div>
-          )}
+          )} */}
         </div>
       )}
     </div>
@@ -575,6 +573,8 @@ function CreateAlertContent({
   const [loadingSubmit, setLoadingSubmit] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
+  const [alertName, setAlertName] = useState("");
+  const [sentPhone, setSentPhone] = useState("");
 
   // ✅ Guard: show alert if scan not saved yet
   useEffect(() => {
@@ -583,8 +583,6 @@ function CreateAlertContent({
       setModalOpen(true);
     }
   }, [saveScan]);
-
-  const [alertName, setAlertName] = useState("");
 
   const [form, setForm] = useState({
     email: "",
@@ -621,9 +619,10 @@ function CreateAlertContent({
     }
 
     if (mode === "sms") {
-      if (!phone) errors.phone = "Phone number required";
-      // else if (!/^\+91\d{10}$/.test(phone))
-      //   errors.phone = "Enter valid number (+91XXXXXXXXXX)";
+      if (!otpSent && !phone) errors.phone = "Phone number required";
+  //     else if (phone.length < 8 || phone.length > 15) {
+  //   errors.phone = "Enter valid phone number";
+  // }
 
       if (otpSent && (!otp || !/^\d{6}$/.test(otp))) {
         errors.otp = "OTP must be 6 digits";
@@ -645,9 +644,11 @@ function CreateAlertContent({
     if (mode === "email") {
       payload = { type: "email", email: form.email };
     } else if (mode === "sms") {
-      payload = { type: "sms", mobile: form.phone };
+      payload = { type: "sms", mobile: form.phone ,
+        // mobile: `+${form.phone}`
+      };
     }
-    console.log(payload, "payloaddddddddd");
+    // console.log(payload, "payloaddddddddd");
 
     setLoadingOtp(true);
     try {
@@ -656,6 +657,8 @@ function CreateAlertContent({
 
       if (response?.success) {
         toast.success(response.message || "OTP sent ✅");
+        setSentPhone(form.phone);
+        updateField("phone", "");
         setOtpSent(true);
         setOtpMessage(`OTP: ${response.otp || "Check your phone"}`);
       } else {
@@ -686,7 +689,8 @@ function CreateAlertContent({
         payload = {
           alert_name: alertName,
           type: "verified",
-          mobile: form.phone,
+          mobile: sentPhone,
+          //  mobile: `+${form.phone}`, // 🔥 important
           otp: form.otp,
           rule: buildCondition({ rules: finalRules }),
         };
@@ -695,10 +699,10 @@ function CreateAlertContent({
 
       const response = await apiService.post("/api/indicatorAlert", payload);
 
-      if (response.statusCode==200) {
+      if (response.success == 200) {
         toast.success("Alert created ✅");
         closeModal();
-        onSubmit?.({ ...form, mode, rules });
+        onSubmit?.({ ...form, phone: sentPhone, mode, rules });
       } else {
         toast.error(response?.message || "Failed to create alert");
       }
@@ -719,6 +723,7 @@ function CreateAlertContent({
     }));
     setErrors({});
     setOtpSent(false);
+    setSentPhone("");
     setOtpMessage("");
   }, [mode]);
 
@@ -728,94 +733,6 @@ function CreateAlertContent({
     if (value.length > 13) return;
     updateField("phone", value);
   }
-
-  // const OPERATOR_LABELS = {
-  //   ">": "is greater than",
-  //   "<": "is less than",
-  //   ">=": "is greater than or equal to",
-  //   "<=": "is less than or equal to",
-  //   "==": "is equal to",
-  //   "!=": "is not equal to",
-  // };
-
-  // /* ================= PARSER ================= */
-
-  // function parseObject(obj) {
-  //   if (!obj) return "";
-
-  //   // ✅ number
-  //   if (obj.indicator === "number") {
-  //     return obj.value;
-  //   }
-
-  //   // ✅ string
-  //   if (typeof obj === "string") return obj;
-
-  //   if (!obj.indicator) return "";
-
-  //   // 🔥 extract length + source (NEW STRUCTURE)
-  //   let length = "";
-  //   let source = "";
-
-  //   if (typeof obj.length === "object") {
-  //     length = obj.length?.length;
-  //     source = obj.length?.source;
-  //   } else {
-  //     length = obj.length;
-  //   }
-
-  //   // fallback (older structure)
-  //   if (!source && obj.source) {
-  //     source = obj.source;
-  //   }
-
-  //   const params = [];
-
-  //   if (source) params.push(source);
-  //   if (length) params.push(length);
-
-  //   const tfMap = {
-  //     "1d": "daily",
-  //     "1w": "weekly",
-  //     "1M": "monthly",
-  //     "30d": "monthly",
-  //     "90d": "quarterly",
-  //     "365d": "yearly",
-  //   };
-
-  //   const tf = tfMap[obj.timeframe] || obj.timeframe || "";
-
-  //   return `${tf ? tf + " " : ""}${obj.indicator.toUpperCase()}(${params.join(", ")})`
-  //     .replace(/\(\)/, "")
-  //     .replace(/\s+/g, " ")
-  //     .trim();
-  // }
-
-  // /* ================= CONDITION BUILDER ================= */
-  // function buildCondition(payload) {
-  //   if (!payload?.rules?.length) return "";
-
-  //   return payload.rules
-  //     .map((rule) => {
-  //       const left = parseObject(rule.object1);
-  //       const op1 = OPERATOR_LABELS[rule.operator1] || rule.operator1;
-  //       const right = parseObject(rule.object2);
-
-  //       let expression = `${left} ${op1} ${right}`;
-
-  //       // 🔥 handle chaining
-  //       if (rule.operator2 && rule.object3) {
-  //         expression += ` ${rule.operator2} ${parseObject(rule.object3)}`;
-  //       }
-
-  //       if (rule.operator3 && rule.object4) {
-  //         expression += ` ${rule.operator3} ${parseObject(rule.object4)}`;
-  //       }
-
-  //       return expression;
-  //     })
-  //     .join(" AND ");
-  // }
   // ✅ When scan not saved: show only the alert modal + close button
   if (!saveScan) {
     return (
@@ -951,6 +868,33 @@ function CreateAlertContent({
                 </div>
               )}
 
+              {/* <div className="mb-2">
+  <label className="text-xs font-semibold">PHONE NUMBER</label>
+
+  <PhoneInput
+    country={"in"} // default India
+    enableSearch={true}
+    value={form.phone}
+    onChange={(value) => updateField("phone", value)}
+    inputClass="w-full"
+    containerClass="w-full"
+    inputStyle={{
+      width: "100%",
+      height: "48px",
+      borderRadius: "12px",
+      border: "1px solid #e2e8f0",
+    }}
+    buttonStyle={{
+      borderTopLeftRadius: "12px",
+      borderBottomLeftRadius: "12px",
+    }}
+    disabled={otpSent}
+  />
+
+  {errors.phone && (
+    <div className="text-xs text-red-500 mt-1">{errors.phone}</div>
+  )}
+</div> */}
               <div className="mb-2">
                 <label className="text-xs font-semibold">PHONE NUMBER</label>
                 <input
