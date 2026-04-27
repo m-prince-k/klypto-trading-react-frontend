@@ -13,6 +13,8 @@ import {
 import { Search } from "lucide-react";
 import ScanTable from "./ScanTable";
 import apiService from "../../../services/apiServices";
+import { formatSmartDate } from "../../../util/scannerFunctions";
+import { AlertDeleteModal } from "../../scanner/ScannerModals";
 
 // 🔹 helper
 const getUser = () => {
@@ -38,11 +40,23 @@ export default function ScansSection() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedScan, setSelectedScan] = useState(null);
+
   // ✅ get user OUTSIDE
   const user = getUser();
-  //   console.log(user, "userrrr")
+  console.log(user, "userrrr");
   const userId = user?.id;
   const token = user?.token;
+
+  const handleConfirmDelete = () => {
+    if (!selectedScan) return;
+
+    setScans((prev) => prev.filter((s) => s.id !== selectedScan.id));
+
+    setShowDeleteModal(false);
+    setSelectedScan(null);
+  };
 
   useEffect(() => {
     if (!userId) return;
@@ -72,9 +86,13 @@ export default function ScansSection() {
   // 🔹 not logged in
   if (!userId) {
     return (
-      <Container className="py-5 text-center">
-        <Alert variant="warning">Please log in to view your saved scans.</Alert>
-      </Container>
+      <>
+        <Container className="py-5 text-center">
+          <Alert variant="warning">
+            Please log in to view your saved scans.
+          </Alert>
+        </Container>
+      </>
     );
   }
 
@@ -87,8 +105,15 @@ export default function ScansSection() {
       s.clause?.toLowerCase().includes(lq),
   );
 
-  const lastCreated = scans.length ? (scans.at(-1)?.created ?? "—") : "—";
-
+  const lastCreated = scans.length
+    ? formatSmartDate(
+        scans.reduce((latest, scan) => {
+          return new Date(scan.createdAt) > new Date(latest.createdAt)
+            ? scan
+            : latest;
+        }).createdAt,
+      )
+    : "—";
   return (
     <Container fluid className="py-4 px-4">
       {/* Stats */}
@@ -147,9 +172,22 @@ export default function ScansSection() {
           scans={filtered}
           onShare={(s) => console.log("share", s)}
           onEdit={(s) => console.log("edit", s)}
-          onDelete={(s) => console.log("delete", s)}
+          onDelete={(scan) => {
+            setSelectedScan(scan);
+            setShowDeleteModal(true);
+          }}
         />
       )}
+
+      <AlertDeleteModal
+        isOpen={showDeleteModal}
+        message={`Are you sure you want to delete "${selectedScan?.label}"?`}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setSelectedScan(null);
+        }}
+        onConfirm={handleConfirmDelete}
+      />
     </Container>
   );
 }

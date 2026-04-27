@@ -24,6 +24,25 @@ const AlertModal = ({ isOpen, message, onClose }) => (
 
 export default AlertModal;
 
+
+export const AlertDeleteModal = ({ isOpen, message, onClose, onConfirm }) => (
+  <Modal show={isOpen} onHide={onClose} centered size="md">
+    <Modal.Body className="p-4 text-center">
+      <div style={iconStyle}>⚠️</div>
+      <p style={textStyle}>{message}</p>
+    </Modal.Body>
+
+    <Modal.Footer className="border-0 justify-content-center pb-4">
+      <Button variant="secondary" onClick={onClose}>
+        Cancel
+      </Button>
+      <Button style={buttonStyle} onClick={onConfirm}>
+        Delete
+      </Button>
+    </Modal.Footer>
+  </Modal>
+);
+
 // ================= STYLES =================
 
 const iconStyle = {

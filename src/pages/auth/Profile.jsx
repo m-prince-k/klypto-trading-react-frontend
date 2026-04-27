@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import ProfileSection from "../../components/auth/profile/ProfileSection";
 import ScansSection from "../../components/auth/profile/ScanSection";
+import { Link } from "react-router-dom";
+import AlertSection from "../../components/auth/profile/AlertSection";
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 
@@ -392,39 +394,6 @@ function ActionButton({ label, type }) {
   );
 }
 
-// ─── Sections ─────────────────────────────────────────────────────────────────
-
-
-
-function AlertsSection() {
-  return (
-    <div style={styles.page}>
-      <div style={styles.emptyState}>
-        <div style={styles.emptyIcon}>
-          <BellLargeIcon />
-        </div>
-        <h3 style={{ fontSize: "16px", fontWeight: 500, marginBottom: "6px" }}>
-          No alerts configured
-        </h3>
-        <p
-          style={{
-            fontSize: "13.5px",
-            color: "#777",
-            lineHeight: 1.6,
-            marginBottom: "20px",
-          }}
-        >
-          Set up price alerts on your scanners to get notified when conditions
-          are triggered.
-        </p>
-        <button style={{ ...styles.btnPrimary, margin: "0 auto" }}>
-          <PlusIcon />
-          Create a scanner first
-        </button>
-      </div>
-    </div>
-  );
-}
 
 // ─── Main Export ──────────────────────────────────────────────────────────────
 
@@ -466,15 +435,15 @@ export default function Profile() {
           />
         </div>
 
-        <button style={styles.btnPrimary}>
+        <Link to="/scannerBuilder" className="text-decoration-none" style={styles.btnPrimary}>
           <PlusIcon />
           Create scanner
-        </button>
+        </Link>
       </nav>
 
       {/* Pages */}
       {activeTab === "scans" && <ScansSection />}
-      {activeTab === "alerts" && <AlertsSection />}
+      {activeTab === "alerts" && <AlertSection />}
       {activeTab === "profile" && <ProfileSection />}
     </div>
   );

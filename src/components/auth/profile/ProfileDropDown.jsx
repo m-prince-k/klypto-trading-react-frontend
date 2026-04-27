@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { styles } from "./style";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function ProfileDropDown() {
   const [open, setOpen] = useState(false);
@@ -36,7 +36,7 @@ export default function ProfileDropDown() {
           <div style={styles.avatar}>S</div>
           <div>
             <div style={{ fontWeight: 600 }}>sm954341</div>
-            <div style={{ fontSize: 12, opacity: 0.7 }}>View profile</div>
+            <Link to="/profile" style={{ fontSize: 12, opacity: 0.7 }}>View profile</Link>
           </div>
         </div>
 

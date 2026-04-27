@@ -1,47 +1,21 @@
-import React, { useState, useEffect } from "react";
-import {
-  Container,
-  Card,
-  Form,
-  Button,
-  Row,
-  Col,
-  Spinner,
-  InputGroup,
-} from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Form, Button } from "react-bootstrap";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 import apiService from "../../services/apiServices";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 import { isAuthenticated } from "./protected";
 import SEO from "../../components/SEO";
 
-const EyeIcon = ({ open }) => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="#888"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    {open ? (
-      <>
-        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-        <circle cx="12" cy="12" r="3" />
-      </>
-    ) : (
-      <>
-        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-        <line x1="1" y1="1" x2="23" y2="23" />
-      </>
-    )}
-  </svg>
-);
+export default function Signup() {
+  const navigate = useNavigate();
 
-const Signup = () => {
+  useEffect(() => {
+    if (isAuthenticated()) {
+      navigate("/candleStick", { replace: true });
+    }
+  }, [navigate]);
+
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -50,61 +24,51 @@ const Signup = () => {
     mobile: "",
     country: "",
   });
-  const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const navigate = useNavigate();
 
-  useEffect(() => {
-    if (isAuthenticated()) {
-      navigate("/candleStick", { replace: true }); // redirect if already logged in
-    }
-  }, [navigate]);
+  const [errors, setErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const validate = () => {
-    const err = {};
-    if (!form.firstName.trim()) err.firstName = "First name is required";
-    if (!form.lastName.trim()) err.lastName = "Last name is required";
-    if (!form.email) {
-      err.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(form.email)) {
-      err.email = "Invalid email";
-    }
-    if (!form.password) {
-      err.password = "Password is required";
-    } else if (form.password.length < 6) {
-      err.password = "Min. 6 characters";
-    }
-    if (!form.mobile) {
-      err.mobile = "Mobile is required";
-    } else if (!/^\d{10,15}$/.test(form.mobile)) {
-      err.mobile = "Invalid mobile number";
-    }
-    if (!form.country) err.country = "Country is required";
-    setErrors(err);
-    return Object.keys(err).length === 0;
+    const newErrors = {};
+
+    if (!form.firstName.trim()) newErrors.firstName = "First name is required";
+    if (!form.lastName.trim()) newErrors.lastName = "Last name is required";
+
+    if (!form.email) newErrors.email = "Email is required";
+    else if (!/\S+@\S+\.\S+/.test(form.email))
+      newErrors.email = "Invalid email format";
+
+    if (!form.password) newErrors.password = "Password is required";
+    else if (form.password.length < 6)
+      newErrors.password = "Minimum 6 characters required";
+
+    if (!form.mobile) newErrors.mobile = "Mobile is required";
+    else if (!/^\d{10,15}$/.test(form.mobile))
+      newErrors.mobile = "Invalid mobile number";
+
+    if (!form.country.trim()) newErrors.country = "Country is required";
+
+    return newErrors;
   };
 
-  const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validate()) return;
 
+    const validationErrors = validate();
+    setErrors(validationErrors);
+    if (Object.keys(validationErrors).length > 0) return;
+
+    setLoading(true);
     try {
-      const payload = {
-        ...form,
-      };
-      const response = await apiService.post("/api/register", payload);
-
-      // ✅ store token (IMPORTANT)
-      const token = await response.data?.token; // adjust based on API
-      if (token) {
-        localStorage.setItem("token", token);
-      }
-
-      // ✅ now user is authenticated
+      const response = await apiService.post("/api/register", { ...form });
+      const token = response.data?.token;
+      if (token) localStorage.setItem("token", token);
       toast.success("Signup successful!");
       navigate("/candleStick");
     } catch (error) {
@@ -117,16 +81,6 @@ const Signup = () => {
     }
   };
 
-  const field = {
-    backgroundColor: "#f5f5f5",
-    border: "1px solid #e8e8e8",
-    borderRadius: "6px",
-    padding: "0.65rem 0.9rem",
-    fontSize: "0.93rem",
-    color: "#2d2d2d",
-    boxShadow: "none",
-  };
-
   return (
     <>
       <SEO
@@ -136,196 +90,188 @@ const Signup = () => {
         url="https://yourdomain.com/"
         image="https://yourdomain.com/banner.jpg"
       />
-      <div
-        style={{
-          minHeight: "100vh",
-          backgroundColor: "#2b2d2f",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "2rem 1rem",
-          fontFamily: "'Segoe UI', sans-serif",
-        }}
-      >
-        <Container>
-          <Row className="justify-content-center">
-            <Col xs={12} sm={9} md={7} lg={5}>
-              <Card
-                className="border-0"
-                style={{
-                  borderRadius: "10px",
-                  boxShadow: "0 10px 40px rgba(0,0,0,0.4)",
-                }}
-              >
-                <Card.Body style={{ padding: "2rem 1.8rem" }}>
-                  <h4
-                    className="fw-bold text-center mb-4"
-                    style={{ color: "#1a1a1a", fontSize: "1.35rem" }}
+
+      <div className="min-vh-100 d-flex align-items-center justify-content-center bg-body-secondary py-4">
+        <div
+          className="card border-0 shadow-sm"
+          style={{ width: 420, borderRadius: 16 }}
+        >
+          <div className="card-body p-4">
+
+            {/* Logo */}
+            <div
+              className="d-flex align-items-center justify-content-center mx-auto mb-3"
+              style={{
+                width: 40,
+                height: 40,
+                background: "#185FA5",
+                borderRadius: 10,
+              }}
+            >
+              <svg width="20" height="20" fill="white" viewBox="0 0 24 24">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+              </svg>
+            </div>
+
+            <h5 className="text-center fw-semibold mb-1">Create your account</h5>
+            <p className="text-center text-muted small mb-4">
+              Start trading crypto in minutes
+            </p>
+
+            <Form noValidate onSubmit={handleSubmit} className="text-start align-items-start">
+
+              {/* First Name + Last Name */}
+              <div className="d-flex gap-2 mb-3">
+                <Form.Group style={{ flex: 1 }}>
+                  <Form.Label className="small fw-medium  text-secondary">
+                    First Name
+                  </Form.Label>
+                  <Form.Control
+                    name="firstName"
+                    type="text"
+                    placeholder="John"
+                    value={form.firstName}
+                    onChange={handleChange}
+                    isInvalid={!!errors.firstName}
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    {errors.firstName}
+                  </Form.Control.Feedback>
+                </Form.Group>
+
+                <Form.Group style={{ flex: 1 }}>
+                  <Form.Label className="small fw-medium text-secondary">
+                    Last Name
+                  </Form.Label>
+                  <Form.Control
+                    name="lastName"
+                    type="text"
+                    placeholder="Doe"
+                    value={form.lastName}
+                    onChange={handleChange}
+                    isInvalid={!!errors.lastName}
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    {errors.lastName}
+                  </Form.Control.Feedback>
+                </Form.Group>
+              </div>
+
+              {/* Email */}
+              <Form.Group className="mb-3">
+                <Form.Label className="small fw-medium text-secondary">
+                  Email address
+                </Form.Label>
+                <Form.Control
+                  name="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={form.email}
+                  onChange={handleChange}
+                  isInvalid={!!errors.email}
+                />
+                <Form.Control.Feedback type="invalid">
+                  {errors.email}
+                </Form.Control.Feedback>
+              </Form.Group>
+
+              {/* Password */}
+              <Form.Group className="mb-3">
+                <Form.Label className="small fw-medium text-secondary">
+                  Password
+                </Form.Label>
+                <div className="position-relative">
+                  <Form.Control
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Min. 6 characters"
+                    value={form.password}
+                    onChange={handleChange}
+                    isInvalid={!!errors.password}
+                    style={{ paddingRight: 40 }}
+                  />
+                  <span
+                    onClick={() => setShowPassword((s) => !s)}
+                    className="position-absolute top-50 end-0 translate-middle-y me-3 text-muted"
+                    style={{ cursor: "pointer", fontSize: 16, zIndex: 5 }}
                   >
-                    Sign Up
-                  </h4>
+                    {showPassword ? <FiEyeOff /> : <FiEye />}
+                  </span>
+                  <Form.Control.Feedback type="invalid">
+                    {errors.password}
+                  </Form.Control.Feedback>
+                </div>
+              </Form.Group>
 
-                  <Form onSubmit={handleSubmit} noValidate>
-                    <Row className="g-2 mb-2">
-                      <Col xs={6}>
-                        <Form.Control
-                          name="firstName"
-                          placeholder="First Name"
-                          value={form.firstName}
-                          onChange={handleChange}
-                          isInvalid={!!errors.firstName}
-                          style={field}
-                        />
-                        <Form.Control.Feedback
-                          type="invalid"
-                          style={{ fontSize: "0.76rem" }}
-                        >
-                          {errors.firstName}
-                        </Form.Control.Feedback>
-                      </Col>
-                      <Col xs={6}>
-                        <Form.Control
-                          name="lastName"
-                          placeholder="Last Name"
-                          value={form.lastName}
-                          onChange={handleChange}
-                          isInvalid={!!errors.lastName}
-                          style={field}
-                        />
-                        <Form.Control.Feedback
-                          type="invalid"
-                          style={{ fontSize: "0.76rem" }}
-                        >
-                          {errors.lastName}
-                        </Form.Control.Feedback>
-                      </Col>
-                    </Row>
+              {/* Mobile + Country */}
+              <div className="d-flex gap-2 mb-3">
+                <Form.Group style={{ flex: 1 }}>
+                  <Form.Label className="small fw-medium text-secondary">
+                    Mobile
+                  </Form.Label>
+                  <Form.Control
+                    name="mobile"
+                    type="tel"
+                    placeholder="10–15 digits"
+                    value={form.mobile}
+                    onChange={handleChange}
+                    isInvalid={!!errors.mobile}
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    {errors.mobile}
+                  </Form.Control.Feedback>
+                </Form.Group>
 
-                    <Form.Group className="mb-2">
-                      <Form.Control
-                        name="email"
-                        type="email"
-                        placeholder="Email Address"
-                        value={form.email}
-                        onChange={handleChange}
-                        isInvalid={!!errors.email}
-                        style={field}
-                      />
-                      <Form.Control.Feedback
-                        type="invalid"
-                        style={{ fontSize: "0.76rem" }}
-                      >
-                        {errors.email}
-                      </Form.Control.Feedback>
-                    </Form.Group>
+                <Form.Group style={{ flex: 1 }}>
+                  <Form.Label className="small fw-medium text-secondary">
+                    Country
+                  </Form.Label>
+                  <Form.Control
+                    name="country"
+                    type="text"
+                    placeholder="e.g. India"
+                    value={form.country}
+                    onChange={handleChange}
+                    isInvalid={!!errors.country}
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    {errors.country}
+                  </Form.Control.Feedback>
+                </Form.Group>
+              </div>
 
-                    <Form.Group className="mb-2">
-                      <InputGroup>
-                        <Form.Control
-                          name="password"
-                          type={showPassword ? "text" : "password"}
-                          placeholder="Password"
-                          value={form.password}
-                          onChange={handleChange}
-                          isInvalid={!!errors.password}
-                          style={{
-                            ...field,
-                            borderRight: "none",
-                            borderRadius: "6px 0 0 6px",
-                          }}
-                        />
-                        <InputGroup.Text
-                          onClick={() => setShowPassword(!showPassword)}
-                          style={{
-                            background: "#f5f5f5",
-                            border: "1px solid #e8e8e8",
-                            borderLeft: "none",
-                            borderRadius: "0 6px 6px 0",
-                            cursor: "pointer",
-                          }}
-                        >
-                          <EyeIcon open={showPassword} />
-                        </InputGroup.Text>
-                        <Form.Control.Feedback
-                          type="invalid"
-                          style={{ fontSize: "0.76rem" }}
-                        >
-                          {errors.password}
-                        </Form.Control.Feedback>
-                      </InputGroup>
-                    </Form.Group>
+              {/* Submit */}
+              <Button
+                type="submit"
+                className="w-100 fw-medium"
+                style={{ background: "#185FA5", border: "none" }}
+                disabled={loading}
+              >
+                {loading ? "Signing up…" : "Sign Up"}
+              </Button>
 
-                    <Row className="g-2 mb-3">
-                      <Col xs={6}>
-                        <Form.Control
-                          name="mobile"
-                          placeholder="Mobile"
-                          value={form.mobile}
-                          onChange={handleChange}
-                          isInvalid={!!errors.mobile}
-                          style={field}
-                        />
-                        <Form.Control.Feedback
-                          type="invalid"
-                          style={{ fontSize: "0.76rem" }}
-                        >
-                          {errors.mobile}
-                        </Form.Control.Feedback>
-                      </Col>
-                      <Col xs={6}>
-                        <Form.Control
-                          name="country"
-                          placeholder="Country"
-                          value={form.country}
-                          onChange={handleChange}
-                          isInvalid={!!errors.country}
-                          style={field}
-                        />
-                        <Form.Control.Feedback
-                          type="invalid"
-                          style={{ fontSize: "0.76rem" }}
-                        >
-                          {errors.country}
-                        </Form.Control.Feedback>
-                      </Col>
-                    </Row>
+              {/* Divider */}
+              <div className="d-flex align-items-center gap-2 my-3">
+                <hr className="flex-grow-1 m-0" />
+                <span className="text-muted small">or</span>
+                <hr className="flex-grow-1 m-0" />
+              </div>
 
-                    <Button
-                      type="submit"
-                      disabled={loading}
-                      className="w-100 fw-semibold border-0"
-                      style={{
-                        backgroundColor: "#1c1c1c",
-                        borderRadius: "6px",
-                        padding: "0.68rem",
-                        fontSize: "0.95rem",
-                        color: "#fff",
-                        letterSpacing: "0.2px",
-                      }}
-                    >
-                      {loading ? (
-                        <>
-                          <Spinner
-                            as="span"
-                            animation="border"
-                            size="sm"
-                            className="me-2"
-                          />
-                          Signing up...
-                        </>
-                      ) : (
-                        "Sign Up"
-                      )}
-                    </Button>
-                  </Form>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
-        </Container>
+              {/* Sign in link */}
+              <p className="text-center small text-muted mb-0">
+                Already have an account?{" "}
+                <a
+                  href="/login"
+                  className="text-primary fw-medium text-decoration-none"
+                >
+                  Sign in
+                </a>
+              </p>
+
+            </Form>
+          </div>
+        </div>
       </div>
     </>
   );
-};
-
-export default Signup;
+}

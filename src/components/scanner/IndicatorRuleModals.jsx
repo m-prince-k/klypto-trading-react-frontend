@@ -13,6 +13,7 @@ import { toast } from "react-toastify";
 import apiService from "../../services/apiServices";
 import { scanCategories, tfToMinutes } from "../../util/common";
 import AlertModal from "./ScannerModals";
+import { buildCondition } from "../../util/scannerFunctions";
 
 export function IndicatorRuleModals({
   type,
@@ -32,6 +33,7 @@ export function IndicatorRuleModals({
           <SaveScanContent
             closeModal={closeModal}
             rules={rules}
+            finalRules={finalRules}
             setSaveScan={setSaveScan}
             dataSource={dataSource}
             onSubmit={(data) => {
@@ -106,6 +108,7 @@ function SaveScanContent({
   onSubmit,
   closeModal,
   rules = [],
+  finalRules,
   setSaveScan,
   dataSource,
 }) {
@@ -158,16 +161,12 @@ function SaveScanContent({
     }
 
     try {
-      const condition = await rules?.map((rule) => ({
-        indicator: rule?.indicator,
-        operator: rule?.operator,
-        value: rule?.value,
-      }));
+     
 
       const payload = {
         label: form?.name?.trim?.(),
         description: form?.description?.trim?.(),
-        condition, // ⭐ ALL RULES HERE
+        condition: buildCondition({ rules: finalRules }),
         categoryKey: form?.category?.key, // ⭐ FROM SELECTED CATEGORY
         categoryLabel: form?.category?.label,
       };
@@ -730,110 +729,93 @@ function CreateAlertContent({
     updateField("phone", value);
   }
 
-  const TF_LABELS = {
-    "1m": "1 minute",
-    "5m": "5 minutes",
-    "15m": "15 minutes",
-    "30m": "30 minutes",
-    "1h": "1 hour",
-    "2h": "2 hours",
-    "4h": "4 hours",
-    "6h": "6 hours",
-    "1d": "daily",
-    "1w": "weekly",
-    "1M": "monthly",
-    "30d": "monthly",
-    "90d": "quarterly",
-    "365d": "yearly",
-  };
+  // const OPERATOR_LABELS = {
+  //   ">": "is greater than",
+  //   "<": "is less than",
+  //   ">=": "is greater than or equal to",
+  //   "<=": "is less than or equal to",
+  //   "==": "is equal to",
+  //   "!=": "is not equal to",
+  // };
 
-  const OPERATOR_LABELS = {
-    ">": "is greater than",
-    "<": "is less than",
-    ">=": "is greater than or equal to",
-    "<=": "is less than or equal to",
-    "==": "is equal to",
-    "!=": "is not equal to",
-  };
+  // /* ================= PARSER ================= */
 
-  /* ================= PARSER ================= */
+  // function parseObject(obj) {
+  //   if (!obj) return "";
 
-  function parseObject(obj) {
-    if (!obj) return "";
+  //   // ✅ number
+  //   if (obj.indicator === "number") {
+  //     return obj.value;
+  //   }
 
-    // ✅ number
-    if (obj.indicator === "number") {
-      return obj.value;
-    }
+  //   // ✅ string
+  //   if (typeof obj === "string") return obj;
 
-    // ✅ string
-    if (typeof obj === "string") return obj;
+  //   if (!obj.indicator) return "";
 
-    if (!obj.indicator) return "";
+  //   // 🔥 extract length + source (NEW STRUCTURE)
+  //   let length = "";
+  //   let source = "";
 
-    // 🔥 extract length + source (NEW STRUCTURE)
-    let length = "";
-    let source = "";
+  //   if (typeof obj.length === "object") {
+  //     length = obj.length?.length;
+  //     source = obj.length?.source;
+  //   } else {
+  //     length = obj.length;
+  //   }
 
-    if (typeof obj.length === "object") {
-      length = obj.length?.length;
-      source = obj.length?.source;
-    } else {
-      length = obj.length;
-    }
+  //   // fallback (older structure)
+  //   if (!source && obj.source) {
+  //     source = obj.source;
+  //   }
 
-    // fallback (older structure)
-    if (!source && obj.source) {
-      source = obj.source;
-    }
+  //   const params = [];
 
-    const params = [];
+  //   if (source) params.push(source);
+  //   if (length) params.push(length);
 
-    if (source) params.push(source);
-    if (length) params.push(length);
+  //   const tfMap = {
+  //     "1d": "daily",
+  //     "1w": "weekly",
+  //     "1M": "monthly",
+  //     "30d": "monthly",
+  //     "90d": "quarterly",
+  //     "365d": "yearly",
+  //   };
 
-    const tfMap = {
-      "1d": "daily",
-      "1w": "weekly",
-      "1M": "monthly",
-      "30d": "monthly",
-      "90d": "quarterly",
-      "365d": "yearly",
-    };
+  //   const tf = tfMap[obj.timeframe] || obj.timeframe || "";
 
-    const tf = tfMap[obj.timeframe] || obj.timeframe || "";
+  //   return `${tf ? tf + " " : ""}${obj.indicator.toUpperCase()}(${params.join(", ")})`
+  //     .replace(/\(\)/, "")
+  //     .replace(/\s+/g, " ")
+  //     .trim();
+  // }
 
-    return `${tf ? tf + " " : ""}${obj.indicator.toUpperCase()}(${params.join(", ")})`
-      .replace(/\(\)/, "")
-      .replace(/\s+/g, " ")
-      .trim();
-  }
+  // /* ================= CONDITION BUILDER ================= */
+  // function buildCondition(payload) {
+  //   if (!payload?.rules?.length) return "";
 
-  /* ================= CONDITION BUILDER ================= */
-  function buildCondition(payload) {
-    if (!payload?.rules?.length) return "";
+  //   return payload.rules
+  //     .map((rule) => {
+  //       const left = parseObject(rule.object1);
+  //       const op1 = OPERATOR_LABELS[rule.operator1] || rule.operator1;
+  //       const right = parseObject(rule.object2);
 
-    return payload.rules
-      .map((rule) => {
-        const left = parseObject(rule.object1);
-        const op1 = OPERATOR_LABELS[rule.operator1] || rule.operator1;
-        const right = parseObject(rule.object2);
+  //       let expression = `${left} ${op1} ${right}`;
 
-        let expression = `${left} ${op1} ${right}`;
+  //       // 🔥 handle chaining
+  //       if (rule.operator2 && rule.object3) {
+  //         expression += ` ${rule.operator2} ${parseObject(rule.object3)}`;
+  //       }
 
-        // 🔥 handle chaining
-        if (rule.operator2 && rule.object3) {
-          expression += ` ${rule.operator2} ${parseObject(rule.object3)}`;
-        }
+  //       if (rule.operator3 && rule.object4) {
+  //         expression += ` ${rule.operator3} ${parseObject(rule.object4)}`;
+  //       }
 
-        if (rule.operator3 && rule.object4) {
-          expression += ` ${rule.operator3} ${parseObject(rule.object4)}`;
-        }
-
-        return expression;
-      })
-      .join(" AND ");
-  }
+  //       return expression;
+  //     })
+  //     .join(" AND ");
+  // }
   // ✅ When scan not saved: show only the alert modal + close button
   if (!saveScan) {
     return (
