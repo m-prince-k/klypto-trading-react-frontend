@@ -14,15 +14,18 @@ import { FiChevronDown } from "react-icons/fi";
 import { chartOptions, convertToHeikinAshi } from "../../util/common";
 import { useNavigate } from "react-router-dom";
 
-export default function MiniChart({ activeSymbol, chartData, timeframeValue }) {
+export default function MiniChart({
+  activeSymbol,
+  chartData,
+  timeframeValue,
+  dropdownRef,
+}) {
   const chartRef = useRef(null);
   const seriesRef = useRef(null);
   const containerRef = useRef(null);
   const navigate = useNavigate();
-
   const [chartType, setChartType] = useState("candlestick");
   const [ohlc, setOhlc] = useState(null);
-
   const active = chartOptions.find((c) => c.value === chartType);
 
   // ✅ Create chart once
@@ -94,12 +97,12 @@ export default function MiniChart({ activeSymbol, chartData, timeframeValue }) {
     const chart = chartRef.current;
     if (!chart || !chartData) return;
 
-      chart.applyOptions({
-    timeScale: {
-      timeVisible: timeframeValue !== "1d",
-      secondsVisible: false,
-    },
-  });
+    chart.applyOptions({
+      timeScale: {
+        timeVisible: timeframeValue !== "1d",
+        secondsVisible: false,
+      },
+    });
 
     // remove old series
     if (chart && seriesRef.current) {
@@ -171,7 +174,7 @@ export default function MiniChart({ activeSymbol, chartData, timeframeValue }) {
         );
         break;
 
-      case "heikin":
+      case "heikinashi":
         series = chart.addSeries(CandlestickSeries, {
           upColor: "#00FF88",
           downColor: "#FF4D4F",
@@ -276,13 +279,21 @@ export default function MiniChart({ activeSymbol, chartData, timeframeValue }) {
             <DropdownMenu.Portal>
               <DropdownMenu.Content
                 sideOffset={8}
+                ref={dropdownRef}
+                onPointerDownOutside={(e) => {
+                  e.preventDefault();
+                }}
+                onInteractOutside={(e) => {
+                  e.preventDefault(); // 🔥 IMPORTANT
+                }}
                 style={{
                   background: "#1f2937",
                   border: "1px solid #374151",
                   borderRadius: 8,
                   padding: 6,
                   minWidth: 180,
-                  zIndex: 99999,
+                  zIndex: 9999999, // 🔥 increase
+                  // position: "relative", // 🔥 important
                 }}
               >
                 {chartOptions.map((item) => (

@@ -70,6 +70,7 @@ export default function IndicatorBuilderListing({
   const inFlight = useRef({}); // ✅ prevent duplicate calls
   const [chartPosition, setChartPosition] = useState("right");
   const popupRef = useRef(null);
+  const dropdownRef = useRef(null);
   const isHoveringPopup = useRef(false);
   const [verticalAdjust, setVerticalAdjust] = useState(0);
   const [hoverRect, setHoverRect] = useState(null);
@@ -156,10 +157,14 @@ export default function IndicatorBuilderListing({
       delete inFlight.current[cacheKey];
     }
   };
+
   useEffect(() => {
     const handleClickOutside = (e) => {
-      // if popup exists and click is outside
-      if (popupRef.current && !popupRef.current.contains(e.target)) {
+      const clickedInsidePopup = popupRef.current?.contains(e.target);
+
+      const clickedInsideDropdown = dropdownRef.current?.contains(e.target);
+
+      if (!clickedInsidePopup && !clickedInsideDropdown) {
         setHoveredSymbol(null);
         setHoverRect(null);
       }
@@ -169,8 +174,11 @@ export default function IndicatorBuilderListing({
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      
     };
   }, []);
+
+
   const hasData = normalizeData(dataSource).length > 0;
   // ✅ Tracks whether the user manually picked a TF from dropdown 1
   // When true, fetchData will NOT override timeframeValue with maxTF
@@ -1760,6 +1768,7 @@ export default function IndicatorBuilderListing({
                     timeframeValue={timeframeValue}
                     setHoverRect={setHoverRect}
                     setHoveredSymbol={setHoveredSymbol}
+                    dropdownRef={dropdownRef}
                   />
                   {/* <div
                                       ref={containerRef}
