@@ -3,20 +3,16 @@ import {
   Container,
   Row,
   Col,
-  Form,
-  InputGroup,
-  Button,
   Spinner,
   Alert,
 } from "react-bootstrap";
-import { Search, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import AlertTable from "./AlertTable";
 import apiService from "../../../services/apiServices";
 import { formatSmartDate } from "../../../util/scannerFunctions";
 import { AlertDeleteModal } from "../../scanner/ScannerModals";
 import { Link } from "react-router-dom";
 
-// 🔹 helper
 const getUser = () => {
   try {
     return JSON.parse(localStorage.getItem("session") || "null");
@@ -37,14 +33,12 @@ const StatCard = ({ label, value, colorClass }) => (
 export default function AlertSection() {
   const [query, setQuery] = useState("");
   const [alerts, setAlerts] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedAlert, setSelectedAlert] = useState(null);
 
   const user = getUser();
-  console.log("user", user);
   const userId = user?.id;
   const token = user?.token;
 
@@ -56,7 +50,10 @@ export default function AlertSection() {
   };
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
 
     const fetchAlerts = async () => {
       try {
@@ -64,9 +61,7 @@ export default function AlertSection() {
         const res = await apiService.post("/api/fetchAuthAlert", {
           user_id: userId,
         });
-
         const data = await res.data;
-
         console.log("data", data);
         setAlerts(Array.isArray(data) ? data : (data.alerts ?? []));
       } catch (err) {
@@ -79,7 +74,6 @@ export default function AlertSection() {
     fetchAlerts();
   }, [userId, token]);
 
-  // 🔹 not logged in
   if (!userId) {
     return (
       <Container className="py-5 text-center">
@@ -90,13 +84,18 @@ export default function AlertSection() {
     );
   }
 
-  // 🔹 no alerts configured
+  if (loading) {
+    return (
+      <div className="text-center py-5">
+        {/* <Spinner animation="border" /> */}
+      </div>
+    );
+  }
+
   if (!loading && !error && alerts.length === 0) {
     return (
       <Container className="py-5 text-center">
-        <div className="mb-3 text-muted" style={{ fontSize: 48 }}>
-          🔔
-        </div>
+        <div className="mb-3 text-muted" style={{ fontSize: 48 }}>🔔</div>
         <h5 className="fw-semibold mb-2">No alerts configured</h5>
         <p
           className="text-muted small mb-4"
@@ -107,7 +106,7 @@ export default function AlertSection() {
         </p>
         <Link
           to="/scannerBuilder"
-          className="btn btn-primary w-fit mx-auto btn-sm d-flex align-items-center text-white text-decoration-none"
+          className="btn btn-primary btn-sm d-flex align-items-center text-white text-decoration-none w-fit mx-auto"
         >
           <Plus size={14} className="me-1" />
           Create an Alert First
@@ -116,7 +115,6 @@ export default function AlertSection() {
     );
   }
 
-  // 🔹 filtering
   const lq = query.toLowerCase();
   const filtered = alerts.filter(
     (a) =>
@@ -130,76 +128,30 @@ export default function AlertSection() {
   const lastCreated = alerts.length
     ? formatSmartDate(
         alerts.reduce((latest, alert) =>
-          new Date(alert.createdAt) > new Date(latest.createdAt)
-            ? alert
-            : latest,
+          new Date(alert.createdAt) > new Date(latest.createdAt) ? alert : latest
         ).createdAt,
       )
     : "—";
 
   return (
     <Container fluid className="py-4 px-4">
-      {/* Stats */}
       <Row className="g-3 mb-4">
         <Col xs={12} sm={4}>
-          <StatCard
-            label="Total alerts"
-            value={alerts.length}
-            colorClass="primary"
-          />
+          <StatCard label="Total alerts" value={alerts.length} colorClass="primary" />
         </Col>
         <Col xs={12} sm={4}>
-          <StatCard
-            label="Active alerts"
-            value={activeAlerts}
-            colorClass="warning"
-          />
+          <StatCard label="Active alerts" value={activeAlerts} colorClass="warning" />
         </Col>
         <Col xs={12} sm={4}>
-          <StatCard
-            label="Last created"
-            value={lastCreated}
-            colorClass="success"
-          />
+          <StatCard label="Last created" value={lastCreated} colorClass="success" />
         </Col>
       </Row>
 
-      {/* Toolbar */}
-      <div className="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
-        <InputGroup style={{ maxWidth: "320px" }}>
-          <InputGroup.Text className="bg-white border-end-0">
-            <Search size={15} className="text-muted" />
-          </InputGroup.Text>
-          <Form.Control
-            placeholder="Search alerts…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="border-start-0 ps-0"
-          />
-        </InputGroup>
-
-        <Link
-          to="/scannerBuilder"
-          className="btn btn-primary btn-sm d-flex align-items-center text-white text-decoration-none"
-          // style={{ background: "#185FA5", border: "none" }}
-        >
-          <Plus size={14} className="me-1" />
-          New alert
-        </Link>
-      </div>
-
-      {/* States */}
-      {loading && (
-        <div className="text-center py-5">
-          <Spinner animation="border" />
-        </div>
-      )}
-
-      {!loading && error && (
+      {error && (
         <Alert variant="danger">Failed to load alerts: {error}</Alert>
       )}
 
-      {!loading && !error && (
+      {!error && (
         <AlertTable
           alerts={filtered}
           onEdit={(a) => console.log("edit", a)}

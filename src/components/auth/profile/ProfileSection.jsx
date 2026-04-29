@@ -1,116 +1,34 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
-  Container,
-  Row,
-  Col,
-  Card,
-  Form,
-  Button,
-  Badge,
-  Image,
+  Container, Row, Col, Card, Form, Button, Image, Alert,
 } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
-
-const inlineStyles = {
-  wrapper: {
-    minHeight: "100vh",
-    backgroundColor: "#f5f5f2",
-    display: "flex",
-    alignItems: "center",
-    paddingTop: "0px",
-    paddingBottom: "40px",
-    fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
-  },
-  card: {
-    border: "0.5px solid rgba(0,0,0,0.1)",
-    borderRadius: "14px",
-    boxShadow: "0 2px 16px rgba(0,0,0,0.05)",
-  },
-  avatarWrap: {
-    display: "flex",
-    alignItems: "center",
-    gap: "18px",
-    paddingBottom: "20px",
-    marginBottom: "20px",
-    borderBottom: "0.5px solid rgba(0,0,0,0.1)",
-  },
-  avatar: {
-    width: "72px",
-    height: "72px",
-    borderRadius: "50%",
-    objectFit: "cover",
-    border: "2px solid #E6F1FB",
-    flexShrink: 0,
-  },
-  name: {
-    fontSize: "18px",
-    fontWeight: 500,
-    margin: 0,
-    color: "#1a1a1a",
-  },
-  email: {
-    fontSize: "13px",
-    color: "#777",
-    marginTop: "3px",
-    marginBottom: "6px",
-  },
-  badge: {
-    fontSize: "11px",
-    background: "#E1F5EE",
-    color: "#1D9E75",
-    borderRadius: "20px",
-    padding: "3px 10px",
-    fontWeight: 500,
-    display: "inline-block",
-  },
-  label: {
-    fontSize: "11.5px",
-    color: "#888",
-    textTransform: "uppercase",
-    letterSpacing: "0.06em",
-    marginBottom: "5px",
-    fontWeight: 500,
-  },
-  input: {
-    border: "0.5px solid rgba(0,0,0,0.2)",
-    borderRadius: "8px",
-    padding: "9px 13px",
-    fontSize: "14px",
-    color: "#1a1a1a",
-    backgroundColor: "#f8f8f6",
-    fontFamily: "inherit",
-  },
-  btnPrimary: {
-    backgroundColor: "#185FA5",
-    border: "none",
-    borderRadius: "8px",
-    padding: "8px 20px",
-    fontSize: "13.5px",
-    fontWeight: 500,
-    fontFamily: "inherit",
-  },
-  btnGhost: {
-    border: "0.5px solid rgba(0,0,0,0.22)",
-    backgroundColor: "#fff",
-    color: "#555",
-    borderRadius: "8px",
-    padding: "8px 20px",
-    fontSize: "13.5px",
-    fontWeight: 400,
-    fontFamily: "inherit",
-  },
-};
+import apiService from "../../../services/apiServices";
 
 export default function ProfileSection() {
-  const [form, setForm] = useState({
-    fullName: "Harry Styles",
-    phone: "+91 9876543210",
-    email: "harry@email.com",
-    location: "Mumbai, India",
-    occupation: "Software Engineer",
-  });
-
+  const [form, setForm] = useState({ fullName: "", phone: "", email: "", location: "" });
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const res = await apiService.get("api/viewProfile");
+      if (res?.data) {
+        const data = res.data;
+        setForm({
+          fullName: data.firstName || "",
+          phone: data.mobile || "",
+          email: data.email || "",
+          location: data.location || "",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to fetch profile:", error);
+    }
+  };
 
   const handleChange = (e) => {
     setSaved(false);
@@ -123,73 +41,39 @@ export default function ProfileSection() {
   };
 
   const handleCancel = () => {
-    setForm({
-      fullName: "Harry Styles",
-      phone: "+91 9876543210",
-      email: "harry@email.com",
-      location: "Mumbai, India",
-      occupation: "Software Engineer",
-    });
+    setForm({ fullName: "", phone: "", email: "", location: "" });
     setSaved(false);
   };
 
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap');
-        * { box-sizing: border-box; }
-        .profile-input:focus {
-          outline: none !important;
-          box-shadow: 0 0 0 3px rgba(24, 95, 165, 0.12) !important;
-          border-color: #185FA5 !important;
-          background-color: #fff !important;
-        }
-        .btn-save:hover { background-color: #0C447C !important; }
-        .btn-cancel:hover { background-color: #f0f0ee !important; border-color: #999 !important; color: #333 !important; }
-        .save-banner {
-          animation: fadeIn 0.2s ease;
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(-4px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
+    <div className="min-vh-100 d-flex align-items-center py-5 bg-light">
+      <Container>
+        <Row className="justify-content-center">
+          <Col xs={12} sm={10} md={8} lg={6}>
 
-      <div style={inlineStyles.wrapper}>
-        <Container>
-          <Row className="justify-content-center">
-            <Col xs={12} sm={10} md={8} lg={6}>
+            {saved && (
+              <Alert variant="success" className="text-start py-2 mb-3 border-0 rounded-3">
+                Profile saved successfully!
+              </Alert>
+            )}
 
-              {/* Save confirmation banner */}
-              {saved && (
-                <div
-                  className="save-banner mb-3 px-4 py-2 text-center"
-                  style={{
-                    background: "#E1F5EE",
-                    color: "#1D9E75",
-                    borderRadius: "8px",
-                    fontSize: "13.5px",
-                    fontWeight: 500,
-                    border: "0.5px solid #9FE1CB",
-                  }}
-                >
-                  Profile saved successfully
-                </div>
-              )}
-
-              <Card style={inlineStyles.card} className="p-4">
+            <Card className="border rounded-4 shadow-sm p-2">
+              <Card.Body>
 
                 {/* Avatar row */}
-                <div style={inlineStyles.avatarWrap}>
+                <div className="d-flex align-items-center gap-3 pb-3 mb-3 border-bottom">
                   <Image
                     src="https://i.pravatar.cc/150?img=12"
                     alt="Profile"
-                    style={inlineStyles.avatar}
+                    roundedCircle
+                    width={68}
+                    height={68}
+                    className="border border-2 border-primary-subtle object-fit-cover flex-shrink-0"
                   />
-                  <div>
-                    <p style={inlineStyles.name}>{form.fullName}</p>
-                    <p style={inlineStyles.email}>{form.email}</p>
-                    <span style={inlineStyles.badge}>Active member</span>
+                  <div className="text-start">
+                    <h6 className="mb-0 fw-semibold text-dark">{form.fullName || "Your Name"}</h6>
+                    <p className="text-muted mb-0 mt-1" style={{ fontSize: 13 }}>{form.email || "your@email.com"}</p>
+                    <p className="text-muted mb-0" style={{ fontSize: 12 }}>Active member</p>
                   </div>
                 </div>
 
@@ -197,105 +81,95 @@ export default function ProfileSection() {
                 <Form>
                   <Row className="g-3">
 
-                    {/* Full Name */}
                     <Col xs={12} sm={6}>
                       <Form.Group>
-                        <Form.Label style={inlineStyles.label}>Full name</Form.Label>
+                        <Form.Label className="text-uppercase fw-semibold text-secondary mb-1 text-start d-block" style={{ fontSize: 11, letterSpacing: "0.06em" }}>
+                          Full name
+                        </Form.Label>
                         <Form.Control
-                          className="profile-input"
                           name="fullName"
                           value={form.fullName}
                           onChange={handleChange}
-                          style={inlineStyles.input}
+                          className="bg-light border rounded-3"
+                          style={{ fontSize: 14 }}
                         />
                       </Form.Group>
                     </Col>
 
-                    {/* Phone */}
                     <Col xs={12} sm={6}>
                       <Form.Group>
-                        <Form.Label style={inlineStyles.label}>Phone number</Form.Label>
+                        <Form.Label className="text-uppercase fw-semibold text-secondary mb-1 text-start d-block" style={{ fontSize: 11, letterSpacing: "0.06em" }}>
+                          Phone number
+                        </Form.Label>
                         <Form.Control
-                          className="profile-input"
                           name="phone"
                           value={form.phone}
                           onChange={handleChange}
-                          style={inlineStyles.input}
+                          className="bg-light border rounded-3"
+                          style={{ fontSize: 14 }}
                         />
                       </Form.Group>
                     </Col>
 
-                    {/* Email — full width */}
                     <Col xs={12}>
                       <Form.Group>
-                        <Form.Label style={inlineStyles.label}>Email address</Form.Label>
+                        <Form.Label className="text-uppercase fw-semibold text-secondary mb-1 text-start d-block" style={{ fontSize: 11, letterSpacing: "0.06em" }}>
+                          Email address
+                        </Form.Label>
                         <Form.Control
-                          className="profile-input"
                           type="email"
                           name="email"
                           value={form.email}
                           onChange={handleChange}
-                          style={inlineStyles.input}
+                          className="bg-light border rounded-3"
+                          style={{ fontSize: 14 }}
                         />
                       </Form.Group>
                     </Col>
 
-                    {/* Location */}
-                    <Col xs={12} sm={6}>
+                    <Col xs={12}>
                       <Form.Group>
-                        <Form.Label style={inlineStyles.label}>Location</Form.Label>
+                        <Form.Label className="text-uppercase fw-semibold text-secondary mb-1 text-start d-block" style={{ fontSize: 11, letterSpacing: "0.06em" }}>
+                          Location
+                        </Form.Label>
                         <Form.Control
-                          className="profile-input"
                           name="location"
                           value={form.location}
                           onChange={handleChange}
-                          style={inlineStyles.input}
-                        />
-                      </Form.Group>
-                    </Col>
-
-                    {/* Occupation */}
-                    <Col xs={12} sm={6}>
-                      <Form.Group>
-                        <Form.Label style={inlineStyles.label}>Occupation</Form.Label>
-                        <Form.Control
-                          className="profile-input"
-                          name="occupation"
-                          value={form.occupation}
-                          onChange={handleChange}
-                          style={inlineStyles.input}
+                          className="bg-light border rounded-3"
+                          style={{ fontSize: 14 }}
                         />
                       </Form.Group>
                     </Col>
 
                   </Row>
 
-                  {/* Actions */}
                   <div className="d-flex gap-2 mt-4">
                     <Button
-                      className="btn-save"
-                      style={inlineStyles.btnPrimary}
+                      variant="primary"
+                      className="px-4 rounded-3 fw-medium"
+                      style={{ fontSize: 13.5 }}
                       onClick={handleSave}
                     >
                       Save changes
                     </Button>
                     <Button
-                      variant="light"
-                      className="btn-cancel"
-                      style={inlineStyles.btnGhost}
+                      variant="outline-secondary"
+                      className="px-4 rounded-3 fw-normal"
+                      style={{ fontSize: 13.5 }}
                       onClick={handleCancel}
                     >
                       Cancel
                     </Button>
                   </div>
-
                 </Form>
-              </Card>
 
-            </Col>
-          </Row>
-        </Container>
-      </div>
-    </>
+              </Card.Body>
+            </Card>
+
+          </Col>
+        </Row>
+      </Container>
+    </div>
   );
 }

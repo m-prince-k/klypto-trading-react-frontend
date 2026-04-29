@@ -8,7 +8,7 @@ const token =
 // 🔹 Create axios instance
 const api = axios.create({
   // baseURL: "https://studios-publishers-promising-rosa.trycloudflare.com",
-  baseURL: "http://192.168.1.10:7000", // change to your API
+  baseURL: "http://192.168.1.28:7000", // change to your API
   timeout: 500000,
   headers: {
     "Content-Type": "application/json",
@@ -43,15 +43,21 @@ api.interceptors.response.use(
 
 // 🔹 API Methods
 const getAuthHeaders = () => {
-  const session =
-    JSON.parse(localStorage.getItem("session")) ||
-    JSON.parse(sessionStorage.getItem("session"));
+  let session = null;
+
+  try {
+    session =
+      JSON.parse(localStorage.getItem("session")) ||
+      JSON.parse(sessionStorage.getItem("session"));
+  } catch (e) {
+    session = null;
+  }
 
   const token = session?.token;
 
   return {
     "Content-Type": "application/json",
-    Authorization: token ? `Bearer ${token}` : "",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 };
 

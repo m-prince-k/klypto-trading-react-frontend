@@ -29,9 +29,12 @@ import {
   baseStyle,
   MA_INDICATORS,
   ohlcv_dropdown,
+  parseScanSlug,
   PRICE_FIELDS,
 } from "../../util/scannerFunctions";
 import BacktestResults from "../../components/scanner/BacktestResults";
+import Navbar from "../../components/Navbar";
+import { useLocation, useParams } from "react-router-dom";
 
 export default function ScannerBuilder() {
   const [rules, setRules] = useState([]);
@@ -57,6 +60,92 @@ export default function ScannerBuilder() {
 
   const scanResultRef = useRef(null);
   const backtestRef = useRef(null);
+
+  const location = useLocation();
+  const { scanSlug } = useParams();
+
+  const getUser = () => {
+    try {
+      return JSON.parse(localStorage.getItem("session") || "null");
+    } catch {
+      return null;
+    }
+  };
+  const user = getUser();
+  const userId = user?.id;
+  // derive the scan id from URL if needed
+  const editingScanId = scanSlug ? parseScanSlug(scanSlug).id : null;
+  useEffect(() => {
+    if (!scanSlug || !scannerOptions.length) return;
+
+    const editScan = location.state?.editScan;
+
+    if (editScan) {
+      loadScanIntoBuilder(editScan);
+      toast.info(`Editing: ${editScan.label}`);
+      return;
+    }
+
+    // Refresh fallback — fetch all scans and find by ID
+    apiService
+      .post("/api/fetchAuthSaveScans", { user_id: userId }) // same call you use in ScanTable
+      .then((res) => {
+        const allScans = Array.isArray(res.data)
+          ? res.data
+          : (res.data?.scans ?? []);
+
+        const scan = allScans.find((s) => s.id === editingScanId);
+
+        if (scan) {
+          loadScanIntoBuilder(scan);
+          toast.info(`Editing: ${scan.label}`);
+        } else {
+          toast.error("Scan not found");
+        }
+      })
+      .catch(console.error);
+  }, [scannerOptions, scanSlug]);
+
+  function mapConditionToRules(conditions = []) {
+    return conditions.map((cond) => {
+      const obj1 = cond.object1 ?? {};
+      const obj2 = cond.object2 ?? {};
+
+      return {
+        id: Date.now() + Math.random(),
+        disabled: false,
+
+        // LEFT SIDE (indicator)
+        indicator: obj1.indicator ?? "Select Scanner",
+        timeframe: obj1.timeframe ?? "1d",
+        indicatorParams: obj1.length ?? {},
+
+        // OPERATOR
+        operator: cond.operator1 ?? "Select Operation",
+
+        // RIGHT SIDE (scanner)
+        scanner: obj2.indicator ?? "Select Scanner",
+        compareTimeframe: obj2.timeframe ?? "1d",
+        scannerParams: obj2.length ?? {},
+
+        // defaults for fields not in saved format
+        value: 0,
+        compareValue: 0,
+        scanner2: undefined,
+        scanner3: undefined,
+      };
+    });
+  }
+
+  function loadScanIntoBuilder(scan) {
+    if (Array.isArray(scan.condition) && scan.condition.length > 0) {
+      const mapped = mapConditionToRules(scan.condition);
+      setRules(mapped);
+    }
+
+    if (scan.logic) setLogic(scan.logic);
+    if (scan.selectedCurrencies) setSelectedCurrencies(scan.selectedCurrencies);
+  }
 
   const [timeframePromptConfig, setTimeframePromptConfig] = useState({
     isOpen: false,
@@ -1122,6 +1211,8 @@ export default function ScannerBuilder() {
         url="https://yourdomain.com/"
         image="https://yourdomain.com/banner.jpg"
       />
+
+      <Navbar />
       <div className="bg-slate-50 py-5">
         <h5 className=" fs-4  fw-semibold text-start px-4 text-dark">
           Scanner
@@ -1522,11 +1613,11 @@ export default function ScannerBuilder() {
         />
       </div>
 
-      {saveScan && (
-        <div ref={backtestRef}>
-          <BacktestResults />
-        </div>
-      )}
+      {/* {saveScan && ( */}
+      <div ref={backtestRef}>
+        <BacktestResults />
+      </div>
+      {/* )} */}
 
       <Modal
         show={timeframePromptConfig.isOpen}

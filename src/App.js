@@ -13,7 +13,7 @@ import { Navigate } from "react-router-dom";
 import Home from "./pages/Home";
 import ScannerBuilder from "./pages/scanner/ScannerBuilder";
 import CustomIndicator from "./pages/customIndicator/CustomIndicator";
-import Profile from "./pages/auth/Profile";
+import { AlertsPage, ProfilePage, ScansPage } from "./pages/auth/Profile";
 
 function App() {
   return (
@@ -37,11 +37,12 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/scannerBuilder/:scanSlug" element={<ScannerBuilder />} />
           <Route
             path="/profile"
             element={
               <ProtectedRoute>
-                <Profile />
+                <ProfilePage />
               </ProtectedRoute>
             }
           />
@@ -54,15 +55,16 @@ function App() {
             }
           />
 
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/scan_dashboard" element={<ScansPage />} />
+          <Route path="/alert_dashboard" element={<AlertsPage />} />
+
           {/* <Route path="/" element={<Form />} /> */}
           <Route path="/testing" element={<Testing />} />
           <Route path="/tradingview" element={<TradingViewChart />} />
           {/* <Route path="/indiatorSlide" element={<IndiatorSlide />} /> */}
 
-          <Route
-            path="/IndicatorBuildingListing"
-            element={<IndicatorBuildingListing />}
-          />
+          
           <Route path="/home" element={<Home />} />
 
           <Route path="/login" element={<Login />} />

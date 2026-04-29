@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { LuX } from "react-icons/lu";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   ButtonGroup,
   ToggleButton,
@@ -13,7 +13,9 @@ import { toast } from "react-toastify";
 import apiService from "../../services/apiServices";
 import { scanCategories, tfToMinutes } from "../../util/common";
 import AlertModal from "./ScannerModals";
-import { buildCondition } from "../../util/scannerFunctions";
+import { buildCondition, buildScanSlug } from "../../util/scannerFunctions";
+import PhoneInput from "react-phone-input-2";
+import "react-phone-input-2/lib/style.css";
 
 export function IndicatorRuleModals({
   type,
@@ -119,6 +121,7 @@ function SaveScanContent({
     description: "",
     category: "",
   });
+  const navigate = useNavigate();
 
   const updateField = (key, value) => {
     setForm((prev) => ({
@@ -164,10 +167,16 @@ function SaveScanContent({
       const payload = {
         label: form?.name?.trim?.(),
         description: form?.description?.trim?.(),
-        condition: buildCondition({ rules: finalRules }),
+        // condition: buildCondition({ rules: finalRules }),
+        condition: finalRules,
         categoryKey: form?.category?.key, // ⭐ FROM SELECTED CATEGORY
         categoryLabel: form?.category?.label,
       };
+
+      console.log(
+        "finalRules being saved:",
+        JSON.stringify(finalRules, null, 2),
+      );
 
       setscannerPayload?.(payload);
 
@@ -181,10 +190,16 @@ function SaveScanContent({
 
       if (response.statusCode === 200) {
         setSaveScan(true);
-      }
+        const savedScan = response.data; // make sure your API returns the saved scan with id
+        const slug = buildScanSlug(form.name.trim(), savedScan.id);
 
-      toast?.success?.("Scanner saved successfully ✅");
-      closeModal();
+        toast.success("Scanner saved successfully ✅");
+        closeModal();
+
+        navigate(`/scannerBuilder/${slug}`, {
+          state: { editScan: { ...payload, id: savedScan.id } },
+        });
+      }
     } catch (error) {
       console.error("SAVE FAILED:", error);
 
@@ -589,8 +604,19 @@ function CreateAlertContent({
     phone: "",
     otp: "",
   });
+  const getUser = () => {
+    try {
+      return JSON.parse(localStorage.getItem("session") || "null");
+    } catch {
+      return null;
+    }
+  };
+  const user = getUser();
+  console.log(user, "userrrr");
+  const userId = user?.id;
 
   const [errors, setErrors] = useState({});
+  const [phoneUI, setPhoneUI] = useState("");
   const [otpMessage, setOtpMessage] = useState(""); // To display OTP from API
 
   function updateField(field, value) {
@@ -620,9 +646,9 @@ function CreateAlertContent({
 
     if (mode === "sms") {
       if (!otpSent && !phone) errors.phone = "Phone number required";
-  //     else if (phone.length < 8 || phone.length > 15) {
-  //   errors.phone = "Enter valid phone number";
-  // }
+      else if (phone.length < 8 || phone.length > 15) {
+        errors.phone = "Enter valid phone number";
+      }
 
       if (otpSent && (!otp || !/^\d{6}$/.test(otp))) {
         errors.otp = "OTP must be 6 digits";
@@ -644,9 +670,7 @@ function CreateAlertContent({
     if (mode === "email") {
       payload = { type: "email", email: form.email };
     } else if (mode === "sms") {
-      payload = { type: "sms", mobile: form.phone ,
-        // mobile: `+${form.phone}`
-      };
+      payload = { type: "sms", mobile: `+${form.phone}` };
     }
     // console.log(payload, "payloaddddddddd");
 
@@ -657,9 +681,11 @@ function CreateAlertContent({
 
       if (response?.success) {
         toast.success(response.message || "OTP sent ✅");
+
         setSentPhone(form.phone);
-        updateField("phone", "");
         setOtpSent(true);
+
+        setPhoneUI("");
         setOtpMessage(`OTP: ${response.otp || "Check your phone"}`);
       } else {
         toast.error(response?.message || "Failed to send OTP");
@@ -689,9 +715,9 @@ function CreateAlertContent({
         payload = {
           alert_name: alertName,
           type: "verified",
-          mobile: sentPhone,
-          //  mobile: `+${form.phone}`, // 🔥 important
+          mobile: `+${form.phone}`, // 🔥 important
           otp: form.otp,
+          user_id: userId,
           rule: buildCondition({ rules: finalRules }),
         };
       }
@@ -699,7 +725,7 @@ function CreateAlertContent({
 
       const response = await apiService.post("/api/indicatorAlert", payload);
 
-      if (response.success == 200) {
+      if (response.statusCode == 200) {
         toast.success("Alert created ✅");
         closeModal();
         onSubmit?.({ ...form, phone: sentPhone, mode, rules });
@@ -868,34 +894,40 @@ function CreateAlertContent({
                 </div>
               )}
 
-              {/* <div className="mb-2">
-  <label className="text-xs font-semibold">PHONE NUMBER</label>
-
-  <PhoneInput
-    country={"in"} // default India
-    enableSearch={true}
-    value={form.phone}
-    onChange={(value) => updateField("phone", value)}
-    inputClass="w-full"
-    containerClass="w-full"
-    inputStyle={{
-      width: "100%",
-      height: "48px",
-      borderRadius: "12px",
-      border: "1px solid #e2e8f0",
-    }}
-    buttonStyle={{
-      borderTopLeftRadius: "12px",
-      borderBottomLeftRadius: "12px",
-    }}
-    disabled={otpSent}
-  />
-
-  {errors.phone && (
-    <div className="text-xs text-red-500 mt-1">{errors.phone}</div>
-  )}
-</div> */}
               <div className="mb-2">
+                <label className="text-xs font-semibold">PHONE NUMBER</label>
+
+                <PhoneInput
+                  key={otpSent ? "otp-sent" : "otp-not-sent"} // 🔥 important
+                  country={"in"}
+                  enableSearch={true}
+                  value={phoneUI}
+                  onChange={(value) => {
+                    setPhoneUI(value); // UI state
+                    updateField("phone", value); // actual form state
+                  }}
+                  inputClass="w-full"
+                  containerClass="w-full"
+                  inputStyle={{
+                    width: "100%",
+                    height: "48px",
+                    borderRadius: "12px",
+                    border: "1px solid #e2e8f0",
+                  }}
+                  buttonStyle={{
+                    borderTopLeftRadius: "12px",
+                    borderBottomLeftRadius: "12px",
+                  }}
+                  disabled={otpSent}
+                />
+
+                {errors.phone && (
+                  <div className="text-xs text-red-500 mt-1">
+                    {errors.phone}
+                  </div>
+                )}
+              </div>
+              {/* <div className="mb-2">
                 <label className="text-xs font-semibold">PHONE NUMBER</label>
                 <input
                   type="tel"
@@ -910,7 +942,7 @@ function CreateAlertContent({
                     {errors.phone}
                   </div>
                 )}
-              </div>
+              </div> */}
 
               <div className="flex justify-end">
                 <button

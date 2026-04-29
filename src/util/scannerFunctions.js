@@ -90,70 +90,156 @@ const OPERATOR_LABELS = {
 
 /* ================= PARSER ================= */
 
-export function parseObject(obj) {
+// export function parseObject(obj) {
+//   if (!obj) return "";
+
+//   // ✅ number
+//   if (obj.indicator === "number") {
+//     return obj.value;
+//   }
+
+//   // ✅ string
+//   if (typeof obj === "string") return obj;
+
+//   if (!obj.indicator) return "";
+
+//   // 🔥 extract length + source (NEW STRUCTURE)
+//   let length = "";
+//   let source = "";
+
+//   if (typeof obj.length === "object") {
+//     length = obj.length?.length;
+//     source = obj.length?.source;
+//   } else {
+//     length = obj.length;
+//   }
+
+//   // fallback (older structure)
+//   if (!source && obj.source) {
+//     source = obj.source;
+//   }
+
+//   const params = [];
+
+//   if (source) params.push(source);
+//   if (length) params.push(length);
+
+//   const tfMap = {
+//     "1d": "daily",
+//     "1w": "weekly",
+//     "1M": "monthly",
+//     "30d": "monthly",
+//     "90d": "quarterly",
+//     "365d": "yearly",
+//   };
+
+//   const tf = tfMap[obj.timeframe] || obj.timeframe || "";
+
+//   return `${tf ? tf + " " : ""}${obj.indicator.toUpperCase()}(${params.join(", ")})`
+//     .replace(/\(\)/, "")
+//     .replace(/\s+/g, " ")
+//     .trim();
+// }
+
+function parseObject(obj) {
+  console.log("parseObject input:", obj);
+
   if (!obj) return "";
 
-  // ✅ number
-  if (obj.indicator === "number") {
-    return obj.value;
-  }
-
   // ✅ string
-  if (typeof obj === "string") return obj;
-
-  if (!obj.indicator) return "";
-
-  // 🔥 extract length + source (NEW STRUCTURE)
-  let length = "";
-  let source = "";
-
-  if (typeof obj.length === "object") {
-    length = obj.length?.length;
-    source = obj.length?.source;
-  } else {
-    length = obj.length;
+  if (typeof obj === "string") {
+    console.log("string detected:", obj);
+    return obj;
   }
 
-  // fallback (older structure)
-  if (!source && obj.source) {
-    source = obj.source;
+  // ✅ number / boolean
+  if (typeof obj === "number" || typeof obj === "boolean") {
+    return String(obj);
   }
 
-  const params = [];
+  // ✅ object
+  if (typeof obj === "object") {
+    // 🔥 indicator object handling
+    if (obj.indicator) {
+      let indicator = obj.indicator;
+      let timeframe = obj.timeframe;
+      let length = obj.length;
 
-  if (source) params.push(source);
-  if (length) params.push(length);
+      console.log("indicator object:", obj);
 
-  const tfMap = {
-    "1d": "daily",
-    "1w": "weekly",
-    "1M": "monthly",
-    "30d": "monthly",
-    "90d": "quarterly",
-    "365d": "yearly",
-  };
+      // 🎯 Format timeframe
+      let tfLabel = "";
+      if (timeframe === "1d") tfLabel = "Daily";
+      else if (timeframe === "1h") tfLabel = "Hourly";
+      else if (timeframe === "1m") tfLabel = "1 Min";
+      else tfLabel = timeframe || "";
 
-  const tf = tfMap[obj.timeframe] || obj.timeframe || "";
+      // 🎯 Format length
+      let lengthStr = "";
+      if (typeof length === "number") {
+        lengthStr = `(${length})`;
+      } else if (typeof length === "object") {
+        // ichimoku case
+        const values = Object.values(length).join(", ");
+        lengthStr = `(${values})`;
+      }
 
-  return `${tf ? tf + " " : ""}${obj.indicator.toUpperCase()}(${params.join(", ")})`
-    .replace(/\(\)/, "")
-    .replace(/\s+/g, " ")
-    .trim();
+      const final = `${tfLabel} ${indicator}${lengthStr}`.trim();
+      console.log("formatted indicator:", final);
+
+      return final;
+    }
+
+    // fallback (last resort)
+    console.warn("fallback stringify:", obj);
+    return JSON.stringify(obj);
+  }
+
+  return "";
 }
-
 /* ================= CONDITION BUILDER ================= */
 export function buildCondition(payload) {
-  if (!payload?.rules?.length) return "";
+  console.log("buildCondition payload:", payload);
+
+  if (!payload) return "";
+
+  // 🟡 string case
+  if (typeof payload === "string") {
+    const trimmed = payload.trim();
+    console.log("string payload:", trimmed);
+
+    if (!trimmed) return "";
+
+    if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        console.log("parsed JSON string:", parsed);
+        return buildCondition(parsed);
+      } catch (e) {
+        console.warn("invalid JSON string:", trimmed);
+        return trimmed;
+      }
+    }
+
+    return trimmed;
+  }
+
+  // 🟡 object rules
+  if (!payload?.rules?.length) {
+    console.warn("no rules found");
+    return "";
+  }
 
   const result = payload.rules
-    .map((rule) => {
+    .map((rule, index) => {
+      console.log(`rule ${index}:`, rule);
+
       const left = parseObject(rule.object1);
       const op1 = OPERATOR_LABELS[rule.operator1] || rule.operator1;
       const right = parseObject(rule.object2);
 
       let expression = `${left} ${op1} ${right}`;
 
-      // 🔥 handle chaining
       if (rule.operator2 && rule.object3) {
         expression += ` ${rule.operator2} ${parseObject(rule.object3)}`;
       }
@@ -162,12 +248,42 @@ export function buildCondition(payload) {
         expression += ` ${rule.operator3} ${parseObject(rule.object4)}`;
       }
 
+      console.log("final expression:", expression);
+
       return expression;
     })
     .join(" AND ");
 
-  return toTitleCase(result); // ✅ apply here
+  console.log("final result:", result);
+
+  return toTitleCase(result);
 }
+// export function buildCondition(payload) {
+//   if (!payload?.rules?.length) return "";
+
+//   const result = payload.rules
+//     .map((rule) => {
+//       const left = parseObject(rule.object1);
+//       const op1 = OPERATOR_LABELS[rule.operator1] || rule.operator1;
+//       const right = parseObject(rule.object2);
+
+//       let expression = `${left} ${op1} ${right}`;
+
+//       // 🔥 handle chaining
+//       if (rule.operator2 && rule.object3) {
+//         expression += ` ${rule.operator2} ${parseObject(rule.object3)}`;
+//       }
+
+//       if (rule.operator3 && rule.object4) {
+//         expression += ` ${rule.operator3} ${parseObject(rule.object4)}`;
+//       }
+
+//       return expression;
+//     })
+//     .join(" AND ");
+
+//   return toTitleCase(result); // ✅ apply here
+// }
 function toTitleCase(str) {
   return str
     .toLowerCase()
@@ -215,4 +331,24 @@ export function formatSmartDate(dateString) {
       year: "numeric",
     }) + `, ${time}`
   );
+}
+
+
+
+
+export function buildScanSlug(label, id) {
+  const slug = (label || "scan")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")   // remove special chars
+    .replace(/\s+/g, "-")            // spaces to hyphens
+    .replace(/-+/g, "-");            // collapse multiple hyphens
+  return `${slug}-${id}`;
+}
+
+export function parseScanSlug(slugParam) {
+  // "rsi-oversold-141034" → id = "141034"
+  const parts = slugParam.split("-");
+  const id = parts[parts.length - 1];
+  return { id };
 }
