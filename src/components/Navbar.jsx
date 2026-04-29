@@ -52,7 +52,7 @@ export default function Navbar() {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
         .klypto-nav-inner {
-          max-width: 1280px;
+          max-width: 1360px;
           margin: 0 auto;
           padding: 0 24px;
           height: 56px;
