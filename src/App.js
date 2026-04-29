@@ -1,36 +1,76 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import './App.css';
-import {Form} from './components/tradingModals/Form'
-import CandleStick from './pages/CandleStick';
-import TradingViewChart from './pages/TradingViewChart';
-import IndiatorSlide from './components/indicator/indicatorSlide';
-import Testing from './pages/Testing';
-import { ToastContainer } from 'react-toastify';
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import "./App.css";
+import CandleStick from "./pages/CandleStick";
+import TradingViewChart from "./pages/TradingViewChart";
+import Testing from "./pages/Testing";
+import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import IndicatorBuildingListing from './components/indicator/IndicatorBuilderListing';
+import IndicatorBuildingListing from "./components/scanner/IndicatorBuilderListing";
+import Login from "./pages/auth/login";
+import { ProtectedRoute } from "./pages/auth/ProtectedRoute";
+import Signup from "./pages/auth/signup";
+import { Navigate } from "react-router-dom";
+import Home from "./pages/Home";
+import ScannerBuilder from "./pages/scanner/ScannerBuilder";
+import CustomIndicator from "./pages/customIndicator/CustomIndicator";
+import Profile from "./pages/auth/Profile";
 
 function App() {
   return (
     <div className="App">
       <BrowserRouter>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        theme="colored"
-      />
-      <Routes>
-        {/* <Route path="/" element={<Form />} /> */}
-        <Route path="/" element={< CandleStick />} />
-        <Route path="/testing" element={< Testing />} />
-        <Route path="/tradingview" element={< TradingViewChart />} />
-        <Route path="/indiatorSlide" element={< IndiatorSlide />} />
+        <ToastContainer position="top-right" autoClose={3000} theme="colored" />
+        <Routes>
+          <Route
+            path="/candleStick"
+            element={
+              <ProtectedRoute>
+                <CandleStick />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/scannerBuilder"
+            element={
+              <ProtectedRoute>
+                <ScannerBuilder />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/customIndicator"
+            element={
+              <ProtectedRoute>
+                <CustomIndicator />
+              </ProtectedRoute>
+            }
+          />
 
-        <Route path="/IndicatorBuildingListing" element={< IndicatorBuildingListing />} />
+          {/* <Route path="/" element={<Form />} /> */}
+          <Route path="/testing" element={<Testing />} />
+          <Route path="/tradingview" element={<TradingViewChart />} />
+          {/* <Route path="/indiatorSlide" element={<IndiatorSlide />} /> */}
 
+          <Route
+            path="/IndicatorBuildingListing"
+            element={<IndicatorBuildingListing />}
+          />
+          <Route path="/home" element={<Home />} />
 
-      </Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+
+          <Route path="/" element={<Navigate to="/login" />} />
+        </Routes>
       </BrowserRouter>
-      
     </div>
   );
 }

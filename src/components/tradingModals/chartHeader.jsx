@@ -8,6 +8,9 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { FiChevronDown } from "react-icons/fi";
 import { chartOptions } from "../../util/common";
 import { EditableNumber } from "../indicator/EditTableLabel";
+import { isAuthenticated, logout } from "../../pages/auth/protected";
+import { Navigate, useNavigate } from "react-router-dom";
+import ProfileDropDown from "../auth/profile/ProfileDropDown";
 
 export default function ChartHeader({
   timeframeValue,
@@ -19,8 +22,10 @@ export default function ChartHeader({
   toggleIndicator,
   setChartType,
   chartType,
-  loadIndicator,
 }) {
+  const navigate = useNavigate();
+
+
   const [timeframe, setTimeframe] = useState(60);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -49,9 +54,9 @@ export default function ChartHeader({
     setError(null);
 
     try {
-      const response = await apiService.post("getTimeFrames");
+      const response = await apiService.post("/api/getTimeFrames");
       setTimeframe(response.data);
-      
+
       setTimeframeValue(timeframeValue);
     } catch (err) {
       console.error(err);
@@ -65,149 +70,170 @@ export default function ChartHeader({
     fetchTimeframe();
   }, []);
 
-return (
-  <div className="w-100 d-flex flex-column gap-3 small">
-
-  <div className="d-flex align-items-center gap-3 px-3 py-2 bg-white shadow-sm">
-
-    {/* Name/Symbol Button */}
-    <button
-      title="Symbol Search"
-      onClick={() => openModal("Symbol Search")}
-      className="btn btn-light fw-bold rounded-pill px-4"
-      style={{ height: 40 }}
-    >
-      {selectedCurrency || "BTCUSDT"}
-    </button>
-
-    {/* Divider */}
-    <div className="vr" />
-
-    {/* TimeFrame Dropdown */}
-    <div title={timeframeValue}>
-      <select
-        value={timeframeValue ? timeframeValue : "1m"}
-        onChange={(e) => setTimeframeValue(e.target.value)}
-        className="form-select form-select-sm"
-        style={{ height: 40 }}
-      >
-        {!timeframe && <option value="1m">1 Minute</option>}
-
-        {timeframe && Object.keys(timeframe).length === 0 && (
-          <option value="1m">1 Minute</option>
-        )}
-
-        {timeframe &&
-          Object.entries(timeframe)?.map(([group, items]) => (
-            <optgroup key={group} label={group?.toUpperCase()}>
-              {items?.map((item) => (
-                <option key={item?.seconds} value={item?.value}>
-                  {item?.label}
-                </option>
-              ))}
-            </optgroup>
-          ))}
-      </select>
-    </div>
-
-    {/* Divider */}
-    <div className="vr" />
-
-    {/* Chart Type Dropdown (UNCHANGED LOGIC) */}
-    <DropdownMenu.Root>
-      <DropdownMenu.Trigger asChild>
-        <button className="btn btn-light d-flex align-items-center gap-2">
-          {active?.icon && <active.icon size={16} />}
-          <span>{active?.label}</span>
-          <FiChevronDown size={14} />
-        </button>
-      </DropdownMenu.Trigger>
-
-      <DropdownMenu.Portal>
-        <DropdownMenu.Content
-          sideOffset={8}
-          className="bg-white border rounded shadow p-2"
+  return (
+    <div className="w-100 d-flex flex-column gap-3 small">
+      <div className="d-flex align-items-center gap-3 px-3 py-2 bg-white shadow-sm">
+        {/* Name/Symbol Button */}
+        <button
+          title="Symbol Search"
+          onClick={() => openModal("Symbol Search")}
+          className="btn btn-light fw-bold rounded-pill px-4"
+          style={{ height: 40 }}
         >
-          {chartOptions.map((item) => (
-            <DropdownMenu.Item
-              key={item.value}
-              onClick={() => setChartType(item.value)}
-              className="d-flex align-items-center gap-2 px-3 py-2 rounded"
+          {selectedCurrency || "BTCUSDT"}
+        </button>
+
+        {/* Divider */}
+        <div className="vr" />
+
+        {/* TimeFrame Dropdown */}
+        <div title={timeframeValue}>
+          <select
+            value={timeframeValue ? timeframeValue : "1m"}
+            onChange={(e) => setTimeframeValue(e.target.value)}
+            className="form-select form-select-sm "
+            style={{ height: 40, width: 120 }}
+          >
+            {!timeframe && <option value="1m">1 Minute</option>}
+
+            {timeframe && Object.keys(timeframe).length === 0 && (
+              <option value="1m">1 Minute</option>
+            )}
+
+            {timeframe &&
+              Object.entries(timeframe)?.map(([group, items]) => (
+                <optgroup key={group} label={group?.toUpperCase()}>
+                  {items?.map((item) => (
+                    <option key={item?.seconds} value={item?.value}>
+                      {item?.label}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+          </select>
+        </div>
+
+        {/* Divider */}
+        <div className="vr" />
+
+        {/* Chart Type Dropdown */}
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger asChild>
+            <button className="btn btn-light d-flex align-items-center gap-2">
+              {active?.icon && <active.icon size={16} />}
+              <span>{active?.label}</span>
+              <FiChevronDown size={14} />
+            </button>
+          </DropdownMenu.Trigger>
+
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content
+              sideOffset={8}
+              className="bg-white border rounded shadow z-999 p-2"
             >
-              <item.icon size={16} />
-              <span className="flex-grow-1">{item.label}</span>
+              {chartOptions.map((item) => (
+                <DropdownMenu.Item
+                  key={item.value}
+                  onClick={() => setChartType(item.value)}
+                  className="d-flex align-items-center gap-2 px-3 py-2 rounded"
+                >
+                  <item.icon size={16} />
+                  <span className="flex-grow-1">{item.label}</span>
 
-              {chartType === item.value && (
-                <span className="badge bg-primary">✓</span>
-              )}
-            </DropdownMenu.Item>
-          ))}
-        </DropdownMenu.Content>
-      </DropdownMenu.Portal>
-    </DropdownMenu.Root>
+                  {chartType === item.value && (
+                    <span className="badge bg-primary">✓</span>
+                  )}
+                </DropdownMenu.Item>
+              ))}
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu.Root>
 
-    {/* Divider */}
-    <div className="vr" />
+        {/* Divider */}
+        <div className="vr" />
 
-    {/* Action Buttons */}
-    <div className="d-flex align-items-center gap-2">
+        {/* Action Buttons */}
+        <div className="d-flex align-items-center w-full gap-2">
+          {/* Range */}
+          {/* <div className="d-flex align-items-center gap-2">
+            <label className="mb-0">Range:</label>
+            <input
+              type="number"
+              min="10"
+              defaultValue="10"
+              className="form-control form-control-sm"
+              style={{ width: 90, height: 40 }}
+            />
+          </div> */}
 
-      {/* Range */}
-      <div className="d-flex align-items-center gap-2">
-        <label className="mb-0">Range:</label>
-        <input
-          type="number"
-          min="10"
-          defaultValue="10"
-          className="form-control form-control-sm"
-          style={{ width: 90, height: 40 }}
-        />
+          {/* Indicators */}
+          <button
+            title="Indicators"
+            onClick={() => openModal("Indicators")}
+            className="btn btn-light d-flex align-items-center gap-2"
+          >
+            <VscGraphLine />
+            <span>Indicators</span>
+          </button>
+
+          {/* Alert */}
+          <button
+            title="Create Alert"
+            onClick={() => openModal("Alerts")}
+            className="btn btn-light d-flex align-items-center gap-2"
+          >
+            <MdAlarmAdd />
+            <span>Alert</span>
+          </button>
+
+          {/* Simulation */}
+          <button
+            title="Simulation"
+            onClick={() => openModal("Simulation")}
+            className="btn btn-primary d-flex align-items-center gap-2"
+          >
+            <FiPlus />
+            <span>Simulation</span>
+          </button>
+        </div>
+        <div className="flex justify-end ">
+          {isAuthenticated ? (
+            <button
+              title="Logout"
+              onClick={() => {
+                logout();
+                navigate("/login");
+              }}
+              className="btn btn-primary d-flex align-items-center gap-2"
+            >
+              <span>Logout</span>
+            </button>
+          ) : (
+            <button
+              title="Signup"
+              onClick={() => {
+                navigate("/signup");
+              }}
+              className="btn btn-primary d-flex align-items-center gap-2"
+            >
+              <span>Signup</span>
+            </button>
+          )}
+        </div>
+          <ProfileDropDown />
       </div>
 
-      {/* Indicators */}
-      <button
-        title="Indicators"
-        onClick={() => openModal("Indicators")}
-        className="btn btn-light d-flex align-items-center gap-2"
-      >
-        <VscGraphLine />
-        <span>Indicators</span>
-      </button>
-
-      {/* Alert */}
-      <button
-        title="Create Alert"
-        onClick={() => openModal("Alerts")}
-        className="btn btn-light d-flex align-items-center gap-2"
-      >
-        <MdAlarmAdd />
-        <span>Alert</span>
-      </button>
-
-      {/* Simulation */}
-      <button
-        title="Simulation"
-        onClick={() => openModal("Simulation")}
-        className="btn btn-primary d-flex align-items-center gap-2"
-      >
-        <FiPlus />
-        <span>Simulation</span>
-      </button>
+      {/* MODAL (UNCHANGED) */}
+      <ListingModal
+        isOpen={modalConfig.open}
+        onClose={closeModal}
+        title={modalConfig.title}
+        selectedCurrency={selectedCurrency}
+        setSelectedCurrency={setSelectedCurrency}
+        selectedIndicator={selectedIndicator}
+        setSelectedIndicator={setSelectedIndicator}
+        toggleIndicator={toggleIndicator}
+      />
     </div>
-  </div>
-
-  {/* MODAL (UNCHANGED) */}
-  <ListingModal
-    isOpen={modalConfig.open}
-    onClose={closeModal}
-    title={modalConfig.title}
-    selectedCurrency={selectedCurrency}
-    setSelectedCurrency={setSelectedCurrency}
-    selectedIndicator={selectedIndicator}
-    setSelectedIndicator={setSelectedIndicator}
-    toggleIndicator={toggleIndicator}
-    loadIndicator={loadIndicator}
-  />
-</div>
-);
+  );
 }

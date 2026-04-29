@@ -1,334 +1,123 @@
+import React, { useState, useMemo } from "react";
 import {
-  createChart,
-  CandlestickSeries,
-  LineSeries,
-  BarSeries,
-  AreaSeries,
-  HistogramSeries,
- BaselineSeries,
-} from "lightweight-charts";
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+} from "recharts";
 
-import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { useEffect, useRef, useState, useCallback } from "react";
+// 🔥 BULK STATIC DATA GENERATOR (realistic pattern)
+const generateBacktestData = () => {
+  const data = [];
+  const start = new Date("2024-01-01");
 
-import { LuCirclePlus, LuCircleMinus } from "react-icons/lu";
-import { RiResetRightLine } from "react-icons/ri";
-import { IoCloseSharp, IoSettingsOutline } from "react-icons/io5";
-import { FiMoreHorizontal } from "react-icons/fi";
-import { FaCode, FaFileWaveform } from "react-icons/fa6";
+  const sectors = ["defi", "bank", "energy", "fmcg"];
 
-import IndicatorRuleBuilder from "../components/indicator/IndicatorRuleBuilder";
-import IndicatorBuildingListing from "../components/indicator/IndicatorBuilderListing";
-import IndicatorAlert from "../components/indicator/IndicatorAlert";
-import ChartHeader from "../components/tradingModals/ChartHeader";
-import { Form } from "../components/tradingModals/Form";
-
-import {
-  ChartProprties,
-  TIMEFRAME_TO_SECONDS,
-  SINGLE_VALUE_CHARTS,
-  INDICATOR_COLORS,
-  chartSeriesStyles,
-  convertToHeikinAshi,
-  getIndicatorChartProperties,
-} from "../util/common";
-
-import {
-  fetchDataByCurrency,
-  fetchIndicatorData,
-  PANE_INDICATORS,
-} from "../util/chartFunctions";
-
-export default function Candlestick() {
-  const chartRef = useRef();
-  const containerRef = useRef();
-  const seriesRef = useRef();
-
-  const indicatorSeriesRef = useRef({});
-  const latestIndicatorValuesRef = useRef({});
-  const panesRef = useRef({});
-  const syncingRef = useRef(false);
-
-  const TIME_AXIS_HEIGHT = 28;
-  const PANE_HEIGHT = 140;
-
-  const [openForm, setOpenForm] = useState(false);
-  const [timeframeValue, setTimeframeValue] = useState("1m");
-  const [selectedCurrency, setSelectedCurrency] = useState("BTCUSDT");
-  const [selectedIndicator, setSelectedIndicator] = useState([]);
-  const [chartType, setChartType] = useState("candlestick");
-  const [liveOhlcv, setLiveOhlcv] = useState({});
-  const [liveIndicatorData, setLiveIndicatorData] = useState({});
-  const [showAlertForm, setShowAlertForm] = useState(false);
-
-  const getIndicatorColor = useCallback(
-    (index) => INDICATOR_COLORS[index % INDICATOR_COLORS.length],
-    [],
-  );
-
-  /* =========================
-     ✅ CHART SYNC ENGINE
-  ========================== */
-
-  function syncCharts(sourceChart, logicalRange) {
-    if (!logicalRange || syncingRef.current) return;
-
-    syncingRef.current = true;
-
-    const charts = [
-      chartRef.current,
-      ...Object.values(panesRef.current).map((p) => p.chart),
-    ];
-
-    charts.forEach((chart) => {
-      if (!chart || chart === sourceChart) return;
-      chart.timeScale().setVisibleLogicalRange(logicalRange);
-    });
-
-    syncingRef.current = false;
-  }
-
-  function attachSync(chart) {
-    if (!chart) return;
-
-    chart.timeScale().subscribeVisibleLogicalRangeChange((range) => {
-      if (!range || syncingRef.current) return;
-      syncCharts(chart, range);
-    });
-  }
-
-  /* =========================
-     ✅ PANE MANAGEMENT
-  ========================== */
-
-  function resolvePaneKey(type) {
-    switch (type) {
-      case "MACD":
-        return "macd";
-      case "Volume":
-        return "volume";
-      default:
-        return "momentum";
-    }
-  }
-
-  function ensurePane(paneKey) {
-    if (panesRef.current[paneKey]) return panesRef.current[paneKey].chart;
-
-    const paneCount = Object.keys(panesRef.current).length;
-
-    const paneDiv = document.createElement("div");
-    paneDiv.style.position = "absolute";
-    paneDiv.style.left = "0";
-    paneDiv.style.width = "100%";
-    paneDiv.style.height = `${PANE_HEIGHT}px`;
-    paneDiv.style.bottom = `${TIME_AXIS_HEIGHT + paneCount * PANE_HEIGHT}px`;
-
-    containerRef.current.appendChild(paneDiv);
-
-    const paneChart = createChart(
-      paneDiv,
-      getIndicatorChartProperties(PANE_HEIGHT),
-    );
-
-    panesRef.current[paneKey] = { chart: paneChart, div: paneDiv };
-
-    attachSync(paneChart);
-
-    return paneChart;
-  }
-
-  function cleanupPane(paneKey) {
-    const pane = panesRef.current[paneKey];
-    if (!pane) return;
-
-    const stillUsed = Object.values(indicatorSeriesRef.current).some((entry) => {
-      if (!entry) return false;
-
-      if (typeof entry === "object" && !entry.setData) {
-        return Object.values(entry).some(
-          (series) => series?.chart === pane.chart,
-        );
-      }
-
-      return entry?.chart === pane.chart;
-    });
-
-    if (!stillUsed) {
-      pane.chart.remove();
-      pane.div.remove();
-      delete panesRef.current[paneKey];
-    }
-  }
-
-  /* =========================
-     ✅ INDICATOR REMOVAL
-  ========================== */
-
-  function removeIndicator(indicator) {
-    const entry = indicatorSeriesRef.current[indicator];
-    if (!entry) return;
-
-    if (typeof entry === "object" && !entry.setData) {
-      Object.values(entry).forEach((s) => s?.remove());
-    } else {
-      entry?.remove();
-    }
-
-    delete indicatorSeriesRef.current[indicator];
-    delete latestIndicatorValuesRef.current[indicator];
-
-    const paneKey = resolvePaneKey(indicator);
-    cleanupPane(paneKey);
-
-    setSelectedIndicator((prev) => prev.filter((i) => i !== indicator));
-  }
-
-  /* =========================
-     ✅ CREATE MAIN CHART
-  ========================== */
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    const chart = createChart(containerRef.current, ChartProprties);
-    chartRef.current = chart;
-
-    attachSync(chart);
-
-    const candleSeries = chart.addSeries(
-      CandlestickSeries,
-      chartSeriesStyles.candlestick,
-    );
-
-    seriesRef.current = candleSeries;
-
-    return () => chart.remove();
-  }, []);
-
-  /* =========================
-     ✅ LOAD DATA ON CHANGE
-  ========================== */
-
-  useEffect(() => {
-    if (!chartRef.current) return;
-
-    async function load() {
-      const { data } = await fetchDataByCurrency(
-        selectedCurrency,
-        timeframeValue,
-        chartType,
-      );
-
-      seriesRef.current.setData(
-        chartType === "heikinashi" ? convertToHeikinAshi(data) : data,
-      );
-
-      chartRef.current.timeScale().fitContent();
-
-      await fetchIndicatorData(
-        selectedIndicator,
-        selectedCurrency,
-        timeframeValue,
-        chartRef,
-        ensurePane,
-        indicatorSeriesRef,
-        latestIndicatorValuesRef,
-        getIndicatorColor,
-      );
-    }
-
-    load();
-  }, [selectedCurrency, timeframeValue, chartType, selectedIndicator]);
-
-const toggleIndicator = useCallback((indicator) => {
-  setSelectedIndicator((prev) => {
-    const exists = prev.includes(indicator);
-
-    /* ✅ REMOVE */
-    if (exists) {
-      const entry = indicatorSeriesRef.current[indicator];
-
-      if (entry) {
-        if (typeof entry === "object" && !entry.setData) {
-          Object.values(entry).forEach((s) => s?.remove());
-        } else {
-          entry?.remove();
-        }
-
-        delete indicatorSeriesRef.current[indicator];
-        delete latestIndicatorValuesRef.current[indicator];
-      }
-
-      const paneKey = resolvePaneKey(indicator);
-      cleanupPane(paneKey);
-
-      return prev.filter((i) => i !== indicator);
-    }
-
-    /* ✅ ADD */
-    return [...prev, indicator];
-  });
-}, []);
-  /* =========================
-     ✅ ZOOM CONTROLS
-  ========================== */
-
-
-  const zoomIn = () => {
-    const range = chartRef.current.timeScale().getVisibleLogicalRange();
-    if (!range) return;
-    chartRef.current.timeScale().setVisibleLogicalRange({
-      from: range.from + 5,
-      to: range.to - 5,
-    });
+  let base = {
+    defi: 0,
+    bank: 0,
+    energy: 0,
+    fmcg: 0,
   };
 
-  const zoomOut = () => {
-    const range = chartRef.current.timeScale().getVisibleLogicalRange();
-    if (!range) return;
-    chartRef.current.timeScale().setVisibleLogicalRange({
-      from: range.from - 5,
-      to: range.to + 5,
+  for (let i = 0; i < 120; i++) {
+    const d = new Date(start);
+    d.setDate(d.getDate() + i);
+
+    // simulate pnl movement (trend + noise)
+    base.defi += Math.sin(i / 5) * 0.8 + (Math.random() - 0.5);
+    base.bank += Math.cos(i / 6) * 0.6 + (Math.random() - 0.5);
+    base.energy += Math.sin(i / 8) * 0.5 + (Math.random() - 0.5);
+    base.fmcg += Math.cos(i / 10) * 0.4 + (Math.random() - 0.5);
+
+    data.push({
+      date: d.toISOString().split("T")[0],
+      defi: Number(base.defi.toFixed(2)),
+      bank: Number(base.bank.toFixed(2)),
+      energy: Number(base.energy.toFixed(2)),
+      fmcg: Number(base.fmcg.toFixed(2)),
     });
-  };
+  }
 
-  const resetZoom = () => chartRef.current.timeScale().fitContent();
+  return data;
+};
+const sectorColors = {
+  defi: "#6EC1E4",
+  bank: "#5DADE2",
+  energy: "#2ECC71",
+  fmcg: "#FF4D6D",
+};
+const rawData = generateBacktestData();
 
-  /* =========================
-     ✅ UI
-  ========================== */
+const BacktestResults = () => {
+  const [selectedSector, setSelectedSector] = useState(null);
+
+  const sectors = ["defi", "bank", "energy", "fmcg"];
+
+  const chartData = useMemo(() => {
+    if (!selectedSector) return rawData;
+
+    return rawData.map((d) => ({
+      date: d.date,
+      [selectedSector]: d[selectedSector],
+    }));
+  }, [selectedSector]);
 
   return (
-    <div className="w-full h-screen flex flex-col bg-slate-50">
-      <ChartHeader
-        timeframeValue={timeframeValue}
-        setTimeframeValue={setTimeframeValue}
-        selectedCurrency={selectedCurrency}
-        setSelectedCurrency={setSelectedCurrency}
-        setChartType={setChartType}
-        chartType={chartType}
-        selectedIndicator={selectedIndicator}
-        setSelectedIndicator={setSelectedIndicator}
-      />
+    <div style={{ padding: 20 }}>
+      <h3>Backtest Results (Static Data)</h3>
 
-      <div
-        ref={containerRef}
-        className="relative m-2 rounded-md bg-white"
-        style={{ width: ChartProprties.width, height: ChartProprties.height }}
-      />
+      {/* 🔹 Filters */}
+      <div style={{ marginBottom: 15 }}>
+        <button onClick={() => setSelectedSector(null)}>All</button>
 
-      <div className="flex gap-2 justify-center">
-        <button onClick={zoomIn}><LuCirclePlus /></button>
-        <button onClick={zoomOut}><LuCircleMinus /></button>
-        <button onClick={resetZoom}><RiResetRightLine /></button>
+        {sectors.map((s) => (
+          <button
+            key={s}
+            onClick={() => setSelectedSector(s)}
+            style={{
+              marginLeft: 8,
+              background: selectedSector === s ? "#333" : "#eee",
+              color: selectedSector === s ? "#fff" : "#000",
+            }}
+          >
+            {s}
+          </button>
+        ))}
       </div>
 
-      <IndicatorRuleBuilder />
-      <IndicatorBuildingListing
-        selectedCurrency={selectedCurrency}
-        timeframeValue={timeframeValue}
-      />
+      {/* 🔹 Chart */}
+      <div style={{ width: "100%", height: 400 }}>
+        <ResponsiveContainer>
+          <BarChart data={chartData} barSize={6}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" interval={15} />
+            <YAxis />
+            <Tooltip />
+
+           {selectedSector ? (
+  <Bar
+    dataKey={selectedSector}
+    fill={sectorColors[selectedSector]}
+  />
+) : (
+  Object.keys(sectorColors).map((sector) => (
+    <Bar
+      key={sector}
+      dataKey={sector}
+      stackId="a"
+      fill={sectorColors[sector]}
+    />
+  ))
+)}
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
-}
+};
+
+export default BacktestResults;

@@ -16,7 +16,6 @@ export const ListingModal = ({
   selectedIndicator,
   setSelectedIndicator,
   toggleIndicator,
-  loadIndicator,
 }) => {
   const [activeTab, setActiveTab] = useState("Indicators");
   const [indicators, setIndicators] = useState([]);
@@ -36,13 +35,12 @@ export const ListingModal = ({
     try {
       if (debouncedIndicator) {
         response = await apiService.post(
-          `getIndicators?q=${debouncedIndicator}`,
+          `/api/getIndicators?q=${debouncedIndicator}`,
         );
       } else {
-        response = await apiService.post(`getIndicators`);
+        response = await apiService.post(`/api/getIndicators`);
       }
       setIndicators(response?.data);
-      // console.log(response?.data, "-----------");
     } catch (err) {
       console.error(err);
       setError(err?.message || "Failed to fetch indicators");
@@ -59,13 +57,12 @@ export const ListingModal = ({
     try {
       if (!debouncedCurrency) {
         response = await apiService.post(
-          `getCurrencies?symbol=${debouncedCurrency}`,
+          `api/getCurrencies?symbol=${debouncedCurrency}`,
         );
       } else {
-        response = await apiService.post(`getCurrencies`);
+        response = await apiService.post(`api/getCurrencies`);
       }
       setCurrencies(await response?.data);
-      // console.log(currencies, "currencies-------------");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -85,21 +82,35 @@ export const ListingModal = ({
   const filteredIndicators = (indicators ?? []).filter((item) => {
     if (!searchIndicator) return true;
 
-    const search = searchIndicator.toLowerCase();
+    const getInitials = (text) =>
+    text
+      .split(" ")
+      .map((w) => w[0])
+      .join("")
+      .toLowerCase();
+    const search = searchIndicator.toLowerCase().trim();
 
-    return item.label?.toLowerCase().includes(search);
+    const label = item.label.toLowerCase();
+    const initials = getInitials(item.label);
+
+    return (
+      label.includes(search) || // normal search
+      initials.includes(search) || // SMA type search
+      item.slug?.toLowerCase().includes(search)
+    );
   });
 
   const filteredCurrencies = currencies?.filter((curr) => {
     if (!searchCurrency) return true;
     const search = searchCurrency.toLowerCase();
-    // console.log(search, "searchCurrency");
 
     return (
       curr?.raw?.toLowerCase().includes(search) ||
       curr?.base?.toLowerCase().includes(search)
     );
   });
+
+  
 
   if (activeTab !== "Indicators") return null;
 
@@ -110,8 +121,9 @@ export const ListingModal = ({
       <div className="w-full px-5 py-4 max-w-3xl h-[90vh] rounded-md bg-white border border-slate-700 shadow-lg">
         {/* Header */}
         <div className="flex items-center justify-between  ">
-          <h2 className="text-xl font-semibold ">{title}</h2>
+          <h2 className="text-xl">{title}</h2>
           <IoCloseSharp
+            size={20}
             onClick={onClose}
             className="cursor-pointer text-slate-400"
           />
@@ -133,7 +145,7 @@ export const ListingModal = ({
             </div>
 
             {/* Listing Grid */}
-            <div className="overflow-y-auto mt-3 max-h-[70vh]">
+            <div className="overflow-y-auto mt-3 max-h-[65vh]">
               {loading ? (
                 <Spinner />
               ) : filteredCurrencies?.length > 0 ? (
@@ -147,16 +159,16 @@ export const ListingModal = ({
                     }}
                     className="w-full flex border-b border-slate-200 justify-between px-1 py-3 text-left hover:bg-slate-100"
                   >
-                    <div className="flex gap-2 items-center">
-                      <span className="text-xl text-yellow-500">
+                    <div className="flex gap-2 fs-6 items-center">
+                      <span className=" text-yellow-500">
                         <GrBitcoin />
                       </span>
-                      <h2 className="uppercase">
+                      <h2 className="uppercase fs-6">
                         {curr?.base}/{curr?.quote}
                       </h2>
                     </div>
                     <div>
-                      <h3>{curr?.symbol}</h3>
+                      <h3 className=" fs-6">{curr?.symbol}</h3>
                     </div>
                   </Link>
                 ))
@@ -170,7 +182,7 @@ export const ListingModal = ({
         )}
 
         {title === "Indicators" && (
-          <div className="mt-3 space-y-4 max-h-[55vh]">
+          <div className="mt-3 space-y-4 z-999 max-h-[45vh]">
             {/* Search */}
             <div className="relative">
               <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -200,7 +212,7 @@ export const ListingModal = ({
             {activeTab === "Indicators" && (
               <div
                 className="flex-grow overflow-auto"
-                style={{ maxHeight: "68vh" }}
+                style={{ maxHeight: "63vh" }}
               >
                 {loading ? (
                   <div
@@ -216,16 +228,16 @@ export const ListingModal = ({
                   </div>
                 ) : filteredIndicators.length > 0 ? (
                   <ul className="list-unstyled ps-7 text-secondary fs-6">
-                    {filteredIndicators.map((item, index) => (
+                    {filteredIndicators?.map((item, index) => (
                       <li key={index}>
                         <label className="d-flex align-items-center gap-2 px-2 py-1 rounded">
                           <input
                             type="checkbox"
-                            checked={selectedIndicator.includes(item.label)}
-                            onChange={() => toggleIndicator(item.label)}
+                            checked={selectedIndicator.includes(item.slug)}
+                            onChange={() => toggleIndicator(item.slug)}
                             className="form-check-input cursor-pointer"
                           />
-                          <span>{item.label}</span>
+                          <span>{item.label} -- {item.slug} </span>
                         </label>
                       </li>
                     ))}

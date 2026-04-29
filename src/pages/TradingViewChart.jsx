@@ -1,340 +1,216 @@
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import {
-  createChart,
-  CandlestickSeries,
-  LineSeries,
-  BarSeries,
-  AreaSeries,
-  HistogramSeries,
-  BaselineSeries,
-} from "lightweight-charts";
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+} from "recharts";
+import html2canvas from "html2canvas";
+import { Dropdown, Container, Card } from "react-bootstrap";
 
-import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { useEffect, useRef, useState, useCallback } from "react";
+// 🔥 Color map (fallback safe)
+const sectorColors = {
+  store: "#F5B041",
+  l1: "#5DADE2",
+  exchange: "#FF6F91",
+  payments: "#58D68D",
+  l2: "#AF7AC5",
+  defi: "#F4D03F",
+  infra: "#48C9B0",
+  gaming: "#EB984E",
+  alt: "#85929E",
+};
 
-import ChartHeader from "../components/tradingModals/ChartHeader";
-import IndicatorRuleBuilder from "../components/indicator/IndicatorRuleBuilder";
-import IndicatorBuildingListing from "../components/indicator/IndicatorBuilderListing";
-import IndicatorAlert from "../components/indicator/IndicatorAlert";
+const getColor = (key) => sectorColors[key] || "#999";
 
-import { LuCirclePlus, LuCircleMinus } from "react-icons/lu";
-import { RiResetRightLine } from "react-icons/ri";
-import { IoCloseSharp, IoSettingsOutline } from "react-icons/io5";
-import { FiMoreHorizontal } from "react-icons/fi";
-import { FaCode, FaFileWaveform } from "react-icons/fa6";
+const BacktestResults = () => {
+  const [selectedSectors, setSelectedSectors] = useState([]);
+  const [isAllSelected, setIsAllSelected] = useState(true);
+  const [rawData, setRawData] = useState([]);
+  const chartRef = useRef();
 
-import {
-  ChartProprties,
-  TIMEFRAME_TO_SECONDS,
-  SINGLE_VALUE_CHARTS,
-  INDICATOR_COLORS,
-  chartSeriesStyles,
-  getSeriesColor,
-  convertToHeikinAshi,
-} from "../util/common";
-
-import {
-  fetchDataByCurrency,
-  fetchIndicatorData,
-} from "../util/chartFunctions";
-
-export default function Candlestick() {
-  const chartRef = useRef(null);
-  const containerRef = useRef(null);
-  const seriesRef = useRef(null);
-  const indicatorSeriesRef = useRef({});
-  const latestIndicatorValuesRef = useRef({});
-
-  const [openForm, setOpenForm] = useState(false);
-  const [timeframeValue, setTimeframeValue] = useState("1m");
-  const [selectedCurrency, setSelectedCurrency] = useState("BTCUSDT");
-  const [selectedIndicator, setSelectedIndicator] = useState([]);
-  const [rangeValue, setRangeValue] = useState("1000");
-  const [chartType, setChartType] = useState("candlestick");
-  const [liveOhlcv, setLiveOhlcv] = useState(null);
-  const [liveIndicatorData, setLiveIndicatorData] = useState({});
-  const [showAlertForm, setShowAlertForm] = useState(false);
-
-  const getIndicatorColor = useCallback(
-    (index) => INDICATOR_COLORS[index % INDICATOR_COLORS.length],
-    []
-  );
-
-  /* -------------------- CREATE CHART ONCE -------------------- */
-
+  // ===============================
+  // 🔥 FETCH API
+  // ===============================
   useEffect(() => {
-    if (!containerRef.current) return;
-
-    const chart = createChart(containerRef.current, ChartProprties);
-    chartRef.current = chart;
-
-    return () => chart.remove();
+    fetch("http://localhost:5000/api/backtest")
+      .then((res) => res.json())
+      .then((data) => {
+        setRawData(data.chart || []);
+      })
+      .catch((err) => console.error("API Error:", err));
   }, []);
 
-  /* -------------------- CROSSHAIR HANDLER -------------------- */
+  // ===============================
+  // 🔥 AUTO-DETECT SECTORS
+  // ===============================
+  const allSectors = useMemo(() => {
+    if (!rawData.length) return [];
 
-  useEffect(() => {
-    const chart = chartRef.current;
-    if (!chart) return;
+    return Object.keys(rawData[0]).filter((k) => k !== "date");
+  }, [rawData]);
 
-    const handler = (param) => {
-      if (!param.time || !param.seriesData) {
-        setLiveOhlcv(null);
-        return;
+  // ===============================
+  // 🔥 TOGGLE LOGIC (Chartink style)
+  // ===============================
+  const toggleSector = (key) => {
+    if (isAllSelected) {
+      setSelectedSectors([key]);
+      setIsAllSelected(false);
+      return;
+    }
+
+    setSelectedSectors((prev) => {
+      if (prev.includes(key)) {
+        const updated = prev.filter((s) => s !== key);
+
+        if (updated.length === 0) {
+          setIsAllSelected(true);
+          return [];
+        }
+
+        return updated;
       }
 
-      const candle = param.seriesData.get(seriesRef.current);
-      if (candle) setLiveOhlcv(candle);
+      return [...prev, key];
+    });
+  };
 
-      const values = {};
+  // ===============================
+  // 🔥 ACTIVE SECTORS
+  // ===============================
+  const activeSectors = isAllSelected ? allSectors : selectedSectors;
 
-      selectedIndicator.forEach((indicator) => {
-        const entry = indicatorSeriesRef.current[indicator];
-        if (!entry) return;
+  // ===============================
+  // 🔥 CHART DATA
+  // ===============================
+  const chartData = useMemo(() => {
+    return rawData.map((d) => {
+      const obj = { date: d.date };
 
-        const isGrouped =
-          typeof entry === "object" && !("setData" in entry);
+      activeSectors.forEach((s) => {
+        const val = d[s];
 
-        if (isGrouped) {
-          const groupedValues = {};
-
-          Object.entries(entry).forEach(([line, series]) => {
-            const point = param.seriesData.get(series);
-            if (point?.value !== undefined) {
-              groupedValues[line] = point.value;
-            }
-          });
-
-          if (Object.keys(groupedValues).length) {
-            values[indicator] = groupedValues;
-          }
-        } else {
-          const point = param.seriesData.get(entry);
-          if (point?.value !== undefined) {
-            values[indicator] = point.value;
-          }
-        }
+        // ❗ hide negative values (your requirement)
+        obj[s] = val > 0 ? val : 0;
       });
 
-      setLiveIndicatorData(values);
-    };
-
-    chart.subscribeCrosshairMove(handler);
-    return () => chart.unsubscribeCrosshairMove(handler);
-  }, [selectedIndicator]);
-
-  /* -------------------- SERIES CLEANUP -------------------- */
-
-  const removeMainSeries = () => {
-    if (!seriesRef.current || !chartRef.current) return;
-
-    try {
-      chartRef.current.removeSeries(seriesRef.current);
-    } catch {}
-    seriesRef.current = null;
-  };
-
-  /* -------------------- LOAD CHART DATA -------------------- */
-
-  useEffect(() => {
-    const chart = chartRef.current;
-    if (!chart) return;
-
-    removeMainSeries();
-
-    async function load() {
-      const { data } = await fetchDataByCurrency(
-        selectedCurrency,
-        timeframeValue,
-        chartType
-      );
-
-      switch (chartType) {
-        case "line":
-          seriesRef.current = chart.addSeries(
-            LineSeries,
-            chartSeriesStyles.line
-          );
-          seriesRef.current.setData(
-            data.map((d) => ({ time: d.time, value: Number(d.close) }))
-          );
-          break;
-
-        case "bar":
-          seriesRef.current = chart.addSeries(
-            BarSeries,
-            chartSeriesStyles.bar
-          );
-          seriesRef.current.setData(data);
-          break;
-
-        case "area":
-          seriesRef.current = chart.addSeries(
-            AreaSeries,
-            chartSeriesStyles.area
-          );
-          seriesRef.current.setData(
-            data.map((d) => ({ time: d.time, value: Number(d.close) }))
-          );
-          break;
-
-        case "baseline":
-          seriesRef.current = chart.addSeries(BaselineSeries, {
-            ...chartSeriesStyles.baseline,
-            baseValue: { type: "price", price: Number(data[0]?.close ?? 0) },
-          });
-          seriesRef.current.setData(
-            data.map((d) => ({ time: d.time, value: d.close }))
-          );
-          break;
-
-        case "histogram":
-          seriesRef.current = chart.addSeries(
-            HistogramSeries,
-            chartSeriesStyles.histogram
-          );
-          seriesRef.current.setData(
-            data.map((d) => ({ time: d.time, value: d.volume }))
-          );
-          break;
-
-        case "heikinashi":
-          seriesRef.current = chart.addSeries(CandlestickSeries);
-          seriesRef.current.setData(convertToHeikinAshi(data));
-          break;
-
-        default:
-          seriesRef.current = chart.addSeries(
-            CandlestickSeries,
-            chartSeriesStyles.candlestick
-          );
-          seriesRef.current.setData(data);
-      }
-
-      chart.timeScale().fitContent();
-
-      await fetchIndicatorData(
-        selectedIndicator,
-        selectedCurrency,
-        timeframeValue,
-        chartRef,
-        indicatorSeriesRef,
-        latestIndicatorValuesRef,
-        getIndicatorColor
-      );
-    }
-
-    load();
-  }, [chartType, timeframeValue, selectedCurrency, rangeValue, selectedIndicator]);
-
-  /* -------------------- INDICATOR TOGGLE -------------------- */
-
-  const toggleIndicator = (indicator) => {
-    setSelectedIndicator((prev) =>
-      prev.includes(indicator)
-        ? prev.filter((i) => i !== indicator)
-        : [...prev, indicator]
-    );
-  };
-
-  const removeIndicator = (indicator) => {
-    const series = indicatorSeriesRef.current[indicator];
-    if (series && chartRef.current) {
-      chartRef.current.removeSeries(series);
-    }
-    delete indicatorSeriesRef.current[indicator];
-
-    setSelectedIndicator((prev) => prev.filter((i) => i !== indicator));
-  };
-
-  /* -------------------- ZOOM -------------------- */
-
-  const zoomIn = () => {
-    const chart = chartRef.current;
-    const range = chart?.timeScale().getVisibleLogicalRange();
-    if (!range) return;
-
-    chart.timeScale().setVisibleLogicalRange({
-      from: range.from + 5,
-      to: range.to - 5,
+      return obj;
     });
+  }, [rawData, activeSectors]);
+
+  // ===============================
+  // 🔹 DOWNLOAD
+  // ===============================
+  const downloadChartImage = async () => {
+    const canvas = await html2canvas(chartRef.current);
+    const link = document.createElement("a");
+    link.download = "chart.png";
+    link.href = canvas.toDataURL();
+    link.click();
   };
-
-  const zoomOut = () => {
-    const chart = chartRef.current;
-    const range = chart?.timeScale().getVisibleLogicalRange();
-    if (!range) return;
-
-    chart.timeScale().setVisibleLogicalRange({
-      from: range.from - 5,
-      to: range.to + 5,
-    });
-  };
-
-  const resetZoom = () => chartRef.current?.timeScale().fitContent();
-
-  const isUp =
-    SINGLE_VALUE_CHARTS.includes(chartType)
-      ? true
-      : liveOhlcv?.close >= liveOhlcv?.open;
-
-  const valueColor = isUp ? "text-green-500" : "text-red-500";
 
   return (
-    <div className="w-full h-screen z-999 flex flex-col bg-slate-50">
-      <ChartHeader
-        timeframeValue={timeframeValue}
-        setTimeframeValue={setTimeframeValue}
-        rangeValue={rangeValue}
-        setRangeValue={setRangeValue}
-        selectedCurrency={selectedCurrency}
-        setSelectedCurrency={setSelectedCurrency}
-        setChartType={setChartType}
-        chartType={chartType}
-        selectedIndicator={selectedIndicator}
-        setSelectedIndicator={setSelectedIndicator}
-        toggleIndicator={toggleIndicator}
-      />
+    <Container fluid className="pb-4 px-4" style={{ background: "#F8F9FA" }}>
+      {/* HEADER */}
+      <div className="d-flex justify-content-between mb-4">
+        <h4>Backtest Results</h4>
 
-      <div ref={containerRef} className="relative z-0 m-2 rounded-md bg-white" />
-
-      {selectedIndicator.length > 0 && (
-        <div className="absolute top-20 left-4 flex flex-col gap-2">
-          {selectedIndicator.map((indicator, index) => (
-            <div key={indicator} className="flex items-center gap-2 text-xs bg-white shadow px-3 h-8 rounded">
-              <span
-                className="w-2 h-2 rounded-full"
-                style={{ background: getIndicatorColor(index) }}
-              />
-              {indicator}
-              <span style={{ color: getSeriesColor(indicatorSeriesRef.current[indicator]) }}>
-                {liveIndicatorData?.[indicator]?.toFixed?.(2) ?? "--"}
-              </span>
-
-              <button onClick={() => removeIndicator(indicator)}>
-                <IoCloseSharp />
-              </button>
-
-              <DropdownMenu.Root>
-                <DropdownMenu.Trigger asChild>
-                  <button><FiMoreHorizontal /></button>
-                </DropdownMenu.Trigger>
-              </DropdownMenu.Root>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="flex gap-2 p-4">
-        <button onClick={zoomIn}><LuCirclePlus /></button>
-        <button onClick={zoomOut}><LuCircleMinus /></button>
-        <button onClick={resetZoom}><RiResetRightLine /></button>
+        <Dropdown align="end">
+          <Dropdown.Toggle size="sm">Download</Dropdown.Toggle>
+          <Dropdown.Menu>
+            <Dropdown.Item onClick={downloadChartImage}>
+              Download Chart
+            </Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown>
       </div>
 
-      <IndicatorRuleBuilder />
-      <IndicatorBuildingListing
-        selectedCurrency={selectedCurrency}
-        timeframeValue={timeframeValue}
-      />
-    </div>
+      <Card className="border-0 shadow-sm">
+        <Card.Body>
+          {/* 🔥 LEGEND */}
+          <div className="d-flex flex-wrap gap-2 mb-3">
+            {allSectors.map((key) => {
+              const isActive = activeSectors.includes(key);
+              const color = getColor(key);
+
+              return (
+                <span
+                  key={key}
+                  onClick={() => toggleSector(key)}
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: 999,
+                    cursor: "pointer",
+                    background: isActive ? color : "#eee",
+                    color: isActive ? "#fff" : "#444",
+                    fontSize: 13,
+                  }}
+                >
+                  ● {key}
+                </span>
+              );
+            })}
+          </div>
+
+          {/* 🔥 CHART */}
+          <div ref={chartRef} style={{ height: 420 }}>
+            <ResponsiveContainer>
+              <BarChart data={chartData} barSize={8}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis domain={[0, "auto"]} />
+                
+
+                {/* 🔥 TOOLTIP (ONLY HOVERED BAR) */}
+                <Tooltip
+                  shared={false}
+                  cursor={false}
+                  content={({ active, payload }) => {
+                    if (!active || !payload || payload.length === 0)
+                      return null;
+
+                    // 🔥 Find the bar actually hovered (value > 0)
+                    const item = payload.find((p) => p.value > 0);
+
+                    if (!item) return null; // no bar hovered
+
+                    return (
+                      <div
+                        style={{
+                          background: "#fff",
+                          border: "1px solid #ddd",
+                          padding: "8px 12px",
+                          borderRadius: 6,
+                          fontSize: 12,
+                        }}
+                      >
+                        <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                          {item.payload.date}
+                        </div>
+
+                        <div style={{ color: item.color }}>
+                          {item.name}: {item.value.toFixed(2)}%
+                        </div>
+                      </div>
+                    );
+                  }}
+                />
+
+                {/* 🔥 BARS */}
+                {activeSectors.map((s) => (
+                  <Bar key={s} dataKey={s} isAnimationActive={false} stackId="a" fill={getColor(s)} />
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card.Body>
+      </Card>
+    </Container>
   );
-}
+};
+
+export default BacktestResults;

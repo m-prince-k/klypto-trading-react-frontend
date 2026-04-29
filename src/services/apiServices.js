@@ -1,10 +1,15 @@
 import axios from "axios";
-import { toast } from "react-toastify";
+
+const token =
+  localStorage.getItem("session") &&
+  JSON.parse(localStorage.getItem("session"));
+// console.log(localStorage.getItem("session"), "tokennnnnnn kkkkkkkkkkkkkkkkkkkkk")
 
 // 🔹 Create axios instance
 const api = axios.create({
-  baseURL: "http://192.168.1.5:4000/", // change to your API
-  timeout: 10000,
+  // baseURL: "https://studios-publishers-promising-rosa.trycloudflare.com",
+  baseURL: "http://192.168.1.10:7000", // change to your API
+  timeout: 500000,
   headers: {
     "Content-Type": "application/json",
   },
@@ -23,7 +28,7 @@ api.interceptors.request.use(
 
 // 🔹 Response Interceptor
 api.interceptors.response.use(
-  (response) => response.data,
+  (response) => response?.data,
   (error) => {
     const message =
       error?.response?.data?.message ||
@@ -31,19 +36,53 @@ api.interceptors.response.use(
       "Something went wrong";
     // console.log("API Error:", error?.response?.data?.message);
     // console.log("API Error Details:", error?.message);
-    toast.error(error?.message);
 
     return Promise.reject(error);
   },
 );
 
 // 🔹 API Methods
+const getAuthHeaders = () => {
+  const session =
+    JSON.parse(localStorage.getItem("session")) ||
+    JSON.parse(sessionStorage.getItem("session"));
+
+  const token = session?.token;
+
+  return {
+    "Content-Type": "application/json",
+    Authorization: token ? `Bearer ${token}` : "",
+  };
+};
+
+// console.log(localStorage.getItem("session"), "tokennnnnnn kkkkkkkkkkkkkkkkkkkkk")
+
 const apiService = {
-  get: (url, params = {}) => api.get(url, { params }),
-  post: (url, data) => api.post(url, data),
-  put: (url, data) => api.put(url, data),
-  patch: (url, data) => api.patch(url, data),
-  delete: (url) => api.delete(url),
+  get: (url, params = {}) =>
+    api.get(url, {
+      headers: getAuthHeaders(),
+      params,
+    }),
+
+  post: (url, data = {}) =>
+    api.post(url, data, {
+      headers: getAuthHeaders(),
+    }),
+
+  put: (url, data = {}) =>
+    api.put(url, data, {
+      headers: getAuthHeaders(),
+    }),
+
+  patch: (url, data = {}) =>
+    api.patch(url, data, {
+      headers: getAuthHeaders(),
+    }),
+
+  delete: (url) =>
+    api.delete(url, {
+      headers: getAuthHeaders(),
+    }),
 };
 
 export default apiService;

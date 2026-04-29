@@ -1,194 +1,1907 @@
-import React from "react";
-import Button from "react-bootstrap/Button";
-import Modal from "react-bootstrap/Modal";
-import { useEffect, useState } from "react";
-import { IoClose, IoChevronDown } from "react-icons/io5";
-import { FiInfo } from "react-icons/fi";
+import { Modal, Button, Tabs, Tab, Row, Col, Form } from "react-bootstrap";
+import IndicatorStyle from "./IndicatorStyle";
+import apiService from "../../services/apiServices";
+import useChartFunctions from "../../util/useChartFunctions";
+import { updateIndicatorFromInput } from "./IndicatorIndex";
+import React, { useEffect, useState } from "react";
 
-function SelectField({ label, options, value, onChange }) {
+/* =========================
+   BASE SETTINGS COMPONENT
+========================== */
+const BaseSettings = React.memo(function BaseSettings({
+  currentConfig,
+  updateProperty,
+  showLength = true,
+  showSource = true,
+  showOffset = true,
+}) {
   return (
-    <div className="flex items-center justify-between mb-4">
-      <label className="text-sm text-gray-700">{label}</label>
+    <section className="mt-3 px-3">
+      {/* LENGTH */}
+      {showLength && (
+        <div className="mb-3">
+          <label className="form-label">Length</label>
+          <input
+            type="number"
+            className="form-control"
+            min="1"
+            value={currentConfig.length ?? ""}
+            onChange={(e) => {
+              const value =
+                e.target.value === ""
+                  ? ""
+                  : Math.max(1, Number(e.target.value));
+              updateProperty("length", value);
+            }}
+          />
+        </div>
+      )}
 
-      <div className="relative w-[140px]">
-        <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full appearance-none bg-white border border-gray-300 rounded-sm text-gray-800 text-sm h-[30px] pl-2.5 pr-7 outline-none focus:border-blue-500 cursor-pointer"
-        >
-          {options.map((o) => (
-            <option key={o} value={o}>
-              {o}
-            </option>
-          ))}
-        </select>
+      {/* SOURCE */}
+      {showSource && (
+        <div className="mb-3">
+          <label className="form-label">Source</label>
+          <select
+            className="form-select"
+            value={currentConfig.source ?? ""}
+            onChange={(e) => updateProperty("source", e.target.value)}
+          >
+            {["Close", "Open", "High", "Low", "HL2", "HLC3", "OHLC4"].map(
+              (opt) => (
+                <option key={opt} value={opt.toLowerCase()}>
+                  {opt}
+                </option>
+              ),
+            )}
+          </select>
+        </div>
+      )}
 
-        <IoChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none text-xs" />
-      </div>
-    </div>
+      {/* OFFSET */}
+      {showOffset && (
+        <div className="mb-3">
+          <label className="form-label">Offset</label>
+          <input
+            type="number"
+            className="form-control"
+            min="0"
+            value={currentConfig.offset ?? ""}
+            onChange={(e) => {
+              const value =
+                e.target.value === ""
+                  ? ""
+                  : Math.max(0, Number(e.target.value));
+              updateProperty("offset", value);
+            }}
+          />
+        </div>
+      )}
+    </section>
   );
-}
+});
 
-function NumberField({ label, value, onChange, info }) {
+/* =========================
+   SMOOTHING SECTION
+========================== */
+const SmoothingSection = React.memo(function SmoothingSection({
+  currentConfig,
+  updateProperty,
+}) {
+  if (!currentConfig) return null;
+
+  const smoothingTypes = [
+    "None",
+    "SMA",
+    "EMA",
+    "WMA",
+    "SMA + Bollinger Bands",
+    "VWMA",
+    "SMMA (RMA)",
+  ];
+
   return (
-    <div className="flex items-center justify-between mb-4">
-      <label className="flex items-center gap-1 text-sm text-gray-700">
-        {label}
-        {info && <FiInfo className="text-gray-400 text-xs" title={info} />}
-      </label>
+    <>
+      <hr />
+      <section className="px-3">
+        {/* TYPE */}
+        <div className="mb-3">
+          <label className="form-label">Type</label>
+          <select
+            className="form-select"
+            value={currentConfig.maType || "none"}
+            onChange={(e) => updateProperty("maType", e.target.value)}
+          >
+            {smoothingTypes.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
+        </div>
 
-      <input
-        type="number"
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-[140px] bg-white border border-gray-300 rounded-sm text-gray-800 text-sm h-[30px] px-2.5 outline-none focus:border-blue-500"
-      />
-    </div>
+        {/* LENGTH */}
+        <div className="mb-3">
+          <label className="form-label">Length</label>
+          <input
+            type="number"
+            className="form-control"
+            min="1"
+            value={currentConfig.maLength}
+            onChange={(e) => {
+              const value =
+                e.target.value === ""
+                  ? ""
+                  : Math.max(1, Number(e.target.value));
+              updateProperty("maLength", value);
+            }}
+          />
+        </div>
+
+        {/* BB STD DEV */}
+        <div className="mb-3">
+          <label className="form-label">BB Std Dev</label>
+          <input
+            type="number"
+            className="form-control"
+            min="0"
+            disabled={currentConfig.maType !== "SMA + Bollinger Bands"}
+            value={currentConfig.bbStdDev}
+            onChange={(e) => {
+              const value =
+                e.target.value === ""
+                  ? ""
+                  : Math.max(0, Number(e.target.value));
+              updateProperty("bbStdDev", value);
+            }}
+          />
+        </div>
+      </section>
+    </>
   );
-}
+});
 
 export default function IndicatorPropertyDialog({
-  indicatorProperty,
-  selectedIndicator,
   setIndicatorProperty,
+  indicatorProperty,
+  activeBarIndicator,
+  setIndicatorConfigs,
+  indicatorConfigs,
+  indicatorStyle,
+  setIndicatorStyle,
+  indicatorSeriesRef,
+  selectedCurrency,
+  timeframeValue,
+  latestIndicatorValuesRef,
 }) {
-  /* ------------------ MAIN COMPONENT ------------------ */
+  const labelStyle = {
+    display: "inline-block",
+    width: "150px",
+    textAlign: "left",
+    marginRight: "1rem",
+  };
 
-  const [open, setOpen] = useState(true);
-
-  //   const [rsiProperty, setRsiProperty] = useState({
-  //     rsiPeriod: 14,
-  //     rsiSource: "Close",
-  //   });
-
-  //   const [smoothing, setSmoothing] = useState({
-  //     type: "WMA",
-  //     length: 14,
-  //     bbStdDev: 2,
-  //   });
-
-  const [indicatorConfig, setIndicatorConfig] = useState({
-    type: "sma",
-    properties: {
-      length: 9,
-      source: "Close",
-      offset: 0,
-
-      smoothing: {
-        type: "SMA + Bollinger Bands",
-        length: 14,
-        bbStdDev: 2,
-      },
-    },
-  });
+  const currentConfig = indicatorConfigs[activeBarIndicator];
+  const [indicatorLoading, setIndicatorLoading] = useState(false);
 
   const updateProperty = (key, value) => {
-    setIndicatorConfig((prev) => ({
+    setIndicatorConfigs((prev) => ({
       ...prev,
-      properties: {
-        ...prev.properties,
+      [activeBarIndicator]: {
+        ...prev[activeBarIndicator],
         [key]: value,
       },
     }));
   };
 
-  const updateSmoothing = (key, value) => {
-    setIndicatorConfig((prev) => ({
+  const handleBlur = (key, value) => {
+    const defaults = indicatorConfigs[activeBarIndicator] || {};
+    const defaultValue = defaults[key];
+
+    let val = value;
+
+    if (val === "" || val === undefined || isNaN(val)) {
+      val = defaultValue ?? 0;
+    } else {
+      val = Number(val);
+    }
+
+    updateProperty(key, val);
+  };
+
+  const handleChange = (key, value) => {
+  updateProperty(key, value === "" ? "" : Number(value));
+};
+
+  const updateNestedDoubleProperty = (band, key, value) => {
+    setIndicatorConfigs((prev) => ({
       ...prev,
-      properties: {
-        ...prev.properties,
-        smoothing: {
-          ...prev.properties.smoothing,
+      [activeBarIndicator]: {
+        ...prev[activeBarIndicator],
+        [band]: {
+          ...prev[activeBarIndicator][band],
           [key]: value,
         },
       },
     }));
   };
 
-  const handleIndicatorPropertyChange = (e) => {
-    console.log(indicatorConfig, "000000000");
+  /* =========================
+     OK BUTTON
+  ========================== */
+  const handleIndicatorPropertyChange = async () => {
+    const config = indicatorConfigs?.[activeBarIndicator] || {};
+    const { maType } = config;
+
+    const payload = {
+      type: activeBarIndicator,
+      ...config,
+    };
+
+    console.log(payload, "payloadddddddddd");
+    console.log(config, "configggggg");
+
+    setIndicatorLoading(true);
+    try {
+      setIndicatorLoading(true); // START LOADER
+
+      const response = await apiService.post(
+        `/api/updateIndicator?symbol=${selectedCurrency}&interval=${timeframeValue}`,
+        payload,
+      );
+
+      console.log("Indicator updated:", response);
+
+      updateIndicatorFromInput(
+        activeBarIndicator,
+        response,
+        indicatorSeriesRef,
+        latestIndicatorValuesRef,
+        maType,
+      );
+
+      setIndicatorProperty(false);
+    } catch (error) {
+      if (error.response) {
+        console.error("Server responded with error:");
+        console.error("Status:", error.response.status);
+        console.error("Data:", error.response.data);
+      } else if (error.request) {
+        console.error("No response received from server");
+        console.error(error.request);
+      } else {
+        console.error("Request setup error:", error.message);
+      }
+    } finally {
+      setIndicatorLoading(false); // STOP LOADER
+    }
   };
 
-  return (
-    <div>
-      <Modal
-        show={indicatorProperty}
-        onHide={() => setIndicatorProperty(false)}
-        centered
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>{selectedIndicator}</Modal.Title>
-        </Modal.Header>
+  const handleCancel = () => {
+    setIndicatorConfigs((prev) => ({
+      ...prev,
+      [activeBarIndicator]: indicatorConfigs[activeBarIndicator],
+    }));
+    setIndicatorProperty(false);
+  };
 
-        <Modal.Body>
-          {/* Section Title */}
-          <p className="text-uppercase text-muted fw-bold small mb-3">
-            {selectedIndicator} Settings
-          </p>
-          <NumberField
-            label={`${selectedIndicator} Length`}
-            value={indicatorConfig.properties.length}
-            onChange={(val) => updateProperty("length", val)}
+  /* =========================
+     RENDER PER INDICATOR
+  ========================== */
+
+  function renderIndicatorSetting() {
+    switch (activeBarIndicator) {
+      case "SMA":
+      case "EMA":
+        return (
+          <>
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+            />
+
+            <SmoothingSection
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+            />
+          </>
+        );
+      case "WMA":
+        return (
+          <BaseSettings
+            currentConfig={currentConfig}
+            updateProperty={updateProperty}
           />
+        );
 
-            <div>
-              <SelectField
-                label="Source"
-                value={indicatorConfig.properties.source}
-                options={[
-                  "Close",
-                  "Open",
-                  "High",
-                  "Low",
-                  "HL2",
-                  "HLC3",
-                  "OHLC4",
-                ]}
-                onChange={(val) => updateProperty("source", val)}
-              />
+      case "HMA":
+      case "DEMA":
+        return (
+          <BaseSettings
+            currentConfig={currentConfig}
+            updateProperty={updateProperty}
+            showOffset={false}
+          />
+        );
 
-              <hr />
+      case "TEMA":
+      case "TRIX":
+      case "FT":
+        return (
+          <BaseSettings
+            currentConfig={currentConfig}
+            updateProperty={updateProperty}
+            showOffset={false}
+            showSource={false}
+          />
+        );
 
-              {/* Smoothing */}
-              <p className="text-uppercase text-muted fw-bold small mb-3">
-                Smoothing
-              </p>
+      case "KAMA":
+        return (
+          <>
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showOffset={false}
+              showLength={false}
+            />
 
-              <SelectField
-                label="Type"
-                value={indicatorConfig.properties.smoothing.type}
-                options={["SMA", "EMA", "WMA", "VWMA", "SMMA (RMA)"]}
-                onChange={(val) => updateSmoothing("type", val)}
+            <div className="mb-3">
+              <label className="form-label">ER Length</label>
+              <input
+                type="number"
+                className="form-control"
+                min="0"
+                value={currentConfig.ERlength}
+                onChange={(e) => {
+                  const value = Math.max(1, Number(e.target.value));
+                  updateProperty("ERlength", value);
+                }}
               />
             </div>
-       
 
-          <NumberField
-            label="Length"
-            value={indicatorConfig.properties.smoothing.length}
-            onChange={(val) => updateProperty("length", val)}
+            <div className="mb-3">
+              <label className="form-label">Fast Length</label>
+              <input
+                type="number"
+                className="form-control"
+                min="0"
+                value={currentConfig.fastLength}
+                onChange={(e) => {
+                  const value = Math.max(1, Number(e.target.value));
+                  updateProperty("fastLength", value);
+                }}
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Slow Length</label>
+              <input
+                type="number"
+                className="form-control"
+                min=""
+                value={currentConfig.slowLength}
+                onChange={(e) => {
+                  const value = Math.max(1, Number(e.target.value));
+                  updateProperty("slowLength", value);
+                }}
+              />
+            </div>
+          </>
+        );
+
+      case "ICHIMOKU":
+        return (
+          <>
+            <div className="mb-3">
+              <label className="form-label">Conversion Line</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig?.conversionLength}
+                onChange={(e) =>
+                  updateProperty("conversionLength", Number(e.target.value))
+                }
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Base Line</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig?.baseLength}
+                onChange={(e) =>
+                  updateProperty("baseLength", Number(e.target.value))
+                }
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Span B Length</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig?.spanBLength}
+                onChange={(e) =>
+                  updateProperty("spanBLength", Number(e.target.value))
+                }
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Lagging Span</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig?.laggingSpan}
+                onChange={(e) =>
+                  updateProperty("laggingSpan", Number(e.target.value))
+                }
+              />
+            </div>
+          </>
+        );
+
+      case "PSAR":
+        return (
+          <>
+            <div className="mb-3">
+              <label className="form-label">Start</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig?.start}
+                onChange={(e) =>
+                  updateProperty("start", Number(e.target.value))
+                }
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Increment</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig?.increment}
+                onChange={(e) =>
+                  updateProperty("increment", Number(e.target.value))
+                }
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Max Value</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig?.maxValue}
+                onChange={(e) =>
+                  updateProperty("maxValue", Number(e.target.value))
+                }
+              />
+            </div>
+          </>
+        );
+
+      case "SUPERTREND":
+        return (
+          <>
+            <div className="mb-3">
+              <label className="form-label">ATR Length</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.atrLength}
+                onChange={(e) =>
+                  updateProperty("atrLength", Number(e.target.value))
+                }
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Factor</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.factor}
+                onChange={(e) =>
+                  updateProperty("factor", Number(e.target.value))
+                }
+              />
+            </div>
+          </>
+        );
+
+      case "AROON":
+        return (
+          <BaseSettings
+            currentConfig={currentConfig}
+            updateProperty={updateProperty}
+            showOffset={false}
+            showSource={false}
           />
+        );
 
+      case "AO":
+        return (
+          <BaseSettings
+            currentConfig={currentConfig}
+            updateProperty={updateProperty}
+            showOffset={false}
+            showSource={false}
+          />
+        );
 
-            <NumberField
-              label="BB StdDev"
-              value={indicatorConfig.properties.smoothing.bbStdDev}
-              info="Bollinger Band Standard Deviation"
-              onChange={(val) => updateSmoothing("bbStdDev", val)}
+      case "AD":
+        return (
+          <BaseSettings
+            currentConfig={currentConfig}
+            updateProperty={updateProperty}
+            showOffset={false}
+            showSource={false}
+          />
+        );
+
+      case "ADX":
+        return (
+          <>
+            <div className="mb-3">
+              <label className="form-label">Smoothing</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.smoothing}
+                onChange={(e) =>
+                  updateProperty("smoothing", Number(e.target.value))
+                }
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">DI Length</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.diLength}
+                onChange={(e) =>
+                  updateProperty("diLength", Number(e.target.value))
+                }
+              />
+            </div>
+          </>
+        );
+
+      case "Chande Kroll Stop":
+        return (
+          <>
+            <div className="mb-3">
+              <label className="form-label">ATR Length (p)</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.atrLength}
+                onChange={(e) =>
+                  updateProperty("atrLength", Number(e.target.value))
+                }
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">ATR Coefficient (x)</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.atrCoefficient}
+                onChange={(e) =>
+                  updateProperty("atrCoefficient", Number(e.target.value))
+                }
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Stop Length (q)</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.stopLength}
+                onChange={(e) =>
+                  updateProperty("stopLength", Number(e.target.value))
+                }
+              />
+            </div>
+          </>
+        );
+
+      case "RSI":
+        return (
+          <>
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showOffset={false}
             />
-         
-        </Modal.Body>
+            <SmoothingSection
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+            />
+          </>
+        );
 
-        <Modal.Footer>
-          <Button variant="light" onClick={() => setIndicatorProperty(false)}>
-            Cancel
-          </Button>
+      case "STOCH":
+        return (
+          <>
+            <div className="mb-3">
+              <label className="form-label">%K Length</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.kLength}
+                onChange={(e) =>
+                  updateProperty("kLength", Number(e.target.value))
+                }
+              />
+            </div>
 
-          <Button variant="dark" onClick={handleIndicatorPropertyChange}>
-            Ok
-          </Button>
-        </Modal.Footer>
-      </Modal>
-    </div>
+            <div className="mb-3">
+              <label className="form-label">%K Smoothing</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.kSmoothing}
+                onChange={(e) =>
+                  updateProperty("kSmoothing", Number(e.target.value))
+                }
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">%D Smoothing</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.dSmoothing}
+                onChange={(e) =>
+                  updateProperty("dSmoothing", Number(e.target.value))
+                }
+              />
+            </div>
+          </>
+        );
+
+      case "STOCHRSI":
+        return (
+          <>
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showOffset={false}
+              showSource={false}
+            />
+
+            <div className="mb-3">
+              <label className="form-label">K</label>
+              <input
+                type="number"
+                className="form-control"
+                min={1}
+                value={currentConfig.kSmoothing}
+                onChange={(e) =>
+                  updateProperty("kSmoothing", Number(e.target.value))
+                }
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">D</label>
+              <input
+                type="number"
+                className="form-control"
+                min={1}
+                value={currentConfig.dSmoothing}
+                onChange={(e) =>
+                  updateProperty("dSmoothing", Number(e.target.value))
+                }
+              />
+            </div>
+            <div className="mb-3">
+              <label className="form-label">RSI Length</label>
+              <input
+                type="number"
+                className="form-control"
+                min={1}
+                value={currentConfig.lengthRSI}
+                onChange={(e) =>
+                  updateProperty("lengthRSI", Number(e.target.value))
+                }
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label"> RSI Source</label>
+              <select
+                className="form-select"
+                value={currentConfig.source}
+                onChange={(e) => updateProperty("source", e.target.value)}
+              >
+                {["Close", "Open", "High", "Low", "HL2", "HLC3", "OHLC4"].map(
+                  (opt) => (
+                    <option key={opt} value={opt.toLowerCase()}>
+                      {opt}
+                    </option>
+                  ),
+                )}
+              </select>
+            </div>
+          </>
+        );
+
+      case "MACD":
+        return (
+          <>
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showLength={false}
+              showOffset={false}
+            />
+            <div className="mb-3">
+              <label className="form-label">Fast Length</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.fastLength}
+                onChange={(e) =>
+                  updateProperty("fastLength", Number(e.target.value))
+                }
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Slow Length</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.slowLength}
+                onChange={(e) =>
+                  updateProperty("slowLength", Number(e.target.value))
+                }
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Signal Length</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.signalLength}
+                onChange={(e) =>
+                  updateProperty("signalLength", Number(e.target.value))
+                }
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Oscillator MA Type</label>
+              <select
+                className="form-control"
+                value={currentConfig.oscillatorMAType}
+                onChange={(e) =>
+                  updateProperty("oscillatorMAType", e.target.value)
+                }
+              >
+                <option value="EMA">EMA</option>
+                <option value="SMA">SMA</option>
+              </select>
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Signal MA Type</label>
+              <select
+                className="form-control"
+                value={currentConfig.signalMAType}
+                onChange={(e) => updateProperty("signalMAType", e.target.value)}
+              >
+                <option value="EMA">EMA</option>
+                <option value="SMA">SMA</option>
+              </select>
+            </div>
+          </>
+        );
+
+      case "CCI": {
+        return (
+          <>
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showOffset={false}
+            />
+            <SmoothingSection
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+            />
+          </>
+        );
+      }
+      case "MOM": {
+        return (
+          <BaseSettings
+            currentConfig={currentConfig}
+            updateProperty={updateProperty}
+            showOffset={false}
+          />
+        );
+      }
+      case "ROC": {
+        return (
+          <BaseSettings
+            currentConfig={currentConfig}
+            updateProperty={updateProperty}
+            showOffset={false}
+          />
+        );
+      }
+      case "WPR": {
+        return (
+          <BaseSettings
+            currentConfig={currentConfig}
+            updateProperty={updateProperty}
+            showOffset={false}
+          />
+        );
+      }
+      case "UO":
+        return (
+          <>
+            <div className="mb-3">
+              <label className="form-label">Fast Length</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.fastLength}
+                onChange={(e) =>
+                  updateProperty("fastLength", Number(e.target.value))
+                }
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Middle Length</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.middleLength}
+                onChange={(e) =>
+                  updateProperty("middleLength", Number(e.target.value))
+                }
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Slow Length</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.slowLength}
+                onChange={(e) =>
+                  updateProperty("slowLength", Number(e.target.value))
+                }
+              />
+            </div>
+          </>
+        );
+
+      case "CMO": {
+        return (
+          <BaseSettings
+            currentConfig={currentConfig}
+            updateProperty={updateProperty}
+            showOffset={false}
+          />
+        );
+      }
+
+      case "TR": {
+        return (
+          <BaseSettings
+            currentConfig={currentConfig}
+            updateProperty={updateProperty}
+            showOffset={false}
+            showSource={false}
+          />
+        );
+      }
+      case "VWMA": {
+        return (
+          <BaseSettings
+            currentConfig={currentConfig}
+            updateProperty={updateProperty}
+          />
+        );
+      }
+      case "ATR":
+        return (
+          <>
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showOffset={false}
+              showSource={false}
+            />
+
+            <div className="mb-3">
+              <label className="form-label">Smoothing</label>
+              <select
+                className="form-control"
+                value={currentConfig.smoothing}
+                onChange={(e) => updateProperty("smoothing", e.target.value)}
+              >
+                <option value="RMA">RMA</option>
+                <option value="SMA">SMA</option>
+                <option value="EMA">EMA</option>
+                <option value="WMA">WMA</option>
+              </select>
+            </div>
+          </>
+        );
+
+
+      case "BB":
+        return (
+          <>
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+            />
+            <div className="mb-3">
+              <label className="form-label">Basic MA Type</label>
+              <select
+                className="form-control"
+                value={currentConfig.maType}
+                onChange={(e) => updateProperty("maType", e.target.value)}
+              >
+                <option value="SMA">SMA</option>
+                <option value="EMA">EMA</option>
+                <option value="SMMA">SMMA</option>
+                <option value="WMA">WMA</option>
+                <option value="VWMA">VWMA</option>
+              </select>
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Standard Deviation</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.stdDev}
+                onChange={(e) =>
+                  updateProperty("stdDev", Number(e.target.value))
+                }
+              />
+            </div>
+          </>
+        );
+
+         case "BBPERB":
+        return (
+          <>
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showOffset={false}
+            />
+            <div className="mb-3">
+              <label className="form-label">Standard Deviation</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig?.stdDev}
+                onChange={(e) =>
+                  updateProperty("stdDev", Number(e.target.value))
+                }
+              />
+            </div>
+          </>
+        );
+
+      case "BBW":
+        return (
+          <>
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showOffset={false}
+            />
+            <div className="mb-3">
+              <label className="form-label">Standard Deviation</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig?.stdDev}
+                onChange={(e) =>
+                  updateProperty("stdDev", Number(e.target.value))
+                }
+              />
+            </div>
+            <div className="mb-3">
+              <label className="form-label">Highest Expansion Length</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig?.highestExpansionLength}
+                onChange={(e) =>
+                  updateProperty(
+                    "highestExpansionLength",
+                    Number(e.target.value),
+                  )
+                }
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Lowest Contraction Length</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.lowestContractionLength}
+                onChange={(e) =>
+                  updateProperty(
+                    "lowestContractionLength",
+                    Number(e.target.value),
+                  )
+                }
+              />
+            </div>
+          </>
+        );
+
+      case "HV":
+        return (
+          <>
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showOffset={false}
+              showSource={false}
+            />
+          </>
+        );
+
+      case "KC":
+        return (
+          <>
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showOffset={false}
+            />
+            <div className="mb-3">
+              <label className="form-label">Multiplier</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.multiplier}
+                onChange={(e) =>
+                  updateProperty("multiplier", Number(e.target.value))
+                }
+              />
+            </div>
+
+            <div className="form-check mb-3">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                id="useEMA"
+                checked={currentConfig.useEMA}
+                onChange={(e) => updateProperty("useEMA", e.target.checked)}
+              />
+              <label className="form-check-label" htmlFor="useEMA">
+                Use Exponential MA
+              </label>
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Bands Style</label>
+              <select
+                className="form-control"
+                value={currentConfig.bandsStyle}
+                onChange={(e) => updateProperty("bandsStyle", e.target.value)}
+              >
+                <option value="Average True Range">Average True Range</option>
+                <option value="True Range">True Range</option>
+                <option value="Range">Range</option>
+              </select>
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">ATR Length</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.atrLength}
+                onChange={(e) =>
+                  updateProperty("atrLength", Number(e.target.value))
+                }
+              />
+            </div>
+          </>
+        );
+
+      case "DC":
+        return (
+          <>
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showSource={false}
+            />
+          </>
+        );
+      case "CHOP":
+        return (
+          <>
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showSource={false}
+            />
+          </>
+        );
+      case "STDDEV":
+        return (
+          <>
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showOffset={false}
+            />
+          </>
+        );
+
+      case "VOL":
+        return (
+          <>
+            <div className="mb-3">
+              <label className="form-label">MA Length</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.maLength}
+                onChange={(e) =>
+                  updateProperty("maLength", Number(e.target.value))
+                }
+              />
+            </div>
+          </>
+        );
+
+      case "OBV":
+        return (
+          <>
+            <SmoothingSection
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+            />
+          </>
+        );
+
+      case "PVO":
+        return (
+          <>
+            <Form.Group
+              as={Row}
+              className="mb-3 align-items-center"
+              controlId="fastLength"
+            >
+              <Form.Label style={labelStyle} className="mb-0">
+                Fast Length
+              </Form.Label>
+              <Col>
+                <Form.Control
+                  type="number"
+                  value={currentConfig.fastLength}
+                  onChange={(e) =>
+                    updateProperty("fastLength", Number(e.target.value))
+                  }
+                />
+              </Col>
+            </Form.Group>
+
+            {/* Slow Length */}
+            <Form.Group
+              as={Row}
+              className="mb-3 align-items-center"
+              controlId="slowLength"
+            >
+              <Form.Label style={labelStyle} className="mb-0">
+                Slow Length
+              </Form.Label>
+              <Col>
+                <Form.Control
+                  type="number"
+                  value={currentConfig.slowLength}
+                  onChange={(e) =>
+                    updateProperty("slowLength", Number(e.target.value))
+                  }
+                />
+              </Col>
+            </Form.Group>
+
+            {/* Signal Length */}
+            <Form.Group
+              as={Row}
+              className="mb-3 align-items-center"
+              controlId="signalLength"
+            >
+              <Form.Label style={labelStyle} className="mb-0">
+                Signal Length
+              </Form.Label>
+              <Col>
+                <Form.Control
+                  type="number"
+                  value={currentConfig.signalLength}
+                  onChange={(e) =>
+                    updateProperty("signalLength", Number(e.target.value))
+                  }
+                />
+              </Col>
+            </Form.Group>
+
+            {/* Oscillator MA Type */}
+            <Form.Group
+              as={Row}
+              className="mb-3 align-items-center"
+              controlId="oscMaType"
+            >
+              <Form.Label style={labelStyle} className="mb-0">
+                Oscillator MA Type
+              </Form.Label>
+              <Col>
+                <Form.Select
+                  value={currentConfig.oscMaType}
+                  onChange={(e) => updateProperty("oscMaType", e.target.value)}
+                >
+                  <option value="EMA">EMA</option>
+                  <option value="SMA">SMA</option>
+                </Form.Select>
+              </Col>
+            </Form.Group>
+
+            {/* Signal MA Type */}
+            <Form.Group
+              as={Row}
+              className="mb-3 align-items-center"
+              controlId="signalMaType"
+            >
+              <Form.Label style={labelStyle} className="mb-0">
+                Signal MA Type
+              </Form.Label>
+              <Col>
+                <Form.Select
+                  value={currentConfig.signalMaType}
+                  onChange={(e) =>
+                    updateProperty("signalMaType", e.target.value)
+                  }
+                >
+                  <option value="EMA">EMA</option>
+                  <option value="SMA">SMA</option>
+                </Form.Select>
+              </Col>
+            </Form.Group>
+          </>
+        );
+
+      case "Chaikin Money Flow":
+        return (
+          <>
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showOffset={false}
+              showSource={false}
+            />
+          </>
+        );
+
+      case "MFI":
+        return (
+          <>
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showOffset={false}
+              showSource={false}
+            />
+          </>
+        );
+
+      case "EOM":
+        return (
+          <>
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showOffset={false}
+              showSource={false}
+            />
+            <Form.Group
+              as={Row}
+              className="mb-3 align-items-center"
+              controlId="eomDivisor"
+            >
+              <Form.Label style={labelStyle} className="mb-0">
+                Divisor
+              </Form.Label>
+              <Col>
+                <Form.Control
+                  type="number"
+                  value={currentConfig.divisor}
+                  onChange={(e) =>
+                    updateProperty("divisor", Number(e.target.value))
+                  }
+                />
+              </Col>
+            </Form.Group>
+          </>
+        );
+
+      case "NVI":
+        return (
+          <>
+            <Form.Group
+              as={Row}
+              className="mb-3 align-items-center"
+              controlId="nviEmaLength"
+            >
+              <Form.Label style={labelStyle} className="mb-0">
+                EMA Length
+              </Form.Label>
+              <Col>
+                <Form.Control
+                  type="number"
+                  value={currentConfig.emaLength}
+                  onChange={(e) =>
+                    updateProperty("emaLength", Number(e.target.value))
+                  }
+                />
+              </Col>
+            </Form.Group>
+          </>
+        );
+
+      case "PVI":
+        return (
+          <>
+            <Form.Group
+              as={Row}
+              className="mb-3 align-items-center"
+              controlId="pviEmaLength"
+            >
+              <Form.Label style={labelStyle} className="mb-0">
+                EMA Length
+              </Form.Label>
+              <Col>
+                <Form.Control
+                  type="number"
+                  value={currentConfig.emaLength}
+                  onChange={(e) =>
+                    updateProperty("emaLength", Number(e.target.value))
+                  }
+                />
+              </Col>
+            </Form.Group>
+          </>
+        );
+
+      case "CKS":
+        return (
+          <>
+            {/* ATR Length */}
+            <Form.Group as={Row} className="mb-3 align-items-center">
+              <Form.Label style={labelStyle} className="mb-0">
+                ATR Length(p)
+              </Form.Label>
+              <Col>
+                <Form.Control
+                  type="number"
+                  value={currentConfig.atrLength}
+                  onChange={(e) =>
+                    updateProperty("atrLength", Number(e.target.value))
+                  }
+                />
+              </Col>
+            </Form.Group>
+
+            {/* ATR Multiplier */}
+            <Form.Group as={Row} className="mb-3 align-items-center">
+              <Form.Label style={labelStyle} className="mb-0">
+                ATR Coefficient(x)
+              </Form.Label>
+              <Col>
+                <Form.Control
+                  type="number"
+                  step="0.1"
+                  value={currentConfig.atrCoefficient}
+                  onChange={(e) =>
+                    updateProperty("atrCoefficient", Number(e.target.value))
+                  }
+                />
+              </Col>
+            </Form.Group>
+
+            {/* Stop Length */}
+            <Form.Group as={Row} className="mb-3 align-items-center">
+              <Form.Label style={labelStyle} className="mb-0">
+                Stop Length (q)
+              </Form.Label>
+              <Col>
+                <Form.Control
+                  type="number"
+                  value={currentConfig.stopLength}
+                  onChange={(e) =>
+                    updateProperty("stopLength", Number(e.target.value))
+                  }
+                />
+              </Col>
+            </Form.Group>
+          </>
+        );
+      case "CMF":
+        return (
+          <>
+            {/* Base Settings */}
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showOffset={false}
+              showSource={false}
+            />
+          </>
+        );
+      case "NVI":
+        return (
+          <>
+            <Form.Group as={Row} className="mb-3 align-items-center">
+              <Form.Label style={labelStyle} className="mb-0">
+                Signal EMA Length
+              </Form.Label>
+              <Col>
+                <Form.Control
+                  type="number"
+                  value={currentConfig.signal.length || 255} // default 255 agar undefined ho
+                  onChange={(e) =>
+                    updateProperty("signal.length", Number(e.target.value))
+                  }
+                />
+              </Col>
+            </Form.Group>
+          </>
+        );
+
+      case "VWAP":
+        return (
+          <>
+            {/* Hide VWAP */}
+            <Form.Group as={Row} className="mb-3 align-items-center">
+              <Form.Label style={labelStyle} className="mb-0">
+                Hide on 1D or Above
+              </Form.Label>
+              <Col>
+                <Form.Check
+                  type="checkbox"
+                  checked={currentConfig.hideOnDailyOrAbove}
+                  onChange={(e) =>
+                    updateProperty("hideOnDailyOrAbove", e.target.checked)
+                  }
+                />
+              </Col>
+            </Form.Group>
+
+            {/* Anchor Period */}
+            <Form.Group as={Row} className="mb-3 align-items-center">
+              <Form.Label style={labelStyle} className="mb-0">
+                Anchor Period
+              </Form.Label>
+              <Col>
+                <Form.Select
+                  value={currentConfig.anchorPeriod}
+                  onChange={(e) =>
+                    updateProperty("anchorPeriod", e.target.value)
+                  }
+                >
+                  <option>Daily</option>
+                  <option>Weekly</option>
+                  <option>Monthly</option>
+                  <option>Quarterly</option>
+                  <option>Yearly</option>
+                </Form.Select>
+              </Col>
+            </Form.Group>
+
+            <BaseSettings
+              currentConfig={currentConfig}
+              updateProperty={updateProperty}
+              showLength={false}
+            />
+
+            {/* ========================= */}
+            {/* Band Settings */}
+            {/* ========================= */}
+
+            <hr />
+            <h6 className="mb-3">Band Settings</h6>
+
+            {/* Band Calculation Mode */}
+            <Form.Group as={Row} className="mb-3 align-items-center">
+              <Form.Label style={labelStyle} className="mb-0">
+                Band Calculation Mode
+              </Form.Label>
+              <Col>
+                <Form.Select
+                  value={
+                    currentConfig.bandMode === "STD"
+                      ? "Standard Deviation"
+                      : "Percentage"
+                  }
+                  onChange={(e) =>
+                    updateProperty(
+                      "bandMode",
+                      e.target.value === "Standard Deviation"
+                        ? "STD"
+                        : "PERCENTAGE",
+                    )
+                  }
+                >
+                  <option>Standard Deviation</option>
+                  <option>Percentage</option>
+                </Form.Select>
+              </Col>
+            </Form.Group>
+
+            {/* Band Multiplier #1 */}
+            <Form.Group as={Row} className="mb-3 align-items-center">
+              <Form.Label style={labelStyle} className="mb-0">
+                Band Multiplier #1
+              </Form.Label>
+              <Col className="d-flex align-items-center gap-3">
+                <Form.Check
+                  type="checkbox"
+                  checked={currentConfig.band1.enabled}
+                  onChange={(e) =>
+                    updateNestedDoubleProperty(
+                      "band1",
+                      "enabled",
+                      e.target.checked,
+                    )
+                  }
+                />
+                <Form.Control
+                  type="number"
+                  disabled={!currentConfig.band1.enabled}
+                  style={{ maxWidth: "120px" }}
+                  value={currentConfig.band1.multiplier}
+                  onChange={(e) =>
+                    updateNestedDoubleProperty(
+                      "band1",
+                      "multiplier",
+                      Number(e.target.value),
+                    )
+                  }
+                />
+              </Col>
+            </Form.Group>
+
+            {/* Band Multiplier #2 */}
+            <Form.Group as={Row} className="mb-3 align-items-center">
+              <Form.Label style={labelStyle} className="mb-0">
+                Band Multiplier #2
+              </Form.Label>
+              <Col className="d-flex align-items-center gap-3">
+                <Form.Check
+                  type="checkbox"
+                  checked={currentConfig.band2.enabled}
+                  onChange={(e) =>
+                    updateNestedDoubleProperty(
+                      "band2",
+                      "enabled",
+                      e.target.checked,
+                    )
+                  }
+                />
+                <Form.Control
+                  type="number"
+                  disabled={!currentConfig.band2.enabled}
+                  style={{ maxWidth: "120px" }}
+                  value={currentConfig.band2.multiplier}
+                  onChange={(e) =>
+                    updateNestedDoubleProperty(
+                      "band2",
+                      "multiplier",
+                      Number(e.target.value),
+                    )
+                  }
+                />
+              </Col>
+            </Form.Group>
+
+            {/* Band Multiplier #3 */}
+            <Form.Group as={Row} className="mb-3 align-items-center">
+              <Form.Label style={labelStyle} className="mb-0">
+                Band Multiplier #3
+              </Form.Label>
+              <Col className="d-flex align-items-center gap-3">
+                <Form.Check
+                  type="checkbox"
+                  checked={currentConfig.band3.enabled}
+                  onChange={(e) =>
+                    updateNestedDoubleProperty(
+                      "band3",
+                      "enabled",
+                      e.target.checked,
+                    )
+                  }
+                />
+                <Form.Control
+                  type="number"
+                  disabled={!currentConfig.band3.enabled}
+                  style={{ maxWidth: "120px" }}
+                  value={currentConfig.band3.multiplier}
+                  onChange={(e) =>
+                    updateNestedDoubleProperty(
+                      "band3",
+                      "multiplier",
+                      Number(e.target.value),
+                    )
+                  }
+                />
+              </Col>
+            </Form.Group>
+          </>
+        );
+
+      case "ZIGZAG":
+        return (
+          <>
+            {/* Price Deviation */}
+            <div className="row mb-3 align-items-center">
+              <div className="col-6">
+                <label className="form-label">
+                  Price Deviation for Reversal (%)
+                </label>
+              </div>
+              <div className="col-6">
+                <input
+                  type="number"
+                  className="form-control"
+                  value={currentConfig.deviation}
+                  onChange={(e) =>
+                    updateProperty("deviation", Number(e.target.value))
+                  }
+                />
+              </div>
+            </div>
+
+            {/* Pivot Legs */}
+            <div className="row mb-3 align-items-center">
+              <div className="col-6">
+                <label className="form-label">Pivot Legs</label>
+              </div>
+              <div className="col-6">
+                <input
+                  type="number"
+                  className="form-control"
+                  value={currentConfig.depth}
+                  onChange={(e) =>
+                    updateProperty("depth", Number(e.target.value))
+                  }
+                />
+              </div>
+            </div>
+
+            {/* Extend to Last Bar */}
+            {/* <div className="form-check mb-2">
+              <input
+                type="checkbox"
+                className="form-check-input"
+                checked={currentConfig.extendToLastBar}
+                onChange={(e) =>
+                  updateProperty("extendToLastBar", e.target.checked)
+                }
+              />
+              <label className="form-check-label">Extend to Last Bar</label>
+            </div> */}
+
+            {/* Display Reversal Price */}
+            {/* <div className="form-check mb-2">
+              <input
+                type="checkbox"
+                className="form-check-input"
+                checked={currentConfig.displayReversalPrice}
+                onChange={(e) =>
+                  updateProperty("displayReversalPrice", e.target.checked)
+                }
+              />
+              <label className="form-check-label">Display Reversal Price</label>
+            </div> */}
+
+            {/* Display Cumulative Volume */}
+            {/* <div className="form-check mb-2">
+              <input
+                type="checkbox"
+                className="form-check-input"
+                checked={currentConfig.displayCumulativeVolume}
+                onChange={(e) =>
+                  updateProperty("displayCumulativeVolume", e.target.checked)
+                }
+              />
+              <label className="form-check-label">
+                Display Cumulative Volume
+              </label>
+            </div> */}
+
+            {/* Display Reversal Price Change Mode */}
+            {/* <div className="row mb-3 align-items-center">
+              <div className="col-6">
+                <label className="form-label">
+                  Display Reversal Price Change
+                </label>
+              </div>
+              <div className="col-6">
+                <select
+                  className="form-select"
+                  value={currentConfig?.reversalPriceChangeMode}
+                  onChange={(e) =>
+                    updateProperty("reversalPriceChangeMode", e.target.value)
+                  }
+                >
+                  <option value="absolute">Absolute</option>
+                  <option value="percent">Percent</option>
+                </select>
+              </div>
+            </div> */}
+          </>
+        );
+
+      default:
+        return <p className="text-muted text-center">No settings available</p>;
+    }
+  }
+
+  /* =========================
+     RETURN
+  ========================== */
+
+  return (
+    <Modal
+      show={indicatorProperty}
+      onHide={() => setIndicatorProperty(false)}
+      centered
+      contentClassName="border-0 shadow-lg"
+      style={{ borderRadius: 16 }}
+    >
+      <Modal.Header closeButton className="border-0 pb-0 px-4 pt-4">
+        <Modal.Title
+          style={{
+            fontSize: 17,
+            fontWeight: 700,
+            color: "#111827",
+            letterSpacing: "-0.2px",
+          }}
+        >
+          {activeBarIndicator}
+        </Modal.Title>
+      </Modal.Header>
+
+      <Modal.Body className="px-0 pt-0 pb-0">
+        <Tabs
+          defaultActiveKey="inputs"
+          className="px-4 mb-0"
+          style={{
+            borderBottom: "1.5px solid #f0f0f0",
+            gap: 4,
+          }}
+        >
+          {["inputs", "style", "visibility"].map(
+            (key) =>
+              // We still use Tab components, styling via CSS below
+              null,
+          )}
+
+          <Tab
+            eventKey="inputs"
+            title={
+              <span style={{ fontSize: 14, fontWeight: 600, padding: "0 2px" }}>
+                Inputs
+              </span>
+            }
+          >
+            <div className="px-4 py-3">{renderIndicatorSetting()}</div>
+          </Tab>
+
+          <Tab
+            eventKey="style"
+            title={
+              <span style={{ fontSize: 14, fontWeight: 600, padding: "0 2px" }}>
+                Style
+              </span>
+            }
+          >
+            <div className="px-4 py-3">
+              <IndicatorStyle
+                indicatorStyle={indicatorStyle}
+                setIndicatorStyle={setIndicatorStyle}
+                activeBarIndicator={activeBarIndicator}
+                indicatorConfigs={indicatorConfigs}
+              />
+            </div>
+          </Tab>
+        </Tabs>
+
+        {/* Inline style overrides for Bootstrap nav-tabs */}
+        <style>{`
+      .nav-tabs {
+        border-bottom: 1.5px solid #f0f0f0 !important;
+      }
+      .nav-tabs .nav-link {
+        border: none !important;
+        border-bottom: 2.5px solid transparent !important;
+        color: #9ca3af !important;
+        font-weight: 600 !important;
+        font-size: 14px !important;
+        padding: 10px 14px !important;
+        margin-bottom: -1.5px !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        transition: color 0.15s ease, border-color 0.15s ease !important;
+      }
+      .nav-tabs .nav-link:hover {
+        color: #374151 !important;
+        border-bottom-color: #d1d5db !important;
+      }
+      .nav-tabs .nav-link.active {
+        color: #111827 !important;
+        border-bottom: 2.5px solid #111827 !important;
+        background: transparent !important;
+      }
+      .tab-content {
+        border: none !important;
+      }
+    `}</style>
+      </Modal.Body>
+
+      <Modal.Footer className="border-0 px-4 pb-4 pt-2" style={{ gap: 8 }}>
+        <Button
+          variant="light"
+          onClick={handleCancel}
+          style={{
+            fontSize: 14,
+            fontWeight: 600,
+            borderRadius: 8,
+            padding: "8px 20px",
+            border: "1.5px solid #e5e7eb",
+            color: "#374151",
+            background: "#f9fafb",
+          }}
+        >
+          Cancel
+        </Button>
+
+        <Button
+          variant="dark"
+          onClick={handleIndicatorPropertyChange}
+          style={{
+            fontSize: 14,
+            fontWeight: 600,
+            borderRadius: 8,
+            padding: "8px 20px",
+            background: "#111827",
+            border: "none",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.18)",
+          }}
+        >
+          Ok
+        </Button>
+      </Modal.Footer>
+    </Modal>
   );
 }
