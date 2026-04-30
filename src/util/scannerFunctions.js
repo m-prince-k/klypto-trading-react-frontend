@@ -261,8 +261,6 @@ export function formatSmartDate(dateString) {
 }
 
 
-
-
 export function buildScanSlug(label, id) {
   const slug = (label || "scan")
     .toLowerCase()

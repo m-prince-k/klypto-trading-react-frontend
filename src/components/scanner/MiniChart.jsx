@@ -322,7 +322,7 @@ export default function MiniChart({
           {/* Expand */}
           <button
             onClick={() =>
-              navigate(`/chart?symbol=${activeSymbol}&tf=${timeframeValue}`)
+              navigate(`/candleStick?symbol=${activeSymbol}&tf=${timeframeValue}`)
             }
             style={{
               background: "#111827",

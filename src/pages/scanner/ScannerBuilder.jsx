@@ -75,14 +75,18 @@ export default function ScannerBuilder() {
   const userId = user?.id;
   // derive the scan id from URL if needed
   const editingScanId = scanSlug ? parseScanSlug(scanSlug).id : null;
+  const [editingScan, setEditingScan] = useState(null);
+
   useEffect(() => {
     if (!scanSlug || !scannerOptions.length) return;
 
-    const editScan = location.state?.editScan;
+    const editScanState = location.state?.editScan;
 
-    if (editScan) {
-      loadScanIntoBuilder(editScan);
-      toast.info(`Editing: ${editScan.label}`);
+    if (editScanState) {
+      setEditingScan(editScanState);
+      loadScanIntoBuilder(editScanState);
+      setRunScanTrigger((prev) => !prev);
+      toast.info(`Editing: ${editScanState.label || editScanState.name}`);
       return;
     }
 
@@ -94,17 +98,19 @@ export default function ScannerBuilder() {
           ? res.data
           : (res.data?.scans ?? []);
 
-        const scan = allScans.find((s) => s.id === editingScanId);
+        const scan = allScans.find((s) => String(s.id) === String(editingScanId));
 
         if (scan) {
+          setEditingScan(scan);
           loadScanIntoBuilder(scan);
-          toast.info(`Editing: ${scan.label}`);
+          setRunScanTrigger((prev) => !prev);
+          toast.info(`Editing: ${scan.label || scan.name}`);
         } else {
           toast.error("Scan not found");
         }
       })
       .catch(console.error);
-  }, [scannerOptions, scanSlug]);
+  }, [scannerOptions, scanSlug, userId, editingScanId, location.state?.editScan]);
 
   function mapConditionToRules(conditions = []) {
     return conditions.map((cond) => {
@@ -1214,9 +1220,12 @@ export default function ScannerBuilder() {
 
       <Navbar />
       <div className="bg-slate-50 py-5">
-        <h5 className=" fs-4  fw-semibold text-start px-4 text-dark">
-          Scanner
+        <h5 className=" fs-4  fw-semibold text-start px-4 text-dark mb-1">
+          {editingScan ? (editingScan.label || editingScan.name) : "Scanner"}
         </h5>
+        {editingScan?.description && (
+          <p className="px-4 text-muted text-left small mb-3">{editingScan.description}</p>
+        )}
 
         <Card className="border-0 shadow-none mx-4 my-1">
           <Card.Body className="d-flex flex-column gap-3">
@@ -1588,6 +1597,7 @@ export default function ScannerBuilder() {
             timeframeOptions={timeframeOptions}
             setRunScanTrigger={setRunScanTrigger}
             dataSource={dataSource}
+            editingScan={editingScan}
           />
         )}
       </div>
@@ -1613,11 +1623,11 @@ export default function ScannerBuilder() {
         />
       </div>
 
-      {/* {saveScan && ( */}
+      {saveScan && (
       <div ref={backtestRef}>
         <BacktestResults />
       </div>
-      {/* )} */}
+       )} 
 
       <Modal
         show={timeframePromptConfig.isOpen}

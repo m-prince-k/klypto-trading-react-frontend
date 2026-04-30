@@ -977,7 +977,7 @@ export default function IndicatorBuilderListing({
     >
       {/* Header */}
       <div className="d-flex align-items-center justify-content-between mb-4">
-        <h4 className="mb-0 fw-semibold text-dark">OHLCV Data</h4>
+        <h4 className="mb-0 fw-semibold text-dark">Currencies</h4>
 
         <div className="d-flex gap-2">
           <Button

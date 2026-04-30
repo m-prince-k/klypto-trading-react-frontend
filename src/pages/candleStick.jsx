@@ -14,7 +14,7 @@ import { RiResetRightLine } from "react-icons/ri";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { FaCode } from "react-icons/fa6";
 import ChartHeader from "../components/tradingModals/ChartHeader";
-
+import { useLocation } from "react-router-dom";
 import SEO from "../components/SEO";
 import {
   ChartProprties,
@@ -61,8 +61,15 @@ export default function Candlestick() {
   const mainChartHeightRef = useRef(500);
 
   const [openForm, setOpenForm] = useState(false);
-  const [timeframeValue, setTimeframeValue] = useState("1m");
-  const [selectedCurrency, setSelectedCurrency] = useState("BTCUSDT");
+  const params = new URLSearchParams(window.location.search);
+
+  const [selectedCurrency, setSelectedCurrency] = useState(
+    params.get("symbol") || "BTCUSDT",
+  );
+
+  const [timeframeValue, setTimeframeValue] = useState(
+    params.get("tf") || "1m",
+  );
   const [selectedIndicator, setSelectedIndicator] = useState([]);
   const [rangeValue, setRangeValue] = useState("1000");
   const [chartType, setChartType] = useState("candlestick");
@@ -80,13 +87,22 @@ export default function Candlestick() {
   const prevTimeframeRef = useRef(timeframeValue);
   const prevCurrencyRef = useRef(selectedCurrency);
 
-  const [rules, setRules] = useState([]);
-  const [finalRules, setFinalRules] = useState([]);
-  const [runScanTrigger, setRunScanTrigger] = useState(false);
-  const [listingTimeframe, setListingTimeframe] = useState("");
-  const [selectedCurrencies, setSelectedCurrencies] = useState([]);
-  const [logic, setLogic] = useState("OR");
-  const [scannerOptions, setScannerOptions] = useState([]);
+  const location = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+
+    const symbolFromUrl = params.get("symbol");
+    const tfFromUrl = params.get("tf");
+
+    if (symbolFromUrl) {
+      setSelectedCurrency(symbolFromUrl);
+    }
+
+    if (tfFromUrl) {
+      setTimeframeValue(tfFromUrl);
+    }
+  }, [location.search]);
 
   const [indicatorConfigs, setIndicatorConfigs] = useState(
     indicatorConfigDefault,

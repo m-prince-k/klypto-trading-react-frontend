@@ -27,6 +27,7 @@ export function IndicatorRuleModals({
   timeframeOptions,
   setRunScanTrigger,
   dataSource,
+  editingScan,
 }) {
   const renderContent = () => {
     switch (type) {
@@ -38,6 +39,7 @@ export function IndicatorRuleModals({
             finalRules={finalRules}
             setSaveScan={setSaveScan}
             dataSource={dataSource}
+            editingScan={editingScan}
             onSubmit={(data) => {
               console.log("SAVE SCAN:", data);
               closeModal();
@@ -113,15 +115,30 @@ function SaveScanContent({
   finalRules,
   setSaveScan,
   dataSource,
+  editingScan,
 }) {
   const [errors, setErrors] = useState({});
   const [scannerPayload, setscannerPayload] = useState("");
   const [form, setForm] = useState({
-    name: "",
-    description: "",
-    category: "",
+    name: editingScan?.label || editingScan?.name || "",
+    description: editingScan?.description || "",
+    category: editingScan?.categoryKey 
+          ? scanCategories.find(c => c.key === editingScan.categoryKey) 
+          : "",
   });
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (editingScan) {
+      setForm({
+        name: editingScan.label || editingScan.name || "",
+        description: editingScan.description || "",
+        category: editingScan.categoryKey 
+          ? scanCategories.find(c => c.key === editingScan.categoryKey) 
+          : "",
+      });
+    }
+  }, [editingScan]);
 
   const updateField = (key, value) => {
     setForm((prev) => ({
@@ -173,6 +190,10 @@ function SaveScanContent({
         categoryLabel: form?.category?.label,
       };
 
+      if (editingScan?.id) {
+        payload.id = editingScan.id;
+      }
+
       console.log(
         "finalRules being saved:",
         JSON.stringify(finalRules, null, 2),
@@ -193,7 +214,7 @@ function SaveScanContent({
         const savedScan = response.data; // make sure your API returns the saved scan with id
         const slug = buildScanSlug(form.name.trim(), savedScan.id);
 
-        toast.success("Scanner saved successfully ✅");
+        // toast.success(editingScan ? "Scanner updated successfully ✅" : "Scanner saved successfully ✅");
         closeModal();
 
         navigate(`/scannerBuilder/${slug}`, {
