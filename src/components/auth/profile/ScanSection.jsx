@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Container, Row, Col, Card, Spinner, Alert } from "react-bootstrap";
+import { Container, Row, Col, Card, Alert } from "react-bootstrap";
 import { Plus, ScanSearch, Tags } from "lucide-react";
 import ScanTable from "./ScanTable";
+import { Spinner } from "../../tradingModals/Spinner";
 import apiService from "../../../services/apiServices";
 import { buildScanSlug, formatSmartDate } from "../../../util/scannerFunctions";
-import { AlertDeleteModal } from "../../scanner/ScannerModals";
+import { AlertDeleteModal, ShareModal } from "../../scanner/ScannerModals";
 import { Link, useNavigate } from "react-router-dom";
 
 const getUser = () => {
@@ -23,6 +24,9 @@ export default function ScansSection() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedScan, setSelectedScan] = useState(null);
   const navigate = useNavigate();
+
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareLink, setShareLink] = useState("");
 
   const user = getUser();
   const userId = user?.id;
@@ -71,7 +75,7 @@ export default function ScansSection() {
   if (loading) {
     return (
       <div className="text-center py-5">
-        {/* <Spinner animation="border" /> */}
+        <Spinner />
       </div>
     );
   }
@@ -96,6 +100,14 @@ export default function ScansSection() {
           <Plus size={14} className="me-1" />
           Create a Scanner
         </Link>
+      </Container>
+    );
+  }
+
+  if (error && scans.length === 0) {
+    return (
+      <Container className="py-5 text-center">
+        <Alert variant="info">No saved scans found.</Alert>
       </Container>
     );
   }
@@ -303,11 +315,18 @@ export default function ScansSection() {
       {!error && (
         <ScanTable
           scans={filtered}
-          onShare={(s) => console.log("share", s)}
+          onShare={(scan) => {
+            const slug = buildScanSlug(scan.label, scan.id);
+
+            const link = `${window.location.origin}/scannerBuilder/${slug}`;
+
+            setShareLink(link);
+            setShowShareModal(true);
+          }}
           onEdit={(scan) => {
-    const slug = buildScanSlug(scan.label, scan.id);
-    navigate(`/scannerBuilder/${slug}`, { state: { editScan: scan } });
-  }}
+            const slug = buildScanSlug(scan.label, scan.id);
+            navigate(`/scannerBuilder/${slug}`, { state: { editScan: scan } });
+          }}
           onDelete={(scan) => {
             setSelectedScan(scan);
             setShowDeleteModal(true);
@@ -323,6 +342,11 @@ export default function ScansSection() {
           setSelectedScan(null);
         }}
         onConfirm={handleConfirmDelete}
+      />
+      <ShareModal
+        isOpen={showShareModal}
+        link={shareLink}
+        onClose={() => setShowShareModal(false)}
       />
     </Container>
   );

@@ -265,8 +265,8 @@ export default function ScanTable({ scans = [], onShare, onEdit, onDelete }) {
                         maxWidth: "100%",
                       }}
                     >
-                      {(buildCondition(scan.condition) || "-")
-                        .split(" AND ")
+                      {(buildCondition({ rules: scan.condition }) || "-")
+                        .split(/\sAND\s/)
                         .map((part, i) => (
                           <span
                             key={i}

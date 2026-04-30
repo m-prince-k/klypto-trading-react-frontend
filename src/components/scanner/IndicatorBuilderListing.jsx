@@ -174,10 +174,8 @@ export default function IndicatorBuilderListing({
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
-      
     };
   }, []);
-
 
   const hasData = normalizeData(dataSource).length > 0;
   // ✅ Tracks whether the user manually picked a TF from dropdown 1
@@ -246,24 +244,6 @@ export default function IndicatorBuilderListing({
             seconds: 2592000, // approx 30 days
           },
         ],
-
-        // quarter: [
-        //   ...(data.quarter || []),
-        //   {
-        //     label: "1 quarter",
-        //     value: "1q",
-        //     seconds: 7776000, // 90 days
-        //   },
-        // ],
-
-        // year: [
-        //   ...(data.year || []),
-        //   {
-        //     label: "1 year",
-        //     value: "1y",
-        //     seconds: 31536000, // 365 days
-        //   },
-        // ],
       };
 
       setFetchTimeframe(extendedData);
@@ -307,9 +287,6 @@ export default function IndicatorBuilderListing({
   const normalizeTfForDropdown = (tf) => {
     if (!tf) return "";
     const lower = tf.toLowerCase();
-    //
-    // if (lower === "90d" || lower === "1q") return "1q";
-    // if (lower === "365d" || lower === "1y") return "1y";
 
     if (lower.includes("_ago")) {
       // if (/y|yr|year/i.test(lower)) return "1y";
@@ -671,18 +648,13 @@ export default function IndicatorBuilderListing({
 
       let apiInterval = timeframeValue;
 
-      // if (apiInterval === "1q" || apiInterval === "90d") {
-      //   apiInterval = "1d";
-      // } else if (apiInterval === "1y" || apiInterval === "365d") {
-      //   apiInterval = "1d";
-      // }
       if (apiInterval === "1M" || apiInterval === "30d") {
         apiInterval = "1M";
       } else if (apiInterval === "1w" || apiInterval === "7d") {
         apiInterval = "1w";
       }
 
-      console.log(rules, "------rules");
+      // console.log(rules, "------rules");
 
       if (!totalDays || !timeframeValue) return;
 
@@ -700,13 +672,12 @@ export default function IndicatorBuilderListing({
         rules: cleanRules,
         logic,
       };
-      setFinalRules(cleanRules);
 
       const { data: result = {} } = await apiService.post(
         `/api/scannerDetail?interval=${apiInterval}&limit=${totalDays}`,
         payload,
       );
-
+      setFinalRules(cleanRules);
       setDataSource(result);
 
       const isEmpty =
@@ -1560,35 +1531,52 @@ export default function IndicatorBuilderListing({
             </div>
 
             <div
-              className="d-flex align-items-center gap-2 px-3 py-1.5"
+              className="d-flex align-items-center justify-content-end gap-3 px-3"
               style={{
-                background: "#f8fafc",
-                border: "1px solid #e5e7eb",
-                borderRadius: 5,
+                userSelect: "none",
               }}
             >
-              {/* LABEL (LEFT) */}
               <span
                 style={{
-                  fontSize: "0.85rem",
+                  fontSize: "0.875rem",
                   fontWeight: 500,
                   color: "#374151",
                   userSelect: "none",
+                  whiteSpace: "nowrap",
                 }}
               >
                 Show Chart Preview
               </span>
 
-              {/* SWITCH (RIGHT) */}
+              <style>{`
+    #chart-preview-toggle {
+      width: 2.8rem;
+      height: 1.5rem;
+      cursor: pointer;
+    }
+    #chart-preview-toggle .form-check-input {
+      width: 2.8rem;
+      height: 1.5rem;
+      cursor: pointer;
+      margin-top: 0;
+    }
+    #chart-preview-toggle .form-check-input:checked {
+      background-color: #185FA5;
+      border-color: #185FA5;
+    }
+    #chart-preview-toggle .form-check-input:focus {
+      box-shadow: 0 0 0 3px rgba(24, 95, 165, 0.2);
+      border-color: #185FA5;
+    }
+  `}</style>
+
               <Form.Check
                 type="switch"
                 id="chart-preview-toggle"
                 checked={showPreview}
                 onChange={(e) => setShowPreview(e.target.checked)}
-                className="ms-2"
-                style={{
-                  transform: "scale(1.1)", // slightly bigger
-                }}
+                className="mb-1"
+                style={{ transform: "scale(1.25)", transformOrigin: "center" }}
               />
             </div>
           </div>

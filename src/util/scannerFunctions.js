@@ -90,57 +90,6 @@ const OPERATOR_LABELS = {
 
 /* ================= PARSER ================= */
 
-// export function parseObject(obj) {
-//   if (!obj) return "";
-
-//   // ✅ number
-//   if (obj.indicator === "number") {
-//     return obj.value;
-//   }
-
-//   // ✅ string
-//   if (typeof obj === "string") return obj;
-
-//   if (!obj.indicator) return "";
-
-//   // 🔥 extract length + source (NEW STRUCTURE)
-//   let length = "";
-//   let source = "";
-
-//   if (typeof obj.length === "object") {
-//     length = obj.length?.length;
-//     source = obj.length?.source;
-//   } else {
-//     length = obj.length;
-//   }
-
-//   // fallback (older structure)
-//   if (!source && obj.source) {
-//     source = obj.source;
-//   }
-
-//   const params = [];
-
-//   if (source) params.push(source);
-//   if (length) params.push(length);
-
-//   const tfMap = {
-//     "1d": "daily",
-//     "1w": "weekly",
-//     "1M": "monthly",
-//     "30d": "monthly",
-//     "90d": "quarterly",
-//     "365d": "yearly",
-//   };
-
-//   const tf = tfMap[obj.timeframe] || obj.timeframe || "";
-
-//   return `${tf ? tf + " " : ""}${obj.indicator.toUpperCase()}(${params.join(", ")})`
-//     .replace(/\(\)/, "")
-//     .replace(/\s+/g, " ")
-//     .trim();
-// }
-
 function parseObject(obj) {
   console.log("parseObject input:", obj);
 
@@ -179,12 +128,15 @@ function parseObject(obj) {
       if (typeof length === "number") {
         lengthStr = `(${length})`;
       } else if (typeof length === "object") {
-        // ichimoku case
-        const values = Object.values(length).join(", ");
-        lengthStr = `(${values})`;
-      }
+  const parts = [];
 
-      const final = `${tfLabel} ${indicator}${lengthStr}`.trim();
+  if (length.length) parts.push(length.length);
+  if (length.source) parts.push(length.source);
+
+  lengthStr = parts.length ? `(${parts.join(", ")})` : "";
+}
+
+      const final = `${tfLabel} ${indicator.toUpperCase()} ${lengthStr}`.trim();
       console.log("formatted indicator:", final);
 
       return final;
@@ -258,32 +210,7 @@ export function buildCondition(payload) {
 
   return toTitleCase(result);
 }
-// export function buildCondition(payload) {
-//   if (!payload?.rules?.length) return "";
 
-//   const result = payload.rules
-//     .map((rule) => {
-//       const left = parseObject(rule.object1);
-//       const op1 = OPERATOR_LABELS[rule.operator1] || rule.operator1;
-//       const right = parseObject(rule.object2);
-
-//       let expression = `${left} ${op1} ${right}`;
-
-//       // 🔥 handle chaining
-//       if (rule.operator2 && rule.object3) {
-//         expression += ` ${rule.operator2} ${parseObject(rule.object3)}`;
-//       }
-
-//       if (rule.operator3 && rule.object4) {
-//         expression += ` ${rule.operator3} ${parseObject(rule.object4)}`;
-//       }
-
-//       return expression;
-//     })
-//     .join(" AND ");
-
-//   return toTitleCase(result); // ✅ apply here
-// }
 function toTitleCase(str) {
   return str
     .toLowerCase()

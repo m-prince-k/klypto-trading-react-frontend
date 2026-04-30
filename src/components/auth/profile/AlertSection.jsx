@@ -3,11 +3,11 @@ import {
   Container,
   Row,
   Col,
-  Spinner,
   Alert,
 } from "react-bootstrap";
 import { Plus } from "lucide-react";
 import AlertTable from "./AlertTable";
+import { Spinner } from "../../tradingModals/Spinner";
 import apiService from "../../../services/apiServices";
 import { formatSmartDate } from "../../../util/scannerFunctions";
 import { AlertDeleteModal } from "../../scanner/ScannerModals";
@@ -87,10 +87,17 @@ export default function AlertSection() {
   if (loading) {
     return (
       <div className="text-center py-5">
-        {/* <Spinner animation="border" /> */}
+        <Spinner />
       </div>
     );
   }
+  if (error && alerts.length === 0) {
+      return (
+        <Container className="py-5 text-center">
+          <Alert variant="info">No saved alerts found.</Alert>
+        </Container>
+      );
+    }
 
   if (!loading && !error && alerts.length === 0) {
     return (
