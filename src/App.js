@@ -14,6 +14,8 @@ import Home from "./pages/Home";
 import ScannerBuilder from "./pages/scanner/ScannerBuilder";
 import CustomIndicator from "./pages/customIndicator/CustomIndicator";
 import Profile from "./pages/auth/Profile";
+import StrategyCanvas from "./pages/stretegy-builder/components/builder/StrategyCanvas";
+
 
 function App() {
   return (
@@ -48,10 +50,13 @@ function App() {
           <Route
             path="/customIndicator"
             element={
-              <ProtectedRoute>
                 <CustomIndicator />
-              </ProtectedRoute>
             }
+          />
+
+           <Route
+            path="/stretegy-builder"
+           element={< StrategyCanvas/>}
           />
 
           {/* <Route path="/" element={<Form />} /> */}

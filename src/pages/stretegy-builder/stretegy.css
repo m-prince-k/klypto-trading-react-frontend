@@ -1,0 +1,106 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 230 25% 7%;
+    --foreground: 210 40% 98%;
+
+    --card: 230 22% 10%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 230 25% 9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 152 76% 50%;
+    --primary-foreground: 230 25% 7%;
+    --primary-glow: 152 90% 60%;
+
+    --secondary: 230 18% 16%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 230 18% 14%;
+    --muted-foreground: 220 12% 60%;
+
+    --accent: 265 85% 65%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 230 18% 18%;
+    --input: 230 18% 18%;
+    --ring: 152 76% 50%;
+
+    --radius: 0.75rem;
+
+    /* Node category / stage colors */
+    --node-source: 200 95% 55%;     /* blue */
+    --node-transform: 152 76% 50%;  /* green */
+    --node-operator: 35 95% 60%;    /* orange */
+    --node-derived: 265 85% 65%;    /* purple */
+    --node-classifier: 320 80% 65%; /* pink */
+    --node-rule: 45 95% 55%;        /* gold */
+    --node-logic: 280 70% 60%;      /* violet */
+    --node-signal: 142 76% 45%;     /* emerald */
+    --node-output: 12 85% 60%;      /* coral */
+
+    --gradient-bg: radial-gradient(ellipse at top, hsl(230 30% 12%), hsl(230 25% 6%));
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --shadow-node: 0 8px 24px -8px hsl(0 0% 0% / 0.5), 0 0 0 1px hsl(var(--border));
+    --shadow-glow: 0 0 32px -4px hsl(var(--primary) / 0.4);
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--gradient-bg);
+    background-attachment: fixed;
+  }
+}
+
+/* React Flow overrides */
+.react-flow__background { background: transparent; }
+.react-flow__edge-path {
+  stroke: hsl(var(--primary) / 0.6);
+  stroke-width: 2;
+}
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: hsl(var(--primary));
+  stroke-width: 3;
+}
+.react-flow__handle {
+  width: 10px;
+  height: 10px;
+  background: hsl(var(--background));
+  border: 2px solid hsl(var(--primary));
+}
+.react-flow__handle:hover {
+  background: hsl(var(--primary));
+  box-shadow: 0 0 0 4px hsl(var(--primary) / 0.2);
+}
+.react-flow__controls {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.react-flow__controls-button {
+  background: hsl(var(--card));
+  border-bottom: 1px solid hsl(var(--border));
+  color: hsl(var(--foreground));
+}
+.react-flow__controls-button:hover {
+  background: hsl(var(--secondary));
+}
+.react-flow__controls-button svg { fill: currentColor; }
+.react-flow__minimap {
+  background: hsl(var(--card)) !important;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+}
+.react-flow__attribution { display: none; }
