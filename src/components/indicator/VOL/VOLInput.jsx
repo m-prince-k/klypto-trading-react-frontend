@@ -1,7 +1,9 @@
 export default function VOLInput(
   response,
   indicatorSeriesRef,
-  latestIndicatorValuesRef
+  latestIndicatorValuesRef,
+  maType,
+  indicator
 ) {
   const rows = Array.isArray(response?.data) ? response.data : [];
 
@@ -18,7 +20,7 @@ export default function VOLInput(
       value: Number(d.volumeMA),
     }));
 
-  const series = indicatorSeriesRef.current?.VOL;
+  const series = indicatorSeriesRef.current?.[indicator];
   if (!series) return; // series not yet created by VOLPlot
 
   // ---------- UPDATE EXISTING SERIES ----------
@@ -29,7 +31,7 @@ export default function VOLInput(
   series.rawData = volumeData;
 
   // ---------- UPDATE LATEST VALUES ----------
-  latestIndicatorValuesRef.current.VOL = {
+  latestIndicatorValuesRef.current[indicator] = {
     volume: volumeData[volumeData.length - 1]?.value ?? null,
     volumeMA: volumeMAData[volumeMAData.length - 1]?.value ?? null,
   };

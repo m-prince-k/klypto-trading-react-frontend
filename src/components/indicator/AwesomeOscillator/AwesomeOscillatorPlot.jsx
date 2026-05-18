@@ -2,11 +2,13 @@ import { useEffect } from "react";
 import { HistogramSeries } from "lightweight-charts";
 
 export default function AWOPlot({
+  indicator,
   result,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
-  chart, // chart reference to attach series to bottom pane
+  chart,
+  // chart reference to attach series to bottom pane
 }) {
   useEffect(() => {
     if (!result?.data) return;
@@ -16,22 +18,22 @@ export default function AWOPlot({
     if (!Array.isArray(awo) || awo.length === 0) return;
 
     // ---------- REMOVE OLD SERIES ----------
-    if (indicatorSeriesRef.current?.AWO) {
-      Object.values(indicatorSeriesRef.current.AWO).forEach((s) => {
+    if (indicatorSeriesRef.current?.[indicator]) {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         try {
           s?.setData?.([]);
         } catch {}
       });
-      indicatorSeriesRef.current.AWO = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const groupedSeries = {};
 
     // ---------- AWO HISTOGRAM ----------
-    const style = indicatorStyle?.AWO?.awoBars || {};
+    const style = indicatorStyle?.[indicator]?.awoBars || {};
     const palette = style?.palette || { up: "rgba(38,166,154,0.6)", down: "rgba(239,83,80,0.6)" };
 
-    const histSeries = addSeries("AWO", HistogramSeries, {
+    const histSeries = addSeries(indicator, HistogramSeries, {
       priceLineVisible: false,
       visible: style?.visible ?? true,
       priceScaleId: "pane_awo", // attach to bottom pane, create pane with this ID
@@ -48,18 +50,18 @@ export default function AWOPlot({
     groupedSeries.hist = histSeries;
     groupedSeries.rawData = awo;
 
-    indicatorSeriesRef.current.AWO = groupedSeries;
+    indicatorSeriesRef.current[indicator] = groupedSeries;
   }, [result]);
 
   // ---------- STYLE / PALETTE UPDATE ----------
   useEffect(() => {
-    const g = indicatorSeriesRef.current?.AWO;
+    const g = indicatorSeriesRef.current?.[indicator];
     if (!g) return;
 
     const awo = g.rawData;
     if (!awo) return;
 
-    const style = indicatorStyle?.AWO?.awoBars || {};
+    const style = indicatorStyle?.[indicator]?.awoBars || {};
     const palette = style?.palette || { up: "rgba(38,166,154,0.6)", down: "rgba(239,83,80,0.6)" };
     const visible = style?.visible ?? true;
 
@@ -71,7 +73,7 @@ export default function AWOPlot({
 
     g.hist?.applyOptions({ visible });
     g.hist?.setData(recolored);
-  }, [indicatorStyle?.AWO?.awoBars?.palette?.up, indicatorStyle?.AWO?.awoBars?.palette?.down, indicatorStyle?.AWO?.awoBars?.visible]);
+  }, [indicatorStyle?.[indicator]?.awoBars?.palette?.up, indicatorStyle?.[indicator]?.awoBars?.palette?.down, indicatorStyle?.[indicator]?.awoBars?.visible]);
 
   return null;
 }

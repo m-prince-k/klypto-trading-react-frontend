@@ -2,10 +2,12 @@ import { useEffect } from "react";
 import { LineSeries } from "lightweight-charts";
 
 export default function CKSPlot({
+  indicator,
   result,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
+  chart
 }) {
 
   /* ================= CREATE CKS ================= */
@@ -21,25 +23,26 @@ export default function CKSPlot({
 
     /* 🔥 REMOVE OLD CKS */
 
-    if (indicatorSeriesRef.current?.CKS) {
-      Object.values(indicatorSeriesRef.current.CKS).forEach((s) => {
+    if (indicatorSeriesRef.current?.[indicator]) {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         if (s?.setData) {
           try {
             s.setData([]);
+            try { chart.removeSeries(s); } catch {}
           } catch {}
         }
       });
-      indicatorSeriesRef.current.CKS = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const groupedSeries = {};
 
-    const longStyle = indicatorStyle?.CKS?.long;
-    const shortStyle = indicatorStyle?.CKS?.short;
+    const longStyle = indicatorStyle?.[indicator]?.long;
+    const shortStyle = indicatorStyle?.[indicator]?.short;
 
     /* 🔵 LONG SERIES */
 
-    const longSeries = addSeries("CKS", LineSeries, {
+    const longSeries = addSeries(indicator, LineSeries, {
       color: longStyle?.color || "#26a69a",
       lineWidth: longStyle?.width || 2,
       lineStyle: longStyle?.lineStyle ?? 0,
@@ -55,7 +58,7 @@ export default function CKSPlot({
 
     /* 🔴 SHORT SERIES */
 
-    const shortSeries = addSeries("CKS", LineSeries, {
+    const shortSeries = addSeries(indicator, LineSeries, {
       color: shortStyle?.color || "#ef5350",
       lineWidth: shortStyle?.width || 2,
       lineStyle: shortStyle?.lineStyle ?? 0,
@@ -69,7 +72,7 @@ export default function CKSPlot({
       groupedSeries.short = shortSeries;
     }
 
-    indicatorSeriesRef.current.CKS = groupedSeries;
+    indicatorSeriesRef.current[indicator] = groupedSeries;
 
   }, [result]);
 
@@ -77,11 +80,11 @@ export default function CKSPlot({
   /* ================= STYLE UPDATE ================= */
 
   useEffect(() => {
-    const cksGroup = indicatorSeriesRef.current?.CKS;
+    const cksGroup = indicatorSeriesRef.current?.[indicator];
     if (!cksGroup) return;
 
-    const longStyle = indicatorStyle?.CKS?.long;
-    const shortStyle = indicatorStyle?.CKS?.short;
+    const longStyle = indicatorStyle?.[indicator]?.long;
+    const shortStyle = indicatorStyle?.[indicator]?.short;
 
     /* 🔵 UPDATE LONG */
 

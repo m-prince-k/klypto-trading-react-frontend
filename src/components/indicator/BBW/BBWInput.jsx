@@ -1,10 +1,12 @@
 export default function BBWInput(
   response,
   indicatorSeriesRef,
-  latestIndicatorValuesRef
+  latestIndicatorValuesRef,
+  maType,
+  indicator
 ) {
 
-  const group = indicatorSeriesRef.current?.BBW;
+  const group = indicatorSeriesRef.current?.[indicator];
   if (!group) return;
 
   const bbwData =
@@ -17,7 +19,7 @@ export default function BBWInput(
 
   group.bbwLine?.setData(bbwData);
 
-  latestIndicatorValuesRef.current.BBW = {
+  latestIndicatorValuesRef.current[indicator] = {
     bbw: bbwData[bbwData.length - 1]?.value ?? null,
   };
 }

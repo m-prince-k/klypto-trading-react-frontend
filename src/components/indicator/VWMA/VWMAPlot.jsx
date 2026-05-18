@@ -2,10 +2,12 @@ import { useEffect } from "react";
 import { LineSeries } from "lightweight-charts";
 
 export default function VWMAPlot({
+  indicator,
   result,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
+  chart
 }) {
 
   /* ================= CREATE ================= */
@@ -20,26 +22,27 @@ export default function VWMAPlot({
     }
 
     // 🔥 REMOVE OLD
-    if (indicatorSeriesRef.current?.VWMA) {
-      Object.values(indicatorSeriesRef.current.VWMA).forEach((s) => {
-        try { s.setData([]); } catch {}
+    if (indicatorSeriesRef.current?.[indicator]) {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
+        try { s.setData([]);
+            try { chart.removeSeries(s); } catch {} } catch {}
       });
-      indicatorSeriesRef.current.VWMA = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     /* 🔵 VWMA LINE */
-    const vwmaSeries = addSeries("VWMA", LineSeries, {
-      color: indicatorStyle?.VWMA?.vwmaLine?.color ?? "rgba(33,150,243,1)",
-      lineWidth: indicatorStyle?.VWMA?.vwmaLine?.width ?? 2,
-      lineStyle: indicatorStyle?.VWMA?.vwmaLine?.lineStyle ?? 0,
-      visible: indicatorStyle?.VWMA?.vwmaLine?.visible ?? true,
+    const vwmaSeries = addSeries(indicator, LineSeries, {
+      color: indicatorStyle?.[indicator]?.vwmaLine?.color ?? "rgba(33,150,243,1)",
+      lineWidth: indicatorStyle?.[indicator]?.vwmaLine?.width ?? 2,
+      lineStyle: indicatorStyle?.[indicator]?.vwmaLine?.lineStyle ?? 0,
+      visible: indicatorStyle?.[indicator]?.vwmaLine?.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: true,
     });
 
     vwmaSeries.setData(vwma);
 
-    indicatorSeriesRef.current.VWMA = {
+    indicatorSeriesRef.current[indicator] = {
       vwmaLine: vwmaSeries,
     };
 
@@ -52,17 +55,17 @@ export default function VWMAPlot({
 
   useEffect(() => {
 
-    const group = indicatorSeriesRef.current?.VWMA;
+    const group = indicatorSeriesRef.current?.[indicator];
     if (!group) return;
 
     group.vwmaLine?.applyOptions({
-      color: indicatorStyle?.VWMA?.vwmaLine?.color,
-      lineWidth: indicatorStyle?.VWMA?.vwmaLine?.width,
-      lineStyle: indicatorStyle?.VWMA?.vwmaLine?.lineStyle ?? 0,
-      visible: indicatorStyle?.VWMA?.vwmaLine?.visible,
+      color: indicatorStyle?.[indicator]?.vwmaLine?.color,
+      lineWidth: indicatorStyle?.[indicator]?.vwmaLine?.width,
+      lineStyle: indicatorStyle?.[indicator]?.vwmaLine?.lineStyle ?? 0,
+      visible: indicatorStyle?.[indicator]?.vwmaLine?.visible,
     });
 
-  }, [indicatorStyle?.VWMA]);
+  }, [indicatorStyle?.[indicator]]);
 
   return null;
 }

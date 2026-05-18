@@ -2,11 +2,13 @@ import { useEffect } from "react";
 import { LineSeries } from "lightweight-charts";
 
 export default function KAMAPlot({
+  indicator,
   result,
   rows,
   indicatorStyle,
   indicatorSeriesRef,
-  addSeries
+  addSeries,
+  chart
 }) {
 
   /* ================= CREATE KAMA ================= */
@@ -15,15 +17,16 @@ export default function KAMAPlot({
 
     if (!result) return;
 
-    if (indicatorSeriesRef.current?.KAMA) {
+    if (indicatorSeriesRef.current?.[indicator]) {
 
-      Object.values(indicatorSeriesRef.current.KAMA).forEach((s) => {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         if (s?.setData) {
-          try { s.setData([]); } catch {}
+          try { s.setData([]);
+            try { chart.removeSeries(s); } catch {} } catch {}
         }
       });
 
-      indicatorSeriesRef.current.KAMA = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const groupedSeries = {};
@@ -31,9 +34,9 @@ export default function KAMAPlot({
     Object.entries(result.data).forEach(([lineName, lineData]) => {
 
       const rowConfig = rows?.find((r) => r.key === lineName);
-      const styleConfig = indicatorStyle?.KAMA?.[lineName];
+      const styleConfig = indicatorStyle?.[indicator]?.[lineName];
 
-      const series = addSeries("KAMA", LineSeries, {
+      const series = addSeries(indicator, LineSeries, {
         color: styleConfig?.color || rowConfig?.color || "#03a9f4",
         lineWidth: styleConfig?.width || 2,
         visible: styleConfig?.visible ?? true,
@@ -48,7 +51,7 @@ export default function KAMAPlot({
       groupedSeries[lineName] = series;
     });
 
-    indicatorSeriesRef.current.KAMA = groupedSeries;
+    indicatorSeriesRef.current[indicator] = groupedSeries;
 
   }, [result]);
 
@@ -58,10 +61,10 @@ export default function KAMAPlot({
 
   useEffect(() => {
 
-    const kamaGroup = indicatorSeriesRef.current?.KAMA;
+    const kamaGroup = indicatorSeriesRef.current?.[indicator];
     if (!kamaGroup) return;
 
-    const style = indicatorStyle?.KAMA?.kama;
+    const style = indicatorStyle?.[indicator]?.kama;
 
     if (kamaGroup.kama) {
       kamaGroup.kama.applyOptions({

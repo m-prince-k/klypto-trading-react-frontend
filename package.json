@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@tailwindcss/postcss": "^4.1.18",
     "@tailwindcss/vite": "^4.1.18",
@@ -12,6 +13,7 @@
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.13.4",
     "bootstrap": "^5.3.8",
+    "class-variance-authority": "^0.7.1",
     "flowbite": "^4.0.1",
     "html2canvas": "^1.4.1",
     "lightweight-charts": "^5.1.0",
@@ -29,7 +31,10 @@
     "react-select": "^5.10.2",
     "react-snap": "^1.23.0",
     "react-toastify": "^11.0.5",
+    "reactflow": "^11.11.4",
     "recharts": "^3.8.1",
+    "sonner": "^1.7.4",
+    "tailwind-merge": "^3.5.0",
     "web-vitals": "^2.1.4",
     "xlsx": "^0.18.5"
   },

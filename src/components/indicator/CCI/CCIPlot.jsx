@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { LineSeries, BaselineSeries } from "lightweight-charts";
 
 export default function CCIPlot({
+  indicator,
   result,
   rows,
   indicatorStyle,
@@ -9,7 +10,7 @@ export default function CCIPlot({
   addSeries,
   chart,
   containerRef,
-  pane,
+  pane
 }) {
 
   const cloudCanvasRef = useRef(null);
@@ -21,31 +22,32 @@ export default function CCIPlot({
 
     if (!result) return;
 
-    if (indicatorSeriesRef.current?.CCI) {
-      Object.values(indicatorSeriesRef.current.CCI).forEach((s) => {
+    if (indicatorSeriesRef.current?.[indicator]) {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         if (s?.setData) {
-          try { s.setData([]); } catch {}
+          try { s.setData([]);
+            try { chart.removeSeries(s); } catch {} } catch {}
         }
       });
-      indicatorSeriesRef.current.CCI = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const groupedSeries = {};
     let cciData = [];
 
-    const upper = indicatorStyle?.CCI?.upperBand?.value ?? 100;
-    const middle = indicatorStyle?.CCI?.middleBand?.value ?? 0;
-    const lower = indicatorStyle?.CCI?.lowerBand?.value ?? -100;
+    const upper = indicatorStyle?.[indicator]?.upperBand?.value ?? 100;
+    const middle = indicatorStyle?.[indicator]?.middleBand?.value ?? 0;
+    const lower = indicatorStyle?.[indicator]?.lowerBand?.value ?? -100;
 
-    const bgFill = indicatorStyle?.CCI?.bgFill;
+    const bgFill = indicatorStyle?.[indicator]?.bgFill;
 
     /* ================= MAIN LINES ================= */
 
     Object.entries(result.data).forEach(([lineName, lineData]) => {
 
-      const styleConfig = indicatorStyle?.CCI?.[lineName];
+      const styleConfig = indicatorStyle?.[indicator]?.[lineName];
 
-      const series = addSeries("CCI", LineSeries, {
+      const series = addSeries(indicator, LineSeries, {
         color: styleConfig?.color,
         lineWidth: styleConfig?.width,
         lineStyle: styleConfig?.lineStyle ?? 0,
@@ -69,29 +71,29 @@ export default function CCIPlot({
     const makeLevelData = (value) =>
       cciData.map((p) => ({ time: p.time, value }));
 
-    const upperBand = addSeries("CCI", LineSeries, {
-      color: indicatorStyle?.CCI?.upperBand?.color,
-      lineWidth: indicatorStyle?.CCI?.upperBand?.width,
-      lineStyle: indicatorStyle?.CCI?.upperBand?.lineStyle ?? 2,
-      visible: indicatorStyle?.CCI?.upperBand?.visible ?? true,
+    const upperBand = addSeries(indicator, LineSeries, {
+      color: indicatorStyle?.[indicator]?.upperBand?.color,
+      lineWidth: indicatorStyle?.[indicator]?.upperBand?.width,
+      lineStyle: indicatorStyle?.[indicator]?.upperBand?.lineStyle ?? 2,
+      visible: indicatorStyle?.[indicator]?.upperBand?.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: false,
     });
 
-    const middleBand = addSeries("CCI", LineSeries, {
-      color: indicatorStyle?.CCI?.middleBand?.color,
-      lineWidth: indicatorStyle?.CCI?.middleBand?.width,
-      lineStyle: indicatorStyle?.CCI?.middleBand?.lineStyle ?? 2,
-      visible: indicatorStyle?.CCI?.middleBand?.visible ?? true,
+    const middleBand = addSeries(indicator, LineSeries, {
+      color: indicatorStyle?.[indicator]?.middleBand?.color,
+      lineWidth: indicatorStyle?.[indicator]?.middleBand?.width,
+      lineStyle: indicatorStyle?.[indicator]?.middleBand?.lineStyle ?? 2,
+      visible: indicatorStyle?.[indicator]?.middleBand?.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: false,
     });
 
-    const lowerBand = addSeries("CCI", LineSeries, {
-      color: indicatorStyle?.CCI?.lowerBand?.color,
-      lineWidth: indicatorStyle?.CCI?.lowerBand?.width,
-      lineStyle: indicatorStyle?.CCI?.lowerBand?.lineStyle ?? 2,
-      visible: indicatorStyle?.CCI?.lowerBand?.visible ?? true,
+    const lowerBand = addSeries(indicator, LineSeries, {
+      color: indicatorStyle?.[indicator]?.lowerBand?.color,
+      lineWidth: indicatorStyle?.[indicator]?.lowerBand?.width,
+      lineStyle: indicatorStyle?.[indicator]?.lowerBand?.lineStyle ?? 2,
+      visible: indicatorStyle?.[indicator]?.lowerBand?.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: false,
     });
@@ -111,7 +113,7 @@ export default function CCIPlot({
       value: upper,
     }));
 
-    const bgSeries = addSeries("CCI", BaselineSeries, {
+    const bgSeries = addSeries(indicator, BaselineSeries, {
       baseValue: { type: "price", price: lower },
       topFillColor1: bgFill?.topFillColor1,
       topFillColor2: bgFill?.topFillColor2,
@@ -129,7 +131,7 @@ export default function CCIPlot({
     groupedSeries.bgFill = bgSeries;
     groupedSeries.cciData = cciData;
 
-    indicatorSeriesRef.current.CCI = {
+    indicatorSeriesRef.current[indicator] = {
       ...groupedSeries,
       result,
     };
@@ -177,7 +179,7 @@ export default function CCIPlot({
     const upperData = cciGroup?.result?.data?.bbUpper;
     const lowerData = cciGroup?.result?.data?.bbLower;
 
-    const fillStyle = indicatorStyle?.CCI?.bbFill;
+    const fillStyle = indicatorStyle?.[indicator]?.bbFill;
 
     const ctx = cloudCtxRef.current;
     const canvas = cloudCanvasRef.current;
@@ -238,17 +240,17 @@ export default function CCIPlot({
       chart.unsubscribeCrosshairMove(drawCloud);
     };
 
-  }, [indicatorStyle?.CCI?.bbFill, result]);
+  }, [indicatorStyle?.[indicator]?.bbFill, result]);
 
 
   /* ================= STYLE UPDATE ================= */
 
   useEffect(() => {
 
-    const cciGroup = indicatorSeriesRef.current?.CCI;
+    const cciGroup = indicatorSeriesRef.current?.[indicator];
     if (!cciGroup) return;
 
-    const styles = indicatorStyle?.CCI;
+    const styles = indicatorStyle?.[indicator];
 
     ["cciLine", "cciMa", "bbUpper", "bbLower"].forEach((key) => {
 

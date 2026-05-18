@@ -1,7 +1,9 @@
 export default function PSARInput(
   response,
   indicatorSeriesRef,
-  latestIndicatorValuesRef
+  latestIndicatorValuesRef,
+  maType,
+  indicator
 ) {
   const rows = Array.isArray(response?.data) ? response.data : [];
 
@@ -15,7 +17,7 @@ export default function PSARInput(
     }))
     .sort((a, b) => a.time - b.time);
 
-  const series = indicatorSeriesRef.current?.PSAR;
+  const series = indicatorSeriesRef.current?.[indicator];
 
   if (!series) return;
 
@@ -25,12 +27,12 @@ export default function PSARInput(
 
   /* ================= UPDATE HOVER VALUE ================= */
 
-  latestIndicatorValuesRef.current.PSAR.psar =
+  latestIndicatorValuesRef.current[indicator].psar =
     psarData[psarData.length - 1]?.value;
 
   /* ================= STORE RESULT ================= */
 
-  indicatorSeriesRef.current.PSAR.result = {
+  indicatorSeriesRef.current[indicator].result = {
     data: {
       psar: psarData,
     },

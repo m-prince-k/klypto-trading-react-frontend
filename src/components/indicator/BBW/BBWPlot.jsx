@@ -2,10 +2,12 @@ import { useEffect } from "react";
 import { LineSeries } from "lightweight-charts";
 
 export default function BBWPlot({
+  indicator,
   result,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
+  chart
 }) {
 
   /* ================= CREATE ================= */
@@ -23,19 +25,20 @@ export default function BBWPlot({
     }
 
     // 🔥 REMOVE OLD
-    if (indicatorSeriesRef.current?.BBW) {
-      Object.values(indicatorSeriesRef.current.BBW).forEach((s) => {
-        try { s.setData([]); } catch {}
+    if (indicatorSeriesRef.current?.[indicator]) {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
+        try { s.setData([]);
+            try { chart.removeSeries(s); } catch {} } catch {}
       });
-      indicatorSeriesRef.current.BBW = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     /* 🔵 BBW LINE */
-    const bbwSeries = addSeries("BBW", LineSeries, {
-      color: indicatorStyle?.BBW?.bbwLine?.color ?? "rgba(33,150,243,1)",
-      lineWidth: indicatorStyle?.BBW?.bbwLine?.width ?? 2,
-      lineStyle: indicatorStyle?.BBW?.bbwLine?.lineStyle ?? 0,
-      visible: indicatorStyle?.BBW?.bbwLine?.visible ?? true,
+    const bbwSeries = addSeries(indicator, LineSeries, {
+      color: indicatorStyle?.[indicator]?.bbwLine?.color ?? "rgba(33,150,243,1)",
+      lineWidth: indicatorStyle?.[indicator]?.bbwLine?.width ?? 2,
+      lineStyle: indicatorStyle?.[indicator]?.bbwLine?.lineStyle ?? 0,
+      visible: indicatorStyle?.[indicator]?.bbwLine?.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: true,
     });
@@ -46,11 +49,11 @@ export default function BBWPlot({
     let highestSeries = null;
 
     if (Array.isArray(highest) && highest.length) {
-      highestSeries = addSeries("BBW", LineSeries, {
-        color: indicatorStyle?.BBW?.highest?.color ?? "rgba(244,67,54,1)",
-        lineWidth: indicatorStyle?.BBW?.highest?.width ?? 1,
-        lineStyle: indicatorStyle?.BBW?.highest?.lineStyle ?? 2,
-        visible: indicatorStyle?.BBW?.highest?.visible ?? true,
+      highestSeries = addSeries(indicator, LineSeries, {
+        color: indicatorStyle?.[indicator]?.highest?.color ?? "rgba(244,67,54,1)",
+        lineWidth: indicatorStyle?.[indicator]?.highest?.width ?? 1,
+        lineStyle: indicatorStyle?.[indicator]?.highest?.lineStyle ?? 2,
+        visible: indicatorStyle?.[indicator]?.highest?.visible ?? true,
         priceLineVisible: false,
       });
 
@@ -61,18 +64,18 @@ export default function BBWPlot({
     let lowestSeries = null;
 
     if (Array.isArray(lowest) && lowest.length) {
-      lowestSeries = addSeries("BBW", LineSeries, {
-        color: indicatorStyle?.BBW?.lowest?.color ?? "rgba(0,200,83,1)",
-        lineWidth: indicatorStyle?.BBW?.lowest?.width ?? 1,
-        lineStyle: indicatorStyle?.BBW?.lowest?.lineStyle ?? 2,
-        visible: indicatorStyle?.BBW?.lowest?.visible ?? true,
+      lowestSeries = addSeries(indicator, LineSeries, {
+        color: indicatorStyle?.[indicator]?.lowest?.color ?? "rgba(0,200,83,1)",
+        lineWidth: indicatorStyle?.[indicator]?.lowest?.width ?? 1,
+        lineStyle: indicatorStyle?.[indicator]?.lowest?.lineStyle ?? 2,
+        visible: indicatorStyle?.[indicator]?.lowest?.visible ?? true,
         priceLineVisible: false,
       });
 
       lowestSeries.setData(lowest);
     }
 
-    indicatorSeriesRef.current.BBW = {
+    indicatorSeriesRef.current[indicator] = {
       bbwLine: bbwSeries,
       highest: highestSeries,
       lowest: lowestSeries,
@@ -87,31 +90,31 @@ export default function BBWPlot({
 
   useEffect(() => {
 
-    const group = indicatorSeriesRef.current?.BBW;
+    const group = indicatorSeriesRef.current?.[indicator];
     if (!group) return;
 
     group.bbwLine?.applyOptions({
-      color: indicatorStyle?.BBW?.bbwLine?.color,
-      lineWidth: indicatorStyle?.BBW?.bbwLine?.width,
-      lineStyle: indicatorStyle?.BBW?.bbwLine?.lineStyle ?? 0,
-      visible: indicatorStyle?.BBW?.bbwLine?.visible,
+      color: indicatorStyle?.[indicator]?.bbwLine?.color,
+      lineWidth: indicatorStyle?.[indicator]?.bbwLine?.width,
+      lineStyle: indicatorStyle?.[indicator]?.bbwLine?.lineStyle ?? 0,
+      visible: indicatorStyle?.[indicator]?.bbwLine?.visible,
     });
 
     group.highest?.applyOptions({
-      color: indicatorStyle?.BBW?.highest?.color,
-      lineWidth: indicatorStyle?.BBW?.highest?.width,
-      lineStyle: indicatorStyle?.BBW?.highest?.lineStyle ?? 2,
-      visible: indicatorStyle?.BBW?.highest?.visible,
+      color: indicatorStyle?.[indicator]?.highest?.color,
+      lineWidth: indicatorStyle?.[indicator]?.highest?.width,
+      lineStyle: indicatorStyle?.[indicator]?.highest?.lineStyle ?? 2,
+      visible: indicatorStyle?.[indicator]?.highest?.visible,
     });
 
     group.lowest?.applyOptions({
-      color: indicatorStyle?.BBW?.lowest?.color,
-      lineWidth: indicatorStyle?.BBW?.lowest?.width,
-      lineStyle: indicatorStyle?.BBW?.lowest?.lineStyle ?? 2,
-      visible: indicatorStyle?.BBW?.lowest?.visible,
+      color: indicatorStyle?.[indicator]?.lowest?.color,
+      lineWidth: indicatorStyle?.[indicator]?.lowest?.width,
+      lineStyle: indicatorStyle?.[indicator]?.lowest?.lineStyle ?? 2,
+      visible: indicatorStyle?.[indicator]?.lowest?.visible,
     });
 
-  }, [indicatorStyle?.BBW]);
+  }, [indicatorStyle?.[indicator]]);
 
   return null;
 }

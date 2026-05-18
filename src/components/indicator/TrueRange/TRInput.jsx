@@ -1,9 +1,11 @@
 export default function TRInput(
   response,
   indicatorSeriesRef,
-  latestIndicatorValuesRef
+  latestIndicatorValuesRef,
+  maType,
+  indicator
 ) {
-  const group = indicatorSeriesRef.current?.TR;
+  const group = indicatorSeriesRef.current?.[indicator];
   if (!group) return;
 
   const trData =
@@ -16,7 +18,7 @@ export default function TRInput(
 
   group.trLine?.setData(trData);
 
-  latestIndicatorValuesRef.current.TR = {
+  latestIndicatorValuesRef.current[indicator] = {
     tr: trData[trData.length - 1]?.value ?? null,
   };
 }

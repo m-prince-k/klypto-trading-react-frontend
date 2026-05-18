@@ -1,7 +1,9 @@
 export default function CCIInput(
   response,
   indicatorSeriesRef,
-  latestIndicatorValuesRef
+  latestIndicatorValuesRef,
+  maType,
+  indicator
 ) {
   const rows = Array.isArray(response?.data) ? response.data : [];
 
@@ -26,8 +28,8 @@ export default function CCIInput(
     .sort((a, b) => a.time - b.time);
 
   // Ensure CCI series object exists
-  if (!indicatorSeriesRef.current.CCI) {
-    indicatorSeriesRef.current.CCI = {
+  if (!indicatorSeriesRef.current[indicator]) {
+    indicatorSeriesRef.current[indicator] = {
       cciLine: null,
       cciMa: null,
       bbUpper: null,
@@ -40,7 +42,7 @@ export default function CCIInput(
     };
   }
 
-  const series = indicatorSeriesRef.current.CCI;
+  const series = indicatorSeriesRef.current[indicator];
 
   // Update series data if lines exist
   series.cciLine?.setData(cciData);
@@ -49,7 +51,7 @@ export default function CCIInput(
   series.bbLower?.setData(bbLower);
 
   // Update hover/latest values
-  latestIndicatorValuesRef.current.CCI = {
+  latestIndicatorValuesRef.current[indicator] = {
     cciLine: cciData[cciData.length - 1]?.value,
     cciMa: cciMa[cciMa.length - 1]?.value,
     bbUpper: bbUpper[bbUpper.length - 1]?.value,

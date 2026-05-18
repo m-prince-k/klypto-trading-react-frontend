@@ -2,11 +2,13 @@ import { useEffect } from "react";
 import { LineSeries } from "lightweight-charts";
 
 export default function FTPlot({
+  indicator,
   result,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
   indicatorConfigs,
+  chart
 }) {
 
   /* ================= CREATE SERIES ================= */
@@ -22,23 +24,24 @@ export default function FTPlot({
 
     /* ===== REMOVE OLD SERIES ===== */
 
-    if (indicatorSeriesRef.current?.FT) {
-      Object.values(indicatorSeriesRef.current.FT).forEach((s) => {
+    if (indicatorSeriesRef.current?.[indicator]) {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         if (s?.setData) {
-          try { s.setData([]); } catch {}
+          try { s.setData([]);
+            try { chart.removeSeries(s); } catch {} } catch {}
         }
       });
-      indicatorSeriesRef.current.FT = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const grouped = {};
 
     /* ===== Fisher Line ===== */
 
-    const fisherSeries = addSeries("FT", LineSeries, {
-      color: indicatorStyle?.FT?.fisherLine?.color ?? "#26a69a",
-      lineWidth: indicatorStyle?.FT?.fisherLine?.width ?? 2,
-      visible: indicatorStyle?.FT?.fisherLine?.visible ?? true,
+    const fisherSeries = addSeries(indicator, LineSeries, {
+      color: indicatorStyle?.[indicator]?.fisherLine?.color ?? "#26a69a",
+      lineWidth: indicatorStyle?.[indicator]?.fisherLine?.width ?? 2,
+      visible: indicatorStyle?.[indicator]?.fisherLine?.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: true,
     });
@@ -48,10 +51,10 @@ export default function FTPlot({
 
     /* ===== Trigger Line ===== */
 
-    const triggerSeries = addSeries("FT", LineSeries, {
-      color: indicatorStyle?.FT?.triggerLine?.color ?? "#ff9800",
-      lineWidth: indicatorStyle?.FT?.triggerLine?.width ?? 2,
-      visible: indicatorStyle?.FT?.triggerLine?.visible ?? true,
+    const triggerSeries = addSeries(indicator, LineSeries, {
+      color: indicatorStyle?.[indicator]?.triggerLine?.color ?? "#ff9800",
+      lineWidth: indicatorStyle?.[indicator]?.triggerLine?.width ?? 2,
+      visible: indicatorStyle?.[indicator]?.triggerLine?.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: true,
     });
@@ -71,13 +74,13 @@ export default function FTPlot({
 
     levels.forEach((key) => {
 
-      const value = indicatorStyle?.FT?.[key]?.value;
+      const value = indicatorStyle?.[indicator]?.[key]?.value;
 
-      const series = addSeries("FT", LineSeries, {
-        color: indicatorStyle?.FT?.[key]?.color,
-        lineWidth: indicatorStyle?.FT?.[key]?.width ?? 1,
-        lineStyle: indicatorStyle?.FT?.[key]?.lineStyle ?? 2,
-        visible: indicatorStyle?.FT?.[key]?.visible ?? true,
+      const series = addSeries(indicator, LineSeries, {
+        color: indicatorStyle?.[indicator]?.[key]?.color,
+        lineWidth: indicatorStyle?.[indicator]?.[key]?.width ?? 1,
+        lineStyle: indicatorStyle?.[indicator]?.[key]?.lineStyle ?? 2,
+        visible: indicatorStyle?.[indicator]?.[key]?.visible ?? true,
         priceLineVisible: false,
         lastValueVisible: false,
       });
@@ -94,7 +97,7 @@ export default function FTPlot({
 
     grouped.fisherData = fisherData;
 
-    indicatorSeriesRef.current.FT = grouped;
+    indicatorSeriesRef.current[indicator] = grouped;
 
   }, [result, indicatorConfigs]);
 
@@ -103,7 +106,7 @@ export default function FTPlot({
 
   useEffect(() => {
 
-    const group = indicatorSeriesRef.current?.FT;
+    const group = indicatorSeriesRef.current?.[indicator];
     if (!group) return;
 
     const fisherData = group.fisherData ?? [];
@@ -118,7 +121,7 @@ export default function FTPlot({
 
     levels.forEach((key) => {
 
-      const value = indicatorStyle?.FT?.[key]?.value;
+      const value = indicatorStyle?.[indicator]?.[key]?.value;
 
       const levelData = fisherData.map((p) => ({
         time: p.time,
@@ -128,24 +131,24 @@ export default function FTPlot({
       group[key]?.setData(levelData);
 
       group[key]?.applyOptions({
-        color: indicatorStyle?.FT?.[key]?.color,
-        visible: indicatorStyle?.FT?.[key]?.visible,
-        lineWidth: indicatorStyle?.FT?.[key]?.width,
+        color: indicatorStyle?.[indicator]?.[key]?.color,
+        visible: indicatorStyle?.[indicator]?.[key]?.visible,
+        lineWidth: indicatorStyle?.[indicator]?.[key]?.width,
       });
     });
 
     group.fisherLine?.applyOptions({
-      color: indicatorStyle?.FT?.fisherLine?.color,
-      visible: indicatorStyle?.FT?.fisherLine?.visible,
-      lineWidth: indicatorStyle?.FT?.fisherLine?.width,
-      lineStyle: indicatorStyle?.FT?.fisherLine?.lineStyle,
+      color: indicatorStyle?.[indicator]?.fisherLine?.color,
+      visible: indicatorStyle?.[indicator]?.fisherLine?.visible,
+      lineWidth: indicatorStyle?.[indicator]?.fisherLine?.width,
+      lineStyle: indicatorStyle?.[indicator]?.fisherLine?.lineStyle,
     });
 
     group.triggerLine?.applyOptions({
-      color: indicatorStyle?.FT?.triggerLine?.color,
-      visible: indicatorStyle?.FT?.triggerLine?.visible,
-      lineWidth: indicatorStyle?.FT?.triggerLine?.width,
-      lineStyle: indicatorStyle?.FT?.triggerLine?.lineStyle,
+      color: indicatorStyle?.[indicator]?.triggerLine?.color,
+      visible: indicatorStyle?.[indicator]?.triggerLine?.visible,
+      lineWidth: indicatorStyle?.[indicator]?.triggerLine?.width,
+      lineStyle: indicatorStyle?.[indicator]?.triggerLine?.lineStyle,
     });
 
   }, [indicatorStyle]);

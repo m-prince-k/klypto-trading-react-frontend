@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { LineSeries, BaselineSeries } from "lightweight-charts";
 
 export default function OBVPlot({
+  indicator,
   result,
   rows,
   indicatorStyle,
@@ -9,7 +10,7 @@ export default function OBVPlot({
   addSeries,
   chart,
   containerRef,
-  indicatorConfigs,
+  indicatorConfigs
 }) {
   const canvasRef = useRef(null);
 
@@ -18,13 +19,14 @@ export default function OBVPlot({
     if (!result) return;
 
     // Clear previous series
-    if (indicatorSeriesRef.current?.OBV) {
-      Object.values(indicatorSeriesRef.current.OBV).forEach((s) => {
+    if (indicatorSeriesRef.current?.[indicator]) {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         if (s?.setData) {
-          try { s.setData([]); } catch {}
+          try { s.setData([]);
+            try { chart.removeSeries(s); } catch {} } catch {}
         }
       });
-      indicatorSeriesRef.current.OBV = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const groupedSeries = {};
@@ -37,12 +39,12 @@ export default function OBVPlot({
 
     Object.entries(result?.data || {}).forEach(([lineName, lineData]) => {
       const rowConfig = rows?.find((r) => r.key === lineName);
-      const styleConfig = indicatorStyle?.OBV?.[lineName];
+      const styleConfig = indicatorStyle?.[indicator]?.[lineName];
 
       // Only add BB lines if MA is SMA and Bollinger Bands exist
       if ((lineName === "bbUpper" || lineName === "bbLower") && !(maType === "SMA" && hasBB)) return;
 
-      const series = addSeries("OBV", LineSeries, {
+      const series = addSeries(indicator, LineSeries, {
         color: styleConfig?.color || rowConfig?.color || "#26a69a",
         lineWidth: styleConfig?.width || 2,
         lineStyle: styleConfig?.lineStyle,
@@ -65,7 +67,7 @@ export default function OBVPlot({
     groupedSeries.bbUpperData = bbUpperData;
     groupedSeries.bbLowerData = bbLowerData;
 
-    indicatorSeriesRef.current.OBV = groupedSeries;
+    indicatorSeriesRef.current[indicator] = groupedSeries;
 
     drawBBCloud();
   }, [result, indicatorConfigs]);
@@ -85,14 +87,14 @@ export default function OBVPlot({
 
   /* ================= DRAW BB CLOUD ================= */
   const drawBBCloud = () => {
-    const obvGroup = indicatorSeriesRef.current?.OBV;
+    const obvGroup = indicatorSeriesRef.current?.[indicator];
     if (!obvGroup) return;
 
     const upperData = obvGroup.bbUpperData || [];
     const lowerData = obvGroup.bbLowerData || [];
 
     const maType = indicatorConfigs?.OBV?.maType ?? "none";
-    const fill = indicatorStyle?.OBV?.bbFill;
+    const fill = indicatorStyle?.[indicator]?.bbFill;
     const hasBB = upperData.length && lowerData.length;
 
     if (!hasBB || !fill?.visible || maType !== "SMA") {
@@ -162,7 +164,7 @@ export default function OBVPlot({
 
   /* ================= STYLE UPDATE ================= */
   useEffect(() => {
-    const obvGroup = indicatorSeriesRef.current?.OBV;
+    const obvGroup = indicatorSeriesRef.current?.[indicator];
     if (!obvGroup) return;
 
     const maType = indicatorConfigs?.OBV?.maType ?? "none";
@@ -170,7 +172,7 @@ export default function OBVPlot({
 
     Object.entries(obvGroup).forEach(([key, series]) => {
       if (!series?.applyOptions) return;
-      const style = indicatorStyle?.OBV?.[key];
+      const style = indicatorStyle?.[indicator]?.[key];
       if (!style) return;
 
       if ((key === "bbUpper" || key === "bbLower") && !(maType === "SMA + Bollinger Bands" && hasBB)) return;
@@ -195,8 +197,8 @@ export default function OBVPlot({
         canvasRef.current.remove();
         canvasRef.current = null;
       }
-      if (indicatorSeriesRef.current?.OBV) {
-        indicatorSeriesRef.current.OBV = null;
+      if (indicatorSeriesRef.current?.[indicator]) {
+        indicatorSeriesRef.current[indicator] = null;
       }
     };
   }, []);

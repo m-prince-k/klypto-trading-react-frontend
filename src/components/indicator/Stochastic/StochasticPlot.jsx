@@ -2,12 +2,13 @@ import { useEffect, useRef } from "react";
 import { LineSeries, BaselineSeries } from "lightweight-charts";
 
 export default function STOCHPlot({
+  indicator,
   result,
   rows,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
-  chart,
+  chart
 }) {
   const seriesRef = useRef(null);
 
@@ -16,15 +17,16 @@ export default function STOCHPlot({
   useEffect(() => {
     if (!result) return;
 
-    if (indicatorSeriesRef.current?.STOCH) {
-      Object.values(indicatorSeriesRef.current.STOCH).forEach((s) => {
+    if (indicatorSeriesRef.current?.[indicator]) {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         if (s?.setData) {
           try {
             s.setData([]);
+            try { chart.removeSeries(s); } catch {}
           } catch {}
         }
       });
-      indicatorSeriesRef.current.STOCH = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const grouped = {};
@@ -33,9 +35,9 @@ export default function STOCHPlot({
     /* ================= MAIN LINES ================= */
 
     Object.entries(result.data).forEach(([key, data]) => {
-      const style = indicatorStyle?.STOCH?.[key];
+      const style = indicatorStyle?.[indicator]?.[key];
 
-      const series = addSeries("STOCH", LineSeries, {
+      const series = addSeries(indicator, LineSeries, {
         color: style?.color,
         lineWidth: style?.width ?? 1,
         lineStyle: style?.lineStyle ?? 0,
@@ -55,33 +57,33 @@ export default function STOCHPlot({
 
     const makeLevel = (value) => kData.map((p) => ({ time: p.time, value }));
 
-    const upper = indicatorStyle?.STOCH?.upperBand?.value ?? 80;
-    const middle = indicatorStyle?.STOCH?.middleBand?.value ?? 50;
-    const lower = indicatorStyle?.STOCH?.lowerBand?.value ?? 20;
+    const upper = indicatorStyle?.[indicator]?.upperBand?.value ?? 80;
+    const middle = indicatorStyle?.[indicator]?.middleBand?.value ?? 50;
+    const lower = indicatorStyle?.[indicator]?.lowerBand?.value ?? 20;
 
-    const upperLine = addSeries("STOCH", LineSeries, {
-      color: indicatorStyle?.STOCH?.upperBand?.color,
-      lineWidth: indicatorStyle?.STOCH?.upperBand?.width,
-      lineStyle: indicatorStyle?.STOCH?.upperBand?.lineStyle,
-      visible: indicatorStyle?.STOCH?.upperBand?.visible,
+    const upperLine = addSeries(indicator, LineSeries, {
+      color: indicatorStyle?.[indicator]?.upperBand?.color,
+      lineWidth: indicatorStyle?.[indicator]?.upperBand?.width,
+      lineStyle: indicatorStyle?.[indicator]?.upperBand?.lineStyle,
+      visible: indicatorStyle?.[indicator]?.upperBand?.visible,
       priceLineVisible: false,
       lastValueVisible: false,
     });
 
-    const middleLine = addSeries("STOCH", LineSeries, {
-      color: indicatorStyle?.STOCH?.middleBand?.color,
-      lineWidth: indicatorStyle?.STOCH?.middleBand?.width,
-      lineStyle: indicatorStyle?.STOCH?.middleBand?.lineStyle,
-      visible: indicatorStyle?.STOCH?.middleBand?.visible,
+    const middleLine = addSeries(indicator, LineSeries, {
+      color: indicatorStyle?.[indicator]?.middleBand?.color,
+      lineWidth: indicatorStyle?.[indicator]?.middleBand?.width,
+      lineStyle: indicatorStyle?.[indicator]?.middleBand?.lineStyle,
+      visible: indicatorStyle?.[indicator]?.middleBand?.visible,
       priceLineVisible: false,
       lastValueVisible: false,
     });
 
-    const lowerLine = addSeries("STOCH", LineSeries, {
-      color: indicatorStyle?.STOCH?.lowerBand?.color,
-      lineWidth: indicatorStyle?.STOCH?.lowerBand?.width,
-      lineStyle: indicatorStyle?.STOCH?.lowerBand?.lineStyle,
-      visible: indicatorStyle?.STOCH?.lowerBand?.visible,
+    const lowerLine = addSeries(indicator, LineSeries, {
+      color: indicatorStyle?.[indicator]?.lowerBand?.color,
+      lineWidth: indicatorStyle?.[indicator]?.lowerBand?.width,
+      lineStyle: indicatorStyle?.[indicator]?.lowerBand?.lineStyle,
+      visible: indicatorStyle?.[indicator]?.lowerBand?.visible,
       priceLineVisible: false,
       lastValueVisible: false,
     });
@@ -96,9 +98,9 @@ export default function STOCHPlot({
 
     /* ================= BACKGROUND ================= */
 
-    const bgFill = indicatorStyle?.STOCH?.bgFill;
+    const bgFill = indicatorStyle?.[indicator]?.bgFill;
 
-    const bgSeries = addSeries("STOCH", BaselineSeries, {
+    const bgSeries = addSeries(indicator, BaselineSeries, {
       baseValue: { type: "price", price: lower },
       topFillColor1: bgFill?.topFillColor1,
       topFillColor2: bgFill?.topFillColor2,
@@ -114,22 +116,22 @@ export default function STOCHPlot({
     grouped.bg = bgSeries;
     grouped.kData = kData;
 
-    indicatorSeriesRef.current.STOCH = grouped;
+    indicatorSeriesRef.current[indicator] = grouped;
   }, [result]);
 
   /* ================= STYLE UPDATE ================= */
 
   useEffect(() => {
-    const g = indicatorSeriesRef.current?.STOCH;
+    const g = indicatorSeriesRef.current?.[indicator];
     if (!g) return;
 
     const kData = g.kData ?? [];
 
     const makeLevel = (v) => kData.map((p) => ({ time: p.time, value: v }));
 
-    const upper = indicatorStyle?.STOCH?.upperBand?.value ?? 80;
-    const middle = indicatorStyle?.STOCH?.middleBand?.value ?? 50;
-    const lower = indicatorStyle?.STOCH?.lowerBand?.value ?? 20;
+    const upper = indicatorStyle?.[indicator]?.upperBand?.value ?? 80;
+    const middle = indicatorStyle?.[indicator]?.middleBand?.value ?? 50;
+    const lower = indicatorStyle?.[indicator]?.lowerBand?.value ?? 20;
 
     g.upper?.setData(makeLevel(upper));
     g.middle?.setData(makeLevel(middle));
@@ -139,7 +141,7 @@ export default function STOCHPlot({
 
     ["k", "d"].forEach((key) => {
       const s = g[key];
-      const st = indicatorStyle?.STOCH?.[key];
+      const st = indicatorStyle?.[indicator]?.[key];
       if (!s) return;
 
       s.applyOptions({
@@ -152,15 +154,15 @@ export default function STOCHPlot({
 
     /* ==== LEVEL STYLE ==== */
 
-    g.upper?.applyOptions(indicatorStyle?.STOCH?.upperBand);
-    g.middle?.applyOptions(indicatorStyle?.STOCH?.middleBand);
-    g.lower?.applyOptions(indicatorStyle?.STOCH?.lowerBand);
+    g.upper?.applyOptions(indicatorStyle?.[indicator]?.upperBand);
+    g.middle?.applyOptions(indicatorStyle?.[indicator]?.middleBand);
+    g.lower?.applyOptions(indicatorStyle?.[indicator]?.lowerBand);
 
     /* ==== BG ==== */
 
     /* ==== BG ==== */
 
-    const bgFill = indicatorStyle?.STOCH?.bgFill;
+    const bgFill = indicatorStyle?.[indicator]?.bgFill;
 
     // 🔥 IMPORTANT: update baseValue (lower band)
     g.bg?.applyOptions({

@@ -2,11 +2,13 @@ import { useEffect } from "react";
 import { LineSeries } from "lightweight-charts";
 
 export default function TEMAPlot({
+  indicator,
   result,
   rows,
   indicatorStyle,
   indicatorSeriesRef,
-  addSeries
+  addSeries,
+  chart
 }) {
 
   /* ================= CREATE TEMA ================= */
@@ -15,15 +17,16 @@ export default function TEMAPlot({
 
     if (!result) return;
 
-    if (indicatorSeriesRef.current?.TEMA) {
+    if (indicatorSeriesRef.current?.[indicator]) {
 
-      Object.values(indicatorSeriesRef.current.TEMA).forEach((s) => {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         if (s?.setData) {
-          try { s.setData([]); } catch {}
+          try { s.setData([]);
+            try { chart.removeSeries(s); } catch {} } catch {}
         }
       });
 
-      indicatorSeriesRef.current.TEMA = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const groupedSeries = {};
@@ -31,9 +34,9 @@ export default function TEMAPlot({
     Object.entries(result.data).forEach(([lineName, lineData]) => {
 
       const rowConfig = rows?.find((r) => r.key === lineName);
-      const styleConfig = indicatorStyle?.TEMA?.[lineName];
+      const styleConfig = indicatorStyle?.[indicator]?.[lineName];
 
-      const series = addSeries("TEMA", LineSeries, {
+      const series = addSeries(indicator, LineSeries, {
         color: styleConfig?.color || rowConfig?.color || "#009688",
         lineWidth: styleConfig?.width || 2,
         visible: styleConfig?.visible ?? true,
@@ -48,7 +51,7 @@ export default function TEMAPlot({
       groupedSeries[lineName] = series;
     });
 
-    indicatorSeriesRef.current.TEMA = groupedSeries;
+    indicatorSeriesRef.current[indicator] = groupedSeries;
 
   }, [result]);
 
@@ -58,10 +61,10 @@ export default function TEMAPlot({
 
   useEffect(() => {
 
-    const temaGroup = indicatorSeriesRef.current?.TEMA;
+    const temaGroup = indicatorSeriesRef.current?.[indicator];
     if (!temaGroup) return;
 
-    const style = indicatorStyle?.TEMA?.tema;
+    const style = indicatorStyle?.[indicator]?.tema;
 
     if (temaGroup.tema) {
       temaGroup.tema.applyOptions({

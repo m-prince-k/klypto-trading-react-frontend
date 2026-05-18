@@ -2,13 +2,14 @@ import { useEffect, useRef } from "react";
 import { LineSeries } from "lightweight-charts";
 
 export default function KCPlot({
+  indicator,
   result,
   rows,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
   chart,
-  containerRef,
+  containerRef
 }) {
   const canvasRef = useRef(null);
 
@@ -17,16 +18,17 @@ export default function KCPlot({
   useEffect(() => {
     if (!result) return;
 
-    if (indicatorSeriesRef.current?.KC) {
-      Object.values(indicatorSeriesRef.current.KC).forEach((s) => {
+    if (indicatorSeriesRef.current?.[indicator]) {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         if (s?.setData) {
           try {
             s.setData([]);
+            try { chart.removeSeries(s); } catch {}
           } catch {}
         }
       });
 
-      indicatorSeriesRef.current.KC = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const groupedSeries = {};
@@ -38,9 +40,9 @@ export default function KCPlot({
 
     Object.entries(result?.data || {}).forEach(([lineName, lineData]) => {
       const rowConfig = rows?.find((r) => r.key === lineName);
-      const styleConfig = indicatorStyle?.KC?.[lineName];
+      const styleConfig = indicatorStyle?.[indicator]?.[lineName];
 
-      const series = addSeries("KC", LineSeries, {
+      const series = addSeries(indicator, LineSeries, {
         color: styleConfig?.color || rowConfig?.color || "#26a69a",
         lineWidth: styleConfig?.width || 2,
         lineStyle: styleConfig?.lineStyle,
@@ -62,7 +64,7 @@ export default function KCPlot({
     groupedSeries.upperData = upperData;
     groupedSeries.lowerData = lowerData;
 
-    indicatorSeriesRef.current.KC = groupedSeries;
+    indicatorSeriesRef.current[indicator] = groupedSeries;
   }, [result]);
 
   /* ================= CANVAS INIT ================= */
@@ -84,7 +86,7 @@ export default function KCPlot({
   /* ================= DRAW KC CLOUD ================= */
 
   const drawKCCloud = () => {
-    const kcGroup = indicatorSeriesRef.current?.KC;
+    const kcGroup = indicatorSeriesRef.current?.[indicator];
     if (!kcGroup) return;
 
     const upper = kcGroup.upperData || [];
@@ -103,7 +105,7 @@ export default function KCPlot({
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const fill = indicatorStyle?.KC?.bbFill;
+    const fill = indicatorStyle?.[indicator]?.bbFill;
 
     if (!fill?.visible) return;
 
@@ -162,13 +164,13 @@ export default function KCPlot({
   /* ================= STYLE UPDATE ================= */
 
   useEffect(() => {
-    const kcGroup = indicatorSeriesRef.current?.KC;
+    const kcGroup = indicatorSeriesRef.current?.[indicator];
     if (!kcGroup) return;
 
     Object.entries(kcGroup).forEach(([key, series]) => {
       if (!series?.applyOptions) return;
 
-      const style = indicatorStyle?.KC?.[key];
+      const style = indicatorStyle?.[indicator]?.[key];
       if (!style) return;
 
       series.applyOptions({
@@ -194,8 +196,8 @@ export default function KCPlot({
 
       canvasRef.current = null;
 
-      if (indicatorSeriesRef.current?.KC) {
-        indicatorSeriesRef.current.KC = null;
+      if (indicatorSeriesRef.current?.[indicator]) {
+        indicatorSeriesRef.current[indicator] = null;
       }
     };
   }, []);

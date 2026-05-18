@@ -2,10 +2,12 @@ export default function TRIXInput(
   response,
   indicatorSeriesRef,
   latestIndicatorValuesRef,
+  maType,
+  indicator
 ) {
   const rows = response?.data ?? [];
 
-  const group = indicatorSeriesRef.current?.TRIX;
+  const group = indicatorSeriesRef.current?.[indicator];
   if (!group) return;
 
   const trixData = rows
@@ -28,7 +30,7 @@ export default function TRIXInput(
 
   group.zeroLine?.setData(zeroData); /* :fire: UPDATE LATEST VALUE */
 
-  latestIndicatorValuesRef.current.TRIX = {
+  latestIndicatorValuesRef.current[indicator] = {
     trix: trixData[trixData.length - 1]?.value ?? null,
   };
 

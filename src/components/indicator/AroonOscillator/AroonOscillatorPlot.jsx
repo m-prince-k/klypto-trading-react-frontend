@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { LineSeries, BaselineSeries } from "lightweight-charts";
 
 export default function AroonOscillatorPlot({
+  indicator,
   result,
   indicatorStyle,
   indicatorSeriesRef,
@@ -14,20 +15,20 @@ export default function AroonOscillatorPlot({
   useEffect(() => {
     if (!result) return;
 
-    if (indicatorSeriesRef.current?.AO) {
-      Object.values(indicatorSeriesRef.current.AO).forEach((s)=>{
+    if (indicatorSeriesRef.current?.[indicator]) {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s)=>{
         try { chart?.removeSeries(s) } catch {}
       });
-      indicatorSeriesRef.current.AO = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const grouped = {};
-    const style = indicatorStyle?.AO;
+    const style = indicatorStyle?.[indicator];
     const data = result?.data ?? [];
 
     /* ================= OSC ================= */
 
-    const osc = addSeries("AO", BaselineSeries, {
+    const osc = addSeries(indicator, BaselineSeries, {
       baseValue: { type: "price", price: style?.center?.value ?? 0 },
 
       topLineColor: style?.oscillator?.palette?.up,
@@ -50,9 +51,9 @@ export default function AroonOscillatorPlot({
 
     const make = (v) => data.map(p => ({ time: p.time, value: v }));
 
-    const center = addSeries("AO", LineSeries, {});
-    const upper = addSeries("AO", LineSeries, {});
-    const lower = addSeries("AO", LineSeries, {});
+    const center = addSeries(indicator, LineSeries, {});
+    const upper = addSeries(indicator, LineSeries, {});
+    const lower = addSeries(indicator, LineSeries, {});
 
     center.setData(make(style?.center?.value ?? 0));
     upper.setData(make(style?.upperLevel?.value ?? 90));
@@ -64,7 +65,7 @@ export default function AroonOscillatorPlot({
 
     grouped.data = data;
 
-    indicatorSeriesRef.current.AO = grouped;
+    indicatorSeriesRef.current[indicator] = grouped;
 
   }, [result]);
 
@@ -73,10 +74,10 @@ export default function AroonOscillatorPlot({
 
   useEffect(() => {
 
-    const g = indicatorSeriesRef.current?.AO;
+    const g = indicatorSeriesRef.current?.[indicator];
     if (!g) return;
 
-    const style = indicatorStyle?.AO;
+    const style = indicatorStyle?.[indicator];
     const data = g.data ?? [];
 
     const make = (v) => data.map(p => ({ time: p.time, value: v }));
@@ -137,7 +138,7 @@ export default function AroonOscillatorPlot({
     result,
 
     // ✅ CRITICAL: full AO dependency
-    indicatorStyle?.AO
+    indicatorStyle?.[indicator]
   ]);
 
   return null;

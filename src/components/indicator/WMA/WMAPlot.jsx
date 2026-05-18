@@ -2,11 +2,13 @@ import { useEffect } from "react";
 import { LineSeries } from "lightweight-charts";
 
 export default function WMAPlot({
+  indicator,
   result,
   rows,
   indicatorStyle,
   indicatorSeriesRef,
-  addSeries
+  addSeries,
+  chart
 }) {
 
   /* ================= CREATE WMA ================= */
@@ -17,15 +19,16 @@ export default function WMAPlot({
 
     /* REMOVE OLD WMA */
 
-    if (indicatorSeriesRef.current?.WMA) {
+    if (indicatorSeriesRef.current?.[indicator]) {
 
-      Object.values(indicatorSeriesRef.current.WMA).forEach((s) => {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         if (s?.setData) {
-          try { s.setData([]); } catch {}
+          try { s.setData([]);
+            try { chart.removeSeries(s); } catch {} } catch {}
         }
       });
 
-      indicatorSeriesRef.current.WMA = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const groupedSeries = {};
@@ -33,9 +36,9 @@ export default function WMAPlot({
     Object.entries(result.data).forEach(([lineName, lineData]) => {
 
       const rowConfig = rows?.find((r) => r.key === lineName);
-      const styleConfig = indicatorStyle?.WMA?.[lineName];
+      const styleConfig = indicatorStyle?.[indicator]?.[lineName];
 
-      const series = addSeries("WMA", LineSeries, {
+      const series = addSeries(indicator, LineSeries, {
         color: styleConfig?.color || rowConfig?.color || "#9c27b0",
         lineWidth: styleConfig?.width || 2,
         visible: styleConfig?.visible ?? true,
@@ -50,7 +53,7 @@ export default function WMAPlot({
       groupedSeries[lineName] = series;
     });
 
-    indicatorSeriesRef.current.WMA = groupedSeries;
+    indicatorSeriesRef.current[indicator] = groupedSeries;
 
   }, [result]);
 
@@ -59,10 +62,10 @@ export default function WMAPlot({
 
   useEffect(() => {
 
-    const wmaGroup = indicatorSeriesRef.current?.WMA;
+    const wmaGroup = indicatorSeriesRef.current?.[indicator];
     if (!wmaGroup) return;
 
-    const style = indicatorStyle?.WMA?.wma;
+    const style = indicatorStyle?.[indicator]?.wma;
 
     if (wmaGroup.wma) {
       wmaGroup.wma.applyOptions({

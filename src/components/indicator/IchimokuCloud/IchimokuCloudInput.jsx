@@ -1,7 +1,9 @@
 export default function IchimokuCloudInput(
   response,
   indicatorSeriesRef,
-  latestIndicatorValuesRef
+  latestIndicatorValuesRef,
+  maType,
+  indicator
 ) {
 
   const rows = Array.isArray(response?.data) ? response.data : [];
@@ -56,7 +58,7 @@ export default function IchimokuCloudInput(
     }))
     .sort((a, b) => a.time - b.time);
 
-  const series = indicatorSeriesRef.current?.ICHIMOKU;
+  const series = indicatorSeriesRef.current?.[indicator];
   if (!series) return;
 
   /* ================= UPDATE SERIES ================= */
@@ -69,7 +71,7 @@ export default function IchimokuCloudInput(
 
   /* ================= UPDATE HOVER VALUES ================= */
 
-  latestIndicatorValuesRef.current.ICHIMOKU = {
+  latestIndicatorValuesRef.current[indicator] = {
     conversionLine: conversionData[conversionData.length - 1]?.value,
     baseLine: baseData[baseData.length - 1]?.value,
     leadLine1: leadLine1Data[leadLine1Data.length - 1]?.value,
@@ -79,7 +81,7 @@ export default function IchimokuCloudInput(
 
   /* ================= STORE RESULT ================= */
 
-  indicatorSeriesRef.current.ICHIMOKU.result = {
+  indicatorSeriesRef.current[indicator].result = {
     data: {
       conversionLine: conversionData,
       baseLine: baseData,

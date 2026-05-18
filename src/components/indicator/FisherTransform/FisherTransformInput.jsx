@@ -1,7 +1,9 @@
 export default function FTInput(
   response,
   indicatorSeriesRef,
-  latestIndicatorValuesRef
+  latestIndicatorValuesRef,
+  maType,
+  indicator
 ) {
   // ---------------- SAFE DATA ----------------
   const rows =
@@ -15,7 +17,7 @@ export default function FTInput(
   }
 
   // ---------------- SERIES REFERENCE ----------------
-  const group = indicatorSeriesRef.current?.FT;
+  const group = indicatorSeriesRef.current?.[indicator];
   if (!group || (!group.fisherLine && !group.triggerLine)) {
     console.log(":x: FT series not ready");
     return;
@@ -41,7 +43,7 @@ export default function FTInput(
   if (group.triggerLine) group.triggerLine.setData([...triggerData]);
 
   // ---------------- LATEST VALUE ----------------
-  latestIndicatorValuesRef.current.FT = {
+  latestIndicatorValuesRef.current[indicator] = {
     fisherLine: fisherData[fisherData.length - 1]?.value ?? null,
     triggerLine: triggerData[triggerData.length - 1]?.value ?? null,
   };

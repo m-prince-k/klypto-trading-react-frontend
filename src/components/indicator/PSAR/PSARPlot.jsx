@@ -2,34 +2,37 @@ import { useEffect } from "react";
 import { LineSeries, createSeriesMarkers } from "lightweight-charts";
 
 export default function PSARPlot({
+  indicator,
   result,
   rows,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
+  chart
 }) {
   useEffect(() => {
     const psarData = result?.data ?? [];
     if (!psarData.length) return;
 
     /* remove previous PSAR series */
-    if (indicatorSeriesRef.current?.PSAR) {
-      Object.values(indicatorSeriesRef.current.PSAR).forEach((s) => {
+    if (indicatorSeriesRef.current?.[indicator]) {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         if (s?.setData) {
           try {
             s.setData([]);
+            try { chart.removeSeries(s); } catch {}
           } catch {}
         }
       });
-      indicatorSeriesRef.current.PSAR = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const groupedSeries = {};
     const rowConfig = rows?.find((r) => r.key === "psar");
-    const styleConfig = indicatorStyle?.PSAR?.psar;
+    const styleConfig = indicatorStyle?.[indicator]?.psar;
 
     /* Hidden line series */
-    const psarSeries = addSeries("PSAR", LineSeries, {
+    const psarSeries = addSeries(indicator, LineSeries, {
       color: "rgba(41,98,255,0)",
       lineWidth: 0, // hide line
       visible: styleConfig?.visible ?? true,
@@ -55,15 +58,15 @@ export default function PSARPlot({
 
     groupedSeries.psar = psarSeries;
     groupedSeries.psarData = psarData;
-    indicatorSeriesRef.current.PSAR = groupedSeries;
+    indicatorSeriesRef.current[indicator] = groupedSeries;
   }, [result]);
 
   /* ================= STYLE UPDATE ================= */
   useEffect(() => {
-    const psarGroup = indicatorSeriesRef.current?.PSAR;
+    const psarGroup = indicatorSeriesRef.current?.[indicator];
     if (!psarGroup) return;
 
-    const styleConfig = indicatorStyle?.PSAR?.psar;
+    const styleConfig = indicatorStyle?.[indicator]?.psar;
     if (psarGroup.psar) {
       psarGroup.psar.applyOptions({
         visible: styleConfig?.visible,

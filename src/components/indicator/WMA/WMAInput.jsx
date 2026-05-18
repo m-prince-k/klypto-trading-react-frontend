@@ -1,7 +1,9 @@
 export default function WMAInput(
   response,
   indicatorSeriesRef,
-  latestIndicatorValuesRef
+  latestIndicatorValuesRef,
+  maType,
+  indicator
 ) {
 
   const rows = Array.isArray(response?.data) ? response.data : [];
@@ -16,7 +18,7 @@ export default function WMAInput(
     }))
     .sort((a, b) => a.time - b.time);
 
-  const series = indicatorSeriesRef.current?.WMA;
+  const series = indicatorSeriesRef.current?.[indicator];
 
   if (!series) return;
 
@@ -26,13 +28,13 @@ export default function WMAInput(
 
   /* ================= UPDATE HOVER VALUES ================= */
 
-  latestIndicatorValuesRef.current.WMA = {
+  latestIndicatorValuesRef.current[indicator] = {
     wma: wmaData[wmaData.length - 1]?.value,
   };
 
   /* ================= STORE RESULT ================= */
 
-  indicatorSeriesRef.current.WMA.result = {
+  indicatorSeriesRef.current[indicator].result = {
     data: {
       wma: wmaData,
     },

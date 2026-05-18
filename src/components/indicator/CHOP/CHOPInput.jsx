@@ -1,12 +1,14 @@
 export default function CHOPInput(
   response,
   indicatorSeriesRef,
-  latestIndicatorValuesRef
+  latestIndicatorValuesRef,
+  maType,
+  indicator
 ) {
 
   const rows = response?.data ?? [];
 
-  const group = indicatorSeriesRef.current?.CHOP;
+  const group = indicatorSeriesRef.current?.[indicator];
   if (!group) return;
 
   const chopData = rows
@@ -52,7 +54,7 @@ export default function CHOPInput(
 
   /* UPDATE LATEST VALUE */
 
-  latestIndicatorValuesRef.current.CHOP = {
+  latestIndicatorValuesRef.current[indicator] = {
     chop: chopData[chopData.length - 1]?.value ?? null,
   };
 

@@ -1,11 +1,13 @@
 export default function CKSInput(
   response,
   indicatorSeriesRef,
-  latestIndicatorValuesRef
+  latestIndicatorValuesRef,
+  maType,
+  indicator
 ) {
 
-  const longSeries = indicatorSeriesRef.current?.CKS?.long;
-  const shortSeries = indicatorSeriesRef.current?.CKS?.short;
+  const longSeries = indicatorSeriesRef.current?.[indicator]?.long;
+  const shortSeries = indicatorSeriesRef.current?.[indicator]?.short;
 
   if (!longSeries || !shortSeries) return;
 
@@ -28,7 +30,7 @@ export default function CKSInput(
   longSeries.setData(longData);
   shortSeries.setData(shortData);
 
-  latestIndicatorValuesRef.current.CKS = {
+  latestIndicatorValuesRef.current[indicator] = {
     long: longData[longData.length - 1]?.value ?? null,
     short: shortData[shortData.length - 1]?.value ?? null,
   };

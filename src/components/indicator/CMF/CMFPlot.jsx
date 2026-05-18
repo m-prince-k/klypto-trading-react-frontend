@@ -2,11 +2,13 @@ import { useEffect } from "react";
 import { LineSeries } from "lightweight-charts";
 
 export default function CMFPlot({
+  indicator,
   result,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
   indicatorConfigs,
+  chart
 }) {
 
   /* ================= CREATE SERIES ================= */
@@ -16,13 +18,14 @@ export default function CMFPlot({
     if (!result?.data?.cmf) return;
 
     // 🔥 REMOVE OLD SERIES
-    if (indicatorSeriesRef.current?.CMF) {
-      Object.values(indicatorSeriesRef.current.CMF).forEach((s) => {
+    if (indicatorSeriesRef.current?.[indicator]) {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         if (s?.setData) {
-          try { s.setData([]); } catch {}
+          try { s.setData([]);
+            try { chart.removeSeries(s); } catch {} } catch {}
         }
       });
-      indicatorSeriesRef.current.CMF = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const mapSeries = (arr) =>
@@ -35,24 +38,24 @@ export default function CMFPlot({
 
     /* ================= CMF LINE ================= */
 
-    const cmfSeries = addSeries("CMF", LineSeries, {
-      color: indicatorStyle?.CMF?.cmfLine?.color ?? "rgba(255,193,7,1)",
-      lineWidth: Number(indicatorStyle?.CMF?.cmfLine?.width ?? 2),
-      lineStyle: indicatorStyle?.CMF?.cmfLine?.lineStyle ?? 0,
-      visible: indicatorStyle?.CMF?.cmfLine?.visible ?? true,
+    const cmfSeries = addSeries(indicator, LineSeries, {
+      color: indicatorStyle?.[indicator]?.cmfLine?.color ?? "rgba(255,193,7,1)",
+      lineWidth: Number(indicatorStyle?.[indicator]?.cmfLine?.width ?? 2),
+      lineStyle: indicatorStyle?.[indicator]?.cmfLine?.lineStyle ?? 0,
+      visible: indicatorStyle?.[indicator]?.cmfLine?.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: true,
     });
 
     /* ================= ZERO LINE ================= */
 
-    const zeroValue = Number(indicatorStyle?.CMF?.zeroLine?.value ?? 0);
+    const zeroValue = Number(indicatorStyle?.[indicator]?.zeroLine?.value ?? 0);
 
-    const zeroSeries = addSeries("CMF", LineSeries, {
-      color: indicatorStyle?.CMF?.zeroLine?.color ?? "rgba(158,158,158,1)",
-      lineWidth: Number(indicatorStyle?.CMF?.zeroLine?.width ?? 1),
-      lineStyle: indicatorStyle?.CMF?.zeroLine?.lineStyle ?? 2,
-      visible: indicatorStyle?.CMF?.zeroLine?.visible ?? true,
+    const zeroSeries = addSeries(indicator, LineSeries, {
+      color: indicatorStyle?.[indicator]?.zeroLine?.color ?? "rgba(158,158,158,1)",
+      lineWidth: Number(indicatorStyle?.[indicator]?.zeroLine?.width ?? 1),
+      lineStyle: indicatorStyle?.[indicator]?.zeroLine?.lineStyle ?? 2,
+      visible: indicatorStyle?.[indicator]?.zeroLine?.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: false,
     });
@@ -65,7 +68,7 @@ export default function CMFPlot({
     cmfSeries.setData(cmfData);
     zeroSeries.setData(zeroData);
 
-    indicatorSeriesRef.current.CMF = {
+    indicatorSeriesRef.current[indicator] = {
       cmfLine: cmfSeries,
       zeroLine: zeroSeries,
       cmfData,
@@ -78,10 +81,10 @@ export default function CMFPlot({
 
   useEffect(() => {
 
-    const group = indicatorSeriesRef.current?.CMF;
+    const group = indicatorSeriesRef.current?.[indicator];
     if (!group) return;
 
-    const style = indicatorStyle?.CMF;
+    const style = indicatorStyle?.[indicator];
     if (!style) return;
 
     /* 🔥 UPDATE ZERO LINE DATA */
@@ -116,7 +119,7 @@ export default function CMFPlot({
       });
     }
 
-  }, [indicatorStyle?.CMF]); // ✅ FIXED DEPENDENCY
+  }, [indicatorStyle?.[indicator]]); // ✅ FIXED DEPENDENCY
 
   return null;
 }

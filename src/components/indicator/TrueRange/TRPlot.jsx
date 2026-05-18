@@ -2,10 +2,12 @@ import { useEffect } from "react";
 import { LineSeries } from "lightweight-charts";
 
 export default function TRPlot({
+  indicator,
   result,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
+  chart
 }) {
 
   /* ================= CREATE ================= */
@@ -20,26 +22,27 @@ export default function TRPlot({
     }
 
     // 🔥 REMOVE OLD
-    if (indicatorSeriesRef.current?.TR) {
-      Object.values(indicatorSeriesRef.current.TR).forEach((s) => {
-        try { s.setData([]); } catch {}
+    if (indicatorSeriesRef.current?.[indicator]) {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
+        try { s.setData([]);
+            try { chart.removeSeries(s); } catch {} } catch {}
       });
-      indicatorSeriesRef.current.TR = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     /* 🔵 TR LINE */
-    const trSeries = addSeries("TR", LineSeries, {
-      color: indicatorStyle?.TR?.trLine?.color ?? "rgba(33,150,243,1)",
-      lineWidth: indicatorStyle?.TR?.trLine?.width ?? 2,
-      lineStyle: indicatorStyle?.TR?.trLine?.lineStyle ?? 0,
-      visible: indicatorStyle?.TR?.trLine?.visible ?? true,
+    const trSeries = addSeries(indicator, LineSeries, {
+      color: indicatorStyle?.[indicator]?.trLine?.color ?? "rgba(33,150,243,1)",
+      lineWidth: indicatorStyle?.[indicator]?.trLine?.width ?? 2,
+      lineStyle: indicatorStyle?.[indicator]?.trLine?.lineStyle ?? 0,
+      visible: indicatorStyle?.[indicator]?.trLine?.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: true,
     });
 
     trSeries.setData(tr);
 
-    indicatorSeriesRef.current.TR = {
+    indicatorSeriesRef.current[indicator] = {
       trLine: trSeries,
     };
 
@@ -52,17 +55,17 @@ export default function TRPlot({
 
   useEffect(() => {
 
-    const group = indicatorSeriesRef.current?.TR;
+    const group = indicatorSeriesRef.current?.[indicator];
     if (!group) return;
 
     group.trLine?.applyOptions({
-      color: indicatorStyle?.TR?.trLine?.color,
-      lineWidth: indicatorStyle?.TR?.trLine?.width,
-      lineStyle: indicatorStyle?.TR?.trLine?.lineStyle ?? 0,
-      visible: indicatorStyle?.TR?.trLine?.visible,
+      color: indicatorStyle?.[indicator]?.trLine?.color,
+      lineWidth: indicatorStyle?.[indicator]?.trLine?.width,
+      lineStyle: indicatorStyle?.[indicator]?.trLine?.lineStyle ?? 0,
+      visible: indicatorStyle?.[indicator]?.trLine?.visible,
     });
 
-  }, [indicatorStyle?.TR]);
+  }, [indicatorStyle?.[indicator]]);
 
   return null;
 }

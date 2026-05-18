@@ -2,10 +2,12 @@ export default function CMOInput(
   response,
   indicatorSeriesRef,
   latestIndicatorValuesRef,
+  maType,
+  indicator
 ) {
   const rows = response?.data ?? [];
 
-  const cmoSeries = indicatorSeriesRef.current?.CMO?.cmoLine;
+  const cmoSeries = indicatorSeriesRef.current?.[indicator]?.cmoLine;
 
   if (!cmoSeries) return;
 
@@ -18,7 +20,7 @@ export default function CMOInput(
 
   cmoSeries.setData(cmoData);
 
-  latestIndicatorValuesRef.current.CMO = {
+  latestIndicatorValuesRef.current[indicator] = {
     cmo: cmoData[cmoData.length - 1]?.value ?? null,
   };
 }

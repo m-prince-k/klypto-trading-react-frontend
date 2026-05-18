@@ -2,11 +2,13 @@ import { useEffect } from "react";
 import { LineSeries } from "lightweight-charts";
 
 export default function NVIPlot({
+  indicator,
   result,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
   indicatorConfigs,
+  chart
 }) {
 
   /* ================= CREATE SERIES ================= */
@@ -15,13 +17,14 @@ export default function NVIPlot({
 
     if (!result?.data) return;
 
-    if (indicatorSeriesRef.current?.NVI) {
-      Object.values(indicatorSeriesRef.current.NVI).forEach((s) => {
+    if (indicatorSeriesRef.current?.[indicator]) {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         if (s?.setData) {
-          try { s.setData([]); } catch {}
+          try { s.setData([]);
+            try { chart.removeSeries(s); } catch {} } catch {}
         }
       });
-      indicatorSeriesRef.current.NVI = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const mapSeries = (arr) =>
@@ -33,20 +36,20 @@ export default function NVIPlot({
     const nviData = mapSeries(result.data.nvi);
     const emaData = mapSeries(result.data.nviEma);
 
-    const nviSeries = addSeries("NVI", LineSeries, {
-      color: indicatorStyle?.NVI?.nvi?.color ?? "rgba(41,98,255,1)",
-      lineWidth: indicatorStyle?.NVI?.nvi?.width ?? 2,
-      lineStyle: indicatorStyle?.NVI?.nvi?.lineStyle ?? 0,
-      visible: indicatorStyle?.NVI?.nvi?.visible ?? true,
+    const nviSeries = addSeries(indicator, LineSeries, {
+      color: indicatorStyle?.[indicator]?.nvi?.color ?? "rgba(41,98,255,1)",
+      lineWidth: indicatorStyle?.[indicator]?.nvi?.width ?? 2,
+      lineStyle: indicatorStyle?.[indicator]?.nvi?.lineStyle ?? 0,
+      visible: indicatorStyle?.[indicator]?.nvi?.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: true,
     });
 
-    const emaSeries = addSeries("NVI", LineSeries, {
-      color: indicatorStyle?.NVI?.nviEma?.color ?? "rgba(38,166,154,1)",
-      lineWidth: indicatorStyle?.NVI?.nviEma?.width ?? 1,
-      lineStyle: indicatorStyle?.NVI?.nviEma?.lineStyle ?? 0,
-      visible: indicatorStyle?.NVI?.nviEma?.visible ?? true,
+    const emaSeries = addSeries(indicator, LineSeries, {
+      color: indicatorStyle?.[indicator]?.nviEma?.color ?? "rgba(38,166,154,1)",
+      lineWidth: indicatorStyle?.[indicator]?.nviEma?.width ?? 1,
+      lineStyle: indicatorStyle?.[indicator]?.nviEma?.lineStyle ?? 0,
+      visible: indicatorStyle?.[indicator]?.nviEma?.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: true,
     });
@@ -54,7 +57,7 @@ export default function NVIPlot({
     nviSeries.setData(nviData);
     emaSeries.setData(emaData);
 
-    indicatorSeriesRef.current.NVI = {
+    indicatorSeriesRef.current[indicator] = {
       nvi: nviSeries,
       nviEma: emaSeries,
     };
@@ -66,21 +69,21 @@ export default function NVIPlot({
 
   useEffect(() => {
 
-    const group = indicatorSeriesRef.current?.NVI;
+    const group = indicatorSeriesRef.current?.[indicator];
     if (!group) return;
 
     group.nvi.applyOptions({
-      color: indicatorStyle?.NVI?.nvi?.color ?? "#2962ff",
-      lineWidth: indicatorStyle?.NVI?.nvi?.width ?? 2,
-      lineStyle: indicatorStyle?.NVI?.nvi?.lineStyle ?? 0,
-      visible: indicatorStyle?.NVI?.nvi?.visible ?? true,
+      color: indicatorStyle?.[indicator]?.nvi?.color ?? "#2962ff",
+      lineWidth: indicatorStyle?.[indicator]?.nvi?.width ?? 2,
+      lineStyle: indicatorStyle?.[indicator]?.nvi?.lineStyle ?? 0,
+      visible: indicatorStyle?.[indicator]?.nvi?.visible ?? true,
     });
 
     group.nviEma.applyOptions({
-      color: indicatorStyle?.NVI?.nviEma?.color ?? "#26a69a",
-      lineWidth: indicatorStyle?.NVI?.nviEma?.width ?? 1,
-      lineStyle: indicatorStyle?.NVI?.nviEma?.lineStyle ?? 0,
-      visible: indicatorStyle?.NVI?.nviEma?.visible ?? true,
+      color: indicatorStyle?.[indicator]?.nviEma?.color ?? "#26a69a",
+      lineWidth: indicatorStyle?.[indicator]?.nviEma?.width ?? 1,
+      lineStyle: indicatorStyle?.[indicator]?.nviEma?.lineStyle ?? 0,
+      visible: indicatorStyle?.[indicator]?.nviEma?.visible ?? true,
     });
 
   }, [indicatorStyle]);

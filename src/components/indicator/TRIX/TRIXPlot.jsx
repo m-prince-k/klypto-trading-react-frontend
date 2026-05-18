@@ -2,10 +2,12 @@ import { useEffect } from "react";
 import { LineSeries } from "lightweight-charts";
 
 export default function TRIXPlot({
+  indicator,
   result,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
+  chart
 }) {
   /* ================= CREATE ================= */
 
@@ -17,13 +19,14 @@ export default function TRIXPlot({
       return;
     } // :fire: REMOVE OLD
 
-    if (indicatorSeriesRef.current?.TRIX) {
-      Object.values(indicatorSeriesRef.current.TRIX).forEach((s) => {
+    if (indicatorSeriesRef.current?.[indicator]) {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         try {
           s.setData([]);
+            try { chart.removeSeries(s); } catch {}
         } catch {}
       });
-      indicatorSeriesRef.current.TRIX = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const trixData = trixRaw.map((p) => ({
@@ -31,9 +34,9 @@ export default function TRIXPlot({
       value: Number(p.value),
     }));
 
-    const style = indicatorStyle?.TRIX; /* :fire: TRIX LINE */
+    const style = indicatorStyle?.[indicator]; /* :fire: TRIX LINE */
 
-    const trixSeries = addSeries("TRIX", LineSeries, {
+    const trixSeries = addSeries(indicator, LineSeries, {
       color: style?.trixLine?.color ?? "rgba(33,150,243,1)",
       lineWidth: style?.trixLine?.width ?? 2,
       lineStyle: style?.trixLine?.lineStyle ?? 0,
@@ -42,7 +45,7 @@ export default function TRIXPlot({
       lastValueVisible: true,
     }); /* :fire: ZERO LINE */
 
-    const zeroSeries = addSeries("TRIX", LineSeries, {
+    const zeroSeries = addSeries(indicator, LineSeries, {
       color: style?.zeroLine?.color ?? "rgba(158,158,158,1)",
       lineWidth: style?.zeroLine?.width ?? 1,
       lineStyle: style?.zeroLine?.lineStyle ?? 2,
@@ -61,7 +64,7 @@ export default function TRIXPlot({
     trixSeries.setData(trixData);
     zeroSeries.setData(zeroData);
 
-    indicatorSeriesRef.current.TRIX = {
+    indicatorSeriesRef.current[indicator] = {
       trixLine: trixSeries,
       zeroLine: zeroSeries,
       trixData,
@@ -71,10 +74,10 @@ export default function TRIXPlot({
   }, [result]); /* ================= STYLE UPDATE ================= */
 
   useEffect(() => {
-    const g = indicatorSeriesRef.current?.TRIX;
+    const g = indicatorSeriesRef.current?.[indicator];
     if (!g) return;
 
-    const style = indicatorStyle?.TRIX;
+    const style = indicatorStyle?.[indicator];
     if (!style) return; /* :fire: UPDATE ZERO LINE DATA */
 
     const zeroValue = style?.zeroLine?.value ?? 0;
@@ -99,7 +102,7 @@ export default function TRIXPlot({
       lineStyle: style?.zeroLine?.lineStyle,
       visible: style?.zeroLine?.visible,
     });
-  }, [indicatorStyle?.TRIX]);
+  }, [indicatorStyle?.[indicator]]);
 
   return null;
 }

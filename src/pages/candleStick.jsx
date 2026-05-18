@@ -130,6 +130,37 @@ export default function Candlestick() {
     } else {
       // 🔥 Reset on timeframe / currency change
       fetchedIndicatorsRef.current.clear();
+
+      // ✅ Remove existing indicator series from charts before refetching
+      selectedIndicator.forEach((indicator) => {
+        const entry = indicatorSeriesRef.current[indicator];
+        if (!entry) return;
+
+        const paneKey = resolvePaneKey(indicator);
+        const pane = panesRef.current[paneKey];
+        const chart = pane?.chart ?? chartRef.current;
+        if (!chart) return;
+
+        /* MULTI SERIES */
+        if (entry && typeof entry === "object" && !entry.priceScale) {
+          Object.values(entry).forEach((series) => {
+            if (!series) return;
+            if (typeof series.setData !== "function") return;
+
+            try {
+              chart.removeSeries(series);
+            } catch {}
+          });
+        } else {
+          /* SINGLE SERIES */
+          try {
+            chart.removeSeries(entry);
+          } catch {}
+        }
+
+        // Keep it empty so the Plot component knows it needs to create a new one
+        delete indicatorSeriesRef.current[indicator];
+      });
     }
 
     fetchIndicatorData(indicatorsToFetch, selectedCurrency, timeframeValue);
@@ -166,15 +197,20 @@ export default function Candlestick() {
   //  GET PANE INDEX
   const getPaneIndex = (indicator) => {
     // ❗ overlay indicators → always main pane
-    if (!PANE_INDICATORS.has(indicator)) return 0;
+    const baseIndicator = indicator.split("_")[0];
+    if (!PANE_INDICATORS.has(baseIndicator)) return 0;
 
     if (paneIndexRef.current[indicator] !== undefined) {
       return paneIndexRef.current[indicator];
     }
 
-    const nextPane = Object.keys(paneIndexRef.current).length + 1;
-    paneIndexRef.current[indicator] = nextPane;
+    const usedPanes = new Set(Object.values(paneIndexRef.current));
+    let nextPane = 1;
+    while (usedPanes.has(nextPane)) {
+      nextPane++;
+    }
 
+    paneIndexRef.current[indicator] = nextPane;
     return nextPane;
   };
 
@@ -196,6 +232,33 @@ export default function Candlestick() {
       },
       paneIndex,
     );
+
+    // 🔥 ADD THIS BLOCK (same as first project)
+    if (paneIndex !== 0) {
+      const tryPopulate = () => {
+        const panes = chartRef.current.panes();
+        const paneObj = panes[paneIndex];
+
+        if (paneObj) {
+          const div = paneObj.getHTMLElement();
+          if (div) {
+            const paneKey = resolvePaneKey(indicator);
+
+            panesRef.current[paneKey] = {
+              chart: chartRef.current,
+              pane: paneObj,
+              div: div,
+            };
+            return true;
+          }
+        }
+        return false;
+      };
+
+      if (!tryPopulate()) {
+        setTimeout(tryPopulate, 100);
+      }
+    }
 
     return series;
   };
@@ -228,26 +291,49 @@ export default function Candlestick() {
     const pane = panesRef.current[paneKey];
     if (!pane) return;
 
-    const stillUsed = Object.entries(indicatorSeriesRef.current).some(
-      ([indicatorKey, series]) => {
-        if (!series || indicatorKey.startsWith("_")) return false;
-        return resolvePaneKey(indicatorKey) === paneKey;
-      },
+    const chart = pane.chart;
+
+    const isStillUsed = Object.entries(indicatorSeriesRef.current).some(
+      ([indicatorKey]) => resolvePaneKey(indicatorKey) === paneKey,
     );
-    if (stillUsed) return;
+
+    if (isStillUsed) return;
+
     try {
-      /* REMOVE DOM ELEMENT */
-      if (pane.div && pane.div.parentNode) {
-        pane.div.parentNode.removeChild(pane.div);
-      }
-      /* REMOVE SPLITTER */
-      if (pane.splitter && pane.splitter.parentNode) {
-        pane.splitter.parentNode.removeChild(pane.splitter);
-      }
+      // 1. Collect all series in this pane
+      const seriesToRemove = [];
+
+      Object.entries(indicatorSeriesRef.current).forEach(([ind, group]) => {
+        if (resolvePaneKey(ind) !== paneKey) return;
+
+        if (!group) return;
+
+        Object.values(group).forEach((series) => {
+          if (series) seriesToRemove.push(series);
+        });
+
+        delete indicatorSeriesRef.current[ind];
+      });
+
+      // 2. REMOVE series FIRST
+      seriesToRemove.forEach((s) => {
+        try {
+          chart.removeSeries(s);
+        } catch {}
+      });
+
+      // 3. IMPORTANT: force chart to recompute pane layout
+      requestAnimationFrame(() => {
+        try {
+          chart.timeScale().fitContent();
+        } catch {}
+      });
+
+      // 4. Remove internal references
+      delete panesRef.current[paneKey];
     } catch (e) {
-      console.error("Pane cleanup error:", e);
+      console.warn("cleanupPane error:", e);
     }
-    delete panesRef.current[paneKey];
   }
 
   //  ✅ INDICATOR REMOVAL
@@ -279,6 +365,7 @@ export default function Candlestick() {
 
     delete indicatorSeriesRef.current[indicator];
     delete latestIndicatorValuesRef.current[indicator];
+    delete paneIndexRef.current[indicator];
     fetchedIndicatorsRef.current.delete(indicator);
 
     /* ✅ ADD THIS BLOCK (IMPORTANT) */
@@ -375,40 +462,24 @@ export default function Candlestick() {
 
   const toggleIndicator = useCallback((indicator) => {
     setSelectedIndicator((prev) => {
-      const alreadySelected = prev.includes(indicator);
-
-      if (alreadySelected) {
-        const entry = indicatorSeriesRef.current[indicator];
-        const paneKey = resolvePaneKey(indicator);
-        const pane = panesRef.current[paneKey];
-        const chart = pane?.chart ?? chartRef.current;
-
-        if (entry && chart) {
-          const seriesList = Array.isArray(entry)
-            ? entry
-            : typeof entry === "object"
-              ? Object.values(entry)
-              : [entry];
-
-          seriesList.forEach((series) => {
-            try {
-              chart.removeSeries(series);
-            } catch {}
-          });
-        }
-
-        delete indicatorSeriesRef.current[indicator];
-        delete latestIndicatorValuesRef.current[indicator];
-        fetchedIndicatorsRef.current.delete(indicator);
-
-        const updated = prev.filter((i) => i !== indicator);
-
-        setTimeout(() => cleanupPane(paneKey), 0);
-
-        return updated;
+      if (prev.length >= 10) {
+        alert("Maximum of 10 indicators allowed.");
+        return prev;
       }
 
-      return [...prev, indicator];
+      const newId = `${indicator}_${Date.now()}`;
+
+      setIndicatorConfigs((configs) => ({
+        ...configs,
+        [newId]: { ...(indicatorConfigDefault[indicator] || {}) },
+      }));
+
+      setIndicatorStyle((styles) => ({
+        ...styles,
+        [newId]: { ...(indicatorStyleDefault[indicator] || {}) },
+      }));
+
+      return [...prev, newId];
     });
   }, []);
 
@@ -417,14 +488,15 @@ export default function Candlestick() {
   const renderValue = (indicator, value) => {
     if (value == null) return "--";
 
-    const showPercent = indicator === "AROON"; // Only show % for Aroon
+    const baseIndicator = indicator.split("_")[0];
+    const showPercent = baseIndicator === "AROON"; // Only show % for Aroon
 
     /* ================= NUMBER VALUES ================= */
     if (typeof value === "number") {
       const style =
         indicatorStyle?.[indicator]?.sma ||
         indicatorStyle?.[indicator]?.ma ||
-        indicatorStyle?.[indicator]?.[indicator?.toLowerCase()];
+        indicatorStyle?.[indicator]?.[baseIndicator?.toLowerCase()];
 
       if (style?.visible === false) return null;
 
@@ -442,7 +514,7 @@ export default function Candlestick() {
     if (typeof value === "object") {
       let keysToShow;
 
-      switch (indicator) {
+      switch (baseIndicator) {
         case "RSI":
           keysToShow = ["rsi", "smoothingMA", "bbUpper", "bbLower"];
           break;
@@ -541,7 +613,8 @@ export default function Candlestick() {
 
   const renderIndicators = () => {
     return selectedIndicator.map((indicator) => {
-      const Component = indicatorComponents[indicator];
+      const baseIndicator = indicator.split("_")[0];
+      const Component = indicatorComponents[baseIndicator];
       if (!Component) return null;
 
       const data = indicatorSeriesRef.current?.[indicator];
@@ -549,12 +622,13 @@ export default function Candlestick() {
       return (
         <Component
           key={indicator}
+          indicator={indicator}
           result={data?.result}
           rows={data?.rows}
           indicatorStyle={indicatorStyle}
           indicatorSeriesRef={indicatorSeriesRef}
           addSeries={addSeries}
-          containerRef={containerRef.current}
+          containerRef={containerRef}
           chart={chartRef.current}
           container={containerRef}
           panesRef={panesRef}
@@ -653,23 +727,27 @@ export default function Candlestick() {
   useEffect(() => {
     if (!chartRef.current) return;
 
+    let isCancelled = false;
+
     const loadChart = async () => {
       try {
         setMainChartLoading(true);
-
-        // remove previous series immediately to avoid showing old data
-        if (seriesRef.current) {
-          try {
-            chartRef.current.removeSeries(seriesRef.current);
-          } catch (e) {}
-          seriesRef.current = null;
-        }
 
         const response = await fetchDataByCurrency(
           selectedCurrency,
           timeframeValue,
           chartType,
         );
+
+        if (isCancelled) return;
+
+        // remove previous series to avoid showing old data before adding the new series
+        if (seriesRef.current) {
+          try {
+            chartRef.current.removeSeries(seriesRef.current);
+          } catch (e) {}
+          seriesRef.current = null;
+        }
 
         const data = response?.data || [];
 
@@ -794,7 +872,11 @@ export default function Candlestick() {
     };
 
     loadChart();
-  }, [chartType, timeframeValue, selectedCurrency, selectedIndicator]);
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [chartType, timeframeValue, selectedCurrency]);
 
   const { fetchDataByCurrency, fetchIndicatorData } = useChartFunctions({
     chartRef,
@@ -970,6 +1052,7 @@ export default function Candlestick() {
                   {selectedIndicator &&
                     selectedIndicator?.map((indicator, index) => {
                       const normalizedType = indicator.replace(/[\s/%]+/g, "");
+                      const baseIndicator = normalizedType.split("_")[0];
                       const value = liveIndicatorData[normalizedType];
                       return (
                         <div
@@ -977,7 +1060,7 @@ export default function Candlestick() {
                           className="flex w-full justify-between items-center gap-3 bg-white shadow-sm border border-slate-200 rounded-3 px-3 h-8 text-xs "
                         >
                           <span className="font-medium w-full text-slate-800 flex items-center gap-2">
-                            {indicator} :{" "}
+                            {baseIndicator} :{" "}
                             {indicatorConfigs?.[normalizedType]?.length ?? ""}{" "}
                             {indicatorConfigs?.[normalizedType]?.source ?? ""}{" "}
                             <span style={{ display: "flex", gap: 6 }}>

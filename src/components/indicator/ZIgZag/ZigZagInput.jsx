@@ -2,13 +2,15 @@ export default function ZIGZAGInput(
   response,
   indicatorSeriesRef,
   latestIndicatorValuesRef,
-  indicatorStyle // ✅ pass this from parent
+  maType,
+  indicator,
+  indicatorStyle,
 ) {
   const series = response?.data?.series ?? [];
   const pivots = response?.data?.pivots ?? [];
 
   const zigzagSeries =
-    indicatorSeriesRef.current?.ZIGZAG?.zigzagLine;
+    indicatorSeriesRef.current?.[indicator]?.zigzagLine;
 
   // ❌ If series not ready, exit
   if (!zigzagSeries) return;
@@ -67,7 +69,7 @@ export default function ZIGZAGInput(
   }
 
   // 🔹 Store latest value (for tooltip / panel)
-  latestIndicatorValuesRef.current.ZIGZAG = {
+  latestIndicatorValuesRef.current[indicator] = {
     zigzagLine:
       lineData.length > 0
         ? lineData[lineData.length - 1].value

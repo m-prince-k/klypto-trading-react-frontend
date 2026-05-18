@@ -1,7 +1,9 @@
 export default function HMAInput(
   response,
   indicatorSeriesRef,
-  latestIndicatorValuesRef
+  latestIndicatorValuesRef,
+  maType,
+  indicator
 ) {
   const rows = Array.isArray(response?.data) ? response.data : [];
 
@@ -15,7 +17,7 @@ export default function HMAInput(
     }))
     .sort((a, b) => a.time - b.time);
 
-  const series = indicatorSeriesRef.current?.HMA;
+  const series = indicatorSeriesRef.current?.[indicator];
 
   if (!series?.hma) return;
 
@@ -25,7 +27,7 @@ export default function HMAInput(
 
   /* ================= UPDATE HOVER VALUE ================= */
 
-  latestIndicatorValuesRef.current.HMA = {
+  latestIndicatorValuesRef.current[indicator] = {
     hma: hmaData[hmaData.length - 1]?.value,
   };
 }

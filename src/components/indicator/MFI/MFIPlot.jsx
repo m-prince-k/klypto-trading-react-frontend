@@ -2,10 +2,12 @@ import { useEffect } from "react";
 import { LineSeries, BaselineSeries } from "lightweight-charts";
 
 export default function MFIPlot({
+  indicator,
   result,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
+  chart
 }) {
   /* ================= CREATE SERIES ================= */
   useEffect(() => {
@@ -17,13 +19,14 @@ export default function MFIPlot({
     }
 
     // REMOVE OLD SERIES
-    if (indicatorSeriesRef.current?.MFI) {
-      Object.values(indicatorSeriesRef.current.MFI).forEach((s) => {
+    if (indicatorSeriesRef.current?.[indicator]) {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         try {
           s.setData([]);
+            try { chart.removeSeries(s); } catch {}
         } catch {}
       });
-      indicatorSeriesRef.current.MFI = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const mfiData = raw.map((d) => ({
@@ -31,10 +34,10 @@ export default function MFIPlot({
       value: Number(d.value ?? d.mfi),
     }));
 
-    const style = indicatorStyle?.MFI;
+    const style = indicatorStyle?.[indicator];
 
     /* ================= MFI LINE ================= */
-    const mfiSeries = addSeries("MFI", LineSeries, {
+    const mfiSeries = addSeries(indicator, LineSeries, {
       color: style?.mfiLine?.color,
       lineWidth: style?.mfiLine?.width,
       lineStyle: style?.mfiLine?.lineStyle ?? 0,
@@ -49,21 +52,21 @@ export default function MFIPlot({
     const middleVal = style?.middleBand?.value ?? 50;
     const lowerVal = style?.lowerBand?.value ?? 20;
 
-    const upperSeries = addSeries("MFI", LineSeries, {
+    const upperSeries = addSeries(indicator, LineSeries, {
       color: style?.upperBand?.color,
       lineWidth: style?.upperBand?.width,
       lineStyle: style?.upperBand?.lineStyle ?? 2,
       visible: style?.upperBand?.visible,
     });
 
-    const middleSeries = addSeries("MFI", LineSeries, {
+    const middleSeries = addSeries(indicator, LineSeries, {
       color: style?.middleBand?.color,
       lineWidth: style?.middleBand?.width,
       lineStyle: style?.middleBand?.lineStyle ?? 2,
       visible: style?.middleBand?.visible,
     });
 
-    const lowerSeries = addSeries("MFI", LineSeries, {
+    const lowerSeries = addSeries(indicator, LineSeries, {
       color: style?.lowerBand?.color,
       lineWidth: style?.lowerBand?.width,
       lineStyle: style?.lowerBand?.lineStyle ?? 2,
@@ -75,7 +78,7 @@ export default function MFIPlot({
     lowerSeries.setData(makeLevel(lowerVal));
 
     /* ================= BACKGROUND FILL ================= */
-    const bgSeries = addSeries("MFI", BaselineSeries, {
+    const bgSeries = addSeries(indicator, BaselineSeries, {
       baseValue: { type: "price", price: lowerVal }, // fill starts from lowerBand
       topFillColor1: style?.bgFill?.topFillColor1,
       topFillColor2: style?.bgFill?.topFillColor2,
@@ -93,7 +96,7 @@ export default function MFIPlot({
     /* ================= SET DATA ================= */
     mfiSeries.setData(mfiData);
 
-    indicatorSeriesRef.current.MFI = {
+    indicatorSeriesRef.current[indicator] = {
       mfiLine: mfiSeries,
       upperBand: upperSeries,
       middleBand: middleSeries,
@@ -107,10 +110,10 @@ export default function MFIPlot({
 
   /* ================= STYLE / BAND UPDATE ================= */
   useEffect(() => {
-    const g = indicatorSeriesRef.current?.MFI;
+    const g = indicatorSeriesRef.current?.[indicator];
     if (!g) return;
 
-    const style = indicatorStyle?.MFI;
+    const style = indicatorStyle?.[indicator];
     if (!style) return;
 
     const makeLevel = (value) => g.mfiData.map((p) => ({ time: p.time, value }));
@@ -161,7 +164,7 @@ export default function MFIPlot({
     });
     const bgData = g.mfiData.map((p) => ({ time: p.time, value: upperVal }));
     g.bgFill?.setData(bgData);
-  }, [indicatorStyle?.MFI]);
+  }, [indicatorStyle?.[indicator]]);
 
   return null;
 }

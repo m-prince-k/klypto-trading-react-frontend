@@ -2,11 +2,13 @@ import { useEffect } from "react";
 import { LineSeries } from "lightweight-charts";
 
 export default function HMAPlot({
+  indicator,
   result,
   rows,
   indicatorStyle,
   indicatorSeriesRef,
-  addSeries
+  addSeries,
+  chart
 }) {
 
   /* ================= CREATE HMA ================= */
@@ -17,15 +19,16 @@ export default function HMAPlot({
 
     /* REMOVE OLD HMA */
 
-    if (indicatorSeriesRef.current?.HMA) {
+    if (indicatorSeriesRef.current?.[indicator]) {
 
-      Object.values(indicatorSeriesRef.current.HMA).forEach((s) => {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         if (s?.setData) {
-          try { s.setData([]); } catch {}
+          try { s.setData([]);
+            try { chart.removeSeries(s); } catch {} } catch {}
         }
       });
 
-      indicatorSeriesRef.current.HMA = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const groupedSeries = {};
@@ -33,9 +36,9 @@ export default function HMAPlot({
     Object.entries(result.data).forEach(([lineName, lineData]) => {
 
       const rowConfig = rows?.find((r) => r.key === lineName);
-      const styleConfig = indicatorStyle?.HMA?.[lineName];
+      const styleConfig = indicatorStyle?.[indicator]?.[lineName];
 
-      const series = addSeries("HMA", LineSeries, {
+      const series = addSeries(indicator, LineSeries, {
         color: styleConfig?.color || rowConfig?.color || "#673ab7",
         lineWidth: styleConfig?.width || 2,
         visible: styleConfig?.visible ?? true,
@@ -50,7 +53,7 @@ export default function HMAPlot({
       groupedSeries[lineName] = series;
     });
 
-    indicatorSeriesRef.current.HMA = groupedSeries;
+    indicatorSeriesRef.current[indicator] = groupedSeries;
 
   }, [result]);
 
@@ -60,10 +63,10 @@ export default function HMAPlot({
 
   useEffect(() => {
 
-    const hmaGroup = indicatorSeriesRef.current?.HMA;
+    const hmaGroup = indicatorSeriesRef.current?.[indicator];
     if (!hmaGroup) return;
 
-    const style = indicatorStyle?.HMA?.hma;
+    const style = indicatorStyle?.[indicator]?.hma;
 
     if (hmaGroup.hma) {
       hmaGroup.hma.applyOptions({

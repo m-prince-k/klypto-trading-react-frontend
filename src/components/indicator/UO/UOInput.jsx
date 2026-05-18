@@ -2,6 +2,8 @@ export default function UOInput(
   response,
   indicatorSeriesRef,
   latestIndicatorValuesRef,
+  maType,
+  indicator
 ) {
   const rows = Array.isArray(response?.data?.series)
     ? response.data.series
@@ -16,15 +18,15 @@ export default function UOInput(
     }));
 
   // Store in indicatorSeriesRef for the plotting component
-  if (!indicatorSeriesRef.current.UO) {
-    indicatorSeriesRef.current.UO = {};
+  if (!indicatorSeriesRef.current[indicator]) {
+    indicatorSeriesRef.current[indicator] = {};
   }
 
-  indicatorSeriesRef.current.UO.uoData = uoData;
-  indicatorSeriesRef.current.UO.result = { data: { uo: uoData } };
+  indicatorSeriesRef.current[indicator].uoData = uoData;
+  indicatorSeriesRef.current[indicator].result = { data: { uo: uoData } };
 
   // Store latest value
-  latestIndicatorValuesRef.current.UO = {
+  latestIndicatorValuesRef.current[indicator] = {
     uo: uoData.length ? uoData[uoData.length - 1].value : null,
   };
 

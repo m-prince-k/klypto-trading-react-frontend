@@ -2,10 +2,12 @@ import { useEffect } from "react";
 import { LineSeries } from "lightweight-charts";
 
 export default function CMOPlot({
+  indicator,
   result,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
+  chart
 }) {
   /* ================= CREATE ================= */
 
@@ -17,13 +19,14 @@ export default function CMOPlot({
       return;
     } // :fire: REMOVE OLD
 
-    if (indicatorSeriesRef.current?.CMO) {
-      Object.values(indicatorSeriesRef.current.CMO).forEach((s) => {
+    if (indicatorSeriesRef.current?.[indicator]) {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         try {
           s.setData([]);
+            try { chart.removeSeries(s); } catch {}
         } catch {}
       });
-      indicatorSeriesRef.current.CMO = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const map = (arr) =>
@@ -34,9 +37,9 @@ export default function CMOPlot({
 
     const cmoData = map(cmoDataRaw);
 
-    const style = indicatorStyle?.CMO; /* :fire: CMO LINE */
+    const style = indicatorStyle?.[indicator]; /* :fire: CMO LINE */
 
-    const cmoSeries = addSeries("CMO", LineSeries, {
+    const cmoSeries = addSeries(indicator, LineSeries, {
       color: style?.cmoLine?.color ?? "rgba(38,166,154,1)",
       lineWidth: style?.cmoLine?.width ?? 2,
       lineStyle: style?.cmoLine?.lineStyle ?? 0,
@@ -45,7 +48,7 @@ export default function CMOPlot({
       lastValueVisible: true,
     }); /* :fire: ZERO LINE */
 
-    const zeroSeries = addSeries("CMO", LineSeries, {
+    const zeroSeries = addSeries(indicator, LineSeries, {
       color: style?.zeroLine?.color ?? "rgba(158,158,158,1)",
       lineWidth: style?.zeroLine?.width ?? 1,
       lineStyle: style?.zeroLine?.lineStyle ?? 2,
@@ -64,7 +67,7 @@ export default function CMOPlot({
     cmoSeries.setData(cmoData);
     zeroSeries.setData(zeroData);
 
-    indicatorSeriesRef.current.CMO = {
+    indicatorSeriesRef.current[indicator] = {
       cmoLine: cmoSeries,
       zeroLine: zeroSeries,
       cmoData,
@@ -74,10 +77,10 @@ export default function CMOPlot({
   }, [result]); /* ================= STYLE UPDATE ================= */
 
   useEffect(() => {
-    const g = indicatorSeriesRef.current?.CMO;
+    const g = indicatorSeriesRef.current?.[indicator];
     if (!g) return;
 
-    const style = indicatorStyle?.CMO;
+    const style = indicatorStyle?.[indicator];
     if (!style) return; /* :fire: UPDATE ZERO LINE DATA */
 
     const zeroValue = style?.zeroLine?.value ?? 0;
@@ -102,7 +105,7 @@ export default function CMOPlot({
       lineStyle: style?.zeroLine?.lineStyle,
       visible: style?.zeroLine?.visible,
     });
-  }, [indicatorStyle?.CMO]);
+  }, [indicatorStyle?.[indicator]]);
 
   return null;
 }

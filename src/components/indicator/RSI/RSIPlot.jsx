@@ -1,7 +1,9 @@
 import { useEffect, useRef } from "react";
 import { LineSeries, BaselineSeries, AreaSeries } from "lightweight-charts";
+import { resolvePaneKey } from "../../../util/indicatorFunctions";
 
 export default function RSIPlot({
+  indicator,
   result,
   rows,
   indicatorStyle,
@@ -10,6 +12,7 @@ export default function RSIPlot({
   indicatorConfigs,
   chart,
   panesRef,
+  containerRef,
 }) {
   const canvasRef = useRef(null);
 
@@ -18,16 +21,19 @@ export default function RSIPlot({
   useEffect(() => {
     if (!result) return;
 
-    if (indicatorSeriesRef.current?.RSI) {
-      Object.values(indicatorSeriesRef.current.RSI).forEach((s) => {
+    if (indicatorSeriesRef.current?.[indicator]) {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         if (s?.setData) {
           try {
             s.setData([]);
-          } catch { }
+            try {
+              chart.removeSeries(s);
+            } catch {}
+          } catch {}
         }
       });
 
-      indicatorSeriesRef.current.RSI = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const groupedSeries = {};
@@ -36,19 +42,19 @@ export default function RSIPlot({
     let bbUpperData = [];
     let bbLowerData = [];
 
-    const upper = indicatorStyle?.RSI?.upper?.value ?? 70;
-    const middle = indicatorStyle?.RSI?.middle?.value ?? 50;
-    const lower = indicatorStyle?.RSI?.lower?.value ?? 30;
+    const upper = indicatorStyle?.[indicator]?.upper?.value ?? 70;
+    const middle = indicatorStyle?.[indicator]?.middle?.value ?? 50;
+    const lower = indicatorStyle?.[indicator]?.lower?.value ?? 30;
 
-    const bandFill = indicatorStyle?.RSI?.bandFill;
-    const obFill = indicatorStyle?.RSI?.obFill;
-    const osFill = indicatorStyle?.RSI?.osFill;
+    const bandFill = indicatorStyle?.[indicator]?.bandFill;
+    const obFill = indicatorStyle?.[indicator]?.obFill;
+    const osFill = indicatorStyle?.[indicator]?.osFill;
 
     Object.entries(result?.data).forEach(([lineName, lineData]) => {
       const rowConfig = rows?.find((r) => r.key === lineName);
-      const styleConfig = indicatorStyle?.RSI?.[lineName];
+      const styleConfig = indicatorStyle?.[indicator]?.[lineName];
 
-      const series = addSeries("RSI", LineSeries, {
+      const series = addSeries(indicator, LineSeries, {
         color: styleConfig?.color || rowConfig?.color || "rgba(38,166,154,1)",
         lineWidth: styleConfig?.width || 2,
         visible: styleConfig?.visible ?? true,
@@ -81,29 +87,29 @@ export default function RSIPlot({
         value,
       }));
 
-    const upperLine = addSeries("RSI", LineSeries, {
-      color: indicatorStyle?.RSI?.upper?.color,
-      lineWidth: indicatorStyle?.RSI?.upper?.width ?? 1,
-      lineStyle: indicatorStyle?.RSI?.upper?.lineStyle ?? 2,
-      visible: indicatorStyle?.RSI?.upper?.visible ?? true,
+    const upperLine = addSeries(indicator, LineSeries, {
+      color: indicatorStyle?.[indicator]?.upper?.color,
+      lineWidth: indicatorStyle?.[indicator]?.upper?.width ?? 1,
+      lineStyle: indicatorStyle?.[indicator]?.upper?.lineStyle ?? 2,
+      visible: indicatorStyle?.[indicator]?.upper?.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: false,
     });
 
-    const middleLine = addSeries("RSI", LineSeries, {
-      color: indicatorStyle?.RSI?.middle?.color,
-      lineWidth: indicatorStyle?.RSI?.middle?.width ?? 1,
-      lineStyle: indicatorStyle?.RSI?.middle?.lineStyle ?? 2,
-      visible: indicatorStyle?.RSI?.middle?.visible ?? true,
+    const middleLine = addSeries(indicator, LineSeries, {
+      color: indicatorStyle?.[indicator]?.middle?.color,
+      lineWidth: indicatorStyle?.[indicator]?.middle?.width ?? 1,
+      lineStyle: indicatorStyle?.[indicator]?.middle?.lineStyle ?? 2,
+      visible: indicatorStyle?.[indicator]?.middle?.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: false,
     });
 
-    const lowerLine = addSeries("RSI", LineSeries, {
-      color: indicatorStyle?.RSI?.lower?.color,
-      lineWidth: indicatorStyle?.RSI?.lower?.width ?? 1,
-      lineStyle: indicatorStyle?.RSI?.lower?.lineStyle ?? 2,
-      visible: indicatorStyle?.RSI?.lower?.visible ?? true,
+    const lowerLine = addSeries(indicator, LineSeries, {
+      color: indicatorStyle?.[indicator]?.lower?.color,
+      lineWidth: indicatorStyle?.[indicator]?.lower?.width ?? 1,
+      lineStyle: indicatorStyle?.[indicator]?.lower?.lineStyle ?? 2,
+      visible: indicatorStyle?.[indicator]?.lower?.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: false,
     });
@@ -121,7 +127,7 @@ export default function RSIPlot({
       value: upper,
     }));
 
-    const bandBackgroundSeries = addSeries("RSI", BaselineSeries, {
+    const bandBackgroundSeries = addSeries(indicator, BaselineSeries, {
       baseValue: { type: "price", price: lower },
       topFillColor1: bandFill?.topFillColor1,
       topFillColor2: bandFill?.topFillColor2,
@@ -136,7 +142,7 @@ export default function RSIPlot({
 
     bandBackgroundSeries.setData(bandData);
 
-    const overboughtSeries = addSeries("RSI", BaselineSeries, {
+    const overboughtSeries = addSeries(indicator, BaselineSeries, {
       baseValue: { type: "price", price: upper },
       topFillColor1: obFill?.topFillColor1,
       topFillColor2: obFill?.topFillColor2,
@@ -149,7 +155,7 @@ export default function RSIPlot({
       lastValueVisible: false,
     });
 
-    const oversoldSeries = addSeries("RSI", BaselineSeries, {
+    const oversoldSeries = addSeries(indicator, BaselineSeries, {
       baseValue: { type: "price", price: lower },
       bottomFillColor1: osFill?.bottomFillColor1,
       bottomFillColor2: osFill?.bottomFillColor2,
@@ -188,39 +194,80 @@ export default function RSIPlot({
     groupedSeries.bbUpperData = bbUpperData;
     groupedSeries.bbLowerData = bbLowerData;
 
-    indicatorSeriesRef.current.RSI = groupedSeries;
+    indicatorSeriesRef.current[indicator] = groupedSeries;
   }, [result]);
 
   /* ================= CANVAS INIT ================= */
 
   useEffect(() => {
-    if (!panesRef || canvasRef.current) return;
+  if (!panesRef?.current || !containerRef?.current) return;
 
-    const pane = panesRef.current?.RSI;
+  let retryCount = 0;
+  const MAX_RETRIES = 10;
+
+  const initCanvas = () => {
+    const paneKey = resolvePaneKey(indicator);
+const pane = panesRef.current[paneKey];
     const paneDiv = pane?.div;
 
-    if (!paneDiv) return;
+    if (!paneDiv) {
+      if (retryCount < MAX_RETRIES) {
+        retryCount++;
+        setTimeout(initCanvas, 100);
+      }
+      return;
+    }
+
+    if (
+      canvasRef.current &&
+      canvasRef.current.parentNode === containerRef.current
+    ) {
+      drawBBCloud();
+      return;
+    }
+
+    if (canvasRef.current) canvasRef.current.remove();
 
     const canvas = document.createElement("canvas");
-
     canvas.style.position = "absolute";
+    canvas.style.top = "0";
+    canvas.style.left = "0";
     canvas.style.pointerEvents = "none";
-    canvas.style.zIndex = 1;
+    canvas.style.zIndex = "10";
 
-    paneDiv.appendChild(canvas);
+    containerRef.current.appendChild(canvas); // ✅ FIXED
+
     canvasRef.current = canvas;
 
-    // ✅ IMPORTANT
-    setTimeout(() => {
-      drawBBCloud();
-    }, 0);
+    drawBBCloud();
+  };
 
-  }, [panesRef]);
-
+  initCanvas();
+}, [panesRef, result, containerRef]);
   /* ================= DRAW BB CLOUD ================= */
 
   const drawBBCloud = () => {
-    const rsiGroup = indicatorSeriesRef.current?.RSI;
+    const paneKey = resolvePaneKey(indicator);
+    const pane = panesRef.current?.[paneKey];
+    const paneDiv = pane?.div;
+    const paneChart = pane?.chart;
+
+if (!canvasRef.current || !paneDiv || !paneChart || !containerRef?.current) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+
+    const paneRect = paneDiv.getBoundingClientRect();
+const chartRect = containerRef.current.getBoundingClientRect();
+    const topOffset = paneRect.top - chartRect.top;
+    const leftOffset = paneRect.left - chartRect.left;
+
+    canvas.width = chartRect.width;
+    canvas.height = chartRect.height;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const rsiGroup = indicatorSeriesRef.current?.[indicator];
     if (!rsiGroup) return;
 
     const upperData = rsiGroup.bbUpperData || [];
@@ -228,91 +275,110 @@ export default function RSIPlot({
 
     if (!upperData.length || !lowerData.length) return;
 
-    const pane = panesRef.current?.RSI;
-    const paneDiv = pane?.div;
-    const paneChart = pane?.chart;
-
-    if (!canvasRef.current) {
-      console.log("❌ canvas missing");
-      return;
-    }
-    if (!paneDiv) {
-      console.log("❌ paneDiv missing");
-      return;
-    }
-    if (!paneChart) {
-      console.log("❌ paneChart missing");
-      return;
-    }
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-
-    const rect = paneDiv.getBoundingClientRect(); // ✅ FIX
-    canvas.width = rect.width;
-    canvas.height = rect.height;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const fill = indicatorStyle?.RSI?.bbFill;
+    const fill = indicatorStyle?.[indicator]?.bbFill;
     if (!fill?.visible) return;
+
+    ctx.save();
+    ctx.translate(leftOffset, topOffset);
+  
 
     ctx.beginPath();
 
-    for (let i = 0; i < upperData.length; i++) {
-      const p = upperData[i];
-      const x = paneChart.timeScale().timeToCoordinate(p.time); // ✅ FIX
-      const y = rsiGroup.bbUpper.priceToCoordinate(p.value);
-      if (x == null || y == null) continue;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
+   for (let i = 0; i < upperData.length; i++) {
+  const p = upperData[i];
+  const x = paneChart.timeScale().timeToCoordinate(p.time);
+  const y = rsiGroup.bbUpper?.priceToCoordinate(p.value);
 
-    for (let i = lowerData.length - 1; i >= 0; i--) {
-      const p = lowerData[i];
-      const x = paneChart.timeScale().timeToCoordinate(p.time); // ✅ FIX
-      const y = rsiGroup.bbLower.priceToCoordinate(p.value);
-      if (x == null || y == null) continue;
-      ctx.lineTo(x, y);
-    }
+  if (x == null || y == null) continue;
+
+  if (i === 0) ctx.moveTo(x, y);
+  else ctx.lineTo(x, y);
+}
+
+for (let i = lowerData.length - 1; i >= 0; i--) {
+  const p = lowerData[i];
+  const x = paneChart.timeScale().timeToCoordinate(p.time);
+  const y = rsiGroup.bbLower?.priceToCoordinate(p.value);
+
+  if (x == null || y == null) continue;
+
+  ctx.lineTo(x, y);
+}
 
     ctx.closePath();
     ctx.fillStyle = fill?.topFillColor1 || "rgba(38,166,154,0.3)";
     ctx.fill();
+
+    ctx.restore();
   };
 
   useEffect(() => {
-    const pane = panesRef.current?.RSI;
-    const paneChart = pane?.chart;
+  const resizeObserver = new ResizeObserver(() => {
+    drawBBCloud();
+  });
 
-    if (!paneChart) return;
+  if (containerRef.current) {
+    resizeObserver.observe(containerRef.current);
+  }
 
-    const redraw = () => drawBBCloud();
+  return () => resizeObserver.disconnect();
+}, []);
 
-    const unsubscribeTime = paneChart.timeScale().subscribeVisibleLogicalRangeChange
-      ? paneChart.timeScale().subscribeVisibleLogicalRangeChange(redraw)
-      : null;
+useEffect(() => {
+  let animationFrame;
 
-    const unsubscribeCrosshair = paneChart.subscribeCrosshairMove
-      ? paneChart.subscribeCrosshairMove(redraw)
-      : null;
+  const loop = () => {
+    drawBBCloud();
+    animationFrame = requestAnimationFrame(loop);
+  };
 
-    return () => {
-      if (unsubscribeTime) unsubscribeTime();
-      if (unsubscribeCrosshair) unsubscribeCrosshair();
-    };
-  }, [panesRef, indicatorStyle]);
+  loop();
 
+  return () => cancelAnimationFrame(animationFrame);
+}, []);
+
+useEffect(() => {
+  const paneKey = resolvePaneKey(indicator);
+  const pane = panesRef.current?.[paneKey];
+  const paneChart = pane?.chart;
+
+  if (!paneChart) return;
+
+  const redraw = () => {
+    requestAnimationFrame(drawBBCloud); // ✅ smooth sync
+  };
+
+  const timeScale = paneChart.timeScale();
+
+  timeScale.subscribeVisibleTimeRangeChange(redraw);
+  timeScale.subscribeVisibleLogicalRangeChange(redraw);
+  paneChart.subscribeCrosshairMove(redraw);
+
+  return () => {
+    timeScale.unsubscribeVisibleTimeRangeChange(redraw);
+    timeScale.unsubscribeVisibleLogicalRangeChange(redraw);
+    paneChart.unsubscribeCrosshairMove(redraw);
+  };
+}, [panesRef, indicator]);
   /* ================= STYLE UPDATE ================= */
+  useEffect(() => {
+  return () => {
+    if (canvasRef.current) {
+      canvasRef.current.remove();
+      canvasRef.current = null;
+    }
+  };
+}, []);
 
   useEffect(() => {
-    const rsiGroup = indicatorSeriesRef.current?.RSI;
+    const rsiGroup = indicatorSeriesRef.current?.[indicator];
     if (!rsiGroup) return;
 
     const rsiData = rsiGroup.rsiData ?? [];
 
-    const upperValue = indicatorStyle?.RSI?.upper?.value ?? 70;
-    const middleValue = indicatorStyle?.RSI?.middle?.value ?? 50;
-    const lowerValue = indicatorStyle?.RSI?.lower?.value ?? 30;
+    const upperValue = indicatorStyle?.[indicator]?.upper?.value ?? 70;
+    const middleValue = indicatorStyle?.[indicator]?.middle?.value ?? 50;
+    const lowerValue = indicatorStyle?.[indicator]?.lower?.value ?? 30;
 
     const makeLevel = (v) => rsiData.map((p) => ({ time: p.time, value: v }));
 
@@ -320,12 +386,12 @@ export default function RSIPlot({
     rsiGroup.middle?.setData(makeLevel(middleValue));
     rsiGroup.lower?.setData(makeLevel(lowerValue));
 
-    const rsiStyle = indicatorStyle?.RSI?.rsi;
-    const smoothingStyle = indicatorStyle?.RSI?.smoothingMA;
+    const rsiStyle = indicatorStyle?.[indicator]?.rsi;
+    const smoothingStyle = indicatorStyle?.[indicator]?.smoothingMA;
 
-    const bandFill = indicatorStyle?.RSI?.bandFill;
-    const obFill = indicatorStyle?.RSI?.obFill;
-    const osFill = indicatorStyle?.RSI?.osFill;
+    const bandFill = indicatorStyle?.[indicator]?.bandFill;
+    const obFill = indicatorStyle?.[indicator]?.obFill;
+    const osFill = indicatorStyle?.[indicator]?.osFill;
 
     if (rsiGroup.rsi) {
       rsiGroup.rsi.applyOptions({
@@ -344,15 +410,15 @@ export default function RSIPlot({
     }
 
     rsiGroup.bbUpper?.applyOptions({
-      color: indicatorStyle?.RSI?.bbUpper?.color,
-      lineWidth: indicatorStyle?.RSI?.bbUpper?.width,
-      visible: indicatorStyle?.RSI?.bbUpper?.visible,
+      color: indicatorStyle?.[indicator]?.bbUpper?.color,
+      lineWidth: indicatorStyle?.[indicator]?.bbUpper?.width,
+      visible: indicatorStyle?.[indicator]?.bbUpper?.visible,
     });
 
     rsiGroup.bbLower?.applyOptions({
-      color: indicatorStyle?.RSI?.bbLower?.color,
-      lineWidth: indicatorStyle?.RSI?.bbLower?.width,
-      visible: indicatorStyle?.RSI?.bbLower?.visible,
+      color: indicatorStyle?.[indicator]?.bbLower?.color,
+      lineWidth: indicatorStyle?.[indicator]?.bbLower?.width,
+      visible: indicatorStyle?.[indicator]?.bbLower?.visible,
     });
 
     if (rsiGroup.bandBackground) {
@@ -382,9 +448,9 @@ export default function RSIPlot({
     drawBBCloud();
   }, [indicatorStyle, result]);
 
-
   useEffect(() => {
-    const pane = panesRef.current?.RSI;
+    const paneKey = resolvePaneKey(indicator);
+    const pane = panesRef.current?.[paneKey];
     const paneChart = pane?.chart;
 
     if (!paneChart) return;
@@ -407,3 +473,5 @@ export default function RSIPlot({
 
   return null;
 }
+
+

@@ -2,22 +2,24 @@ import { useEffect } from "react";
 import { LineSeries } from "lightweight-charts";
 
 export default function EOMPlot({
+  indicator,
   result,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
   indicatorConfigs,
+  chart
 }) {
   /* ================= CREATE EOM SERIES ================= */
 
   useEffect(() => {
     if (!result?.data) return; /* remove previous series */
 
-    if (indicatorSeriesRef.current?.EOM?.eom) {
+    if (indicatorSeriesRef.current?.[indicator]?.eom) {
       try {
-        indicatorSeriesRef.current.EOM.eom.setData([]);
+        indicatorSeriesRef.current[indicator].eom.setData([]);
       } catch {}
-      indicatorSeriesRef.current.EOM = null;
+      indicatorSeriesRef.current[indicator] = null;
     } /* format data */
 
     const eomData = (result.data || []).map((p) => ({
@@ -25,18 +27,18 @@ export default function EOMPlot({
       value: Number(p.value),
     })); /* create line */
 
-    const series = addSeries("EOM", LineSeries, {
-      color: indicatorStyle?.EOM?.eom?.color ?? "rgba(38,166,154,1)",
-      lineWidth: indicatorStyle?.EOM?.eom?.width ?? 1,
-      lineStyle: indicatorStyle?.EOM?.eom?.lineStyle ?? 0,
-      visible: indicatorStyle?.EOM?.eom?.visible ?? true,
+    const series = addSeries(indicator, LineSeries, {
+      color: indicatorStyle?.[indicator]?.eom?.color ?? "rgba(38,166,154,1)",
+      lineWidth: indicatorStyle?.[indicator]?.eom?.width ?? 1,
+      lineStyle: indicatorStyle?.[indicator]?.eom?.lineStyle ?? 0,
+      visible: indicatorStyle?.[indicator]?.eom?.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: true,
     });
 
     series.setData(eomData); /* IMPORTANT: store using key */
 
-    indicatorSeriesRef.current.EOM = {
+    indicatorSeriesRef.current[indicator] = {
       eom: series,
     };
   }, [
@@ -45,14 +47,14 @@ export default function EOMPlot({
   ]); /* ================= APPLY STYLE UPDATES ================= */
 
   useEffect(() => {
-    const series = indicatorSeriesRef.current?.EOM?.eom;
+    const series = indicatorSeriesRef.current?.[indicator]?.eom;
     if (!series) return;
 
     series.applyOptions({
-      color: indicatorStyle?.EOM?.eom?.color ?? "#26A69A",
-      lineWidth: indicatorStyle?.EOM?.eom?.width ?? 1,
-      lineStyle: indicatorStyle?.EOM?.eom?.lineStyle ?? 0,
-      visible: indicatorStyle?.EOM?.eom?.visible ?? true,
+      color: indicatorStyle?.[indicator]?.eom?.color ?? "#26A69A",
+      lineWidth: indicatorStyle?.[indicator]?.eom?.width ?? 1,
+      lineStyle: indicatorStyle?.[indicator]?.eom?.lineStyle ?? 0,
+      visible: indicatorStyle?.[indicator]?.eom?.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: true,
     });

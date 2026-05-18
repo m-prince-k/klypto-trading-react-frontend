@@ -2,11 +2,13 @@ import { useEffect } from "react";
 import { LineSeries } from "lightweight-charts";
 
 export default function ROCPlot({
+  indicator,
   result,
   rows,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
+  chart
 }) {
 
   /* ================= CREATE ROC ================= */
@@ -15,15 +17,16 @@ export default function ROCPlot({
 
     if (!result) return;
 
-    if (indicatorSeriesRef.current?.ROC) {
+    if (indicatorSeriesRef.current?.[indicator]) {
 
-      Object.values(indicatorSeriesRef.current.ROC).forEach((s) => {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         if (s?.setData) {
-          try { s.setData([]); } catch {}
+          try { s.setData([]);
+            try { chart.removeSeries(s); } catch {} } catch {}
         }
       });
 
-      indicatorSeriesRef.current.ROC = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const groupedSeries = {};
@@ -33,9 +36,9 @@ export default function ROCPlot({
 
     Object.entries(result.data).forEach(([lineName, lineData]) => {
 
-      const styleConfig = indicatorStyle?.ROC?.[lineName];
+      const styleConfig = indicatorStyle?.[indicator]?.[lineName];
 
-      const series = addSeries("ROC", LineSeries, {
+      const series = addSeries(indicator, LineSeries, {
         color: styleConfig?.color || "rgba(33,150,243,1)",
         lineWidth: styleConfig?.width || 2,
         lineStyle: styleConfig?.lineStyle ?? 0,
@@ -56,13 +59,13 @@ export default function ROCPlot({
 
     /* ================= ZERO LINE ================= */
 
-    const zeroValue = indicatorStyle?.ROC?.zeroLine?.value ?? 0;
+    const zeroValue = indicatorStyle?.[indicator]?.zeroLine?.value ?? 0;
 
-    const zeroLine = addSeries("ROC", LineSeries, {
-      color: indicatorStyle?.ROC?.zeroLine?.color || "rgba(158,158,158,1)",
-      lineWidth: indicatorStyle?.ROC?.zeroLine?.width || 1,
-      lineStyle: indicatorStyle?.ROC?.zeroLine?.lineStyle ?? 2,
-      visible: indicatorStyle?.ROC?.zeroLine?.visible ?? true,
+    const zeroLine = addSeries(indicator, LineSeries, {
+      color: indicatorStyle?.[indicator]?.zeroLine?.color || "rgba(158,158,158,1)",
+      lineWidth: indicatorStyle?.[indicator]?.zeroLine?.width || 1,
+      lineStyle: indicatorStyle?.[indicator]?.zeroLine?.lineStyle ?? 2,
+      visible: indicatorStyle?.[indicator]?.zeroLine?.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: false,
     });
@@ -77,7 +80,7 @@ export default function ROCPlot({
     groupedSeries.zeroLine = zeroLine;
     groupedSeries.rocData = rocData;
 
-    indicatorSeriesRef.current.ROC = groupedSeries;
+    indicatorSeriesRef.current[indicator] = groupedSeries;
 
   }, [result]);
 
@@ -86,10 +89,10 @@ export default function ROCPlot({
 
   useEffect(() => {
 
-    const rocGroup = indicatorSeriesRef.current?.ROC;
+    const rocGroup = indicatorSeriesRef.current?.[indicator];
     if (!rocGroup) return;
 
-    const style = indicatorStyle?.ROC;
+    const style = indicatorStyle?.[indicator];
     const data = rocGroup.rocData ?? [];
 
     const zeroValue = style?.zeroLine?.value ?? 0;

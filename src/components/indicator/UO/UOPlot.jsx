@@ -2,10 +2,12 @@ import { useEffect } from "react";
 import { LineSeries } from "lightweight-charts";
 
 export default function UOPlot({
+  indicator,
   result,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
+  chart
 }) {
   useEffect(() => {
     const raw = result?.data?.series;
@@ -15,13 +17,14 @@ export default function UOPlot({
       return;
     }
 
-    if (indicatorSeriesRef.current?.UO) {
-      Object.values(indicatorSeriesRef.current.UO).forEach((s) => {
+    if (indicatorSeriesRef.current?.[indicator]) {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         try {
           s.setData([]);
+            try { chart.removeSeries(s); } catch {}
         } catch {}
       });
-      indicatorSeriesRef.current.UO = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const uoData = raw.map((d) => ({
@@ -29,16 +32,16 @@ export default function UOPlot({
       value: Number(d.uo),
     }));
 
-    const uoSeries = addSeries("UO", LineSeries, {
-      color: indicatorStyle?.UO?.uoLine?.color ?? "#E05273",
-      lineWidth: indicatorStyle?.UO?.uoLine?.width ?? 2,
-      lineStyle: indicatorStyle?.UO?.uoLine?.lineStyle ?? 0,
-      visible: indicatorStyle?.UO?.uoLine?.visible ?? true,
+    const uoSeries = addSeries(indicator, LineSeries, {
+      color: indicatorStyle?.[indicator]?.uoLine?.color ?? "#E05273",
+      lineWidth: indicatorStyle?.[indicator]?.uoLine?.width ?? 2,
+      lineStyle: indicatorStyle?.[indicator]?.uoLine?.lineStyle ?? 0,
+      visible: indicatorStyle?.[indicator]?.uoLine?.visible ?? true,
     });
 
     uoSeries.setData(uoData);
 
-    indicatorSeriesRef.current.UO = {
+    indicatorSeriesRef.current[indicator] = {
       uoLine: uoSeries,
       uoData,
     };
@@ -47,10 +50,10 @@ export default function UOPlot({
   }, [result]);
 
   useEffect(() => {
-    const g = indicatorSeriesRef.current?.UO;
+    const g = indicatorSeriesRef.current?.[indicator];
     if (!g) return;
 
-    const style = indicatorStyle?.UO;
+    const style = indicatorStyle?.[indicator];
 
     g.uoLine?.applyOptions({
       color: style?.uoLine?.color,
@@ -58,7 +61,7 @@ export default function UOPlot({
       lineStyle: style?.uoLine?.lineStyle,
       visible: style?.uoLine?.visible,
     });
-  }, [indicatorStyle?.UO]);
+  }, [indicatorStyle?.[indicator]]);
 
   return null;
 }

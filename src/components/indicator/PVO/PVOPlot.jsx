@@ -1,18 +1,25 @@
 import { useEffect } from "react";
 import { LineSeries, HistogramSeries } from "lightweight-charts";
 
-export default function PVOPlot({ result, indicatorStyle, indicatorSeriesRef, addSeries }) {
+export default function PVOPlot({
+  indicator,
+  result,
+  indicatorStyle,
+  indicatorSeriesRef,
+  addSeries,
+  chart
+}) {
 
   /* ================= CREATE SERIES ================= */
   useEffect(() => {
     if (!result?.data) return;
 
     // Remove old series
-    if (indicatorSeriesRef.current?.PVO) {
-      Object.values(indicatorSeriesRef.current.PVO).forEach((s) => {
+    if (indicatorSeriesRef.current?.[indicator]) {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         try { s?.setData?.([]); } catch {}
       });
-      indicatorSeriesRef.current.PVO = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const groupedSeries = {};
@@ -21,11 +28,11 @@ export default function PVOPlot({ result, indicatorStyle, indicatorSeriesRef, ad
 
     Object.entries(result.data).forEach(([lineName, lineData]) => {
       if (!Array.isArray(lineData)) return;
-      const style = indicatorStyle?.PVO?.[lineName];
+      const style = indicatorStyle?.[indicator]?.[lineName];
 
       /* ================= HISTOGRAM ================= */
       if (lineName === "hist") {
-        const series = addSeries("PVO", HistogramSeries, {
+        const series = addSeries(indicator, HistogramSeries, {
           visible: style?.visible ?? true,
           priceLineVisible: false,
           lastValueVisible: true,
@@ -36,7 +43,7 @@ export default function PVOPlot({ result, indicatorStyle, indicatorSeriesRef, ad
           .map((d) => ({ time: d.time, value: Number(d.value) }));
 
         // ALWAYS use palette from state (user-selected)
-        const palette = indicatorStyle?.PVO?.histogram?.palette;
+        const palette = indicatorStyle?.[indicator]?.histogram?.palette;
         if (!palette) return; // do nothing if palette is missing
 
         const colored = histRaw.map((d, i, arr) => {
@@ -57,7 +64,7 @@ export default function PVOPlot({ result, indicatorStyle, indicatorSeriesRef, ad
 
       /* ================= PVO + SIGNAL LINES ================= */
       else {
-        const series = addSeries("PVO", LineSeries, {
+        const series = addSeries(indicator, LineSeries, {
           color: style?.color,
           lineWidth: style?.width ?? 2,
           lineStyle: style?.lineStyle ?? 0,
@@ -77,10 +84,10 @@ export default function PVOPlot({ result, indicatorStyle, indicatorSeriesRef, ad
     });
 
     /* ================= ZERO LINE ================= */
-    const zeroStyle = indicatorStyle?.PVO?.zero;
+    const zeroStyle = indicatorStyle?.[indicator]?.zero;
     const zeroValue = zeroStyle?.value ?? 0;
 
-    const zeroLine = addSeries("PVO", LineSeries, {
+    const zeroLine = addSeries(indicator, LineSeries, {
       color: zeroStyle?.color,
       lineWidth: zeroStyle?.width ?? 1,
       lineStyle: zeroStyle?.lineStyle ?? 2,
@@ -93,16 +100,16 @@ export default function PVOPlot({ result, indicatorStyle, indicatorSeriesRef, ad
     groupedSeries.zero = zeroLine;
     groupedSeries.pvoData = pvoData;
 
-    indicatorSeriesRef.current.PVO = groupedSeries;
+    indicatorSeriesRef.current[indicator] = groupedSeries;
 
   }, [result, indicatorStyle]); // NOTE: added indicatorStyle to dependency
 
   /* ================= STYLE / PALETTE UPDATE ================= */
   useEffect(() => {
-    const group = indicatorSeriesRef.current?.PVO;
+    const group = indicatorSeriesRef.current?.[indicator];
     if (!group) return;
 
-    const style = indicatorStyle?.PVO;
+    const style = indicatorStyle?.[indicator];
     const histRaw = group.histRaw ?? [];
     const pvoData = group.pvoData ?? [];
 

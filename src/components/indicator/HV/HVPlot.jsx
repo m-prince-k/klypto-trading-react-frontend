@@ -2,11 +2,13 @@ import { useEffect } from "react";
 import { LineSeries } from "lightweight-charts";
 
 export default function HVPlot({
+  indicator,
   result,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
   indicatorConfigs,
+  chart
 }) {
 
   /* ================= CREATE ================= */
@@ -16,13 +18,14 @@ export default function HVPlot({
     if (!result?.data?.hv) return;
 
     // 🔥 REMOVE OLD
-    if (indicatorSeriesRef.current?.HV) {
-      Object.values(indicatorSeriesRef.current.HV).forEach((s) => {
+    if (indicatorSeriesRef.current?.[indicator]) {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         if (s?.setData) {
-          try { s.setData([]); } catch {}
+          try { s.setData([]);
+            try { chart.removeSeries(s); } catch {} } catch {}
         }
       });
-      indicatorSeriesRef.current.HV = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const hvData = (result.data.hv || [])
@@ -34,11 +37,11 @@ export default function HVPlot({
 
     /* 🔥 HV LINE */
 
-    const hvSeries = addSeries("HV", LineSeries, {
-      color: indicatorStyle?.HV?.hv?.color ?? "rgba(255,152,0,1)",
-      lineWidth: Number(indicatorStyle?.HV?.hv?.width ?? 2),
-      lineStyle: indicatorStyle?.HV?.hv?.lineStyle ?? 0,
-      visible: indicatorStyle?.HV?.hv?.visible ?? true,
+    const hvSeries = addSeries(indicator, LineSeries, {
+      color: indicatorStyle?.[indicator]?.hv?.color ?? "rgba(255,152,0,1)",
+      lineWidth: Number(indicatorStyle?.[indicator]?.hv?.width ?? 2),
+      lineStyle: indicatorStyle?.[indicator]?.hv?.lineStyle ?? 0,
+      visible: indicatorStyle?.[indicator]?.hv?.visible ?? true,
       priceLineVisible: false,
       lastValueVisible: true,
     });
@@ -46,7 +49,7 @@ export default function HVPlot({
     hvSeries.setData(hvData);
 
     // 🔥 IMPORTANT: STORE AS "hv" (NOT hvLine)
-    indicatorSeriesRef.current.HV = {
+    indicatorSeriesRef.current[indicator] = {
       hv: hvSeries,
       hvData,
     };
@@ -58,10 +61,10 @@ export default function HVPlot({
 
   useEffect(() => {
 
-    const group = indicatorSeriesRef.current?.HV;
+    const group = indicatorSeriesRef.current?.[indicator];
     if (!group) return;
 
-    const style = indicatorStyle?.HV;
+    const style = indicatorStyle?.[indicator];
     if (!style) return;
 
     // 🔥 APPLY STYLE CORRECTLY
@@ -72,7 +75,7 @@ export default function HVPlot({
       visible: style.hv?.visible ?? true,
     });
 
-  }, [indicatorStyle?.HV]);
+  }, [indicatorStyle?.[indicator]]);
 
   return null;
 }

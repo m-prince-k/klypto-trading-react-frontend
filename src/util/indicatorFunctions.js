@@ -1,7 +1,8 @@
 export function resolvePaneKey(type) {
-  const baseType = type.startsWith("CUSTOM_")
+  const actualType = type.startsWith("CUSTOM_")
     ? type.replace("CUSTOM_", "")
     : type;
+  const baseType = actualType.split("_")[0];
 
   switch (baseType) {
     case "RSI":

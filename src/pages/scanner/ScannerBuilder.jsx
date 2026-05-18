@@ -64,6 +64,7 @@ export default function ScannerBuilder() {
   const location = useLocation();
   const { scanSlug } = useParams();
 
+
   const getUser = () => {
     try {
       return JSON.parse(localStorage.getItem("session") || "null");
@@ -77,40 +78,88 @@ export default function ScannerBuilder() {
   const editingScanId = scanSlug ? parseScanSlug(scanSlug).id : null;
   const [editingScan, setEditingScan] = useState(null);
 
+  // useEffect(() => {
+  //   // if (!scanSlug || !scannerOptions.length) return;
+  //   if (!scanSlug) return;
+
+  //   const editScanState = location.state?.editScan;
+
+  //   if (editScanState) {
+  //     setEditingScan(editScanState);
+  //     loadScanIntoBuilder(editScanState);
+  //     setRunScanTrigger((prev) => !prev);
+  //     toast.info(`Editing: ${editScanState.label || editScanState.name}`);
+  //     return;
+  //   }
+
+  //   // Refresh fallback — fetch all scans and find by ID
+  //   apiService
+  //     .post("/api/fetchAuthSaveScans", { user_id: userId }) // same call you use in ScanTable
+  //     .then((res) => {
+  //       const allScans = Array.isArray(res.data)
+  //         ? res.data
+  //         : (res.data?.scans ?? []);
+
+  //       const scan = allScans.find((s) => String(s.id) === String(editingScanId));
+
+  //       if (scan) {
+  //         setEditingScan(scan);
+  //         loadScanIntoBuilder(scan);
+  //         setRunScanTrigger((prev) => !prev);
+  //         toast.info(`Editing: ${scan.label || scan.name}`);
+  //       } else {
+  //         toast.error("Scan not found");
+  //       }
+  //     })
+  //     .catch(console.error);
+  // }, [scannerOptions, scanSlug, userId, editingScanId, location.state?.editScan]);
+
+
   useEffect(() => {
-    if (!scanSlug || !scannerOptions.length) return;
+  const editScanState = location.state?.editScan;
 
-    const editScanState = location.state?.editScan;
+  if (editScanState) {
+    setEditingScan(editScanState);
+    loadScanIntoBuilder(editScanState);
+    setRunScanTrigger((prev) => !prev);
+    toast.info(`Editing: ${editScanState.label || editScanState.name}`);
+  }
+}, [location.state]);
 
-    if (editScanState) {
-      setEditingScan(editScanState);
-      loadScanIntoBuilder(editScanState);
-      setRunScanTrigger((prev) => !prev);
-      toast.info(`Editing: ${editScanState.label || editScanState.name}`);
-      return;
+useEffect(() => {
+  if (!scanSlug || !userId) return;
+
+  const fetchScan = async () => {
+    try {
+      const res = await apiService.post("/api/fetchAuthSaveScans", {
+        user_id: userId,
+      });
+
+      const allScans = Array.isArray(res.data)
+        ? res.data
+        : res.data?.scans ?? [];
+
+      const scan = allScans.find(
+        (s) => String(s.id) === String(editingScanId)
+      );
+
+      if (scan) {
+        setEditingScan(scan);
+        loadScanIntoBuilder(scan);
+        setRunScanTrigger((prev) => !prev);
+        toast.info(`Loaded: ${scan.label || scan.name}`);
+      } else {
+        toast.error("Scan not found");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load scan");
     }
+  };
 
-    // Refresh fallback — fetch all scans and find by ID
-    apiService
-      .post("/api/fetchAuthSaveScans", { user_id: userId }) // same call you use in ScanTable
-      .then((res) => {
-        const allScans = Array.isArray(res.data)
-          ? res.data
-          : (res.data?.scans ?? []);
+  fetchScan();
+}, [scanSlug, userId, editingScanId]);
 
-        const scan = allScans.find((s) => String(s.id) === String(editingScanId));
-
-        if (scan) {
-          setEditingScan(scan);
-          loadScanIntoBuilder(scan);
-          setRunScanTrigger((prev) => !prev);
-          toast.info(`Editing: ${scan.label || scan.name}`);
-        } else {
-          toast.error("Scan not found");
-        }
-      })
-      .catch(console.error);
-  }, [scannerOptions, scanSlug, userId, editingScanId, location.state?.editScan]);
 
   function mapConditionToRules(conditions = []) {
     return conditions.map((cond) => {

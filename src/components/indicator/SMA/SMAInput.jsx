@@ -2,7 +2,8 @@ export default function SMAInput(
   response,
   indicatorSeriesRef,
   latestIndicatorValuesRef,
-  maType
+  maType,
+  indicator
 ) {
 
   const rows = Array.isArray(response?.data) ? response.data : [];
@@ -23,7 +24,7 @@ export default function SMAInput(
     .filter((d) => d.bbLower != null && d.time != null)
     .map((d) => ({ time: Number(d.time), value: Number(d.bbLower) }));
 
-  const series = indicatorSeriesRef.current?.SMA;
+  const series = indicatorSeriesRef.current?.[indicator];
 
   if (!series) return;
 
@@ -38,14 +39,14 @@ export default function SMAInput(
     series.bbLower?.setData(bbLowerData);
   }
 
-  latestIndicatorValuesRef.current.SMA = {
+  latestIndicatorValuesRef.current[indicator] = {
     sma: smaData[smaData.length - 1]?.value,
     smoothingMA: smoothingData[smoothingData.length - 1]?.value,
     bbUpper: bbUpperData[bbUpperData.length - 1]?.value,
     bbLower: bbLowerData[bbLowerData.length - 1]?.value,
   };
 
-  indicatorSeriesRef.current.SMA.result = {
+  indicatorSeriesRef.current[indicator].result = {
     data: {
       sma: smaData,
       smoothingMA: smoothingData,

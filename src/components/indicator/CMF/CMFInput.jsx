@@ -1,15 +1,17 @@
 export default function CMFInput(
   response,
   indicatorSeriesRef,
-  latestIndicatorValuesRef
+  latestIndicatorValuesRef,
+  maType,
+  indicator
 ) {
 
   const rows = Array.isArray(response?.data)
     ? response.data
     : [];
 
-  const cmfSeries = indicatorSeriesRef.current?.CMF?.cmfLine;
-  const zeroSeries = indicatorSeriesRef.current?.CMF?.zeroLine;
+  const cmfSeries = indicatorSeriesRef.current?.[indicator]?.cmfLine;
+  const zeroSeries = indicatorSeriesRef.current?.[indicator]?.zeroLine;
 
   if (!cmfSeries) return;
 
@@ -21,7 +23,7 @@ export default function CMFInput(
     }));
 
   const zeroValue =
-    indicatorSeriesRef.current?.CMF?.zeroValue ?? 0;
+    indicatorSeriesRef.current?.[indicator]?.zeroValue ?? 0;
 
   const zeroData = cmfData.map((p) => ({
     time: p.time,
@@ -32,7 +34,7 @@ export default function CMFInput(
 
   if (zeroSeries) zeroSeries.setData(zeroData);
 
-  latestIndicatorValuesRef.current.CMF = {
+  latestIndicatorValuesRef.current[indicator] = {
     cmfLine: cmfData[cmfData.length - 1]?.value ?? null,
   };
 }

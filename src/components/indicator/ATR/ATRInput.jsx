@@ -1,7 +1,9 @@
 export default function ATRInput(
   response,
   indicatorSeriesRef,
-  latestIndicatorValuesRef
+  latestIndicatorValuesRef,
+  maType,
+  indicator
 ) {
 
   const rows = Array.isArray(response?.data) ? response.data : [];
@@ -13,12 +15,12 @@ export default function ATRInput(
       value: Number(d.atr),
     }));
 
-  const series = indicatorSeriesRef.current?.ATR;
+  const series = indicatorSeriesRef.current?.[indicator];
   if (!series) return;
 
   series.atr?.setData(atrData);
 
-  latestIndicatorValuesRef.current.ATR = {
+  latestIndicatorValuesRef.current[indicator] = {
     atr: atrData[atrData.length - 1]?.value,
   };
 

@@ -2,12 +2,13 @@ import { useEffect, useRef } from "react";
 import { LineSeries } from "lightweight-charts";
 
 export default function ZIGZAGPlot({
+  indicator,
   result,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
   chart,
-  indicatorConfigs,
+  indicatorConfigs
 }) {
   const labelLayerRef = useRef(null);
   const seriesRef = useRef(null);
@@ -79,10 +80,10 @@ export default function ZIGZAGPlot({
 
     const zigzagData = result.data.zigzagLine ?? [];
     const pivotData = result.data.paneLabels ?? [];
-    const style = indicatorStyle?.ZIGZAG?.z;
+    const style = indicatorStyle?.[indicator]?.z;
 
     if (!seriesRef.current) {
-      seriesRef.current = addSeries("ZIGZAG", LineSeries, {
+      seriesRef.current = addSeries(indicator, LineSeries, {
         color: style.color,
         lineWidth: style.width,
         lineStyle: style.lineStyle ?? 0,
@@ -92,7 +93,7 @@ export default function ZIGZAGPlot({
         crosshairMarkerVisible: true,
       });
 
-      indicatorSeriesRef.current.ZIGZAG = {
+      indicatorSeriesRef.current[indicator] = {
         zigzagLine: seriesRef.current,
         data: zigzagData,
         pivotData,
@@ -123,7 +124,7 @@ export default function ZIGZAGPlot({
     const series = seriesRef.current;
     if (!series) return;
 
-    const style = indicatorStyle?.ZIGZAG?.z || {};
+    const style = indicatorStyle?.[indicator]?.z || {};
     const prevStyle = prevStyleRef.current || {};
 
     // Only update if any option changed
@@ -143,10 +144,10 @@ export default function ZIGZAGPlot({
       prevStyleRef.current = { ...style };
     }
   }, [
-    indicatorStyle?.ZIGZAG?.z?.color,
-    indicatorStyle?.ZIGZAG?.z?.width,
-    indicatorStyle?.ZIGZAG?.z?.lineStyle,
-    indicatorStyle?.ZIGZAG?.z?.visible,
+    indicatorStyle?.[indicator]?.z?.color,
+    indicatorStyle?.[indicator]?.z?.width,
+    indicatorStyle?.[indicator]?.z?.lineStyle,
+    indicatorStyle?.[indicator]?.z?.visible,
   ]);
 
   return null;

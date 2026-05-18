@@ -2,10 +2,12 @@ import { useEffect } from "react";
 import { LineSeries } from "lightweight-charts";
 
 export default function ATRPlot({
+  indicator,
   result,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
+  chart
 }) {
 
   /* ===== CREATE SERIES ===== */
@@ -14,15 +16,15 @@ export default function ATRPlot({
 
     if (!result?.data) return;
 
-    if (indicatorSeriesRef.current?.ATR?.atr) {
+    if (indicatorSeriesRef.current?.[indicator]?.atr) {
       try {
-        indicatorSeriesRef.current.ATR.atr.setData([]);
+        indicatorSeriesRef.current[indicator].atr.setData([]);
       } catch {}
     }
 
-    const atrStyle = indicatorStyle?.ATR?.atr;
+    const atrStyle = indicatorStyle?.[indicator]?.atr;
 
-    const series = addSeries("ATR", LineSeries, {
+    const series = addSeries(indicator, LineSeries, {
       color: atrStyle?.color || "rgba(0,0,0,1)",
       lineWidth: atrStyle?.width || 2,
       lineStyle: atrStyle?.lineStyle ?? 0,
@@ -39,7 +41,7 @@ export default function ATRPlot({
 
     series.setData(safeData);
 
-    indicatorSeriesRef.current.ATR = {
+    indicatorSeriesRef.current[indicator] = {
       atr: series,
     };
 
@@ -50,10 +52,10 @@ export default function ATRPlot({
 
   useEffect(() => {
 
-    const atrSeries = indicatorSeriesRef.current?.ATR?.atr;
+    const atrSeries = indicatorSeriesRef.current?.[indicator]?.atr;
     if (!atrSeries) return;
 
-    const atrStyle = indicatorStyle?.ATR?.atr;
+    const atrStyle = indicatorStyle?.[indicator]?.atr;
 
     atrSeries.applyOptions({
       color: atrStyle?.color,

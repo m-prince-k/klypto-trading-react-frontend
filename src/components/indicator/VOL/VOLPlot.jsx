@@ -2,11 +2,13 @@ import { useEffect } from "react";
 import { HistogramSeries, LineSeries } from "lightweight-charts";
 
 export default function VOLPlot({
+  indicator,
   result,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
-  chart, // chart reference to attach series to bottom pane
+  chart,
+  // chart reference to attach series to bottom pane
 }) {
   useEffect(() => {
     if (!result?.data) return;
@@ -17,24 +19,23 @@ export default function VOLPlot({
     if (!Array.isArray(volume) || volume.length === 0) return;
 
     // ---------- REMOVE OLD SERIES ----------
-    if (indicatorSeriesRef.current?.VOL) {
-      Object.values(indicatorSeriesRef.current.VOL).forEach((s) => {
+    if (indicatorSeriesRef.current?.[indicator]) {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         try {
           s?.setData?.([]);
         } catch {}
       });
-      indicatorSeriesRef.current.VOL = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const groupedSeries = {};
 
     // ---------- VOLUME BARS ----------
-    const volSeries = addSeries(
-      "VOL",
+    const volSeries = addSeries(indicator,
       HistogramSeries,
       {
         priceLineVisible: false,
-        visible: indicatorStyle?.VOL?.volumeBars?.visible ?? true,
+        visible: indicatorStyle?.[indicator]?.volumeBars?.visible ?? true,
         priceScaleId: "pane_volume", // make sure you create a bottom pane with this id
       }
     );
@@ -47,22 +48,21 @@ export default function VOLPlot({
         time: d.time,
         value: d.value,
         color: isGrowing
-          ? indicatorStyle?.VOL?.volumeBars?.palette?.up
-          : indicatorStyle?.VOL?.volumeBars?.palette?.down,
+          ? indicatorStyle?.[indicator]?.volumeBars?.palette?.up
+          : indicatorStyle?.[indicator]?.volumeBars?.palette?.down,
       };
     });
 
     volSeries.setData(coloredVolume);
 
     // ---------- VOLUME MA LINE ----------
-    const maSeries = addSeries(
-      "VOL",
+    const maSeries = addSeries(indicator,
       LineSeries,
       {
-        color: indicatorStyle?.VOL?.volumeMA?.color ?? "rgba(255,193,7,1)",
-        lineWidth: indicatorStyle?.VOL?.volumeMA?.width ?? 2,
-        lineStyle: indicatorStyle?.VOL?.volumeMA?.lineStyle ?? 0,
-        visible: indicatorStyle?.VOL?.volumeMA?.visible ?? true,
+        color: indicatorStyle?.[indicator]?.volumeMA?.color ?? "rgba(255,193,7,1)",
+        lineWidth: indicatorStyle?.[indicator]?.volumeMA?.width ?? 2,
+        lineStyle: indicatorStyle?.[indicator]?.volumeMA?.lineStyle ?? 0,
+        visible: indicatorStyle?.[indicator]?.volumeMA?.visible ?? true,
         priceLineVisible: false,
         priceScaleId: "pane_volume",
       }
@@ -74,19 +74,19 @@ export default function VOLPlot({
     groupedSeries.volumeMA = maSeries;
     groupedSeries.rawData = volume;
 
-    indicatorSeriesRef.current.VOL = groupedSeries;
+    indicatorSeriesRef.current[indicator] = groupedSeries;
   }, [result]);
 
   // ---------- STYLE / PALETTE UPDATE ----------
   useEffect(() => {
-    const g = indicatorSeriesRef.current?.VOL;
+    const g = indicatorSeriesRef.current?.[indicator];
     if (!g) return;
 
     const volume = g.rawData;
     if (!volume) return;
 
-    const palette = indicatorStyle?.VOL?.volumeBars?.palette;
-    const volVisible = indicatorStyle?.VOL?.volumeBars?.visible ?? true;
+    const palette = indicatorStyle?.[indicator]?.volumeBars?.palette;
+    const volVisible = indicatorStyle?.[indicator]?.volumeBars?.visible ?? true;
 
     // recolor volume bars
     const recolored = volume.map((d, i, arr) => {
@@ -104,12 +104,12 @@ export default function VOLPlot({
 
     // update MA line style
     g.volumeMA?.applyOptions({
-      color: indicatorStyle?.VOL?.volumeMA?.color,
-      lineWidth: indicatorStyle?.VOL?.volumeMA?.width,
-      lineStyle: indicatorStyle?.VOL?.volumeMA?.lineStyle,
-      visible: indicatorStyle?.VOL?.volumeMA?.visible,
+      color: indicatorStyle?.[indicator]?.volumeMA?.color,
+      lineWidth: indicatorStyle?.[indicator]?.volumeMA?.width,
+      lineStyle: indicatorStyle?.[indicator]?.volumeMA?.lineStyle,
+      visible: indicatorStyle?.[indicator]?.volumeMA?.visible,
     });
-  }, [indicatorStyle?.VOL]);
+  }, [indicatorStyle?.[indicator]]);
 
   return null;
 }

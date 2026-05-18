@@ -233,7 +233,7 @@ export default function IndicatorPropertyDialog({
     const { maType } = config;
 
     const payload = {
-      type: activeBarIndicator,
+      type: activeBarIndicator.split("_")[0],
       ...config,
     };
 
@@ -289,7 +289,8 @@ export default function IndicatorPropertyDialog({
   ========================== */
 
   function renderIndicatorSetting() {
-    switch (activeBarIndicator) {
+    const baseIndicator = activeBarIndicator.split("_")[0];
+    switch (baseIndicator) {
       case "SMA":
       case "EMA":
         return (
@@ -1788,7 +1789,7 @@ export default function IndicatorPropertyDialog({
             letterSpacing: "-0.2px",
           }}
         >
-          {activeBarIndicator}
+          {activeBarIndicator.split("_")[0]}
         </Modal.Title>
       </Modal.Header>
 

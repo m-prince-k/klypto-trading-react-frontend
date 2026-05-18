@@ -2,11 +2,13 @@ import { useEffect } from "react";
 import { LineSeries } from "lightweight-charts";
 
 export default function ADXPlot({
+  indicator,
   result,
   rows,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
+  chart
 }) {
 
   /* ================= CREATE ADX ================= */
@@ -15,24 +17,25 @@ export default function ADXPlot({
 
     if (!result) return;
 
-    if (indicatorSeriesRef.current?.ADX) {
+    if (indicatorSeriesRef.current?.[indicator]) {
 
-      Object.values(indicatorSeriesRef.current.ADX).forEach((s) => {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         if (s?.setData) {
-          try { s.setData([]); } catch {}
+          try { s.setData([]);
+            try { chart.removeSeries(s); } catch {} } catch {}
         }
       });
 
-      indicatorSeriesRef.current.ADX = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const groupedSeries = {};
 
     const adxData = result.data.adx || [];
 
-    const styleConfig = indicatorStyle?.ADX?.adx;
+    const styleConfig = indicatorStyle?.[indicator]?.adx;
 
-    const series = addSeries("ADX", LineSeries, {
+    const series = addSeries(indicator, LineSeries, {
 
       color: styleConfig?.color || "rgb(255,152,0)",
 
@@ -53,7 +56,7 @@ export default function ADXPlot({
 
     groupedSeries.adx = series;
 
-    indicatorSeriesRef.current.ADX = groupedSeries;
+    indicatorSeriesRef.current[indicator] = groupedSeries;
 
   }, [result]);
 
@@ -62,10 +65,10 @@ export default function ADXPlot({
 
   useEffect(() => {
 
-    const adxGroup = indicatorSeriesRef.current?.ADX;
+    const adxGroup = indicatorSeriesRef.current?.[indicator];
     if (!adxGroup) return;
 
-    const style = indicatorStyle?.ADX?.adx;
+    const style = indicatorStyle?.[indicator]?.adx;
 
     adxGroup.adx?.applyOptions({
 

@@ -1,4 +1,10 @@
-export default function PVOInput(response, indicatorSeriesRef, latestIndicatorValuesRef) {
+export default function PVOInput(
+  response,
+  indicatorSeriesRef,
+  latestIndicatorValuesRef,
+  maType,
+  indicator
+) {
   const rows = Array.isArray(response?.data) ? response.data : [];
   if (!rows.length) return;
 
@@ -16,7 +22,7 @@ export default function PVOInput(response, indicatorSeriesRef, latestIndicatorVa
     .map((d) => ({ time: Number(d.time), value: Number(d.hist) }));
 
   // ---------- UPDATE SERIES IF EXISTS ----------
-  const series = indicatorSeriesRef.current?.PVO;
+  const series = indicatorSeriesRef.current?.[indicator];
   if (series) {
     series.pvo?.setData(pvoData);
     series.signal?.setData(signalData);
@@ -29,14 +35,14 @@ export default function PVOInput(response, indicatorSeriesRef, latestIndicatorVa
     series.result = { data: { pvo: pvoData, signal: signalData, hist: histData } };
   } else {
     // If series does not exist yet, store result and rows for PVOPlot
-    indicatorSeriesRef.current.PVO = {
+    indicatorSeriesRef.current[indicator] = {
       result: { data: { pvo: pvoData, signal: signalData, hist: histData } },
       rows,
     };
   }
 
   // ---------- UPDATE LATEST VALUES ----------
-  latestIndicatorValuesRef.current.PVO = {
+  latestIndicatorValuesRef.current[indicator] = {
     pvo: pvoData[pvoData.length - 1]?.value ?? null,
     signal: signalData[signalData.length - 1]?.value ?? null,
     hist: histData[histData.length - 1]?.value ?? null,

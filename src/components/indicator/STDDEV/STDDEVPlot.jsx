@@ -2,11 +2,13 @@ import { useEffect } from "react";
 import { LineSeries } from "lightweight-charts";
 
 export default function STDDEVPlot({
+  indicator,
   result,
   rows,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
+  chart
 }) {
 
   /* ================= CREATE STDDEV ================= */
@@ -22,17 +24,18 @@ export default function STDDEVPlot({
 
     /* REMOVE OLD SERIES */
 
-    if (indicatorSeriesRef.current?.STDDEV) {
+    if (indicatorSeriesRef.current?.[indicator]) {
 
       console.log("STDDEV: removing old series");
 
-      Object.values(indicatorSeriesRef.current.STDDEV).forEach((s) => {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         if (s?.setData) {
-          try { s.setData([]); } catch {}
+          try { s.setData([]);
+            try { chart.removeSeries(s); } catch {} } catch {}
         }
       });
 
-      indicatorSeriesRef.current.STDDEV = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const groupedSeries = {};
@@ -58,13 +61,13 @@ export default function STDDEVPlot({
       return;
     }
 
-    const style = indicatorStyle?.STDDEV?.stddev;
+    const style = indicatorStyle?.[indicator]?.stddev;
 
     const rowConfig = rows?.find((r) => r.key === "stddev");
 
     console.log("STDDEV STYLE →", style);
 
-    const series = addSeries("STDDEV", LineSeries, {
+    const series = addSeries(indicator, LineSeries, {
       color: style?.color || rowConfig?.color || "rgba(33,150,243,1)",
       lineWidth: style?.width || 2,
       lineStyle: style?.lineStyle ?? 0,
@@ -84,7 +87,7 @@ export default function STDDEVPlot({
 
     groupedSeries.stddev = series;
 
-    indicatorSeriesRef.current.STDDEV = {
+    indicatorSeriesRef.current[indicator] = {
       ...groupedSeries,
       result,
     };
@@ -96,11 +99,11 @@ export default function STDDEVPlot({
 
   useEffect(() => {
 
-    const stdGroup = indicatorSeriesRef.current?.STDDEV;
+    const stdGroup = indicatorSeriesRef.current?.[indicator];
 
     if (!stdGroup) return;
 
-    const style = indicatorStyle?.STDDEV?.stddev;
+    const style = indicatorStyle?.[indicator]?.stddev;
 
     console.log("STDDEV STYLE UPDATE →", style);
 

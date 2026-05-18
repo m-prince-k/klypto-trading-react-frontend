@@ -21,9 +21,13 @@ export const ChartProprties = {
     fontFamily: "Inter, sans-serif",
   },
 
-  localization: {
-    priceFormatter: (price) => price.toFixed(2), // TV-like formatting
+localization: {
+  priceFormatter: (price) => {
+    if (price < 1) return price.toFixed(7);
+    return price.toFixed(2);
   },
+},
+  
 
   timeScale: {
     timeVisible: true,
@@ -606,9 +610,10 @@ export const handleCopy = async (data) => {
   }
 };
 export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
-  const baseIndicator = indicator.startsWith("CUSTOM_")
+  let baseIndicator = indicator.startsWith("CUSTOM_")
     ? indicator.replace("CUSTOM_", "")
     : indicator;
+  baseIndicator = baseIndicator.split("_")[0];
 
   switch (baseIndicator) {
     case "SMA": {

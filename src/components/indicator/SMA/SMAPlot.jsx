@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { LineSeries } from "lightweight-charts";
 
 export default function SMAPlot({
+  indicator,
   result,
   rows,
   indicatorStyle,
@@ -9,7 +10,7 @@ export default function SMAPlot({
   addSeries,
   chart,
   containerRef,
-  indicatorConfigs,
+  indicatorConfigs
 }) {
   const canvasRef = useRef(null);
 
@@ -18,16 +19,17 @@ export default function SMAPlot({
   useEffect(() => {
     if (!result) return;
 
-    if (indicatorSeriesRef.current?.SMA) {
-      Object.values(indicatorSeriesRef.current.SMA).forEach((s) => {
+    if (indicatorSeriesRef.current?.[indicator]) {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         if (s?.setData) {
           try {
             s.setData([]);
+            try { chart.removeSeries(s); } catch {}
           } catch {}
         }
       });
 
-      indicatorSeriesRef.current.SMA = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const groupedSeries = {};
@@ -39,9 +41,9 @@ export default function SMAPlot({
 
     Object.entries(result?.data || {}).forEach(([lineName, lineData]) => {
       const rowConfig = rows?.find((r) => r.key === lineName);
-      const styleConfig = indicatorStyle?.SMA?.[lineName];
+      const styleConfig = indicatorStyle?.[indicator]?.[lineName];
 
-      const series = addSeries("SMA", LineSeries, {
+      const series = addSeries(indicator, LineSeries, {
         color: styleConfig?.color || rowConfig?.color || "#26a69a",
         lineWidth: styleConfig?.width || 2,
         lineStyle: styleConfig?.lineStyle,
@@ -63,13 +65,13 @@ export default function SMAPlot({
     groupedSeries.bbUpperData = upperData;
     groupedSeries.bbLowerData = lowerData;
 
-    indicatorSeriesRef.current.SMA = groupedSeries;
+    indicatorSeriesRef.current[indicator] = groupedSeries;
   }, [result]);
 
   /* ================= CANVAS INIT ================= */
 
   useEffect(() => {
-    if (!containerRef || canvasRef.current) return;
+    if (!containerRef.current || canvasRef.current) return;
 
     const canvas = document.createElement("canvas");
 
@@ -77,15 +79,15 @@ export default function SMAPlot({
     canvas.style.pointerEvents = "none";
     canvas.style.zIndex = 1;
 
-    containerRef.appendChild(canvas);
+    containerRef.current?.appendChild(canvas);
 
     canvasRef.current = canvas;
-  }, [containerRef]);
+  }, [containerRef.current]);
 
   /* ================= DRAW BB CLOUD ================= */
 
   const drawBBCloud = () => {
-    const smaGroup = indicatorSeriesRef.current?.SMA;
+    const smaGroup = indicatorSeriesRef.current?.[indicator];
     if (!smaGroup) return;
 
     const upper = smaGroup.bbUpperData || [];
@@ -104,7 +106,7 @@ export default function SMAPlot({
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const fill = indicatorStyle?.SMA?.bbFill;
+    const fill = indicatorStyle?.[indicator]?.bbFill;
 
     if (!fill?.visible) return;
 
@@ -163,13 +165,13 @@ export default function SMAPlot({
   /* ================= STYLE UPDATE ================= */
 
   useEffect(() => {
-    const smaGroup = indicatorSeriesRef.current?.SMA;
+    const smaGroup = indicatorSeriesRef.current?.[indicator];
     if (!smaGroup) return;
 
     Object.entries(smaGroup).forEach(([key, series]) => {
       if (!series?.applyOptions) return;
 
-      const style = indicatorStyle?.SMA?.[key];
+      const style = indicatorStyle?.[indicator]?.[key];
       if (!style) return;
 
       series.applyOptions({
@@ -194,8 +196,8 @@ export default function SMAPlot({
 
       canvasRef.current = null;
 
-      if (indicatorSeriesRef.current?.SMA) {
-        indicatorSeriesRef.current.SMA = null;
+      if (indicatorSeriesRef.current?.[indicator]) {
+        indicatorSeriesRef.current[indicator] = null;
       }
     };
   }, []);

@@ -2,13 +2,14 @@ import { useEffect, useRef } from "react";
 import { LineSeries } from "lightweight-charts";
 
 export default function DCPlot({
+  indicator,
   result,
   rows,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
   chart,
-  containerRef,
+  containerRef
 }) {
   const canvasRef = useRef(null);
 
@@ -17,16 +18,17 @@ export default function DCPlot({
   useEffect(() => {
     if (!result) return;
 
-    if (indicatorSeriesRef.current?.DC) {
-      Object.values(indicatorSeriesRef.current.DC).forEach((s) => {
+    if (indicatorSeriesRef.current?.[indicator]) {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         if (s?.setData) {
           try {
             s.setData([]);
+            try { chart.removeSeries(s); } catch {}
           } catch {}
         }
       });
 
-      indicatorSeriesRef.current.DC = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const groupedSeries = {};
@@ -38,9 +40,9 @@ export default function DCPlot({
 
     Object.entries(result?.data || {}).forEach(([lineName, lineData]) => {
       const rowConfig = rows?.find((r) => r.key === lineName);
-      const styleConfig = indicatorStyle?.DC?.[lineName];
+      const styleConfig = indicatorStyle?.[indicator]?.[lineName];
 
-      const series = addSeries("DC", LineSeries, {
+      const series = addSeries(indicator, LineSeries, {
         color: styleConfig?.color || rowConfig?.color || "#26a69a",
         lineWidth: styleConfig?.width || 2,
         lineStyle: styleConfig?.lineStyle,
@@ -62,7 +64,7 @@ export default function DCPlot({
     groupedSeries.upperData = upperData;
     groupedSeries.lowerData = lowerData;
 
-    indicatorSeriesRef.current.DC = groupedSeries;
+    indicatorSeriesRef.current[indicator] = groupedSeries;
 
     drawDCCloud();
   }, [result]);
@@ -86,7 +88,7 @@ export default function DCPlot({
   /* ================= DRAW DC CLOUD ================= */
 
   const drawDCCloud = () => {
-    const dcGroup = indicatorSeriesRef.current?.DC;
+    const dcGroup = indicatorSeriesRef.current?.[indicator];
     if (!dcGroup) return;
 
     const upper = dcGroup.upperData || [];
@@ -105,7 +107,7 @@ export default function DCPlot({
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const fill = indicatorStyle?.DC?.bbFill;
+    const fill = indicatorStyle?.[indicator]?.bbFill;
 
     if (!fill?.visible) return;
 
@@ -168,13 +170,13 @@ export default function DCPlot({
   /* ================= STYLE UPDATE ================= */
 
   useEffect(() => {
-    const dcGroup = indicatorSeriesRef.current?.DC;
+    const dcGroup = indicatorSeriesRef.current?.[indicator];
     if (!dcGroup) return;
 
     Object.entries(dcGroup).forEach(([key, series]) => {
       if (!series?.applyOptions) return;
 
-      const style = indicatorStyle?.DC?.[key];
+      const style = indicatorStyle?.[indicator]?.[key];
       if (!style) return;
 
       series.applyOptions({
@@ -202,8 +204,8 @@ export default function DCPlot({
 
       canvasRef.current = null;
 
-      if (indicatorSeriesRef.current?.DC) {
-        indicatorSeriesRef.current.DC = null;
+      if (indicatorSeriesRef.current?.[indicator]) {
+        indicatorSeriesRef.current[indicator] = null;
       }
     };
   }, []);

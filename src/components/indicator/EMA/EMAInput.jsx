@@ -4,7 +4,8 @@ export default function EMAInput(
   response,
   indicatorSeriesRef,
   latestIndicatorValuesRef,
-  maType
+  maType,
+  indicator
 ) {
   const rows = Array.isArray(response?.data) ? response.data : [];
 
@@ -50,7 +51,7 @@ export default function EMAInput(
   }
 
   /* ================= UPDATE SERIES ================= */
-  const series = indicatorSeriesRef.current?.EMA;
+  const series = indicatorSeriesRef.current?.[indicator];
   if (!series) return;
 
   series.ema?.setData(emaData);
@@ -67,20 +68,20 @@ export default function EMAInput(
   }
 
   /* ================= UPDATE HOVER VALUES ================= */
-  latestIndicatorValuesRef.current.EMA =
-    typeof latestIndicatorValuesRef.current.EMA === "object" &&
-    latestIndicatorValuesRef.current.EMA !== null
-      ? latestIndicatorValuesRef.current.EMA
+  latestIndicatorValuesRef.current[indicator] =
+    typeof latestIndicatorValuesRef.current[indicator] === "object" &&
+    latestIndicatorValuesRef.current[indicator] !== null
+      ? latestIndicatorValuesRef.current[indicator]
       : {};
 
-  latestIndicatorValuesRef.current.EMA.ema = emaData[emaData.length - 1]?.value ?? null;
-  latestIndicatorValuesRef.current.EMA.smoothingMA =
+  latestIndicatorValuesRef.current[indicator].ema = emaData[emaData.length - 1]?.value ?? null;
+  latestIndicatorValuesRef.current[indicator].smoothingMA =
     smoothingData[smoothingData.length - 1]?.value ?? null;
-  latestIndicatorValuesRef.current.EMA.bbUpper = bbUpperData[bbUpperData.length - 1]?.value ?? null;
-  latestIndicatorValuesRef.current.EMA.bbLower = bbLowerData[bbLowerData.length - 1]?.value ?? null;
+  latestIndicatorValuesRef.current[indicator].bbUpper = bbUpperData[bbUpperData.length - 1]?.value ?? null;
+  latestIndicatorValuesRef.current[indicator].bbLower = bbLowerData[bbLowerData.length - 1]?.value ?? null;
 
   /* ================= STORE RESULT ================= */
-  indicatorSeriesRef.current.EMA.result = {
+  indicatorSeriesRef.current[indicator].result = {
     data: {
       ema: emaData,
       smoothingMA: maType !== "none" ? smoothingData : [],

@@ -2,11 +2,13 @@ import { useEffect } from "react";
 import { LineSeries } from "lightweight-charts";
 
 export default function AroonPlot({
+  indicator,
   result,
   rows,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
+  chart
 }) {
   /* ================= CREATE AROON ================= */
 
@@ -15,15 +17,16 @@ export default function AroonPlot({
 
     /* REMOVE OLD AROON COMPLETELY */
 
-    if (indicatorSeriesRef.current?.AROON) {
-      Object.values(indicatorSeriesRef.current.AROON).forEach((s) => {
+    if (indicatorSeriesRef.current?.[indicator]) {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         if (s?.setData) {
           try {
             s.setData([]);
+            try { chart.removeSeries(s); } catch {}
           } catch {}
         }
       });
-      indicatorSeriesRef.current.AROON = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     const groupedSeries = {};
@@ -32,9 +35,9 @@ export default function AroonPlot({
 
     Object.entries(result.data).forEach(([lineName, lineData]) => {
       const rowConfig = rows?.find((r) => r.key === lineName);
-      const styleConfig = indicatorStyle?.AROON?.[lineName];
+      const styleConfig = indicatorStyle?.[indicator]?.[lineName];
 
-      const series = addSeries("AROON", LineSeries, {
+      const series = addSeries(indicator, LineSeries, {
         color: styleConfig?.color || rowConfig?.color || "rgb(38,166,154)",
 
         lineWidth: styleConfig?.width || 1,
@@ -50,17 +53,17 @@ export default function AroonPlot({
       groupedSeries[lineName] = series;
     });
 
-    indicatorSeriesRef.current.AROON = groupedSeries;
+    indicatorSeriesRef.current[indicator] = groupedSeries;
   }, [result]);
 
   /* ================= STYLE UPDATE ================= */
 
   useEffect(() => {
-    const aroonGroup = indicatorSeriesRef.current?.AROON;
+    const aroonGroup = indicatorSeriesRef.current?.[indicator];
     if (!aroonGroup) return;
 
-    const upStyle = indicatorStyle?.AROON?.aroonUp;
-    const downStyle = indicatorStyle?.AROON?.aroonDown;
+    const upStyle = indicatorStyle?.[indicator]?.aroonUp;
+    const downStyle = indicatorStyle?.[indicator]?.aroonDown;
 
     /* UPDATE AROON UP */
 

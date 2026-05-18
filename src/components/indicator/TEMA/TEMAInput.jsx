@@ -1,7 +1,9 @@
 export default function TEMAInput(
   response,
   indicatorSeriesRef,
-  latestIndicatorValuesRef
+  latestIndicatorValuesRef,
+  maType,
+  indicator
 ) {
 
   const rows = Array.isArray(response?.data) ? response.data : [];
@@ -16,7 +18,7 @@ export default function TEMAInput(
     }))
     .sort((a, b) => a.time - b.time);
 
-  const series = indicatorSeriesRef.current?.TEMA;
+  const series = indicatorSeriesRef.current?.[indicator];
 
   if (!series) return;
 
@@ -26,13 +28,13 @@ export default function TEMAInput(
 
   /* ================= HOVER VALUE ================= */
 
-  latestIndicatorValuesRef.current.TEMA = {
+  latestIndicatorValuesRef.current[indicator] = {
     tema: temaData[temaData.length - 1]?.value,
   };
 
   /* ================= STORE RESULT ================= */
 
-  indicatorSeriesRef.current.TEMA.result = {
+  indicatorSeriesRef.current[indicator].result = {
     data: {
       tema: temaData,
     },

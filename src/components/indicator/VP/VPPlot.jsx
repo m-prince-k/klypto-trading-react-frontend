@@ -1,10 +1,11 @@
 import { useEffect, useRef } from "react";
 
 export default function VPPlot({
+  indicator,
   result,
   chart,
   containerRef,
-  indicatorConfigs,
+  indicatorConfigs
 }) {
   const canvasRef = useRef(null);
   const ctxRef = useRef(null);

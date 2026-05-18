@@ -2,12 +2,14 @@ import { useEffect } from "react";
 import { LineSeries, BaselineSeries } from "lightweight-charts";
 
 export default function STOCHRSIPlot({
+  indicator,
   result,
   rows,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
   indicatorConfigs,
+  chart
 }) {
 
   /* ================= CREATE STOCHRSI ================= */
@@ -16,35 +18,36 @@ export default function STOCHRSIPlot({
 
     if (!result) return;
 
-    if (indicatorSeriesRef.current?.STOCHRSI) {
+    if (indicatorSeriesRef.current?.[indicator]) {
 
-      Object.values(indicatorSeriesRef.current.STOCHRSI).forEach((s) => {
+      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
         if (s?.setData) {
-          try { s.setData([]); } catch {}
+          try { s.setData([]);
+            try { chart.removeSeries(s); } catch {} } catch {}
         }
       });
 
-      indicatorSeriesRef.current.STOCHRSI = null;
+      indicatorSeriesRef.current[indicator] = null;
 
     }
 
     const groupedSeries = {};
     let kData = [];
 
-    const upper = indicatorStyle?.STOCHRSI?.upperBand?.value ?? 80;
-    const middle = indicatorStyle?.STOCHRSI?.middleBand?.value ?? 50;
-    const lower = indicatorStyle?.STOCHRSI?.lowerBand?.value ?? 20;
+    const upper = indicatorStyle?.[indicator]?.upperBand?.value ?? 80;
+    const middle = indicatorStyle?.[indicator]?.middleBand?.value ?? 50;
+    const lower = indicatorStyle?.[indicator]?.lowerBand?.value ?? 20;
 
-    const bgFill = indicatorStyle?.STOCHRSI?.bgFill;
+    const bgFill = indicatorStyle?.[indicator]?.bgFill;
 
     /* ================= MAIN LINES ================= */
 
     Object.entries(result.data).forEach(([lineName, lineData]) => {
 
       const rowConfig = rows?.find((r) => r.key === lineName);
-      const styleConfig = indicatorStyle?.STOCHRSI?.[lineName];
+      const styleConfig = indicatorStyle?.[indicator]?.[lineName];
 
-      const series = addSeries("STOCHRSI", LineSeries, {
+      const series = addSeries(indicator, LineSeries, {
         color: styleConfig?.color || rowConfig?.color || "rgba(38,166,154,1)",
         lineWidth: styleConfig?.width || 2,
         visible: styleConfig?.visible ?? true,
@@ -72,29 +75,29 @@ export default function STOCHRSIPlot({
       }));
 
 
-    const upperLine = addSeries("STOCHRSI", LineSeries,{
-      color: indicatorStyle?.STOCHRSI?.upperBand?.color,
-      lineWidth: indicatorStyle?.STOCHRSI?.upperBand?.width ?? 1,
-      lineStyle: indicatorStyle?.STOCHRSI?.upperBand?.lineStyle ?? 2,
-      visible: indicatorStyle?.STOCHRSI?.upperBand?.visible ?? true,
+    const upperLine = addSeries(indicator, LineSeries,{
+      color: indicatorStyle?.[indicator]?.upperBand?.color,
+      lineWidth: indicatorStyle?.[indicator]?.upperBand?.width ?? 1,
+      lineStyle: indicatorStyle?.[indicator]?.upperBand?.lineStyle ?? 2,
+      visible: indicatorStyle?.[indicator]?.upperBand?.visible ?? true,
       priceLineVisible:false,
       lastValueVisible:false
     });
 
-    const middleLine = addSeries("STOCHRSI", LineSeries,{
-      color: indicatorStyle?.STOCHRSI?.middleBand?.color,
-      lineWidth: indicatorStyle?.STOCHRSI?.middleBand?.width ?? 1,
-      lineStyle: indicatorStyle?.STOCHRSI?.middleBand?.lineStyle ?? 2,
-      visible: indicatorStyle?.STOCHRSI?.middleBand?.visible ?? true,
+    const middleLine = addSeries(indicator, LineSeries,{
+      color: indicatorStyle?.[indicator]?.middleBand?.color,
+      lineWidth: indicatorStyle?.[indicator]?.middleBand?.width ?? 1,
+      lineStyle: indicatorStyle?.[indicator]?.middleBand?.lineStyle ?? 2,
+      visible: indicatorStyle?.[indicator]?.middleBand?.visible ?? true,
       priceLineVisible:false,
       lastValueVisible:false
     });
 
-    const lowerLine = addSeries("STOCHRSI", LineSeries,{
-      color: indicatorStyle?.STOCHRSI?.lowerBand?.color,
-      lineWidth: indicatorStyle?.STOCHRSI?.lowerBand?.width ?? 1,
-      lineStyle: indicatorStyle?.STOCHRSI?.lowerBand?.lineStyle ?? 2,
-      visible: indicatorStyle?.STOCHRSI?.lowerBand?.visible ?? true,
+    const lowerLine = addSeries(indicator, LineSeries,{
+      color: indicatorStyle?.[indicator]?.lowerBand?.color,
+      lineWidth: indicatorStyle?.[indicator]?.lowerBand?.width ?? 1,
+      lineStyle: indicatorStyle?.[indicator]?.lowerBand?.lineStyle ?? 2,
+      visible: indicatorStyle?.[indicator]?.lowerBand?.visible ?? true,
       priceLineVisible:false,
       lastValueVisible:false
     });
@@ -115,7 +118,7 @@ export default function STOCHRSIPlot({
       value: upper,
     }));
 
-    const bandBackgroundSeries = addSeries("STOCHRSI", BaselineSeries,{
+    const bandBackgroundSeries = addSeries(indicator, BaselineSeries,{
       baseValue:{ type:"price", price: lower },
       topFillColor1: bgFill?.topFillColor1,
       topFillColor2: bgFill?.topFillColor2,
@@ -136,7 +139,7 @@ export default function STOCHRSIPlot({
 
     groupedSeries.kData = kData;
 
-    indicatorSeriesRef.current.STOCHRSI = groupedSeries;
+    indicatorSeriesRef.current[indicator] = groupedSeries;
 
   }, [result]);
 
@@ -145,14 +148,14 @@ export default function STOCHRSIPlot({
 
   useEffect(() => {
 
-    const stochGroup = indicatorSeriesRef.current?.STOCHRSI;
+    const stochGroup = indicatorSeriesRef.current?.[indicator];
     if (!stochGroup) return;
 
     const kData = stochGroup.kData ?? [];
 
-    const upperValue = indicatorStyle?.STOCHRSI?.upperBand?.value ?? 80;
-    const middleValue = indicatorStyle?.STOCHRSI?.middleBand?.value ?? 50;
-    const lowerValue = indicatorStyle?.STOCHRSI?.lowerBand?.value ?? 20;
+    const upperValue = indicatorStyle?.[indicator]?.upperBand?.value ?? 80;
+    const middleValue = indicatorStyle?.[indicator]?.middleBand?.value ?? 50;
+    const lowerValue = indicatorStyle?.[indicator]?.lowerBand?.value ?? 20;
 
     const makeLevel = (v)=> kData.map(p=>({time:p.time,value:v}));
 
@@ -161,10 +164,10 @@ export default function STOCHRSIPlot({
     stochGroup.lowerBand?.setData(makeLevel(lowerValue));
 
 
-    const kStyle = indicatorStyle?.STOCHRSI?.kLine;
-    const dStyle = indicatorStyle?.STOCHRSI?.dLine;
+    const kStyle = indicatorStyle?.[indicator]?.kLine;
+    const dStyle = indicatorStyle?.[indicator]?.dLine;
 
-    const bgFill = indicatorStyle?.STOCHRSI?.bgFill;
+    const bgFill = indicatorStyle?.[indicator]?.bgFill;
 
 
     /* ================= UPDATE K ================= */
@@ -192,21 +195,21 @@ export default function STOCHRSIPlot({
     /* ================= UPDATE BANDS ================= */
 
     stochGroup.upperBand?.applyOptions({
-      color: indicatorStyle?.STOCHRSI?.upperBand?.color,
-      lineWidth: indicatorStyle?.STOCHRSI?.upperBand?.width,
-      visible: indicatorStyle?.STOCHRSI?.upperBand?.visible,
+      color: indicatorStyle?.[indicator]?.upperBand?.color,
+      lineWidth: indicatorStyle?.[indicator]?.upperBand?.width,
+      visible: indicatorStyle?.[indicator]?.upperBand?.visible,
     });
 
     stochGroup.middleBand?.applyOptions({
-      color: indicatorStyle?.STOCHRSI?.middleBand?.color,
-      lineWidth: indicatorStyle?.STOCHRSI?.middleBand?.width,
-      visible: indicatorStyle?.STOCHRSI?.middleBand?.visible,
+      color: indicatorStyle?.[indicator]?.middleBand?.color,
+      lineWidth: indicatorStyle?.[indicator]?.middleBand?.width,
+      visible: indicatorStyle?.[indicator]?.middleBand?.visible,
     });
 
     stochGroup.lowerBand?.applyOptions({
-      color: indicatorStyle?.STOCHRSI?.lowerBand?.color,
-      lineWidth: indicatorStyle?.STOCHRSI?.lowerBand?.width,
-      visible: indicatorStyle?.STOCHRSI?.lowerBand?.visible,
+      color: indicatorStyle?.[indicator]?.lowerBand?.color,
+      lineWidth: indicatorStyle?.[indicator]?.lowerBand?.width,
+      visible: indicatorStyle?.[indicator]?.lowerBand?.visible,
     });
 
 

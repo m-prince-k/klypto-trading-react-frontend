@@ -2,10 +2,12 @@ import { useEffect } from "react";
 import { LineSeries } from "lightweight-charts";
 
 export default function ADPlot({
+  indicator,
   result,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
+  chart
 }) {
   useEffect(() => {
     // ✅ Get AD data
@@ -13,18 +15,18 @@ export default function ADPlot({
 
 
     // 🔥 Remove previous series
-    if (indicatorSeriesRef.current?.AD?.ad) {
+    if (indicatorSeriesRef.current?.[indicator]?.ad) {
       try {
-        indicatorSeriesRef.current.AD.ad.setData([]);
+        indicatorSeriesRef.current[indicator].ad.setData([]);
       } catch {}
-      indicatorSeriesRef.current.AD = null;
+      indicatorSeriesRef.current[indicator] = null;
     }
 
     // 🔹 Get style
-    const style = indicatorStyle?.AD?.ad;
+    const style = indicatorStyle?.[indicator]?.ad;
 
     // 🔹 Add LineSeries
-    const adSeries = addSeries("AD", LineSeries, {
+    const adSeries = addSeries(indicator, LineSeries, {
       color: style?.color ?? "rgba(156,39,176,1)",
       lineWidth: style?.width ?? 2,
       lineStyle: style?.lineStyle ?? 0,
@@ -36,7 +38,7 @@ export default function ADPlot({
     adSeries.setData(adData);
 
     // 🔹 Store reference
-    indicatorSeriesRef.current.AD = {
+    indicatorSeriesRef.current[indicator] = {
       ad: adSeries,
       result,
       adData,
@@ -47,10 +49,10 @@ export default function ADPlot({
 
   // ================= STYLE UPDATE =================
   useEffect(() => {
-    const g = indicatorSeriesRef.current?.AD;
+    const g = indicatorSeriesRef.current?.[indicator];
     if (!g) return;
 
-    const style = indicatorStyle?.AD?.ad;
+    const style = indicatorStyle?.[indicator]?.ad;
     if (!style) return;
 
     g.ad?.applyOptions({
@@ -59,7 +61,7 @@ export default function ADPlot({
       lineStyle: style.lineStyle,
       visible: style.visible,
     });
-  }, [indicatorStyle?.AD]);
+  }, [indicatorStyle?.[indicator]]);
 
   return null;
 }

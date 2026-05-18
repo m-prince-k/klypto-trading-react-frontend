@@ -2,12 +2,13 @@ import { useCallback, useEffect, useRef } from "react";
 import { LineSeries } from "lightweight-charts";
 
 export default function SuperTrendPlot({
+  indicator,
   result,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
   chart,
-  containerRef,
+  containerRef
 }) {
   const canvasRef = useRef(null);
   const styleRef = useRef(indicatorStyle); // ✅ LIVE STYLE REF
@@ -103,7 +104,7 @@ export default function SuperTrendPlot({
       });
     });
 
-    indicatorSeriesRef.current.SUPERTREND = seriesRef.current;
+    indicatorSeriesRef.current[indicator] = seriesRef.current;
   }, [result]); // ❗ unchanged
 
   /* ================= CANVAS INIT ================= */
@@ -275,7 +276,7 @@ export default function SuperTrendPlot({
       }
 
       if (indicatorSeriesRef.current) {
-        indicatorSeriesRef.current.SUPERTREND = null;
+        indicatorSeriesRef.current[indicator] = null;
       }
     };
   }, []);

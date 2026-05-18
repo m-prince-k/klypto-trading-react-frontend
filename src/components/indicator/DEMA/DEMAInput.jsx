@@ -1,7 +1,9 @@
 export default function DEMAInput(
   response,
   indicatorSeriesRef,
-  latestIndicatorValuesRef
+  latestIndicatorValuesRef,
+  maType,
+  indicator
 ) {
 
   const rows = Array.isArray(response?.data) ? response.data : [];
@@ -16,7 +18,7 @@ export default function DEMAInput(
     }))
     .sort((a, b) => a.time - b.time);
 
-  const series = indicatorSeriesRef.current?.DEMA;
+  const series = indicatorSeriesRef.current?.[indicator];
 
   if (!series?.dema) return;
 
@@ -26,7 +28,7 @@ export default function DEMAInput(
 
   /* ================= STORE HOVER VALUE ================= */
 
-  latestIndicatorValuesRef.current.DEMA = {
+  latestIndicatorValuesRef.current[indicator] = {
     dema: demaData[demaData.length - 1]?.value,
   };
 }

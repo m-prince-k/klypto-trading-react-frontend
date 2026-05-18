@@ -2,12 +2,14 @@ export default function KVOInput(
   response,
   indicatorSeriesRef,
   latestIndicatorValuesRef,
+  maType,
+  indicator
 ) {
   const rows = Array.isArray(response?.data) ? response.data : [];
 
-  const kvoSeries = indicatorSeriesRef.current?.KVO?.kvoLine;
-  const signalSeries = indicatorSeriesRef.current?.KVO?.signalLine;
-  const zeroSeries = indicatorSeriesRef.current?.KVO?.zeroLine;
+  const kvoSeries = indicatorSeriesRef.current?.[indicator]?.kvoLine;
+  const signalSeries = indicatorSeriesRef.current?.[indicator]?.signalLine;
+  const zeroSeries = indicatorSeriesRef.current?.[indicator]?.zeroLine;
 
   if (!kvoSeries || !signalSeries) return;
 
@@ -25,7 +27,7 @@ export default function KVOInput(
       value: Number(d.signal),
     }));
 
-  const zeroValue = indicatorSeriesRef.current?.KVO?.zeroValue ?? 0;
+  const zeroValue = indicatorSeriesRef.current?.[indicator]?.zeroValue ?? 0;
 
   const zeroData = kvoData.map((p) => ({
     time: p.time,
@@ -36,7 +38,7 @@ export default function KVOInput(
   signalSeries.setData(signalData);
   if (zeroSeries) zeroSeries.setData(zeroData);
 
-  latestIndicatorValuesRef.current.KVO = {
+  latestIndicatorValuesRef.current[indicator] = {
     kvo: kvoData[kvoData.length - 1]?.value ?? null,
     signal: signalData[signalData.length - 1]?.value ?? null,
   };

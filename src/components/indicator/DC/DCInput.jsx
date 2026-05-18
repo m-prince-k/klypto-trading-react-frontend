@@ -1,7 +1,9 @@
 export default function DCInput(
   response,
   indicatorSeriesRef,
-  latestIndicatorValuesRef
+  latestIndicatorValuesRef,
+  maType,
+  indicator
 ) {
 
   const rows = Array.isArray(response?.data) ? response.data : [];
@@ -34,7 +36,7 @@ export default function DCInput(
 
   /* ================= HOVER VALUES ================= */
 
-  latestIndicatorValuesRef.current.DC = {
+  latestIndicatorValuesRef.current[indicator] = {
     upper: upperData[upperData.length - 1]?.value,
     basis: basisData[basisData.length - 1]?.value,
     lower: lowerData[lowerData.length - 1]?.value,
@@ -42,10 +44,10 @@ export default function DCInput(
 
   /* ================= STORE RESULT ================= */
 
-  if (!indicatorSeriesRef.current.DC)
-    indicatorSeriesRef.current.DC = {};
+  if (!indicatorSeriesRef.current[indicator])
+    indicatorSeriesRef.current[indicator] = {};
 
-  indicatorSeriesRef.current.DC.result = {
+  indicatorSeriesRef.current[indicator].result = {
     data: {
       upper: upperData,
       basis: basisData,

@@ -232,7 +232,8 @@ export function updateIndicatorFromInput(
 ) {
   console.log("🔥 updateIndicatorFromInput CALLED:", indicatorType);
 
-  const handler = indicatorInputs[indicatorType];
+  const baseIndicator = indicatorType.split("_")[0];
+  const handler = indicatorInputs[baseIndicator];
 
   if (!handler) {
     console.error("❌ No input handler for:", indicatorType);
@@ -242,5 +243,5 @@ export function updateIndicatorFromInput(
 
   console.log("✅ Found handler for:", indicatorType);
 
-  handler(response, indicatorSeriesRef, latestIndicatorValuesRef, maType);
+  handler(response, indicatorSeriesRef, latestIndicatorValuesRef, maType, indicatorType);
 }
