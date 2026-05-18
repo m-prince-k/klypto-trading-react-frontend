@@ -15,6 +15,7 @@ import ScannerBuilder from "./pages/scanner/ScannerBuilder";
 import CustomIndicator from "./pages/customIndicator/CustomIndicator";
 import Profile, { AlertsPage, ProfilePage, ScansPage } from "./pages/auth/Profile";
 import StrategyCanvas from "./pages/stretegy-builder/components/builder/StrategyCanvas";
+import CryptoEdgeDashboard from "./pages/CryptoEdgeDashboard/CryptoEdgeDashboard";
 
 
 function App() {
@@ -66,6 +67,7 @@ function App() {
           {/* <Route path="/" element={<Form />} /> */}
           <Route path="/testing" element={<Testing />} />
           <Route path="/tradingview" element={<TradingViewChart />} />
+           <Route path="/cryptoedge" element={<CryptoEdgeDashboard/>} />
           {/* <Route path="/indiatorSlide" element={<IndiatorSlide />} /> */}
 
           
