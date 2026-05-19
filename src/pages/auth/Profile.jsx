@@ -70,7 +70,6 @@ const PlusIcon = () => (
 const TABS = [
   { to: "/scan_dashboard", icon: <ScansIcon />, label: "Scans" },
   { to: "/alert_dashboard", icon: <AlertsIcon />, label: "Alerts" },
-  { to: "/profile", icon: <ProfileIcon />, label: "Profile" },
 ];
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
@@ -79,12 +78,12 @@ const styles = {
   wrapper: {
     minHeight: "100vh",
     fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
-    backgroundColor: "#f5f5f2",
-    color: "#1a1a1a",
+    backgroundColor: "var(--bg-main, #f5f5f2)",
+    color: "var(--text-main, #1a1a1a)",
   },
   tabBar: {
-    backgroundColor: "#ffffff",
-    borderBottom: "0.5px solid rgba(0,0,0,0.12)",
+    backgroundColor: "var(--bg-card, #ffffff)",
+    borderBottom: "1px solid var(--border-color, rgba(0,0,0,0.12))",
     borderRadius: "5px",
     padding: "0 24px",
     margin: "20px 25px 2px 25px",
@@ -99,8 +98,8 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "7px",
-    backgroundColor: "#185FA5",
-    color: "#fff",
+    backgroundColor: "var(--accent-color, #185FA5)",
+    color: "var(--bg-card, #fff)",
     border: "none",
     borderRadius: "8px",
     padding: "7px 16px",
@@ -123,7 +122,7 @@ function PageLayout({ children }) {
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap');
         * { box-sizing: border-box; }
         body { margin: 0; }
-        input::placeholder { color: #bbb; }
+        input::placeholder { color: var(--text-muted, #bbb); }
         button:hover { opacity: 0.88; }
       `}</style>
 
@@ -145,8 +144,8 @@ function PageLayout({ children }) {
                   borderRadius: "8px",
                   fontSize: "16px",
                   fontWeight: active ? 500 : 400,
-                  color: active ? "#185FA5" : "#777",
-                  background: active ? "#E6F1FB" : "transparent",
+                  color: active ? "var(--accent-color, #185FA5)" : "var(--text-muted, #777)",
+                  background: active ? "var(--bg-main, #E6F1FB)" : "transparent",
                   textDecoration: "none",
                 }}
               >
@@ -186,9 +185,21 @@ export function AlertsPage() {
 
 export function ProfilePage() {
   return (
-    <PageLayout>
-      <ProfileSection />
-    </PageLayout>
+    <div style={styles.wrapper}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap');
+        * { box-sizing: border-box; }
+        body { margin: 0; }
+        input::placeholder { color: var(--text-muted, #bbb); }
+        button:hover { opacity: 0.88; }
+      `}</style>
+
+      <Navbar />
+
+      <div style={{ marginTop: "20px" }}>
+        <ProfileSection />
+      </div>
+    </div>
   );
 }
 

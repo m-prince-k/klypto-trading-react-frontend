@@ -13,6 +13,7 @@ import { BsArrowUpRight } from "react-icons/bs";
 import { FiChevronDown } from "react-icons/fi";
 import { chartOptions, convertToHeikinAshi } from "../../util/common";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "../../context/ThemeContext";
 
 export default function MiniChart({
   activeSymbol,
@@ -20,6 +21,7 @@ export default function MiniChart({
   timeframeValue,
   dropdownRef,
 }) {
+  const { theme } = useTheme();
   const chartRef = useRef(null);
   const seriesRef = useRef(null);
   const containerRef = useRef(null);
@@ -32,16 +34,17 @@ export default function MiniChart({
   useEffect(() => {
     if (!containerRef.current) return;
 
+    const isDark = theme === "dark";
     const chart = createChart(containerRef.current, {
       width: 600,
       height: 350,
       layout: {
-        background: { color: "#0F0F0F" },
-        textColor: "#DDD",
+        background: { color: isDark ? "#0b0f19" : "#ffffff" },
+        textColor: isDark ? "#8f9cae" : "#64748b",
       },
       grid: {
-        vertLines: { color: "#222" },
-        horzLines: { color: "#222" },
+        vertLines: { color: isDark ? "#1e293b" : "#f1f5f9" },
+        horzLines: { color: isDark ? "#1e293b" : "#f1f5f9" },
       },
       timeScale: {
         barSpacing: 10,
@@ -91,6 +94,21 @@ export default function MiniChart({
 
     return () => chart.remove();
   }, []);
+
+  useEffect(() => {
+    if (!chartRef.current) return;
+    const isDark = theme === "dark";
+    chartRef.current.applyOptions({
+      layout: {
+        background: { color: isDark ? "#0b0f19" : "#ffffff" },
+        textColor: isDark ? "#8f9cae" : "#64748b",
+      },
+      grid: {
+        vertLines: { color: isDark ? "#1e293b" : "#f1f5f9" },
+        horzLines: { color: isDark ? "#1e293b" : "#f1f5f9" },
+      },
+    });
+  }, [theme]);
 
   // ✅ Update series + legend logic
   useEffect(() => {
@@ -237,15 +255,15 @@ export default function MiniChart({
           alignItems: "center",
           justifyContent: "space-between",
           padding: "6px 6px",
-          background: "#0b1220",
-          borderBottom: "1px solid #1f2937",
+          background: "var(--bg-card, #ffffff)",
+          borderBottom: "1px solid var(--border-color, #e2e8f0)",
           borderTopLeftRadius: 8,
           borderTopRightRadius: 8,
         }}
       >
         {/* LEFT → SYMBOL + OHLC */}
-        <div style={{ fontSize: 12, color: "#9ca3af" }}>
-          <b style={{ color: "#e5e7eb" }}>{activeSymbol}</b>{" "}
+        <div style={{ fontSize: 12, color: "var(--text-muted, #64748b)" }}>
+          <b style={{ color: "var(--text-main, #131722)" }}>{activeSymbol}</b>{" "}
           {timeframeValue && `(${timeframeValue})`} &nbsp;
           {ohlc && (
             <span style={{ color: ohlcColor }}>
@@ -260,14 +278,15 @@ export default function MiniChart({
             <DropdownMenu.Trigger asChild>
               <button
                 style={{
-                  background: "#111827",
-                  border: "1px solid #1f2937",
-                  color: "#e5e7eb",
+                  background: "var(--bg-main, #f4f6f8)",
+                  border: "1px solid var(--border-color, #e2e8f0)",
+                  color: "var(--text-main, #131722)",
                   padding: "4px 8px",
                   borderRadius: 6,
                   display: "flex",
                   alignItems: "center",
                   gap: 6,
+                  cursor: "pointer",
                 }}
               >
                 {active?.icon && <active.icon size={14} />}
@@ -287,13 +306,12 @@ export default function MiniChart({
                   e.preventDefault(); // 🔥 IMPORTANT
                 }}
                 style={{
-                  background: "#1f2937",
-                  border: "1px solid #374151",
+                  background: "var(--bg-card, #ffffff)",
+                  border: "1px solid var(--border-color, #e2e8f0)",
                   borderRadius: 8,
                   padding: 6,
                   minWidth: 180,
                   zIndex: 9999999, // 🔥 increase
-                  // position: "relative", // 🔥 important
                 }}
               >
                 {chartOptions.map((item) => (
@@ -307,8 +325,10 @@ export default function MiniChart({
                       padding: "6px 10px",
                       borderRadius: 6,
                       cursor: "pointer",
-                      color: "#e5e7eb",
+                      color: "var(--text-main, #131722)",
                     }}
+                    onMouseEnter={(e) => (e.target.style.backgroundColor = "var(--bg-card-hover, #f1f5f9)")}
+                    onMouseLeave={(e) => (e.target.style.backgroundColor = "transparent")}
                   >
                     <item.icon size={14} />
                     <span style={{ flex: 1 }}>{item.label}</span>
@@ -325,11 +345,12 @@ export default function MiniChart({
               navigate(`/candleStick?symbol=${activeSymbol}&tf=${timeframeValue}`)
             }
             style={{
-              background: "#111827",
-              border: "1px solid #1f2937",
-              color: "#e5e7eb",
+              background: "var(--bg-main, #f4f6f8)",
+              border: "1px solid var(--border-color, #e2e8f0)",
+              color: "var(--text-main, #131722)",
               padding: "4px 6px",
               borderRadius: 6,
+              cursor: "pointer",
             }}
           >
             <BsArrowUpRight size={14} />

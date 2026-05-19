@@ -82,14 +82,14 @@ export default function ScansSection() {
 
   if (!loading && !error && scans.length === 0) {
     return (
-      <Container className="py-5 text-center">
-        <div className="mb-3 text-muted" style={{ fontSize: 48 }}>
+      <Container className="py-5 text-center" style={{ color: "var(--text-main, #1a1a1a)" }}>
+        <div className="mb-3" style={{ fontSize: 48 }}>
           🔍
         </div>
         <h5 className="fw-semibold mb-2">No saved scans</h5>
         <p
-          className="text-muted small mb-4"
-          style={{ maxWidth: 320, margin: "0 auto 1rem" }}
+          className="small mb-4"
+          style={{ maxWidth: 320, margin: "0 auto 1rem", color: "var(--text-muted, #64748b)" }}
         >
           Build and save scanners to find stocks that match your conditions.
         </p>
@@ -132,26 +132,26 @@ export default function ScansSection() {
     : "—";
 
   return (
-    <Container fluid className="py-4 px-3 px-md-4">
+    <Container fluid className="py-4 px-3 px-md-4" style={{ color: "var(--text-main, #131722)" }}>
       {/* Dashboard Header Card */}
       <Card
-        className="border mb-4"
+        className="border mb-4 shadow-sm"
         style={{
           borderRadius: 10,
-          borderColor: "#e0dfd8",
-          background: "#fff",
-          boxShadow: "0 1px 6px rgba(0,0,0,0.05)",
+          borderColor: "var(--border-color, #e0dfd8)",
+          background: "var(--bg-card, #fff)",
+          color: "var(--text-main, #131722)"
         }}
       >
         <Card.Body className="px-4 py-3">
           {/* Title + subtitle */}
           <div className="d-flex align-items-center gap-2 mb-1">
-            <ScanSearch size={30} color="#185FA5" />
-            <h5 className="mb-0 fw-semibold text-dark" style={{ fontSize: 32 }}>
+            <ScanSearch size={30} color="var(--accent-color, #185FA5)" />
+            <h5 className="mb-0 fw-semibold" style={{ fontSize: 32, color: "var(--text-main, #131722)" }}>
               Scan Dashboard
             </h5>
           </div>
-          <p className="mb-5 text-muted text-left" style={{ fontSize: 14 }}>
+          <p className="mb-5 text-left" style={{ fontSize: 14, color: "var(--text-muted, #64748b)" }}>
             Review saved scans, manage tags, share strategies, and preview live
             results — all from one place.
           </p>
@@ -163,52 +163,52 @@ export default function ScansSection() {
               <div className="d-flex align-items-center gap-2 flex-wrap">
                 <div
                   style={{
-                    background: "#f0f5ff",
-                    border: "1px solid #d0dff5",
+                    background: "var(--bg-main, #f0f5ff)",
+                    border: "1px solid var(--border-color, #d0dff5)",
                     borderRadius: 8,
                     padding: "8px 16px",
                   }}
                 >
                   <div
-                    className="text-muted"
                     style={{
                       fontSize: 11,
                       textTransform: "uppercase",
                       letterSpacing: "0.06em",
                       marginBottom: 2,
+                      color: "var(--text-muted, #64748b)"
                     }}
                   >
                     Total Scans
                   </div>
                   <div
-                    className="fw-semibold text-dark"
-                    style={{ fontSize: 18 }}
+                    className="fw-semibold"
+                    style={{ fontSize: 18, color: "var(--text-main, #131722)" }}
                   >
                     {scans.length}
                   </div>
                 </div>
                 <div
                   style={{
-                    background: "#f5f4f0",
-                    border: "1px solid #e0dfd8",
+                    background: "var(--bg-main, #f5f4f0)",
+                    border: "1px solid var(--border-color, #e0dfd8)",
                     borderRadius: 8,
                     padding: "8px 16px",
                   }}
                 >
                   <div
-                    className="text-muted"
                     style={{
                       fontSize: 11,
                       textTransform: "uppercase",
                       letterSpacing: "0.06em",
                       marginBottom: 2,
+                      color: "var(--text-muted, #64748b)"
                     }}
                   >
                     Last Created
                   </div>
                   <div
-                    className="fw-semibold text-dark"
-                    style={{ fontSize: 18 }}
+                    className="fw-semibold"
+                    style={{ fontSize: 18, color: "var(--text-main, #131722)" }}
                   >
                     {lastCreated}
                   </div>
@@ -229,11 +229,11 @@ export default function ScansSection() {
                       width: "100%",
                       height: 34,
                       padding: "0 10px 0 34px",
-                      border: "1px solid #d0cfc8",
+                      border: "1px solid var(--border-color, #d0cfc8)",
                       borderRadius: 6,
                       fontSize: 13,
-                      background: "#f9f8f5",
-                      color: "#1a1a1a",
+                      background: "var(--bg-main, #f9f8f5)",
+                      color: "var(--text-main, #1a1a1a)",
                       outline: "none",
                     }}
                   />
@@ -244,6 +244,7 @@ export default function ScansSection() {
                       top: "50%",
                       transform: "translateY(-50%)",
                       opacity: 0.4,
+                      color: "var(--text-main, #131722)"
                     }}
                     width="14"
                     height="14"
@@ -266,13 +267,13 @@ export default function ScansSection() {
                     gap: 5,
                     height: 34,
                     padding: "0 13px",
-                    background: "#fff",
-                    color: "#444",
+                    background: "var(--bg-card, #fff)",
+                    color: "var(--text-main, #444)",
                     borderRadius: 6,
                     fontSize: 13,
                     fontWeight: 500,
                     whiteSpace: "nowrap",
-                    border: "1px solid #d0cfc8",
+                    border: "1px solid var(--border-color, #d0cfc8)",
                     cursor: "pointer",
                   }}
                 >
@@ -288,8 +289,8 @@ export default function ScansSection() {
                     gap: 5,
                     height: 34,
                     padding: "0 14px",
-                    background: "#185FA5",
-                    color: "#fff",
+                    background: "var(--accent-color, #185FA5)",
+                    color: "var(--bg-card, #fff)",
                     borderRadius: 6,
                     fontSize: 13,
                     fontWeight: 500,

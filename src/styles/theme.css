@@ -1,0 +1,60 @@
+:root, [data-theme="light"] {
+  --bg-main: #f4f6f8;       /* Very light grey for main dashboard body */
+  --bg-card: #ffffff;       /* Pure white for cards */
+  --bg-card-hover: #f1f5f9; /* Hover state for rows */
+  
+  --text-main: #131722;     /* Dark text for headings/main */
+  --text-muted: #64748b;    /* Muted text for labels */
+  --text-highlight: #000000;
+  
+  --border-color: #e2e8f0;  /* Light border */
+  --border-light: #f1f3f6;  /* Extremely subtle border */
+  
+  --accent-color: #3b82f6;  /* Blue */
+  --header-bg: #ffffff;     /* White header */
+  --sidebar-bg: #ffffff;    /* White sidebar */
+  
+  --table-header-bg: #f8f9fa; 
+  --shadow-color: rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 4px 12px rgba(0,0,0,0.05);
+  
+  /* Arbitrage specific */
+  --bg-table-row: #ffffff;
+  --bg-table-row-alt: #f8f9fa;
+  --bg-input: #ffffff;
+  --input-border: #cbd5e1;
+}
+
+[data-theme="dark"] {
+  --bg-main: #0b0f19;       /* Deep dark background */
+  --bg-card: #161b22;       /* Elevated dark card */
+  --bg-card-hover: #1e293b;
+  
+  --text-main: #ffffff;     /* White text */
+  --text-muted: #8f9cae;    /* Slate grey text */
+  --text-highlight: #ffffff;
+  
+  --border-color: rgba(255, 255, 255, 0.05);
+  --border-light: rgba(255, 255, 255, 0.02);
+  
+  --accent-color: #3b82f6;
+  --header-bg: #0e121b;
+  --sidebar-bg: #0e121b;
+  
+  --table-header-bg: rgba(255, 255, 255, 0.02);
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.3);
+  
+  /* Arbitrage specific */
+  --bg-table-row: #161b22;
+  --bg-table-row-alt: rgba(255,255,255,0.01);
+  --bg-input: rgba(255,255,255,0.05);
+  --input-border: rgba(255,255,255,0.1);
+}
+
+/* Base utility resets for body */
+body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}

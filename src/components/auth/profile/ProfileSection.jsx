@@ -77,7 +77,7 @@ export default function ProfileSection() {
   };
 
   return (
-    <div className=" d-flex align-items-center py-4 bg-light">
+    <div className=" d-flex align-items-center py-4" style={{ backgroundColor: "var(--bg-main, #f8f9fa)" }}>
       <Container>
         <Row className="justify-content-center">
           <Col xs={12} sm={10} md={8} lg={6}>
@@ -90,10 +90,20 @@ export default function ProfileSection() {
               </Alert>
             )}
 
-            <Card className="border rounded-4 shadow-sm p-2">
+            <Card 
+              className="border rounded-4 shadow-sm p-2"
+              style={{
+                backgroundColor: "var(--bg-card, #ffffff)",
+                borderColor: "var(--border-color, #e2e8f0)",
+                color: "var(--text-main, #1a1a1a)"
+              }}
+            >
               <Card.Body>
                 {/* Avatar row */}
-                <div className="d-flex align-items-center gap-3 pb-3 mb-3 border-bottom">
+                <div 
+                  className="d-flex align-items-center gap-3 pb-3 mb-3 border-bottom"
+                  style={{ borderColor: "var(--border-color, #e2e8f0)" }}
+                >
                   <div style={{ position: "relative", cursor: "pointer" }}>
                     <Image
                       src={imagePreview || "https://i.pravatar.cc/150?img=12"}
@@ -136,16 +146,16 @@ export default function ProfileSection() {
                     />
                   </div>
                   <div className="text-start">
-                    <h6 className="mb-0 fw-semibold text-dark">
+                    <h6 className="mb-0 fw-semibold" style={{ color: "var(--text-main, #131722)" }}>
                       {form.fullName || "Your Name"}
                     </h6>
                     <p
-                      className="text-muted mb-0 mt-1"
-                      style={{ fontSize: 13 }}
+                      className="mb-0 mt-1"
+                      style={{ fontSize: 13, color: "var(--text-muted, #64748b)" }}
                     >
                       {form.email || "your@email.com"}
                     </p>
-                    <p className="text-muted mb-0" style={{ fontSize: 12 }}>
+                    <p className="mb-0" style={{ fontSize: 12, color: "var(--text-muted, #64748b)" }}>
                       Active member
                     </p>
                   </div>
@@ -157,8 +167,8 @@ export default function ProfileSection() {
                     <Col xs={12} sm={6}>
                       <Form.Group>
                         <Form.Label
-                          className="text-uppercase fw-semibold text-secondary mb-1 text-start d-block"
-                          style={{ fontSize: 11, letterSpacing: "0.06em" }}
+                          className="text-uppercase fw-semibold mb-1 text-start d-block"
+                          style={{ fontSize: 11, letterSpacing: "0.06em", color: "var(--text-muted, #64748b)" }}
                         >
                           Full name
                         </Form.Label>
@@ -166,8 +176,13 @@ export default function ProfileSection() {
                           name="fullName"
                           value={form.fullName}
                           onChange={handleChange}
-                          className="bg-light border rounded-3"
-                          style={{ fontSize: 14 }}
+                          className="border rounded-3"
+                          style={{
+                            fontSize: 14,
+                            backgroundColor: "var(--bg-main, #f8f9fa)",
+                            color: "var(--text-main, #131722)",
+                            borderColor: "var(--border-color, #cbd5e1)"
+                          }}
                         />
                       </Form.Group>
                     </Col>
@@ -175,8 +190,8 @@ export default function ProfileSection() {
                     <Col xs={12} sm={6}>
                       <Form.Group>
                         <Form.Label
-                          className="text-uppercase fw-semibold text-secondary mb-1 text-start d-block"
-                          style={{ fontSize: 11, letterSpacing: "0.06em" }}
+                          className="text-uppercase fw-semibold mb-1 text-start d-block"
+                          style={{ fontSize: 11, letterSpacing: "0.06em", color: "var(--text-muted, #64748b)" }}
                         >
                           Phone number
                         </Form.Label>
@@ -184,8 +199,13 @@ export default function ProfileSection() {
                           name="phone"
                           value={form.phone}
                           onChange={handleChange}
-                          className="bg-light border rounded-3"
-                          style={{ fontSize: 14 }}
+                          className="border rounded-3"
+                          style={{
+                            fontSize: 14,
+                            backgroundColor: "var(--bg-main, #f8f9fa)",
+                            color: "var(--text-main, #131722)",
+                            borderColor: "var(--border-color, #cbd5e1)"
+                          }}
                         />
                       </Form.Group>
                     </Col>
@@ -193,8 +213,8 @@ export default function ProfileSection() {
                     <Col xs={12}>
                       <Form.Group>
                         <Form.Label
-                          className="text-uppercase fw-semibold text-secondary mb-1 text-start d-block"
-                          style={{ fontSize: 11, letterSpacing: "0.06em" }}
+                          className="text-uppercase fw-semibold mb-1 text-start d-block"
+                          style={{ fontSize: 11, letterSpacing: "0.06em", color: "var(--text-muted, #64748b)" }}
                         >
                           Email address
                         </Form.Label>
@@ -203,8 +223,13 @@ export default function ProfileSection() {
                           name="email"
                           value={form.email}
                           onChange={handleChange}
-                          className="bg-light border rounded-3"
-                          style={{ fontSize: 14 }}
+                          className="border rounded-3"
+                          style={{
+                            fontSize: 14,
+                            backgroundColor: "var(--bg-main, #f8f9fa)",
+                            color: "var(--text-main, #131722)",
+                            borderColor: "var(--border-color, #cbd5e1)"
+                          }}
                         />
                       </Form.Group>
                     </Col>
@@ -212,8 +237,8 @@ export default function ProfileSection() {
                     <Col xs={12}>
                       <Form.Group>
                         <Form.Label
-                          className="text-uppercase fw-semibold text-secondary mb-1 text-start d-block"
-                          style={{ fontSize: 11, letterSpacing: "0.06em" }}
+                          className="text-uppercase fw-semibold mb-1 text-start d-block"
+                          style={{ fontSize: 11, letterSpacing: "0.06em", color: "var(--text-muted, #64748b)" }}
                         >
                           Location
                         </Form.Label>
@@ -221,8 +246,13 @@ export default function ProfileSection() {
                           name="location"
                           value={form.location}
                           onChange={handleChange}
-                          className="bg-light border rounded-3"
-                          style={{ fontSize: 14 }}
+                          className="border rounded-3"
+                          style={{
+                            fontSize: 14,
+                            backgroundColor: "var(--bg-main, #f8f9fa)",
+                            color: "var(--text-main, #131722)",
+                            borderColor: "var(--border-color, #cbd5e1)"
+                          }}
                         />
                       </Form.Group>
                     </Col>
@@ -240,7 +270,11 @@ export default function ProfileSection() {
                     <Button
                       variant="outline-secondary"
                       className="px-4 rounded-3 fw-normal"
-                      style={{ fontSize: 13.5 }}
+                      style={{
+                        fontSize: 13.5,
+                        borderColor: "var(--border-color, #cbd5e1)",
+                        color: "var(--text-main, #131722)"
+                      }}
                       onClick={handleCancel}
                     >
                       Cancel

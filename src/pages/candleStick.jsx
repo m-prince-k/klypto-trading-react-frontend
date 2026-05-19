@@ -15,6 +15,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { FaCode } from "react-icons/fa6";
 import ChartHeader from "../components/tradingModals/ChartHeader";
 import { useLocation } from "react-router-dom";
+import { useTheme } from "../context/ThemeContext";
 import SEO from "../components/SEO";
 import {
   ChartProprties,
@@ -48,9 +49,12 @@ import {
   indicatorStyleDefault,
   PANE_INDICATORS,
 } from "../util/indicatorFunctions";
-import RightSidebar from "../components/layout/RightSidebar"
+import RightSidebar from "../components/layout/RightSidebar";
+import { Button } from "react-bootstrap";
+import socket from "../services/socket";
 
 export default function Candlestick() {
+  const { theme } = useTheme();
   const chartRef = useRef();
   const containerRef = useRef();
   const paneContainerRef = useRef();
@@ -87,12 +91,115 @@ export default function Candlestick() {
   const [activeSourceIndicator, setActiveSourceIndicator] = useState(null);
   const [indicatorVisibility, setIndicatorVisibility] = useState({});
   const [activeBarIndicator, setActiveBarIndicator] = useState("");
-  
+
   // Watchlist & Details state
-  const [isWatchlistOpen, setIsWatchlistOpen] = useState(false);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isWatchlistOpen, setIsWatchlistOpen] = useState(true);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(true);
   const [isAlertsOpen, setIsAlertsOpen] = useState(false);
+
+  // Resizable layout states
+  const [sidebarWidth, setSidebarWidth] = useState(350);
+  const [detailsHeight, setDetailsHeight] = useState(350);
+  const [isDraggingWidth, setIsDraggingWidth] = useState(false);
+  const [isDraggingHeight, setIsDraggingHeight] = useState(false);
+
+  const sidebarContainerRef = useRef(null);
+
+  // Width resizing logic
+  useEffect(() => {
+    if (!isDraggingWidth) return;
+
+    const handleMouseMove = (e) => {
+      const newWidth = window.innerWidth - e.clientX;
+      if (newWidth > 250 && newWidth < 800) {
+        setSidebarWidth(newWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingWidth(false);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDraggingWidth]);
+
+  // Height resizing logic
+  useEffect(() => {
+    if (!isDraggingHeight) return;
+
+    const handleMouseMove = (e) => {
+      if (sidebarContainerRef.current) {
+        const containerRect = sidebarContainerRef.current.getBoundingClientRect();
+        const newHeight = containerRect.bottom - e.clientY;
+        if (newHeight > 100 && newHeight < containerRect.height - 65) {
+          setDetailsHeight(newHeight);
+        }
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingHeight(false);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDraggingHeight]);
+
+  const startWidthResize = useCallback((e) => {
+    e.preventDefault();
+    setIsDraggingWidth(true);
+  }, []);
+
+  const startHeightResize = useCallback((e) => {
+    e.preventDefault();
+    setIsDraggingHeight(true);
+  }, []);
   const [activeWatchlistCurrency, setActiveWatchlistCurrency] = useState(null);
+  const [livePrice, setLivePrice] = useState(null);
+
+  useEffect(() => {
+    socket.emit("get-watchlist");
+
+    const handleWatchlistResponse = (res) => {
+      if (res && Array.isArray(res.data)) {
+        const item = res.data.find((w) => w.symbol === selectedCurrency);
+        if (item) {
+          const price = item.price ?? item.lastPrice;
+          if (price !== undefined && price !== null) {
+            setLivePrice(Number(price));
+          }
+        }
+      }
+    };
+
+    const handleWatchlistUpdate = (tick) => {
+      if (tick && tick.symbol === selectedCurrency) {
+        const price = tick.price ?? tick.lastPrice;
+        if (price !== undefined && price !== null) {
+          setLivePrice(Number(price));
+        }
+      }
+    };
+
+    socket.on("watchlist-response", handleWatchlistResponse);
+    socket.on("watchlist-update", handleWatchlistUpdate);
+
+    return () => {
+      socket.off("watchlist-response", handleWatchlistResponse);
+      socket.off("watchlist-update", handleWatchlistUpdate);
+    };
+  }, [selectedCurrency]);
 
   // Keep activeWatchlistCurrency in sync with selectedCurrency from listing modal
   useEffect(() => {
@@ -413,9 +520,27 @@ export default function Candlestick() {
     if (!containerRef.current) return;
     if (chartRef.current) return; // Prevent recreating the chart on every render
 
+    const isDark = theme === "dark";
     const chart = createChart(containerRef.current, {
       ...ChartProprties,
       height: mainChartHeightRef.current,
+      layout: {
+        ...ChartProprties.layout,
+        background: { type: "solid", color: isDark ? "#000000ff" : "#ffffff" },
+        textColor: isDark ? "#ffffff" : "#334155",
+      },
+      grid: {
+        vertLines: { color: isDark ? "#171e29ff" : "#f1f5f9" },
+        horzLines: { color: isDark ? "#171e29ff" : "#f1f5f9" },
+      },
+      timeScale: {
+        ...ChartProprties.timeScale,
+        borderColor: isDark ? "#1e293b" : "#e2e8f0",
+      },
+      rightPriceScale: {
+        ...ChartProprties.rightPriceScale,
+        borderColor: isDark ? "#1e293b" : "#e2e8f0",
+      },
     });
     chartRef.current = chart;
     attachSync(chart);
@@ -425,6 +550,27 @@ export default function Candlestick() {
       chartRef.current = null;
     };
   }, []); // Run only once
+
+  useEffect(() => {
+    if (!chartRef.current) return;
+    const isDark = theme === "dark";
+    chartRef.current.applyOptions({
+      layout: {
+        background: { type: "solid", color: isDark ? "#0b0f19" : "#ffffff" },
+        textColor: isDark ? "#ffffff" : "#334155",
+      },
+      grid: {
+        vertLines: { color: isDark ? "#1e293b" : "#f1f5f9" },
+        horzLines: { color: isDark ? "#1e293b" : "#f1f5f9" },
+      },
+      timeScale: {
+        borderColor: isDark ? "#1e293b" : "#e2e8f0",
+      },
+      rightPriceScale: {
+        borderColor: isDark ? "#1e293b" : "#e2e8f0",
+      },
+    });
+  }, [theme]);
 
   // useEffect(() => {
   //   //   WebSocket Trades
@@ -517,7 +663,7 @@ export default function Candlestick() {
 
       if (style?.visible === false) return null;
 
-      const color = style?.color || "#333";
+      const color = style?.color || "var(--text-main, #333)";
 
       return (
         <span style={{ color }}>
@@ -613,7 +759,9 @@ export default function Candlestick() {
         })
         .map((key) => {
           const val = value[key];
-          const color = indicatorStyle?.[indicator]?.[key]?.color || "#333";
+          const color =
+            indicatorStyle?.[indicator]?.[key]?.color ||
+            "var(--text-main, #333)";
 
           return (
             <span key={key} style={{ marginRight: 8, color }}>
@@ -770,6 +918,8 @@ export default function Candlestick() {
 
         if (!Array.isArray(data) || !data.length) return;
 
+        setLivePrice(Number(data[data.length - 1]?.close));
+
         switch (chartType) {
           case "line":
             seriesRef.current = chartRef.current.addSeries(
@@ -847,7 +997,7 @@ export default function Candlestick() {
                 return {
                   time: d.time,
                   value: d.volume,
-                  color: isUp ? "#22c55e" : "#ef4444",
+                  color: isUp ? "#26a69a" : "#f23645",
                 };
               }),
             );
@@ -966,7 +1116,7 @@ export default function Candlestick() {
               width: "100%",
               height: "calc(100vh - 100px)",
               overflow: "hidden",
-              backgroundColor: "#fff"
+              backgroundColor: "var(--bg-main, #ffffff)",
             }}
           >
             {/* Left Content (Chart + Indicators) */}
@@ -977,7 +1127,7 @@ export default function Candlestick() {
                 flexDirection: "column",
                 height: "100%",
                 overflow: "hidden",
-                transition: "flex 0.3s cubic-bezier(0.25, 1, 0.5, 1)"
+                transition: "flex 0.3s cubic-bezier(0.25, 1, 0.5, 1)",
               }}
             >
               <div
@@ -1005,9 +1155,19 @@ export default function Candlestick() {
                   </div>
                 )}
                 {/* -------------------------------sub-header live Values----------------------- */}
-                <div className="flex px-2 top-2 z-10 absolute items-center gap-2 bg-slate-100 justify-start">
+                <div
+                  className="flex px-2 py-1 top-2 z-10 absolute items-center gap-2 justify-start rounded-3"
+                  style={{
+                    backgroundColor: "var(--bg-card, #f8f9fa)",
+                    color: "var(--text-main, #131722)",
+                    border: "1px solid var(--border-color, #e2e8f0)",
+                  }}
+                >
                   {/* LEFT: Symbol */}
-                  <div className="text-sm text-slate-950">
+                  <div
+                    className="text-sm font-semibold"
+                    style={{ color: "var(--text-main, #131722)" }}
+                  >
                     {selectedCurrency} : {timeframeValue} :
                   </div>
                   <div className="flex items-center justify-center">
@@ -1028,22 +1188,52 @@ export default function Candlestick() {
                   <div className="d-flex gap-2 align-items-center">
                     {SINGLE_VALUE_CHARTS.includes(chartType) ? (
                       // Line / Area / Baseline → Close only
-                      <h6 className="px-2 py-1 mb-0">
+                      <h6
+                        className="px-2 py-1 mb-0"
+                        style={{ fontSize: "12px" }}
+                      >
                         <span className="text-primary">{liveOhlcv?.value}</span>
                       </h6>
                     ) : (
                       // Other charts → OHLC
                       <>
-                        <h6 className="px-2 py-1 mb-0">
-                          O: <span className={valueColor}>{liveOhlcv?.open}</span>
+                        <h6
+                          className="px-2 py-1 mb-0"
+                          style={{
+                            fontSize: "12px",
+                            color: "var(--text-muted, #64748b)",
+                          }}
+                        >
+                          O:{" "}
+                          <span className={valueColor}>{liveOhlcv?.open}</span>
                         </h6>
-                        <h6 className="px-2 py-1 mb-0">
-                          H: <span className={valueColor}>{liveOhlcv?.high}</span>
+                        <h6
+                          className="px-2 py-1 mb-0"
+                          style={{
+                            fontSize: "12px",
+                            color: "var(--text-muted, #64748b)",
+                          }}
+                        >
+                          H:{" "}
+                          <span className={valueColor}>{liveOhlcv?.high}</span>
                         </h6>
-                        <h6 className="px-2 py-1 mb-0">
-                          L: <span className={valueColor}>{liveOhlcv?.low}</span>
+                        <h6
+                          className="px-2 py-1 mb-0"
+                          style={{
+                            fontSize: "12px",
+                            color: "var(--text-muted, #64748b)",
+                          }}
+                        >
+                          L:{" "}
+                          <span className={valueColor}>{liveOhlcv?.low}</span>
                         </h6>
-                        <h6 className="px-2 py-1 mb-0">
+                        <h6
+                          className="px-2 py-1 mb-0"
+                          style={{
+                            fontSize: "12px",
+                            color: "var(--text-muted, #64748b)",
+                          }}
+                        >
                           C:{" "}
                           <span className={valueColor}>{liveOhlcv?.close}</span>
                         </h6>
@@ -1052,21 +1242,181 @@ export default function Candlestick() {
                   </div>
                 </div>
 
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "12px",
+                    position: "absolute",
+                    top: "54px",
+                    left: "8px",
+                    zIndex: 50,
+                  }}
+                >
+                  <Button
+                    onClick={() =>
+                      alert(
+                        `Executing Buy Order for ${selectedCurrency} at $${livePrice || "market price"}`,
+                      )
+                    }
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor:
+                        theme === "dark"
+                          ? "rgba(8, 153, 129, 0.05)"
+                          : "rgba(8, 153, 129, 0.02)",
+                      border: "1.5px solid #089981",
+                      color: "#089981",
+                      borderRadius: "8px",
+                      width: "120px",
+                      padding: "6px 12px",
+                      lineHeight: "1.2",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease-in-out",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor =
+                        "rgba(8, 153, 129, 0.15)";
+                      e.currentTarget.style.transform = "translateY(-1px)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor =
+                        theme === "dark"
+                          ? "rgba(8, 153, 129, 0.05)"
+                          : "rgba(8, 153, 129, 0.02)";
+                      e.currentTarget.style.transform = "translateY(0)";
+                    }}
+                    onMouseDown={(e) => {
+                      e.currentTarget.style.transform = "scale(0.96)";
+                    }}
+                    onMouseUp={(e) => {
+                      e.currentTarget.style.transform = "scale(1)";
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: "14px",
+                        fontWeight: "700",
+                        fontFamily: "'IBM Plex Mono', monospace",
+                      }}
+                    >
+                      {livePrice !== null && livePrice !== undefined
+                        ? livePrice.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 6,
+                          })
+                        : "—"}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: "600",
+                        letterSpacing: "0.05em",
+                        marginTop: "2px",
+                      }}
+                    >
+                      BUY
+                    </span>
+                  </Button>
+
+                  <Button
+                    onClick={() =>
+                      alert(
+                        `Executing Sell Order for ${selectedCurrency} at $${livePrice || "market price"}`,
+                      )
+                    }
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor:
+                        theme === "dark"
+                          ? "rgba(242, 54, 69, 0.05)"
+                          : "rgba(242, 54, 69, 0.02)",
+                      border: "1.5px solid #f23645",
+                      color: "#f23645",
+                      borderRadius: "8px",
+                      width: "120px",
+                      padding: "6px 12px",
+                      lineHeight: "1.2",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease-in-out",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor =
+                        "rgba(242, 54, 69, 0.15)";
+                      e.currentTarget.style.transform = "translateY(-1px)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor =
+                        theme === "dark"
+                          ? "rgba(242, 54, 69, 0.05)"
+                          : "rgba(242, 54, 69, 0.02)";
+                      e.currentTarget.style.transform = "translateY(0)";
+                    }}
+                    onMouseDown={(e) => {
+                      e.currentTarget.style.transform = "scale(0.96)";
+                    }}
+                    onMouseUp={(e) => {
+                      e.currentTarget.style.transform = "scale(1)";
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: "14px",
+                        fontWeight: "700",
+                        fontFamily: "'IBM Plex Mono', monospace",
+                      }}
+                    >
+                      {livePrice !== null && livePrice !== undefined
+                        ? livePrice.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 6,
+                          })
+                        : "—"}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: "600",
+                        letterSpacing: "0.05em",
+                        marginTop: "2px",
+                      }}
+                    >
+                      SELL
+                    </span>
+                  </Button>
+                </div>
+
                 {/* -----------------INDICATOR BAR------------------- */}
 
                 {selectedIndicator?.length > 0 && (
                   <div className="absolute top-10 left-2 flex flex-col gap-1 z-50">
                     {selectedIndicator &&
                       selectedIndicator?.map((indicator, index) => {
-                        const normalizedType = indicator.replace(/[\s/%]+/g, "");
+                        const normalizedType = indicator.replace(
+                          /[\s/%]+/g,
+                          "",
+                        );
                         const baseIndicator = normalizedType.split("_")[0];
                         const value = liveIndicatorData[normalizedType];
                         return (
                           <div
                             key={index}
-                            className="flex w-full justify-between items-center gap-3 bg-white shadow-sm border border-slate-200 rounded-3 px-3 h-8 text-xs "
+                            className="flex w-full justify-between items-center gap-3 shadow-sm border rounded-3 px-3 h-8 text-xs "
+                            style={{
+                              backgroundColor: "var(--bg-card, #ffffff)",
+                              borderColor: "var(--border-color, #e2e8f0)",
+                              color: "var(--text-main, #131722)",
+                            }}
                           >
-                            <span className="font-medium w-full text-slate-800 flex items-center gap-2">
+                            <span
+                              className="font-medium w-full flex items-center gap-2"
+                              style={{ color: "var(--text-main, #131722)" }}
+                            >
                               {baseIndicator} :{" "}
                               {indicatorConfigs?.[normalizedType]?.length ?? ""}{" "}
                               {indicatorConfigs?.[normalizedType]?.source ?? ""}{" "}
@@ -1138,7 +1488,7 @@ export default function Candlestick() {
                   </div>
                 )}
               </div>
-              
+
               <div
                 ref={paneContainerRef}
                 style={{
@@ -1163,20 +1513,70 @@ export default function Candlestick() {
               </div>
             </div>
 
-            {/* Sliding Panel */}
             <div
+              ref={sidebarContainerRef}
               style={{
-                width: (isWatchlistOpen || isDetailsOpen || isAlertsOpen) ? "400px" : "0px",
-                transition: "width 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+                position: "relative",
+                width: isWatchlistOpen ? `${sidebarWidth}px` : "0px",
+                transition: isDraggingWidth
+                  ? "none"
+                  : "width 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
                 overflow: "hidden",
-                borderLeft: (isWatchlistOpen || isDetailsOpen || isAlertsOpen) ? "1px solid #e0e3eb" : "none",
-                backgroundColor: "#fff",
+                borderLeft: isWatchlistOpen
+                  ? "1px solid var(--border-color, #e2e8f0)"
+                  : "none",
+                backgroundColor: "var(--bg-card, #ffffff)",
                 height: "100%",
-                flexShrink: 0
+                flexShrink: 0,
+                display: "flex",
+                flexDirection: "column",
               }}
             >
-              <div style={{ width: "400px", height: "100%" }}>
-                {isWatchlistOpen && (
+              {/* Width Resizer Handle on the left edge */}
+              {isWatchlistOpen && (
+                <div
+                  onMouseDown={startWidthResize}
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: "4px",
+                    cursor: "col-resize",
+                    zIndex: 100,
+                    backgroundColor: isDraggingWidth
+                      ? "var(--accent-color, #2962ff)"
+                      : "transparent",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor =
+                      "var(--accent-color, #2962ff)";
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isDraggingWidth)
+                      e.target.style.backgroundColor = "transparent";
+                  }}
+                />
+              )}
+
+              {/* Inside Wrapper */}
+              <div
+                style={{
+                  width: `${sidebarWidth}px`,
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
+                {/* Watchlist Panel (Top) */}
+                <div
+                  style={{
+                    flex: 1,
+                    overflow: "hidden",
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                >
                   <WatchlistPanel
                     onClose={() => setIsWatchlistOpen(false)}
                     activeCurrency={activeWatchlistCurrency}
@@ -1185,12 +1585,49 @@ export default function Candlestick() {
                       setSelectedCurrency(symbol);
                     }}
                   />
-                )}
+                </div>
+
+                {/* Details Panel (Bottom) */}
                 {isDetailsOpen && (
-                  <DetailsPanel
-                    onClose={() => setIsDetailsOpen(false)}
-                    symbol={activeWatchlistCurrency || selectedCurrency}
-                  />
+                  <>
+                    {/* Horizontal Height Resizer Handle */}
+                    <div
+                      onMouseDown={startHeightResize}
+                      style={{
+                        height: "5px",
+                        cursor: "row-resize",
+                        zIndex: 100,
+                        backgroundColor: isDraggingHeight
+                          ? "var(--accent-color, #2962ff)"
+                          : "var(--border-color, #e2e8f0)",
+                        borderTop: "1px solid var(--border-color, #e2e8f0)",
+                        borderBottom: "1px solid var(--border-color, #e2e8f0)",
+                        transition: "background-color 0.2s",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.backgroundColor =
+                          "var(--accent-color, #2962ff)";
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isDraggingHeight)
+                          e.target.style.backgroundColor =
+                            "var(--border-color, #e2e8f0)";
+                      }}
+                    />
+                    <div
+                      style={{
+                        height: `${detailsHeight}px`,
+                        overflow: "hidden",
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
+                    >
+                      <DetailsPanel
+                        onClose={() => setIsDetailsOpen(false)}
+                        symbol={activeWatchlistCurrency || selectedCurrency}
+                      />
+                    </div>
+                  </>
                 )}
               </div>
             </div>
@@ -1201,13 +1638,16 @@ export default function Candlestick() {
                 isWatchlistOpen={isWatchlistOpen}
                 toggleWatchlist={() => {
                   setIsWatchlistOpen(!isWatchlistOpen);
-                  setIsDetailsOpen(false);
                   setIsAlertsOpen(false);
                 }}
                 isDetailsOpen={isDetailsOpen}
                 toggleDetails={() => {
-                  setIsDetailsOpen(!isDetailsOpen);
-                  setIsWatchlistOpen(false);
+                  if (isWatchlistOpen) {
+                    setIsDetailsOpen(!isDetailsOpen);
+                  } else {
+                    setIsWatchlistOpen(true);
+                    setIsDetailsOpen(true);
+                  }
                   setIsAlertsOpen(false);
                 }}
                 isAlertsOpen={isAlertsOpen}
@@ -1226,9 +1666,11 @@ export default function Candlestick() {
           indicator={activeSourceIndicator}
           onClose={() => setShowSourcePanel(false)}
         />
-        
       </section>
-      <section className="market-trading-part">
+      <section
+        className="market-trading-part"
+        style={{ backgroundColor: "var(--bg-main, #ffffff)" }}
+      >
         <div className="container p-0 m-0">
           <div className="row">
             <div className="d-flex align-items-center position-relative">
@@ -1239,9 +1681,9 @@ export default function Candlestick() {
                   title="Zoom in"
                   className="d-flex align-items-center gap-2 fw-semibold"
                   style={{
-                    borderColor: "#e9d5ff",
-                    color: "#7c3aed",
-                    background: "#faf5ff",
+                    borderColor: "var(--border-color, #e2e8f0)",
+                    color: "var(--text-main, #131722)",
+                    background: "var(--bg-card, #ffffff)",
                     borderRadius: "10px",
                     borderWidth: "1.5px",
                     borderStyle: "solid",
@@ -1249,25 +1691,30 @@ export default function Candlestick() {
                     letterSpacing: "0.01em",
                     padding: "6px 14px",
                     boxShadow:
-                      "0 1px 3px rgba(124,58,237,0.08), inset 0 1px 0 rgba(255,255,255,0.9)",
+                      "0 1px 3px var(--shadow-color, rgba(0,0,0,0.05))",
                     transition: "all 0.22s cubic-bezier(0.4, 0, 0.2, 1)",
                     cursor: "pointer",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = "#a855f7";
-                    e.currentTarget.style.color = "#6d28d9";
-                    e.currentTarget.style.background = "#f3e8ff";
+                    e.currentTarget.style.borderColor =
+                      "var(--accent-color, #3b82f6)";
+                    e.currentTarget.style.color =
+                      "var(--accent-color, #3b82f6)";
+                    e.currentTarget.style.background =
+                      "var(--bg-card-hover, #f1f5f9)";
                     e.currentTarget.style.boxShadow =
-                      "0 4px 14px rgba(124,58,237,0.18), inset 0 1px 0 rgba(255,255,255,0.9)";
+                      "0 4px 14px var(--shadow-color, rgba(0,0,0,0.1))";
                     e.currentTarget.querySelector("svg").style.transform =
                       "scale(1.15) rotate(90deg)";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = "#e9d5ff";
-                    e.currentTarget.style.color = "#7c3aed";
-                    e.currentTarget.style.background = "#faf5ff";
+                    e.currentTarget.style.borderColor =
+                      "var(--border-color, #e2e8f0)";
+                    e.currentTarget.style.color = "var(--text-main, #131722)";
+                    e.currentTarget.style.background =
+                      "var(--bg-card, #ffffff)";
                     e.currentTarget.style.boxShadow =
-                      "0 1px 3px rgba(124,58,237,0.08), inset 0 1px 0 rgba(255,255,255,0.9)";
+                      "0 1px 3px var(--shadow-color, rgba(0,0,0,0.05))";
                     e.currentTarget.querySelector("svg").style.transform =
                       "scale(1) rotate(0deg)";
                   }}
@@ -1290,7 +1737,7 @@ export default function Candlestick() {
                   style={{
                     width: "1px",
                     height: "22px",
-                    background: "#d1d5db",
+                    background: "var(--border-color, #d1d5db)",
                   }}
                 />
 
@@ -1300,9 +1747,9 @@ export default function Candlestick() {
                   title="Zoom out"
                   className="d-flex align-items-center gap-2 fw-semibold"
                   style={{
-                    borderColor: "#e9d5ff",
-                    color: "#7c3aed",
-                    background: "#faf5ff",
+                    borderColor: "var(--border-color, #e2e8f0)",
+                    color: "var(--text-main, #131722)",
+                    background: "var(--bg-card, #ffffff)",
                     borderRadius: "10px",
                     borderWidth: "1.5px",
                     borderStyle: "solid",
@@ -1310,25 +1757,30 @@ export default function Candlestick() {
                     letterSpacing: "0.01em",
                     padding: "6px 14px",
                     boxShadow:
-                      "0 1px 3px rgba(124,58,237,0.08), inset 0 1px 0 rgba(255,255,255,0.9)",
+                      "0 1px 3px var(--shadow-color, rgba(0,0,0,0.05))",
                     transition: "all 0.22s cubic-bezier(0.4, 0, 0.2, 1)",
                     cursor: "pointer",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = "#a855f7";
-                    e.currentTarget.style.color = "#6d28d9";
-                    e.currentTarget.style.background = "#f3e8ff";
+                    e.currentTarget.style.borderColor =
+                      "var(--accent-color, #3b82f6)";
+                    e.currentTarget.style.color =
+                      "var(--accent-color, #3b82f6)";
+                    e.currentTarget.style.background =
+                      "var(--bg-card-hover, #f1f5f9)";
                     e.currentTarget.style.boxShadow =
-                      "0 4px 14px rgba(124,58,237,0.18), inset 0 1px 0 rgba(255,255,255,0.9)";
+                      "0 4px 14px var(--shadow-color, rgba(0,0,0,0.1))";
                     e.currentTarget.querySelector("svg").style.transform =
                       "scale(1.15) rotate(90deg)";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = "#e9d5ff";
-                    e.currentTarget.style.color = "#7c3aed";
-                    e.currentTarget.style.background = "#faf5ff";
+                    e.currentTarget.style.borderColor =
+                      "var(--border-color, #e2e8f0)";
+                    e.currentTarget.style.color = "var(--text-main, #131722)";
+                    e.currentTarget.style.background =
+                      "var(--bg-card, #ffffff)";
                     e.currentTarget.style.boxShadow =
-                      "0 1px 3px rgba(124,58,237,0.08), inset 0 1px 0 rgba(255,255,255,0.9)";
+                      "0 1px 3px var(--shadow-color, rgba(0,0,0,0.05))";
                     e.currentTarget.querySelector("svg").style.transform =
                       "scale(1) rotate(0deg)";
                   }}
@@ -1351,7 +1803,7 @@ export default function Candlestick() {
                   style={{
                     width: "1px",
                     height: "22px",
-                    background: "#d1d5db",
+                    background: "var(--border-color, #d1d5db)",
                   }}
                 />
 
@@ -1361,33 +1813,38 @@ export default function Candlestick() {
                   title="Reset zoom"
                   className="d-flex align-items-center gap-2 fw-semibold"
                   style={{
-                    borderColor: "#7c3aed",
+                    borderColor: "var(--accent-color, #3b82f6)",
                     color: "#ffffff",
-                    background: "#7c3aed",
+                    background: "var(--accent-color, #3b82f6)",
                     borderRadius: "10px",
                     borderWidth: "1.5px",
                     borderStyle: "solid",
                     fontSize: "0.8rem",
                     letterSpacing: "0.01em",
                     padding: "6px 14px",
-                    boxShadow:
-                      "0 1px 3px rgba(124,58,237,0.25), 0 4px 12px rgba(124,58,237,0.15)",
+                    boxShadow: "0 1px 3px var(--shadow-color, rgba(0,0,0,0.1))",
                     transition: "all 0.22s cubic-bezier(0.4, 0, 0.2, 1)",
                     cursor: "pointer",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "#6d28d9";
-                    e.currentTarget.style.borderColor = "#6d28d9";
+                    e.currentTarget.style.background =
+                      "var(--accent-color, #3b82f6)";
+                    e.currentTarget.style.borderColor =
+                      "var(--accent-color, #3b82f6)";
+                    e.currentTarget.style.opacity = "0.9";
                     e.currentTarget.style.boxShadow =
-                      "0 4px 14px rgba(124,58,237,0.4)";
+                      "0 4px 14px var(--shadow-color, rgba(0,0,0,0.15))";
                     e.currentTarget.querySelector("svg").style.transform =
                       "rotate(360deg)";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "#7c3aed";
-                    e.currentTarget.style.borderColor = "#7c3aed";
+                    e.currentTarget.style.background =
+                      "var(--accent-color, #3b82f6)";
+                    e.currentTarget.style.borderColor =
+                      "var(--accent-color, #3b82f6)";
+                    e.currentTarget.style.opacity = "1";
                     e.currentTarget.style.boxShadow =
-                      "0 1px 3px rgba(124,58,237,0.25), 0 4px 12px rgba(124,58,237,0.15)";
+                      "0 1px 3px var(--shadow-color, rgba(0,0,0,0.1))";
                     e.currentTarget.querySelector("svg").style.transform =
                       "rotate(0deg)";
                   }}

@@ -1,8 +1,8 @@
-import { getSuggestedQuery } from "@testing-library/dom";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUser } from "../../../util/common";
 import apiService from "../../../services/apiServices";
+import { logout } from "../../../pages/auth/protected";
 
 const HeaderControls = ({ selectedSymbol, setSelectedSymbol }) => {
   const navigate = useNavigate();
@@ -12,6 +12,7 @@ const HeaderControls = ({ selectedSymbol, setSelectedSymbol }) => {
   const userInitial = userEmail.charAt(0).toUpperCase();
 
   const [currencies, setCurrencies] = useState([]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   useEffect(() => {
     async function fetchCurrencies() {
@@ -176,23 +177,102 @@ const HeaderControls = ({ selectedSymbol, setSelectedSymbol }) => {
           </svg>
           <div className="bell-badge">3</div>
         </div>
-        <div
-          onClick={() => navigate("/profile")}
-          style={{
-            width: "28px",
-            height: "28px",
-            borderRadius: "50%",
-            backgroundColor: "#6366f1",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontWeight: "bold",
-            fontSize: "12px",
-            color: "white",
-            cursor: "pointer", // ✅ makes it clickable
-          }}
-        >
-          {userInitial}
+        <div style={{ position: "relative" }}>
+          <div
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            style={{
+              width: "28px",
+              height: "28px",
+              borderRadius: "50%",
+              backgroundColor: "#6366f1",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontWeight: "bold",
+              fontSize: "12px",
+              color: "white",
+              cursor: "pointer", // ✅ makes it clickable
+            }}
+          >
+            {userInitial}
+          </div>
+
+          {dropdownOpen && (
+            <>
+              <div
+                onClick={() => setDropdownOpen(false)}
+                style={{
+                  position: "fixed",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  zIndex: 999,
+                  cursor: "default",
+                }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  top: "34px",
+                  right: 0,
+                  backgroundColor: "var(--bg-card, #161b22)",
+                  border: "1px solid var(--border-color, #21262d)",
+                  borderRadius: "8px",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                  zIndex: 1000,
+                  minWidth: "120px",
+                  display: "flex",
+                  flexDirection: "column",
+                  padding: "4px 0",
+                }}
+              >
+                <button
+                  onClick={() => {
+                    setDropdownOpen(false);
+                    navigate("/profile");
+                  }}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "var(--text-main, #ffffff)",
+                    padding: "8px 12px",
+                    textAlign: "left",
+                    fontSize: "12px",
+                    cursor: "pointer",
+                    width: "100%",
+                    fontFamily: "inherit",
+                  }}
+                  onMouseEnter={(e) => (e.target.style.backgroundColor = "var(--bg-card-hover, #21262d)")}
+                  onMouseLeave={(e) => (e.target.style.backgroundColor = "transparent")}
+                >
+                  Profile Page
+                </button>
+                <button
+                  onClick={() => {
+                    setDropdownOpen(false);
+                    logout();
+                    navigate("/login");
+                  }}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "#ef4444",
+                    padding: "8px 12px",
+                    textAlign: "left",
+                    fontSize: "12px",
+                    cursor: "pointer",
+                    width: "100%",
+                    fontFamily: "inherit",
+                  }}
+                  onMouseEnter={(e) => (e.target.style.backgroundColor = "var(--bg-card-hover, #21262d)")}
+                  onMouseLeave={(e) => (e.target.style.backgroundColor = "transparent")}
+                >
+                  Logout
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

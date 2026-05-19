@@ -105,10 +105,16 @@ export default function Signup() {
         image="https://yourdomain.com/banner.jpg"
       />
 
-      <div className="min-vh-100 d-flex align-items-center justify-content-center bg-body-secondary py-4">
+      <div className="min-vh-100 d-flex align-items-center justify-content-center py-4" style={{ backgroundColor: "var(--bg-main, #f8f9fa)" }}>
         <div
-          className="card border-0 shadow-sm"
-          style={{ width: 420, borderRadius: 16 }}
+          className="card border shadow-sm"
+          style={{ 
+            width: 420, 
+            borderRadius: 16,
+            backgroundColor: "var(--bg-card, #ffffff)",
+            borderColor: "var(--border-color, #e2e8f0)",
+            color: "var(--text-main, #1a1a1a)"
+          }}
         >
           <div className="card-body p-4">
 
@@ -118,7 +124,7 @@ export default function Signup() {
               style={{
                 width: 40,
                 height: 40,
-                background: "#185FA5",
+                background: "var(--accent-color, #185FA5)",
                 borderRadius: 10,
               }}
             >
@@ -127,8 +133,8 @@ export default function Signup() {
               </svg>
             </div>
 
-            <h5 className="text-center fw-semibold mb-1">Create your account</h5>
-            <p className="text-center text-muted small mb-4">
+            <h5 className="text-center fw-semibold mb-1" style={{ color: "var(--text-main, #131722)" }}>Create your account</h5>
+            <p className="text-center small mb-4" style={{ color: "var(--text-muted, #64748b)" }}>
               Start trading crypto in minutes
             </p>
 
@@ -137,7 +143,7 @@ export default function Signup() {
               {/* First Name + Last Name */}
               <div className="d-flex gap-2 mb-3">
                 <Form.Group style={{ flex: 1 }}>
-                  <Form.Label className="small fw-medium text-secondary">
+                  <Form.Label className="small fw-medium" style={{ color: "var(--text-muted, #64748b)" }}>
                     First Name
                   </Form.Label>
                   <Form.Control
@@ -147,6 +153,11 @@ export default function Signup() {
                     value={form.firstName}
                     onChange={handleChange}
                     isInvalid={!!errors.firstName}
+                    style={{
+                      backgroundColor: "var(--bg-main, #f8f9fa)",
+                      color: "var(--text-main, #131722)",
+                      borderColor: "var(--border-color, #cbd5e1)"
+                    }}
                   />
                   <Form.Control.Feedback type="invalid">
                     {errors.firstName}
@@ -154,7 +165,7 @@ export default function Signup() {
                 </Form.Group>
 
                 <Form.Group style={{ flex: 1 }}>
-                  <Form.Label className="small fw-medium text-secondary">
+                  <Form.Label className="small fw-medium" style={{ color: "var(--text-muted, #64748b)" }}>
                     Last Name
                   </Form.Label>
                   <Form.Control
@@ -164,6 +175,11 @@ export default function Signup() {
                     value={form.lastName}
                     onChange={handleChange}
                     isInvalid={!!errors.lastName}
+                    style={{
+                      backgroundColor: "var(--bg-main, #f8f9fa)",
+                      color: "var(--text-main, #131722)",
+                      borderColor: "var(--border-color, #cbd5e1)"
+                    }}
                   />
                   <Form.Control.Feedback type="invalid">
                     {errors.lastName}
@@ -173,7 +189,7 @@ export default function Signup() {
 
               {/* Email */}
               <Form.Group className="mb-3">
-                <Form.Label className="small fw-medium text-secondary">
+                <Form.Label className="small fw-medium" style={{ color: "var(--text-muted, #64748b)" }}>
                   Email address
                 </Form.Label>
                 <Form.Control
@@ -183,6 +199,11 @@ export default function Signup() {
                   value={form.email}
                   onChange={handleChange}
                   isInvalid={!!errors.email}
+                  style={{
+                    backgroundColor: "var(--bg-main, #f8f9fa)",
+                    color: "var(--text-main, #131722)",
+                    borderColor: "var(--border-color, #cbd5e1)"
+                  }}
                 />
                 <Form.Control.Feedback type="invalid">
                   {errors.email}
@@ -191,7 +212,7 @@ export default function Signup() {
 
               {/* Password */}
               <Form.Group className="mb-3">
-                <Form.Label className="small fw-medium text-secondary">
+                <Form.Label className="small fw-medium" style={{ color: "var(--text-muted, #64748b)" }}>
                   Password
                 </Form.Label>
                 <div className="position-relative">
@@ -202,12 +223,17 @@ export default function Signup() {
                     value={form.password}
                     onChange={handleChange}
                     isInvalid={!!errors.password}
-                    style={{ paddingRight: 40 }}
+                    style={{ 
+                      paddingRight: 40,
+                      backgroundColor: "var(--bg-main, #f8f9fa)",
+                      color: "var(--text-main, #131722)",
+                      borderColor: "var(--border-color, #cbd5e1)"
+                    }}
                   />
                   <span
                     onClick={() => setShowPassword((s) => !s)}
-                    className="position-absolute top-50 end-0 translate-middle-y me-3 text-muted"
-                    style={{ cursor: "pointer", fontSize: 16, zIndex: 5 }}
+                    className="position-absolute top-50 end-0 translate-middle-y me-3"
+                    style={{ cursor: "pointer", fontSize: 16, zIndex: 5, color: "var(--text-muted, #64748b)" }}
                   >
                     {showPassword ? <FiEyeOff /> : <FiEye />}
                   </span>
@@ -220,7 +246,7 @@ export default function Signup() {
               {/* Mobile + Country */}
               <div className="d-flex gap-2 mb-3">
                 <div style={{ flex: 1 }}>
-                  <Form.Label className="small fw-medium text-secondary">
+                  <Form.Label className="small fw-medium" style={{ color: "var(--text-muted, #64748b)" }}>
                     Mobile
                   </Form.Label>
 
@@ -239,7 +265,17 @@ export default function Signup() {
                       width: "100%",
                       height: "38px",
                       borderRadius: "6px",
-                      border: "1px solid #ced4da",
+                      border: "1px solid var(--border-color, #ced4da)",
+                      backgroundColor: "var(--bg-main, #f8f9fa)",
+                      color: "var(--text-main, #131722)"
+                    }}
+                    buttonStyle={{
+                      backgroundColor: "var(--bg-card, #ffffff)",
+                      borderColor: "var(--border-color, #ced4da)"
+                    }}
+                    dropdownStyle={{
+                      backgroundColor: "var(--bg-card, #ffffff)",
+                      color: "var(--text-main, #131722)"
                     }}
                   />
 
@@ -249,7 +285,7 @@ export default function Signup() {
                 </div>
 
                 <Form.Group style={{ flex: 1 }}>
-                  <Form.Label className="small fw-medium text-secondary">
+                  <Form.Label className="small fw-medium" style={{ color: "var(--text-muted, #64748b)" }}>
                     Country
                   </Form.Label>
                   <Form.Control
@@ -258,6 +294,11 @@ export default function Signup() {
                     value={form.country}
                     onChange={handleChange}
                     isInvalid={!!errors.country}
+                    style={{
+                      backgroundColor: "var(--bg-main, #f8f9fa)",
+                      color: "var(--text-main, #131722)",
+                      borderColor: "var(--border-color, #cbd5e1)"
+                    }}
                   />
                   <Form.Control.Feedback type="invalid">
                     {errors.country}
@@ -270,7 +311,7 @@ export default function Signup() {
               <Button
                 type="submit"
                 className="w-100 fw-medium"
-                style={{ background: "#185FA5", border: "none" }}
+                style={{ background: "var(--accent-color, #185FA5)", border: "none" }}
                 disabled={loading}
               >
                 {loading ? "Signing up…" : "Sign Up"}
@@ -278,17 +319,18 @@ export default function Signup() {
 
               {/* Divider */}
               <div className="d-flex align-items-center gap-2 my-3">
-                <hr className="flex-grow-1 m-0" />
-                <span className="text-muted small">or</span>
-                <hr className="flex-grow-1 m-0" />
+                <hr className="flex-grow-1 m-0" style={{ borderColor: "var(--border-color, #cbd5e1)" }} />
+                <span className="small" style={{ color: "var(--text-muted, #64748b)" }}>or</span>
+                <hr className="flex-grow-1 m-0" style={{ borderColor: "var(--border-color, #cbd5e1)" }} />
               </div>
 
               {/* Sign in link */}
-              <p className="text-center small text-muted mb-0">
+              <p className="text-center small mb-0" style={{ color: "var(--text-muted, #64748b)" }}>
                 Already have an account?{" "}
                 <a
                   href="/login"
-                  className="text-primary fw-medium text-decoration-none"
+                  className="fw-medium text-decoration-none"
+                  style={{ color: "var(--accent-color, #185FA5)" }}
                 >
                   Sign in
                 </a>

@@ -7,8 +7,8 @@
 
 .si-workspace {
   display: flex;
-  background-color: #07090e;
-  color: #e2e8f0;
+  background-color: var(--bg-main);
+  color: var(--text-main);
   font-family: 'Inter', -apple-system, sans-serif;
   height: 100vh;
   width: 100vw;
@@ -19,8 +19,8 @@
 /* 1. LEFT TOOLBAR STYLE */
 .si-left-toolbar {
   width: 45px;
-  background-color: #0b0e17;
-  border-right: 1px solid #161e31;
+  background-color: var(--header-bg);
+  border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -68,14 +68,14 @@
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  background-color: #07090e;
+  background-color: var(--bg-main);
 }
 
 /* 2. TOPBAR STYLE */
 .si-topbar {
   height: 48px;
-  background-color: #0b0e17;
-  border-bottom: 1px solid #161e31;
+  background-color: var(--header-bg);
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -106,7 +106,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #ffffff;
+  color: var(--text-main);
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
@@ -121,7 +121,7 @@
 .si-topbar-divider {
   width: 1px;
   height: 18px;
-  background-color: #161e31;
+  background-color: var(--border-color);
 }
 
 .si-timeframe-selector {
@@ -221,8 +221,8 @@
 .si-chart-container {
   height: 480px;
   width: 100%;
-  background-color: #0b0e17;
-  border-bottom: 1px solid #161e31;
+  background-color: var(--header-bg);
+  border-bottom: 1px solid var(--border-color);
   position: relative;
 }
 
@@ -235,8 +235,8 @@
 /* 4. SUBHEADER TABS STYLE */
 .si-tabs-row {
   display: flex;
-  background-color: #0b0e17;
-  border-bottom: 1px solid #161e31;
+  background-color: var(--header-bg);
+  border-bottom: 1px solid var(--border-color);
   padding: 0 16px;
   gap: 24px;
 }
@@ -960,4 +960,46 @@
   background-color: transparent;
   overflow-x: hidden;
   box-sizing: border-box;
+}
+
+/* ── Sub-Component Alignment Tweaks ── */
+.si-workspace-sub .si-intelligence-section {
+  padding: 16px 0 !important;
+}
+
+.si-workspace-sub .si-tabs-row {
+  padding: 0 !important;
+}
+
+/* ── Light Theme Responsive Overrides ── */
+[data-theme="light"] .si-section-title,
+[data-theme="light"] .si-widget-title,
+[data-theme="light"] .si-topic-name,
+[data-theme="light"] .si-inf-name,
+[data-theme="light"] .si-timeline-text,
+[data-theme="light"] .si-leg-val,
+[data-theme="light"] .si-donut-val,
+[data-theme="light"] .si-gauge-number,
+[data-theme="light"] .si-stat-number,
+[data-theme="light"] .si-prediction-result,
+[data-theme="light"] .si-confidence-val {
+  color: var(--text-main) !important;
+}
+
+[data-theme="light"] .si-card,
+[data-theme="light"] .si-right-sidebar,
+[data-theme="light"] .si-bottombar {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="light"] .si-card-dropdown,
+[data-theme="light"] .si-widget-dropdown {
+  background-color: var(--bg-card-hover) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-main) !important;
+}
+
+[data-theme="light"] .si-leg-item {
+  color: var(--text-muted) !important;
 }

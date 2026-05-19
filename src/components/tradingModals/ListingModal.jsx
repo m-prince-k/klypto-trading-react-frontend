@@ -119,20 +119,28 @@ export const ListingModal = ({
 
   return (
     <div className="fixed inset-0 z-99 flex items-center justify-center bg-black/60">
-      <div className="w-full px-5 py-4 max-w-3xl h-[90vh] rounded-md bg-white border border-slate-700 shadow-lg">
+      <div 
+        className="w-full px-5 py-4 max-w-3xl h-[90vh] rounded-md shadow-lg border"
+        style={{
+          backgroundColor: "var(--bg-card, #ffffff)",
+          color: "var(--text-main, #131722)",
+          borderColor: "var(--border-color, #e2e8f0)"
+        }}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between  ">
-          <h2 className="text-xl">{title}</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl" style={{ color: "var(--text-main, #131722)" }}>{title}</h2>
           <IoCloseSharp
             size={20}
             onClick={onClose}
-            className="cursor-pointer text-slate-400"
+            className="cursor-pointer"
+            style={{ color: "var(--text-muted, #94a3b8)" }}
           />
         </div>
         {title === "Symbol Search" && (
           <div className=" py-3 ">
             <div className="relative">
-              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--text-muted, #94a3b8)" }} />
               <input
                 type="text"
                 autoFocus
@@ -141,7 +149,12 @@ export const ListingModal = ({
                 onChange={(e) => {
                   setSearchCurrency(e.target.value);
                 }}
-                className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-md "
+                className="w-full pl-9 pr-3 py-2 text-sm rounded-md border"
+                style={{
+                  backgroundColor: "var(--bg-main, #ffffff)",
+                  color: "var(--text-main, #131722)",
+                  borderColor: "var(--border-color, #cbd5e1)"
+                }}
               />
             </div>
 
@@ -153,28 +166,35 @@ export const ListingModal = ({
                 filteredCurrencies?.map((curr, index) => (
                   <Link
                     to="#"
-                    // key={curr.id}
+                    key={index}
                     onClick={() => {
                       setSelectedCurrency(curr?.symbol);
                       onClose();
                     }}
-                    className="w-full flex border-b border-slate-200 justify-between px-1 py-3 text-left hover:bg-slate-100"
+                    className="w-full flex border-b justify-between px-1 py-3 text-left transition-colors"
+                    style={{
+                      borderColor: "var(--border-color, #e2e8f0)",
+                      color: "var(--text-main, #131722)",
+                      textDecoration: "none"
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "var(--bg-card-hover, #f1f5f9)"}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
                   >
                     <div className="flex gap-2 fs-6 items-center">
                       <span className=" text-yellow-500">
                         <GrBitcoin />
                       </span>
-                      <h2 className="uppercase fs-6">
+                      <h2 className="uppercase fs-6 mb-0" style={{ color: "var(--text-main, #131722)" }}>
                         {curr?.base}/{curr?.quote}
                       </h2>
                     </div>
                     <div>
-                      <h3 className=" fs-6">{curr?.symbol}</h3>
+                      <h3 className=" fs-6 mb-0" style={{ color: "var(--text-muted, #64748b)" }}>{curr?.symbol}</h3>
                     </div>
                   </Link>
                 ))
               ) : (
-                <p className="text-center text-md text-slate-900 py-6">
+                <p className="text-center text-md py-6" style={{ color: "var(--text-muted, #64748b)" }}>
                   No Data found
                 </p>
               )}
@@ -186,29 +206,21 @@ export const ListingModal = ({
           <div className="mt-3 space-y-4 z-999 max-h-[45vh]">
             {/* Search */}
             <div className="relative">
-              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--text-muted, #94a3b8)" }} />
               <input
                 type="text"
                 autoFocus
                 placeholder="Search indicators"
                 value={searchIndicator}
                 onChange={(e) => setSearchIndicator(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-md"
+                className="w-full pl-9 pr-3 py-2 text-sm rounded-md border"
+                style={{
+                  backgroundColor: "var(--bg-main, #ffffff)",
+                  color: "var(--text-main, #131722)",
+                  borderColor: "var(--border-color, #cbd5e1)"
+                }}
               />
             </div>
-            {/* {TABS.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-3 py-1.5 text-sm rounded-md transition ${
-                  activeTab === tab
-                    ? "bg-slate-600 text-white"
-                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                }`}
-              >
-                {tab}
-              </button>
-            ))} */}
             {/* Indicators tab */}
             {activeTab === "Indicators" && (
               <div
@@ -228,15 +240,20 @@ export const ListingModal = ({
                     </div>
                   </div>
                 ) : filteredIndicators.length > 0 ? (
-                  <ul className="list-unstyled ps-7 text-secondary fs-6">
+                  <ul className="list-unstyled ps-7 fs-6">
                     {filteredIndicators?.map((item, index) => (
                       <li key={index}>
                         <div 
-                          className="d-flex align-items-center gap-2 px-2 py-1 rounded cursor-pointer hover:bg-slate-100"
+                          className="d-flex align-items-center gap-2 px-2 py-2 rounded cursor-pointer transition-colors"
+                          style={{
+                            color: "var(--text-main, #334155)"
+                          }}
                           onClick={() => {
                             toggleIndicator(item.slug);
                             onClose();
                           }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "var(--bg-card-hover, #f1f5f9)"}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
                         >
                           <span>{item.label} -- {item.slug} </span>
                         </div>
@@ -244,14 +261,14 @@ export const ListingModal = ({
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-muted">No Data found</p>
+                  <p style={{ color: "var(--text-muted, #64748b)" }}>No Data found</p>
                 )}
               </div>
             )}
 
             {/* Other tabs */}
             {activeTab !== "Indicators" && !loading && (
-              <p className="text-sm text-slate-500 text-center">
+              <p className="text-sm text-center" style={{ color: "var(--text-muted, #64748b)" }}>
                 {activeTab} content coming soon
               </p>
             )}

@@ -17,9 +17,9 @@ const RightSidebar = ({
       alignItems: "center",
       width: "100%",
       height: "calc(100vh - 60px)",
-      backgroundColor: "#ffffff",
-      borderLeft: "1px solid #9b9b9bff",
-      color: "#131722",
+      backgroundColor: "var(--bg-card, #ffffff)",
+      borderLeft: "1px solid var(--border-color, #e2e8f0)",
+      color: "var(--text-main, #131722)",
       paddingTop: "16px",
       gap: "24px",
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
@@ -30,6 +30,7 @@ const RightSidebar = ({
       alignItems: "center",
       gap: "4px",
       cursor: "pointer",
+      color: "var(--text-muted, #787b86)",
       fontSize: "0.65rem",
       transition: "color 0.2s",
     },
@@ -39,7 +40,6 @@ const RightSidebar = ({
   };
 
   const menuItems = [
-    { id: 'details', icon: <FiBriefcase size={20} />, label: "Details", active: isDetailsOpen },
     { id: 'watchlist', icon: <FiList size={20} />, label: "Watchlist", active: isWatchlistOpen },
     { id: 'alerts', icon: <FiAlignLeft size={20} />, label: "Alerts" },
     { id: 'depth', icon: <FiLayers size={20} />, label: "Market Depth" },
@@ -57,8 +57,8 @@ const RightSidebar = ({
             ...(item.active ? styles.iconItemActive : {})
           }}
           title={item.label}
-          onMouseEnter={(e) => { if (!item.active) e.currentTarget.style.color = "#666768ff"; }}
-          onMouseLeave={(e) => { if (!item.active) e.currentTarget.style.color = "#000000ff"; }}
+          onMouseEnter={(e) => { if (!item.active) e.currentTarget.style.color = "var(--text-main, #131722)"; }}
+          onMouseLeave={(e) => { if (!item.active) e.currentTarget.style.color = "var(--text-muted, #787b86)"; }}
           onClick={() => {
             if (item.id === 'watchlist' && toggleWatchlist) {
               toggleWatchlist();

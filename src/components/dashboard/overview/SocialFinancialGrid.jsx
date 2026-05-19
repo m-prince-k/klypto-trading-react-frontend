@@ -28,7 +28,7 @@ const SocialFinancialGrid = ({ tvlData, socialStats, financials }) => {
                     <div className="coin-icon-small" style={{ backgroundColor: proto.color }}>{proto.icon}</div>
                     {proto.name}
                   </td>
-                  <td align="left" style={{ color: '#8f9cae' }}>{proto.cat}</td>
+                  <td align="left" style={{ color: 'var(--text-muted)' }}>{proto.cat}</td>
                   <td align="right" style={{ fontWeight: 'bold' }}>${proto.val.toFixed(2)}B</td>
                   <td align="right" style={{ color: isUp ? '#10b981' : '#ef4444', fontWeight: 'bold' }}>
                     {isUp ? '▲ +' : '▼ '}{proto.change.toFixed(2)}%
@@ -46,7 +46,7 @@ const SocialFinancialGrid = ({ tvlData, socialStats, financials }) => {
       <div 
         className="premium-card" 
         style={{ cursor: 'pointer' }} 
-        onClick={() => window.location.href = '/social-intelligence'}
+        onClick={() => window.location.href = '/dashboard#social-intelligence'}
       >
         <div className="card-header-row">
           <h4 className="card-title-main" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -80,9 +80,9 @@ const SocialFinancialGrid = ({ tvlData, socialStats, financials }) => {
           </svg>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', fontSize: '9.5px', color: '#8f9cae', textAlign: 'center' }}>
-          <div>Social Vol: <span style={{ color: '#ffffff', fontWeight: 'bold' }}>{socialStats.radarValues.vol}%</span></div>
-          <div>Engagement: <span style={{ color: '#ffffff', fontWeight: 'bold' }}>{socialStats.radarValues.eng}%</span></div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', fontSize: '9.5px', color: 'var(--text-muted)', textAlign: 'center' }}>
+          <div>Social Vol: <span style={{ color: 'var(--text-main)', fontWeight: 'bold' }}>{socialStats.radarValues.vol}%</span></div>
+          <div>Engagement: <span style={{ color: 'var(--text-main)', fontWeight: 'bold' }}>{socialStats.radarValues.eng}%</span></div>
         </div>
       </div>
 
@@ -113,8 +113,8 @@ const SocialFinancialGrid = ({ tvlData, socialStats, financials }) => {
             <div style={{ color: '#3b82f6', fontWeight: '600' }}>Fees</div>
           </div>
         </div>
-        <div style={{ fontSize: '11px', textAlign: 'center', color: '#cbd5e1' }}>
-          Total 30D Revenue: <span style={{ fontWeight: 'bold', color: '#ffffff' }}>{financials.revenue}</span>
+        <div style={{ fontSize: '11px', textAlign: 'center', color: 'var(--text-muted)' }}>
+          Total 30D Revenue: <span style={{ fontWeight: 'bold', color: 'var(--text-main)' }}>{financials.revenue}</span>
         </div>
       </div>
 

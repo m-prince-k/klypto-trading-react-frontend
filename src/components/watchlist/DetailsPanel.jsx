@@ -53,7 +53,7 @@ export default function DetailsPanel({ onClose, symbol }) {
         // Flash effect on price change
         if (prevPriceRef.current && nextPrice !== prevPriceRef.current) {
           const isUp = nextPrice > prevPriceRef.current;
-          setFlashClass(isUp ? "flash-up" : "flash-down");
+          setFlashClass(isUp ? "flash-up-text" : "flash-down-text");
           setTimeout(() => setFlashClass(""), 600);
         }
         prevPriceRef.current = nextPrice;
@@ -79,8 +79,8 @@ export default function DetailsPanel({ onClose, symbol }) {
       <div
         className="d-flex flex-column h-100 justify-content-center align-items-center"
         style={{
-          backgroundColor: "#ffffff",
-          color: "#131722",
+          backgroundColor: "var(--bg-card, #ffffff)",
+          color: "var(--text-main, #131722)",
           padding: "24px",
           textAlign: "center",
         }}
@@ -113,47 +113,34 @@ export default function DetailsPanel({ onClose, symbol }) {
     <div
       className="d-flex flex-column h-100"
       style={{
-        backgroundColor: "#ffffff",
-        color: "#131722",
+        backgroundColor: "var(--bg-card, #ffffff)",
+        color: "var(--text-main, #131722)",
         fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       }}
     >
       <style>{`
-        @keyframes green-pulse {
-          0% { background-color: rgba(8, 153, 129, 0.15); }
-          100% { background-color: transparent; }
+        @keyframes green-text-pulse {
+          0% { color: #089981; }
+          100% { color: inherit; }
         }
-        @keyframes red-pulse {
-          0% { background-color: rgba(242, 54, 69, 0.15); }
-          100% { background-color: transparent; }
+        @keyframes red-text-pulse {
+          0% { color: #f23645; }
+          100% { color: inherit; }
         }
+        .flash-up-text { animation: green-text-pulse 0.6s ease-out; }
+        .flash-down-text { animation: red-text-pulse 0.6s ease-out; }
         .detail-row {
           display: flex;
           justify-content: space-between;
           padding: 8px 0;
-          border-bottom: 1px solid #f1f3f6;
+          border-bottom: 1px solid var(--border-color, #f1f3f6);
           font-size: 13px;
         }
-        .detail-label { color: #787b86; }
-        .detail-val { font-weight: 500; }
+        .detail-label { color: var(--text-muted, #787b86); }
+        .detail-val { font-weight: 500; color: var(--text-main, inherit); }
       `}</style>
 
-      {/* Header */}
-      <div
-        className="d-flex align-items-center justify-content-between px-3 py-3"
-        style={{ borderBottom: "1px solid #f1f3f6" }}
-      >
-        <div className="d-flex align-items-center gap-2">
-          <FiActivity className="text-primary" size={18} />
-          <span style={{ fontWeight: "600", fontSize: "15px" }}>Market Details</span>
-        </div>
-        <IoMdClose
-          size={20}
-          style={{ cursor: "pointer" }}
-          onClick={onClose}
-          className="text-secondary"
-        />
-      </div>
+    
 
       <div className="flex-1 p-3">
         {/* Coin Title */}
@@ -181,7 +168,7 @@ export default function DetailsPanel({ onClose, symbol }) {
                 <h5 className="mb-0 fw-bold" style={{ letterSpacing: "-0.5px" }}>{symbol}</h5>
                 <span
                   className="badge"
-                  style={{ backgroundColor: "#f1f3f6", color: "#475569", fontSize: "10px", fontWeight: "600" }}
+                  style={{ backgroundColor: "var(--bg-main, #f1f3f6)", color: "var(--text-muted, #475569)", fontSize: "10px", fontWeight: "600" }}
                 >
                   SPOT
                 </span>
@@ -195,9 +182,9 @@ export default function DetailsPanel({ onClose, symbol }) {
         </div>
 
         {/* Price Widget */}
-        <div className={`p-3 rounded-3 mb-3 ${flashClass}`} style={{ backgroundColor: "#f8f9fa" }}>
+        <div className="p-3 rounded-3 mb-3" style={{ backgroundColor: "var(--bg-main, #f8f9fa)" }}>
           <div className="d-flex align-items-baseline gap-2">
-            <h2 className="mb-0 fw-bold" style={{ fontSize: "28px", letterSpacing: "-1px" }}>
+            <h2 className={`mb-0 fw-bold ${flashClass}`} style={{ fontSize: "28px", letterSpacing: "-1px", transition: 'color 0.1s' }}>
               {priceData.lastPrice > 0
                 ? priceData.lastPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })
                 : "---"}
@@ -236,18 +223,18 @@ export default function DetailsPanel({ onClose, symbol }) {
         </div>
 
         {/* Signal Gauge */}
-        <div className="p-3 border rounded-3 mb-3" style={{ borderColor: "#e0e3eb" }}>
+        <div className="p-3 border rounded-3 mb-3" style={{ borderColor: "var(--border-color, #e0e3eb)" }}>
           <div className="d-flex justify-content-between align-items-center mb-2">
             <span className="fw-semibold text-secondary" style={{ fontSize: "12px" }}>
               SIGNAL
             </span>
-            <span className="badge bg-light text-dark" style={{ fontSize: "10px" }}>Based on Chg%</span>
+            <span className="badge" style={{ fontSize: "10px", backgroundColor: "var(--bg-main, #f8f9fa)", color: "var(--text-muted, #131722)" }}>Based on Chg%</span>
           </div>
           <div className="text-center py-1">
             <div className="fs-5 fw-bold mb-2" style={{ color: rating.color, transition: "color 0.3s" }}>
               {rating.text}
             </div>
-            <div style={{ height: "4px", backgroundColor: "#f1f3f6", borderRadius: "2px" }}>
+            <div style={{ height: "4px", backgroundColor: "var(--bg-main, #f1f3f6)", borderRadius: "2px" }}>
               <div
                 style={{
                   height: "100%",

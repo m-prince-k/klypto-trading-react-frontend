@@ -43,7 +43,7 @@ const TopTickerBar = ({ prices, selectedSymbol }) => {
           <span className="ticker-name" style={{ color: '#818cf8', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}>
             <span style={{ color: '#a78bfa' }}>★</span> {formatSymbol(selectedSymbol)}
           </span>
-          <span className="ticker-val" style={{ color: '#ffffff', fontWeight: 'bold' }}>{activePriceObj.price ? `$${activePriceObj.price}` : ''}</span>
+          <span className="ticker-val" style={{ color: 'var(--text-main, #ffffff)', fontWeight: 'bold' }}>{activePriceObj.price ? `$${activePriceObj.price}` : ''}</span>
           <span className="ticker-change-pct" style={{ color: activePriceObj.isUp ? '#10b981' : '#ef4444', fontWeight: 'bold' }}>{activePriceObj.change || ''}</span>
         </div>
       )}

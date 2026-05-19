@@ -7,9 +7,9 @@
 .arbitrage-wrapper {
   display: flex;
   min-height: 100vh;
-  background-color: #0d1117;
+  background-color: var(--bg-main);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  color: #e2e8f0;
+  color: var(--text-main);
 }
 
 /* ── Main Content ──────────────────────────────────────────── */
@@ -23,8 +23,8 @@
 /* ── Top Header ────────────────────────────────────────────── */
 .main-header {
   height: 70px;
-  background-color: #161b22;
-  border-bottom: 1px solid #21262d;
+  background-color: var(--header-bg);
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -59,7 +59,7 @@
 .header-title {
   font-size: 20px;
   font-weight: 600;
-  color: #f0f6fc;
+  color: var(--text-main);
   margin: 0;
   letter-spacing: -0.3px;
 }
@@ -124,15 +124,15 @@
 
 /* ── Filters Card ──────────────────────────────────────────── */
 .filters-card {
-  background-color: #161b22 !important;
+  background-color: var(--bg-card) !important;
   border-radius: 12px !important;
-  border: 1px solid #21262d !important;
+  border: 1px solid var(--border-color) !important;
 }
 
 .select-label {
   font-size: 11.5px;
   font-weight: 600;
-  color: #8b949e;
+  color: var(--text-muted);
   margin-bottom: 6px;
   text-transform: uppercase;
   letter-spacing: 0.4px;
@@ -144,8 +144,8 @@
   border: 1px solid #30363d !important;
   border-radius: 6px !important;
   font-size: 13px;
-  color: #c9d1d9 !important;
-  background-color: #0d1117 !important;
+  color: var(--text-main) !important;
+  background-color: var(--bg-input) !important;
   padding: 0 12px;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
@@ -157,10 +157,10 @@
   outline: none;
 }
 
-/* Dropdown arrow color fix for dark */
+/* Dropdown arrow color fix */
 .filter-select option {
-  background-color: #161b22;
-  color: #c9d1d9;
+  background-color: var(--bg-card);
+  color: var(--text-main);
 }
 
 /* ── Toggle ────────────────────────────────────────────────── */
@@ -223,7 +223,7 @@ input:checked + .slider:before {
 
 /* ── Filter Buttons ────────────────────────────────────────── */
 .filter-divider {
-  border-top: 1px solid #21262d !important;
+  border-top: 1px solid var(--border-color) !important;
 }
 
 .btn-reset {
@@ -705,23 +705,23 @@ input:checked + .slider:before {
 .arbitrage-table.table {
   --bs-table-bg: transparent;
   --bs-table-striped-bg: transparent;
-  --bs-table-hover-bg: rgba(255, 255, 255, 0.025);
-  --bs-table-border-color: #21262d;
-  --bs-table-color: #c9d1d9;
-  color: #c9d1d9;
+  --bs-table-hover-bg: var(--bg-card-hover);
+  --bs-table-border-color: var(--border-color);
+  --bs-table-color: var(--text-main);
+  color: var(--text-main);
 }
 
 .arbitrage-table tbody tr {
-  background-color: #161b22 !important;
+  background-color: var(--bg-table-row) !important;
 }
 
 .arbitrage-table tbody tr td {
   background-color: transparent !important;
-  color: #c9d1d9 !important;
+  color: var(--text-main) !important;
 }
 
 .arbitrage-table tbody tr:hover td {
-  background-color: rgba(255, 255, 255, 0.025) !important;
+  background-color: var(--bg-card-hover) !important;
 }
 
 /* ── FIX 2: Equal card heights in row 2 ── */
@@ -736,6 +736,86 @@ input:checked + .slider:before {
 
 /* ── FIX 3: Coin pair bright white ── */
 .td-instrument {
-  color: #f0f6fc !important;
+  color: var(--text-main) !important;
   font-weight: 600;
+}
+
+/* ── Sub-Component Alignment Tweaks ── */
+.arbitrage-main-sub .content-container {
+  padding: 16px 0 !important;
+}
+
+/* ── Light Theme Responsive Overrides ── */
+[data-theme="light"] .stats-card,
+[data-theme="light"] .opportunities-card {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="light"] .stats-card:hover {
+  border-color: var(--accent-color) !important;
+}
+
+[data-theme="light"] .stats-value,
+[data-theme="light"] .table-header-title,
+[data-theme="light"] .td-instrument,
+[data-theme="light"] .exchange-badge {
+  color: var(--text-main) !important;
+}
+
+[data-theme="light"] .table-search-input {
+  background-color: var(--bg-main) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-main) !important;
+}
+
+[data-theme="light"] .arbitrage-table thead tr {
+  background-color: var(--table-header-bg) !important;
+}
+
+[data-theme="light"] .arbitrage-table th {
+  border-bottom-color: var(--border-color) !important;
+}
+
+[data-theme="light"] .arbitrage-table td {
+  color: var(--text-main) !important;
+  border-bottom-color: var(--border-color) !important;
+}
+
+[data-theme="light"] .table-row:hover {
+  background-color: var(--bg-card-hover) !important;
+}
+
+[data-theme="light"] .pagination-arrow,
+[data-theme="light"] .pagination-num {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-main) !important;
+}
+
+[data-theme="light"] .pagination-arrow:not(:disabled):hover,
+[data-theme="light"] .pagination-num:not(.active):hover {
+  background-color: var(--bg-card-hover) !important;
+}
+
+[data-theme="light"] .pagination-num.active {
+  background-color: var(--accent-color) !important;
+  color: #ffffff !important;
+  border-color: var(--accent-color) !important;
+}
+
+[data-theme="light"] .btn-reset {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-muted) !important;
+}
+
+[data-theme="light"] .btn-reset:hover {
+  background-color: var(--bg-card-hover) !important;
+  color: var(--text-main) !important;
+}
+
+[data-theme="light"] .filter-select,
+[data-theme="light"] .filter-input {
+  border-color: var(--border-color) !important;
 }

@@ -306,21 +306,21 @@ export const getSeriesColor = (series) => {
 
 export const chartSeriesStyles = {
   candlestick: {
-    upColor: "#22c55e",
-    downColor: "#ef4444",
-    borderUpColor: "#22c55e",
-    borderDownColor: "#ef4444",
-    wickUpColor: "#22c55e",
-    wickDownColor: "#ef4444",
+    upColor: "#69ff44ff",
+    downColor: "#ff4141ff",
+    borderUpColor: "#69ff44ff",
+    borderDownColor: "#ff6363ff",
+    wickUpColor: "#69ff44ff",
+    wickDownColor: "#ff4141ff",
   },
 
   hollowcandles: {
     upColor: "transparent",
-    downColor: "#ef4444",
-    borderUpColor: "#22c55e",
-    borderDownColor: "#ef4444",
-    wickUpColor: "#22c55e",
-    wickDownColor: "#ef4444",
+    downColor: "#ff4141ff",
+    borderUpColor: "#69ff44ff",
+    borderDownColor: "#ff4141ff",
+    wickUpColor: "#69ff44ff",
+    wickDownColor: "#ff4141ff",
   },
 
   line: {
@@ -328,8 +328,8 @@ export const chartSeriesStyles = {
   },
 
   bar: {
-    upColor: "#22c55e",
-    downColor: "#ef4444",
+    upColor: "#69ff44ff",
+    downColor: "#ff4141ff",
   },
 
   area: {

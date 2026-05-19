@@ -1,19 +1,20 @@
 import React, { useState, useEffect, useRef } from "react";
 import io from "socket.io-client";
 import "./CryptoEdgeDashboard.css";
+import { useTheme } from "../../context/ThemeContext";
 // Import split components
 import Sidebar from "../../../src/components/dashboard/layout/Sidebar";
 import TopTickerBar from "../../../src/components/dashboard/layout/TopTickerBar";
 import HeaderControls from "../../../src/components/dashboard/layout/HeaderControls";
-import AdvancedMetricsGrid from "../../../src/components/dashboard/overview/AdvancedMetricsGrid";
-import ChartAndOrderBook from "../../../src/components/dashboard/overview/ChartAndOrderBook";
-import SocialFinancialGrid from "../../../src/components/dashboard/overview/SocialFinancialGrid";
-import HeatmapArbitrageGrid from "../../../src/components/dashboard/overview/HeatmapArbitrageGrid";
+import Overview from "./overview/Overview";
 import SocialIntelligence from "./socialIntellingence/socialIntellingence";
 import Arbitrage from "./arbitrage/Arbitrage";
+import Financials from "./financials/Financial";
+import MarketData from "./marketData/MarketData";
 import socket from "../../services/socket";
 
 const CryptoEdgeDashboard = () => {
+  const { theme } = useTheme();
   // -------------------------------------------------------------
   // Dynamic Real-time States
   // -------------------------------------------------------------
@@ -87,7 +88,7 @@ const CryptoEdgeDashboard = () => {
           symbol: `BINANCE:${selectedSymbol}`,
           interval: "1", // 1-minute interval for ultra-fast, live tick updates
           timezone: "Etc/UTC",
-          theme: "dark",
+          theme: theme,
           style: "1", // Candlesticks style
           locale: "en",
           enable_publishing: false,
@@ -96,8 +97,11 @@ const CryptoEdgeDashboard = () => {
           container_id: tvDivId,
           studies: ["RSI@tv-basicstudies", "MASimple@tv-basicstudies"],
           show_popup_button: false,
-          backgroundColor: "#07090e",
-          gridColor: "rgba(255, 255, 255, 0.02)",
+          backgroundColor: theme === "dark" ? "#07090e" : "#ffffff",
+          gridColor:
+            theme === "dark"
+              ? "rgba(255, 255, 255, 0.02)"
+              : "rgba(0, 0, 0, 0.04)",
         });
       }
     };
@@ -107,7 +111,7 @@ const CryptoEdgeDashboard = () => {
     } else {
       script.addEventListener("load", initWidget);
     }
-  }, [selectedSymbol]);
+  }, [selectedSymbol, theme]);
 
   const [orderBook, setOrderBook] = useState({
     asks: [],
@@ -491,44 +495,48 @@ const CryptoEdgeDashboard = () => {
                 </button>
               </div>
 
-              {/* Render conditional tab components */}
               {activeTab === "Overview" && (
-                <>
-                  {/* Row 1: 5 Advanced Metric Cards */}
-                  <AdvancedMetricsGrid
-                    fearGreed={fearGreed}
-                    socialStats={socialStats}
-                    prices={prices}
-                  />
-                  {/* Row 2: Live TradingView Chart & Order Book */}
-                  <ChartAndOrderBook
-                    selectedSymbol={selectedSymbol}
-                    baseSymbol={getBaseSymbol(selectedSymbol)}
-                    prices={prices}
-                    orderBook={orderBook}
-                    tvlData={tvlData}
-                    tvContainerRef={tvContainerRef}
-                  />
-                  {/* Row 3: Social & Financial Metrics Grid */}
-                  <SocialFinancialGrid
-                    tvlData={tvlData}
-                    socialStats={socialStats}
-                    financials={financials}
-                  />
-                  {/* Row 4: Narrative Heatmap bubbles & Alerts feed */}
-                  <HeatmapArbitrageGrid
-                    socialStats={socialStats}
-                    arbitrage={arbitrage}
-                    alerts={alerts}
-                  />
-                </>
+                <Overview
+                  fearGreed={fearGreed}
+                  socialStats={socialStats}
+                  prices={prices}
+                  selectedSymbol={selectedSymbol}
+                  orderBook={orderBook}
+                  tvlData={tvlData}
+                  tvContainerRef={tvContainerRef}
+                  financials={financials}
+                  arbitrage={arbitrage}
+                  alerts={alerts}
+                />
               )}
 
               {activeTab === "Social Intelligence" && (
-                <SocialIntelligence isSubComponent={true} selectedSymbol={selectedSymbol} />
+                <SocialIntelligence
+                  isSubComponent={true}
+                  selectedSymbol={selectedSymbol}
+                />
               )}
 
-              {activeTab === "Arbitrage" && <Arbitrage isSubComponent={true} selectedSymbol={selectedSymbol} />}
+              {activeTab === "Arbitrage" && (
+                <Arbitrage
+                  isSubComponent={true}
+                  selectedSymbol={selectedSymbol}
+                />
+              )}
+
+              {activeTab === "Financials" && (
+                <Financials
+                  isSubComponent={true}
+                  selectedSymbol={selectedSymbol}
+                />
+              )}
+
+              {activeTab === "Market Data" && (
+                <MarketData
+                  isSubComponent={true}
+                  selectedSymbol={selectedSymbol}
+                />
+              )}
             </div>
           </main>
         </div>

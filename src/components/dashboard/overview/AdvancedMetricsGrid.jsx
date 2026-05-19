@@ -26,7 +26,7 @@ const AdvancedMetricsGrid = ({ selectedSymbol = "SOL", fearGreed, socialStats, p
             <div style={{ fontSize: '17px', fontWeight: 'bold', color: '#10b981', display: 'flex', alignItems: 'center', gap: '5px' }}>
               <span>🐂</span> BULL REGIME
             </div>
-            <div style={{ fontSize: '9px', color: '#64748b', textTransform: 'uppercase' }}>Strength: 72/100</div>
+            <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Strength: 72/100</div>
           </div>
         </div>
         {/* Segment meter */}
@@ -56,7 +56,7 @@ const AdvancedMetricsGrid = ({ selectedSymbol = "SOL", fearGreed, socialStats, p
             <circle cx="20" cy="20" r="2.5" fill="#ffffff" />
           </svg>
           <div>
-            <div style={{ fontSize: '19px', fontWeight: 'bold', color: '#ffffff' }}>{fearGreed.value}</div>
+            <div style={{ fontSize: '19px', fontWeight: 'bold', color: 'var(--text-main)' }}>{fearGreed.value}</div>
             <div style={{ fontSize: '10px', color: '#10b981', fontWeight: '700' }}>{fearGreed.label}</div>
           </div>
         </div>
@@ -85,10 +85,10 @@ const AdvancedMetricsGrid = ({ selectedSymbol = "SOL", fearGreed, socialStats, p
           </svg>
           <div>
             <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#a78bfa' }}>{socialStats.btcDominance}</div>
-            <div style={{ fontSize: '9px', color: '#64748b', fontWeight: 'bold' }}>BTC DOMINANCE</div>
+            <div style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: 'bold' }}>BTC DOMINANCE</div>
           </div>
         </div>
-        <div style={{ fontSize: '8.5px', color: '#64748b', marginTop: '6px', textAlign: 'center' }}>
+        <div style={{ fontSize: '8.5px', color: 'var(--text-muted)', marginTop: '6px', textAlign: 'center' }}>
           Twitter: <span style={{ color: '#a78bfa', fontWeight: 'bold' }}>44.1%</span> | Reddit: <span style={{ color: '#a78bfa', fontWeight: 'bold' }}>21.6%</span>
         </div>
       </div>
@@ -106,12 +106,12 @@ const AdvancedMetricsGrid = ({ selectedSymbol = "SOL", fearGreed, socialStats, p
             <text x="18" y="21.5" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="bold">#1</text>
           </svg>
           <div>
-            <div style={{ fontSize: '17px', fontWeight: 'bold', color: '#ffffff' }}>{socialStats.altRank}</div>
+            <div style={{ fontSize: '17px', fontWeight: 'bold', color: 'var(--text-main)' }}>{socialStats.altRank}</div>
             <div style={{ fontSize: '9px', color: '#6366f1', fontWeight: 'bold' }}>{baseAsset} RANK</div>
           </div>
         </div>
-        <div style={{ fontSize: '9px', color: '#64748b', marginTop: '6px', textAlign: 'center' }}>
-          Out of <span style={{ fontWeight: 'bold', color: '#cbd5e1' }}>4,821 active tokens</span>
+        <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginTop: '6px', textAlign: 'center' }}>
+          Out of <span style={{ fontWeight: 'bold', color: 'var(--text-muted)' }}>4,821 active tokens</span>
         </div>
       </div>
 
@@ -130,14 +130,14 @@ const AdvancedMetricsGrid = ({ selectedSymbol = "SOL", fearGreed, socialStats, p
             <rect x="27" y="4" width="5" height="28" rx="1.5" fill="#10b981" fillOpacity="0.4" />
           </svg>
           <div>
-            <div style={{ fontSize: '17px', fontWeight: 'bold', color: '#ffffff' }}>{prices.TOTAL_MCAP?.val ? `$${prices.TOTAL_MCAP.val}` : ''}</div>
+            <div style={{ fontSize: '17px', fontWeight: 'bold', color: 'var(--text-main)' }}>{prices.TOTAL_MCAP?.val ? `$${prices.TOTAL_MCAP.val}` : ''}</div>
             <div style={{ fontSize: '9px', color: prices.TOTAL_MCAP?.isUp ? '#10b981' : '#ef4444', fontWeight: 'bold' }}>
               {prices.TOTAL_MCAP?.change ? `${prices.TOTAL_MCAP.isUp ? '▲' : '▼'} ${prices.TOTAL_MCAP.change} (24H)` : ''}
             </div>
           </div>
         </div>
-        <div style={{ fontSize: '8.5px', color: '#64748b', marginTop: '5px', textAlign: 'center' }}>
-          Dominance: <span style={{ color: '#cbd5e1', fontWeight: 'bold' }}>BTC 55.4%</span> | <span style={{ color: '#cbd5e1', fontWeight: 'bold' }}>ETH 17.8%</span>
+        <div style={{ fontSize: '8.5px', color: 'var(--text-muted)', marginTop: '5px', textAlign: 'center' }}>
+          Dominance: <span style={{ color: 'var(--text-muted)', fontWeight: 'bold' }}>BTC 55.4%</span> | <span style={{ color: 'var(--text-muted)', fontWeight: 'bold' }}>ETH 17.8%</span>
         </div>
       </div>
     </div>

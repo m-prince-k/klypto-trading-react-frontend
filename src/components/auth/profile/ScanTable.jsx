@@ -89,77 +89,25 @@ export default function ScanTable({ scans = [], onShare, onEdit, onDelete }) {
     whiteSpace: "nowrap",
     cursor: "pointer",
     userSelect: "none",
-    borderRight: "1px solid #2e3347",
+    borderRight: "1px solid var(--border-color, #2e3347)",
   };
   const tdStyle = {
     padding: "11px 14px",
     verticalAlign: "top",
-    borderRight: "1px solid #ebebeb",
+    borderRight: "1px solid var(--border-color, #ebebeb)",
   };
 
   return (
     <div
       style={{
-        border: "1px solid #d0cfc8",
+        border: "1px solid var(--border-color, #d0cfc8)",
         borderRadius: 6,
         overflow: "hidden",
-        background: "#fff",
+        background: "var(--bg-card, #fff)",
         fontSize: 14,
         fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
       }}
     >
-      {/* Toolbar */}
-      {/* <div
-        style={{
-          display: "flex",
-          gap: 10,
-          padding: "10px 14px",
-          background: "#f5f4f0",
-          borderBottom: "1px solid #d0cfc8",
-          flexWrap: "wrap",
-        }}
-      >
-        <input
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setPage(1);
-          }}
-          placeholder="Search scans..."
-          style={{
-            flex: 1,
-            minWidth: 160,
-            height: 32,
-            padding: "0 10px",
-            border: "1px solid #c8c7c0",
-            borderRadius: 4,
-            fontSize: 13,
-            background: "#fff",
-            color: "#1a1a1a",
-            outline: "none",
-          }}
-        />
-        <select
-          value={filterCol}
-          onChange={(e) => setFilterCol(e.target.value)}
-          style={{
-            height: 32,
-            padding: "0 8px",
-            border: "1px solid #c8c7c0",
-            borderRadius: 4,
-            fontSize: 13,
-            background: "#fff",
-            color: "#1a1a1a",
-            cursor: "pointer",
-          }}
-        >
-          <option value="all">Filter by column</option>
-          <option value="name">Name</option>
-          <option value="description">Description</option>
-          <option value="clause">Clause</option>
-        </select>
-      </div> */}
-
       {/* Table */}
       <div style={{ overflowX: "auto" }}>
         <table
@@ -170,7 +118,7 @@ export default function ScanTable({ scans = [], onShare, onEdit, onDelete }) {
           }}
         >
           <thead>
-            <tr style={{ background: "#1e2330" }}>
+            <tr style={{ background: "var(--bg-main, #1e2330)" }}>
               {[
                 ["name", "Name", 100],
                 ["description", "Description", 130],
@@ -189,9 +137,6 @@ export default function ScanTable({ scans = [], onShare, onEdit, onDelete }) {
                   </div>
                 </th>
               ))}
-              {/* <th style={{ ...thStyle, width: 120, cursor: "default" }}>
-                Tags
-              </th> */}
               <th
                 style={{ ...thStyle, width: 120 }}
                 onClick={() => handleSort("createdAt")}
@@ -225,7 +170,7 @@ export default function ScanTable({ scans = [], onShare, onEdit, onDelete }) {
                   style={{
                     textAlign: "center",
                     padding: "2.5rem",
-                    color: "#999",
+                    color: "var(--text-muted, #999)",
                     fontStyle: "italic",
                   }}
                 >
@@ -238,13 +183,13 @@ export default function ScanTable({ scans = [], onShare, onEdit, onDelete }) {
                   key={scan.id ?? scan.label}
                   style={{
                     borderBottom:
-                      i < slice.length - 1 ? "1px solid #ebebeb" : "none",
+                      i < slice.length - 1 ? "1px solid var(--border-color, #ebebeb)" : "none",
                   }}
                 >
                   <td style={tdStyle}>
                     <span
                       style={{
-                        color: "#3d6ec4",
+                        color: "var(--accent-color, #3d6ec4)",
                         fontWeight: 600,
                         fontSize: 14,
                         cursor: "pointer",
@@ -253,7 +198,7 @@ export default function ScanTable({ scans = [], onShare, onEdit, onDelete }) {
                       {scan.label}
                     </span>
                   </td>
-                  <td style={{ ...tdStyle, fontSize: 13, color: "#555" }}>
+                  <td style={{ ...tdStyle, fontSize: 13, color: "var(--text-muted, #555)" }}>
                     {scan.description || "—"}
                   </td>
                   <td style={tdStyle}>
@@ -273,9 +218,9 @@ export default function ScanTable({ scans = [], onShare, onEdit, onDelete }) {
                             style={{
                               fontFamily: "'Courier New', monospace",
                               fontSize: 11,
-                              color: "#1a4a8a",
-                              background: "rgba(59, 130, 246, 0.08)",
-                              border: "1px solid rgba(59, 130, 246, 0.22)",
+                              color: "var(--text-main, #1a4a8a)",
+                              background: "var(--bg-main, rgba(59, 130, 246, 0.08))",
+                              border: "1px solid var(--border-color, rgba(59, 130, 246, 0.22))",
                               padding: "3px 8px",
                               borderRadius: 6,
                               display: "inline-flex",
@@ -284,10 +229,10 @@ export default function ScanTable({ scans = [], onShare, onEdit, onDelete }) {
                               lineHeight: 1.6,
                               fontWeight: 600,
                               letterSpacing: "0.01em",
-                              whiteSpace: "normal", // ← allow wrapping
-                              wordBreak: "break-word", // ← break long tokens
+                              whiteSpace: "normal",
+                              wordBreak: "break-word",
                               alignSelf: "flex-start",
-                              maxWidth: "100%", // ← never exceed column
+                              maxWidth: "100%",
                               boxSizing: "border-box",
                             }}
                           >
@@ -296,9 +241,9 @@ export default function ScanTable({ scans = [], onShare, onEdit, onDelete }) {
                                 width: 5,
                                 height: 5,
                                 borderRadius: "50%",
-                                background: "rgba(59, 130, 246, 0.55)",
+                                background: "var(--accent-color, rgba(59, 130, 246, 0.55))",
                                 flexShrink: 0,
-                                marginTop: 5, // ← align dot with first line
+                                marginTop: 5,
                                 display: "inline-block",
                               }}
                             />
@@ -307,29 +252,11 @@ export default function ScanTable({ scans = [], onShare, onEdit, onDelete }) {
                         ))}
                     </div>
                   </td>
-                  {/* <td style={tdStyle}>
-                    <button
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 4,
-                        fontSize: 12,
-                        color: "#777",
-                        border: "1px dashed #bbb",
-                        padding: "3px 9px",
-                        borderRadius: 3,
-                        cursor: "pointer",
-                        background: "transparent",
-                      }}
-                    >
-                      <Plus size={12} /> Add tag
-                    </button>
-                  </td> */}
                   <td
                     style={{
                       ...tdStyle,
                       fontSize: 13,
-                      color: "#666",
+                      color: "var(--text-muted, #666)",
                       whiteSpace: "nowrap",
                     }}
                   >
@@ -463,13 +390,13 @@ export default function ScanTable({ scans = [], onShare, onEdit, onDelete }) {
           alignItems: "center",
           justifyContent: "space-between",
           padding: "9px 14px",
-          background: "#f5f4f0",
-          borderTop: "1px solid #d0cfc8",
+          background: "var(--bg-main, #f5f4f0)",
+          borderTop: "1px solid var(--border-color, #d0cfc8)",
           flexWrap: "wrap",
           gap: 8,
         }}
       >
-        <span style={{ fontSize: 12, color: "#666" }}>
+        <span style={{ fontSize: 12, color: "var(--text-muted, #666)" }}>
           Showing {Math.min((safePage - 1) * PER_PAGE + 1, filtered.length)}–
           {Math.min(safePage * PER_PAGE, filtered.length)} of {filtered.length}
         </span>
@@ -481,8 +408,9 @@ export default function ScanTable({ scans = [], onShare, onEdit, onDelete }) {
               height: 28,
               minWidth: 28,
               padding: "0 8px",
-              border: "1px solid #c8c7c0",
-              background: "#fff",
+              border: "1px solid var(--border-color, #c8c7c0)",
+              background: "var(--bg-card, #fff)",
+              color: "var(--text-main, #333)",
               borderRadius: 3,
               fontSize: 12,
               cursor: "pointer",
@@ -501,12 +429,12 @@ export default function ScanTable({ scans = [], onShare, onEdit, onDelete }) {
                   height: 28,
                   minWidth: 28,
                   padding: "0 8px",
-                  border: "1px solid #c8c7c0",
+                  border: "1px solid var(--border-color, #c8c7c0)",
                   borderRadius: 3,
                   fontSize: 12,
                   cursor: "pointer",
-                  background: i === safePage ? "#1e2330" : "#fff",
-                  color: i === safePage ? "#fff" : "#333",
+                  background: i === safePage ? "var(--text-main, #1e2330)" : "var(--bg-card, #fff)",
+                  color: i === safePage ? "var(--bg-card, #fff)" : "var(--text-main, #333)",
                 }}
               >
                 {i}
@@ -519,8 +447,9 @@ export default function ScanTable({ scans = [], onShare, onEdit, onDelete }) {
               height: 28,
               minWidth: 28,
               padding: "0 8px",
-              border: "1px solid #c8c7c0",
-              background: "#fff",
+              border: "1px solid var(--border-color, #c8c7c0)",
+              background: "var(--bg-card, #fff)",
+              color: "var(--text-main, #333)",
               borderRadius: 3,
               fontSize: 12,
               cursor: "pointer",
@@ -537,16 +466,16 @@ export default function ScanTable({ scans = [], onShare, onEdit, onDelete }) {
         style={{
           textAlign: "center",
           padding: "8px 14px",
-          background: "#f0f4ff",
-          borderTop: "1px solid #d0cfc8",
+          background: "var(--bg-main, #f0f4ff)",
+          borderTop: "1px solid var(--border-color, #d0cfc8)",
           fontSize: 13,
-          color: "#555",
+          color: "var(--text-muted, #555)",
         }}
       >
         Read our{" "}
         <a
           href="#"
-          style={{ color: "#3d6ec4", textDecoration: "none", fontWeight: 500 }}
+          style={{ color: "var(--accent-color, #3d6ec4)", textDecoration: "none", fontWeight: 500 }}
         >
           guide
         </a>{" "}

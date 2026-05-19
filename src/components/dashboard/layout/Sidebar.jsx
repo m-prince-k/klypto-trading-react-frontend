@@ -61,7 +61,14 @@ const Sidebar = ({ activeTab = "Overview", setActiveTab = () => {} }) => {
             </span>
           </a>
 
-          <a href="#market-data" className="nav-item">
+          <a
+            href="#market-data"
+            className={`nav-item ${activeTab === "Market Data" ? "active" : ""}`}
+            onClick={(e) => {
+              e.preventDefault();
+              setActiveTab("Market Data");
+            }}
+          >
             <span className="nav-label-group">
               <span className="nav-icon">
                 <svg

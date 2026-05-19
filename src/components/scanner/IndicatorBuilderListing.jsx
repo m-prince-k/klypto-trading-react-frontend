@@ -972,12 +972,12 @@ export default function IndicatorBuilderListing({
   return (
     <Container
       fluid
-      className="pt-4 px-4 bg-slate-50"
-      style={{ minHeight: "80vh" }}
+      className="pt-4 px-4"
+      style={{ minHeight: "80vh", backgroundColor: "var(--bg-main, #f8fafc)", color: "var(--text-main, #0f172a)" }}
     >
       {/* Header */}
       <div className="d-flex align-items-center justify-content-between mb-4">
-        <h4 className="mb-0 fw-semibold text-dark">Currencies</h4>
+        <h4 className="mb-0 fw-semibold" style={{ color: "var(--text-main, #0f172a)" }}>Currencies</h4>
 
         <div className="d-flex gap-2">
           <Button
@@ -1132,17 +1132,22 @@ export default function IndicatorBuilderListing({
         </div>
       </div>
 
-      <Card className="border-0 shadow-sm">
+      <Card className="border shadow-sm" style={{ backgroundColor: "var(--bg-card, #ffffff)", borderColor: "var(--border-color, #e2e8f0)", color: "var(--text-main, #0f172a)" }}>
         <Card.Body className="p-0">
           {/* Controls */}
-          <div className="d-flex align-items-center gap-3 px-3 py-3 border-bottom bg-white rounded-top">
+          <div className="d-flex align-items-center gap-3 px-3 py-3 border-bottom rounded-top" style={{ backgroundColor: "var(--bg-card, #ffffff)", borderColor: "var(--border-color, #e2e8f0)" }}>
             <Form.Control
               size="sm"
               type="text"
               placeholder="Search…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              style={{ maxWidth: 200 }}
+              style={{ 
+                maxWidth: 200,
+                backgroundColor: "var(--bg-main, #ffffff)",
+                borderColor: "var(--border-color, #cbd5e1)",
+                color: "var(--text-main, #0f172a)"
+              }}
             />
 
             <Dropdown
@@ -1608,9 +1613,15 @@ export default function IndicatorBuilderListing({
               <Table
                 hover
                 className="mb-0 align-middle"
-                style={{ fontSize: "0.875rem", zIndex: 0 }}
+                style={{ 
+                  fontSize: "0.875rem", 
+                  zIndex: 0, 
+                  backgroundColor: "var(--bg-card, #ffffff)", 
+                  color: "var(--text-main, #0f172a)",
+                  borderColor: "var(--border-color, #dee2e6)"
+                }}
               >
-                <thead style={{ background: "#212529", color: "#fff" }}>
+                <thead style={{ background: "var(--bg-main, #212529)", color: "var(--text-main, #fff)" }}>
                   <tr>
                     {paginatedData.length > 0 && (
                       <th
@@ -1802,7 +1813,7 @@ export default function IndicatorBuilderListing({
             </small>
           </div>
           {/* Pagination */}
-          <div className="d-flex justify-content-end px-3 py-3 border-top bg-white rounded-bottom">
+          <div className="d-flex justify-content-end px-3 py-3 border-top rounded-bottom" style={{ backgroundColor: "var(--bg-card, #ffffff)", borderColor: "var(--border-color, #e2e8f0)" }}>
             <ReactPaginate
               previousLabel={"← Prev"}
               nextLabel={"Next →"}

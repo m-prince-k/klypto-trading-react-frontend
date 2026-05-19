@@ -22,9 +22,16 @@ const getUser = () => {
 };
 
 const StatCard = ({ label, value, colorClass }) => (
-  <div className="card border-0 shadow-sm">
+  <div 
+    className="card shadow-sm border"
+    style={{
+      backgroundColor: "var(--bg-card, #ffffff)",
+      borderColor: "var(--border-color, #e2e8f0)",
+      color: "var(--text-main, #131722)"
+    }}
+  >
     <div className="card-body py-3">
-      <div className="text-muted small mb-1">{label}</div>
+      <div style={{ color: "var(--text-muted, #64748b)" }} className="small mb-1">{label}</div>
       <div className={`fw-bold fs-5 text-${colorClass}`}>{value}</div>
     </div>
   </div>
@@ -101,12 +108,12 @@ export default function AlertSection() {
 
   if (!loading && !error && alerts.length === 0) {
     return (
-      <Container className="py-5 text-center">
-        <div className="mb-3 text-muted" style={{ fontSize: 48 }}>🔔</div>
+      <Container className="py-5 text-center" style={{ color: "var(--text-main, #1a1a1a)" }}>
+        <div className="mb-3" style={{ fontSize: 48 }}>🔔</div>
         <h5 className="fw-semibold mb-2">No alerts configured</h5>
         <p
-          className="text-muted small mb-4"
-          style={{ maxWidth: 320, margin: "0 auto 1rem" }}
+          className="small mb-4"
+          style={{ maxWidth: 320, margin: "0 auto 1rem", color: "var(--text-muted, #64748b)" }}
         >
           Set up price alerts on your scanners to get notified when conditions
           are triggered.
@@ -141,7 +148,7 @@ export default function AlertSection() {
     : "—";
 
   return (
-    <Container fluid className="py-4 px-4">
+    <Container fluid className="py-4 px-4" style={{ color: "var(--text-main, #131722)" }}>
       <Row className="g-3 mb-4">
         <Col xs={12} sm={4}>
           <StatCard label="Total alerts" value={alerts.length} colorClass="primary" />

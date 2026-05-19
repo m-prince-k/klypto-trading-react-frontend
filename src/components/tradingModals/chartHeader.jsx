@@ -72,28 +72,28 @@ export default function ChartHeader({
 
   return (
     <div className="w-100 d-flex flex-column gap-3 small">
-      <div className="d-flex align-items-center gap-3 px-3 py-2 bg-white shadow-sm">
+      <div className="d-flex align-items-center gap-3 px-3 py-2 shadow-sm" style={{ background: "var(--bg-card, #ffffff)", borderBottom: "1px solid var(--border-color, #e2e8f0)" }}>
         {/* Name/Symbol Button */}
         <ProfileDropDown /> 
         <button
           title="Symbol Search"
           onClick={() => openModal("Symbol Search")}
-          className="btn btn-light fw-bold rounded-pill px-4"
-          style={{ height: 40 }}
+          className="btn fw-bold rounded-pill px-4"
+          style={{ height: 40, backgroundColor: "var(--bg-main, #f4f6f8)", color: "var(--text-main, #131722)", border: "1px solid var(--border-color, #e2e8f0)" }}
         >
           {selectedCurrency || "BTCUSDT"}
         </button>
 
         {/* Divider */}
-        <div className="vr" />
+        <div className="vr" style={{ backgroundColor: "var(--border-color, #e2e8f0)" }} />
 
         {/* TimeFrame Dropdown */}
         <div title={timeframeValue}>
           <select
             value={timeframeValue ? timeframeValue : "1m"}
             onChange={(e) => setTimeframeValue(e.target.value)}
-            className="form-select form-select-sm "
-            style={{ height: 40, width: 120 }}
+            className="form-select form-select-sm"
+            style={{ height: 40, width: 120, backgroundColor: "var(--bg-main, #f4f6f8)", color: "var(--text-main, #131722)", borderColor: "var(--border-color, #e2e8f0)" }}
           >
             {!timeframe && <option value="1m">1 Minute</option>}
 
@@ -103,7 +103,7 @@ export default function ChartHeader({
 
             {timeframe &&
               Object.entries(timeframe)?.map(([group, items]) => (
-                <optgroup key={group} label={group?.toUpperCase()}>
+                <optgroup key={group} label={group?.toUpperCase()} style={{ backgroundColor: "var(--bg-card, #ffffff)", color: "var(--text-main, #131722)" }}>
                   {items?.map((item) => (
                     <option key={item?.seconds} value={item?.value}>
                       {item?.label}
@@ -115,12 +115,12 @@ export default function ChartHeader({
         </div>
 
         {/* Divider */}
-        <div className="vr" />
+        <div className="vr" style={{ backgroundColor: "var(--border-color, #e2e8f0)" }} />
 
         {/* Chart Type Dropdown */}
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
-            <button className="btn btn-light d-flex align-items-center gap-2">
+            <button className="btn d-flex align-items-center gap-2" style={{ height: 40, backgroundColor: "var(--bg-main, #f4f6f8)", color: "var(--text-main, #131722)", border: "1px solid var(--border-color, #e2e8f0)" }}>
               {active?.icon && <active.icon size={16} />}
               <span>{active?.label}</span>
               <FiChevronDown size={14} />
@@ -130,13 +130,17 @@ export default function ChartHeader({
           <DropdownMenu.Portal>
             <DropdownMenu.Content
               sideOffset={8}
-              className="bg-white border rounded shadow z-999 p-2"
+              className="border rounded shadow z-999 p-2"
+              style={{ backgroundColor: "var(--bg-card, #ffffff)", color: "var(--text-main, #131722)", borderColor: "var(--border-color, #e2e8f0)" }}
             >
               {chartOptions.map((item) => (
                 <DropdownMenu.Item
                   key={item.value}
                   onClick={() => setChartType(item.value)}
                   className="d-flex align-items-center gap-2 px-3 py-2 rounded"
+                  style={{ color: "var(--text-main, #131722)", cursor: "pointer" }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = "var(--bg-card-hover, #f1f5f9)"}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
                 >
                   <item.icon size={16} />
                   <span className="flex-grow-1">{item.label}</span>
@@ -151,27 +155,16 @@ export default function ChartHeader({
         </DropdownMenu.Root>
 
         {/* Divider */}
-        <div className="vr" />
+        <div className="vr" style={{ backgroundColor: "var(--border-color, #e2e8f0)" }} />
 
         {/* Action Buttons */}
         <div className="d-flex align-items-center w-full gap-2">
-          {/* Range */}
-          {/* <div className="d-flex align-items-center gap-2">
-            <label className="mb-0">Range:</label>
-            <input
-              type="number"
-              min="10"
-              defaultValue="10"
-              className="form-control form-control-sm"
-              style={{ width: 90, height: 40 }}
-            />
-          </div> */}
-
           {/* Indicators */}
           <button
             title="Indicators"
             onClick={() => openModal("Indicators")}
-            className="btn btn-light d-flex align-items-center gap-2"
+            className="btn d-flex align-items-center gap-2"
+            style={{ height: 40, backgroundColor: "var(--bg-main, #f4f6f8)", color: "var(--text-main, #131722)", border: "1px solid var(--border-color, #e2e8f0)" }}
           >
             <VscGraphLine />
             <span>Indicators</span>
@@ -181,7 +174,8 @@ export default function ChartHeader({
           <button
             title="Create Alert"
             onClick={() => openModal("Alerts")}
-            className="btn btn-light d-flex align-items-center gap-2"
+            className="btn d-flex align-items-center gap-2"
+            style={{ height: 40, backgroundColor: "var(--bg-main, #f4f6f8)", color: "var(--text-main, #131722)", border: "1px solid var(--border-color, #e2e8f0)" }}
           >
             <MdAlarmAdd />
             <span>Alert</span>
@@ -192,6 +186,7 @@ export default function ChartHeader({
             title="Simulation"
             onClick={() => openModal("Simulation")}
             className="btn btn-primary d-flex align-items-center gap-2"
+            style={{ height: 40 }}
           >
             <FiPlus />
             <span>Simulation</span>
@@ -206,6 +201,7 @@ export default function ChartHeader({
                 navigate("/login");
               }}
               className="btn btn-primary d-flex align-items-center gap-2"
+              style={{ height: 40 }}
             >
               <span>Logout</span>
             </button>
@@ -216,6 +212,7 @@ export default function ChartHeader({
                 navigate("/signup");
               }}
               className="btn btn-primary d-flex align-items-center gap-2"
+              style={{ height: 40 }}
             >
               <span>Signup</span>
             </button>

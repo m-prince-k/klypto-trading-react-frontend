@@ -943,7 +943,7 @@ export default function ScannerBuilder() {
           />
         )}
 
-        <div style={{ color: "#000", fontWeight: 500 }}>
+        <div style={{ color: "var(--text-main, #000)", fontWeight: 500 }}>
           <EditableSelect
             value={currentVal}
             options={scannerOptions}
@@ -1265,17 +1265,17 @@ export default function ScannerBuilder() {
       />
 
       <Navbar />
-      <div className="bg-slate-50 py-5">
-        <h5 className=" fs-4  fw-semibold text-start px-4 text-dark mb-1">
+      <div className="py-5" style={{ backgroundColor: "var(--bg-main, #f8fafc)", color: "var(--text-main, #0f172a)" }}>
+        <h5 className=" fs-4  fw-semibold text-start px-4 mb-1" style={{ color: "var(--text-main, #0f172a)" }}>
           {editingScan ? editingScan.label || editingScan.name : "Scanner"}
         </h5>
         {editingScan?.description && (
-          <p className="px-4 text-muted text-left small mb-3">
+          <p className="px-4 text-left small mb-3" style={{ color: "var(--text-muted, #64748b)" }}>
             {editingScan.description}
           </p>
         )}
 
-        <Card className="border-0 shadow-none mx-4 my-1">
+        <Card className="border mx-4 my-1 shadow-sm" style={{ backgroundColor: "var(--bg-card, #ffffff)", borderColor: "var(--border-color, #e2e8f0)", color: "var(--text-main, #0f172a)" }}>
           <Card.Body className="d-flex flex-column gap-3">
             {/* INPUT */}
             <Stack direction="horizontal" gap={3}>

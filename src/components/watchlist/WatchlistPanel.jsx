@@ -25,12 +25,12 @@ const styles = `
 
   .wl-panel {
     font-family: 'IBM Plex Sans', sans-serif;
-    background: #ffffff;
-    border-left: 1px solid #e2e6ee;
+    background: var(--bg-card, #ffffff);
+    border-left: 1px solid var(--border-color, #e2e6ee);
     display: flex;
     flex-direction: column;
     height: 100%;
-    color: #2d3748;
+    color: var(--text-main, #2d3748);
   }
 
   .wl-header {
@@ -38,8 +38,8 @@ const styles = `
     align-items: center;
     justify-content: space-between;
     padding: 12px 14px 10px;
-    border-bottom: 1px solid #e2e6ee;
-    background: #ffffff;
+    border-bottom: 1px solid var(--border-color, #e2e6ee);
+    background: var(--bg-card, #ffffff);
   }
 
   .wl-title {
@@ -57,7 +57,7 @@ const styles = `
   }
 
   .wl-title:hover {
-    color: #2d3748;
+    color: var(--text-main, #2d3748);
   }
 
   .wl-title svg {
@@ -86,8 +86,8 @@ const styles = `
   }
 
   .wl-icon-btn:hover {
-    background: #f0f2f7;
-    color: #2d3748;
+    background: var(--bg-card-hover, #f0f2f7);
+    color: var(--text-main, #2d3748);
   }
 
   .wl-icon-btn.add:hover {
@@ -106,15 +106,15 @@ const styles = `
     gap: 8px;
     margin: 10px 12px;
     padding: 6px 10px;
-    background: #f7f8fb;
-    border: 1px solid #e2e6ee;
+    background: var(--bg-main, #f7f8fb);
+    border: 1px solid var(--border-color, #e2e6ee);
     border-radius: 6px;
     transition: border-color 0.15s, background 0.15s;
   }
 
   .wl-search-bar:focus-within {
     border-color: #2962ff;
-    background: #ffffff;
+    background: var(--bg-card, #ffffff);
   }
 
   .wl-search-bar svg {
@@ -128,7 +128,7 @@ const styles = `
     outline: none;
     font-size: 12px;
     font-family: 'IBM Plex Sans', sans-serif;
-    color: #2d3748;
+    color: var(--text-main, #2d3748);
     width: 100%;
   }
 
@@ -140,13 +140,13 @@ const styles = `
     display: flex;
     align-items: center;
     padding: 6px 14px;
-    border-bottom: 1px solid #e2e6ee;
+    border-bottom: 1px solid var(--border-color, #e2e6ee);
     font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: #b0bac9;
-    background: #f7f8fb;
+    background: var(--bg-main, #f7f8fb);
   }
 
   .wl-list {
@@ -180,11 +180,11 @@ const styles = `
   }
 
   .wl-row:hover {
-    background: #f7f8fb;
+    background: var(--bg-card-hover, #f7f8fb);
   }
 
   .wl-row.active {
-    background: #f0f4ff;
+    background: var(--bg-main, #f0f4ff);
     border-left-color: #2962ff;
   }
 
@@ -195,7 +195,7 @@ const styles = `
     left: 14px;
     right: 14px;
     height: 1px;
-    background: #e2e6ee;
+    background: var(--border-color, #e2e6ee);
     opacity: 0.7;
   }
 
@@ -211,7 +211,7 @@ const styles = `
     font-family: 'IBM Plex Mono', monospace;
     font-size: 12px;
     font-weight: 600;
-    color: #1a202c;
+    color: var(--text-main, #1a202c);
     letter-spacing: 0.03em;
   }
 
@@ -296,8 +296,8 @@ const styles = `
 
   .wl-footer {
     padding: 8px 14px;
-    border-top: 1px solid #e2e6ee;
-    background: #f7f8fb;
+    border-top: 1px solid var(--border-color, #e2e6ee);
+    background: var(--bg-main, #f7f8fb);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -489,7 +489,7 @@ export default function WatchlistPanel({
                   gap: "4px",
                   fontSize: "12px",
                   textTransform: "none",
-                  color: "#1a202c",
+                  color: "var(--text-main, #1a202c)",
                 }}
               >
                 <FiChevronLeft size={16} />

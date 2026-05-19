@@ -1,11 +1,14 @@
-import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { BarChart2, ScanSearch, LayoutDashboard, User } from "lucide-react";
 import { getUser } from "../../util/common";
+import { logout } from "../../pages/auth/protected";
 
 export default function Navbar() {
   const location = useLocation();
   const user = getUser();
+  const navigate = useNavigate();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const initials = user?.firstName
     ? user.firstName.charAt(0).toUpperCase()
@@ -26,7 +29,7 @@ export default function Navbar() {
     },
     {
       label: "Dashboard",
-      to: "/cryptoedge",
+      to: "/dashboard",
       icon: <LayoutDashboard size={15} />,
     },
   ];
@@ -43,8 +46,8 @@ export default function Navbar() {
           position: sticky;
           top: 0;
           z-index: 99;
-          background: #fff;
-          border-bottom: 1px solid #e8e7e0;
+          background: var(--bg-card, #fff);
+          border-bottom: 1px solid var(--border-color, #e8e7e0);
           box-shadow: 0 1px 4px rgba(0,0,0,0.04);
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
@@ -75,7 +78,7 @@ export default function Navbar() {
         .klypto-logo-name {
           font-size: 17px;
           font-weight: 600;
-          color: #1a1a1a;
+          color: var(--text-main, #1a1a1a);
           letter-spacing: -0.3px;
         }
         .klypto-links {
@@ -97,25 +100,25 @@ export default function Navbar() {
           border-radius: 6px;
           font-size: 13.5px;
           font-weight: 500;
-          color: #555;
+          color: var(--text-muted, #555);
           text-decoration: none;
           transition: background 0.12s, color 0.12s;
           white-space: nowrap;
         }
         .klypto-link:hover {
-          background: #f5f4f0;
-          color: #1a1a1a;
+          background: var(--bg-card-hover, #f5f4f0);
+          color: var(--text-main, #1a1a1a);
         }
         .klypto-link.active {
-          background: #eef4fc;
+          background: var(--bg-main, #eef4fc);
           color: #185FA5;
         }
         .klypto-dropdown {
           position: absolute;
           top: 100%;
           left: 0;
-          background: #ffffff;
-          border: 1px solid #e8e7e0;
+          background: var(--bg-card, #ffffff);
+          border: 1px solid var(--border-color, #e8e7e0);
           border-radius: 8px;
           box-shadow: 0 4px 12px rgba(0,0,0,0.08);
           padding: 6px 0;
@@ -137,18 +140,18 @@ export default function Navbar() {
           padding: 8px 16px;
           font-size: 13px;
           font-weight: 500;
-          color: #555;
+          color: var(--text-muted, #555);
           text-decoration: none;
           transition: background 0.12s, color 0.12s;
           text-align: left;
           white-space: nowrap;
         }
         .klypto-dropdown-item:hover {
-          background: #f5f4f0;
-          color: #1a1a1a;
+          background: var(--bg-card-hover, #f5f4f0);
+          color: var(--text-main, #1a1a1a);
         }
         .klypto-dropdown-item.active {
-          background: #eef4fc;
+          background: var(--bg-main, #eef4fc);
           color: #185FA5;
         }
         .klypto-avatar {
@@ -163,7 +166,7 @@ export default function Navbar() {
           align-items: center;
           justify-content: center;
           text-decoration: none;
-          border: 2px solid #d0dff5;
+          border: 2px solid var(--border-color, #d0dff5);
           transition: border-color 0.12s;
           flex-shrink: 0;
         }
@@ -223,12 +226,103 @@ export default function Navbar() {
           </ul>
 
           {/* Avatar */}
-          <Link
-            to="/profile"
-            className={`klypto-avatar${location.pathname === "/profile" ? " active" : ""}`}
-          >
-            {initials}
-          </Link>
+          <div style={{ position: "relative" }}>
+            <div
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              className={`klypto-avatar${location.pathname === "/profile" ? " active" : ""}`}
+              style={{ cursor: "pointer" }}
+            >
+              {initials}
+            </div>
+
+            {dropdownOpen && (
+              <>
+                <div
+                  onClick={() => setDropdownOpen(false)}
+                  style={{
+                    position: "fixed",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    zIndex: 999,
+                    cursor: "default",
+                  }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "34px",
+                    right: 0,
+                    backgroundColor: "var(--bg-card, #ffffff)",
+                    border: "1px solid var(--border-color, #e2e8f0)",
+                    borderRadius: "8px",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                    zIndex: 1000,
+                    minWidth: "120px",
+                    display: "flex",
+                    flexDirection: "column",
+                    padding: "4px 0",
+                  }}
+                >
+                  <button
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      navigate("/profile");
+                    }}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "var(--text-main, #131722)",
+                      padding: "8px 12px",
+                      textAlign: "left",
+                      fontSize: "12px",
+                      cursor: "pointer",
+                      width: "100%",
+                      fontFamily: "inherit",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.target.style.backgroundColor =
+                        "var(--bg-card-hover, #f1f5f9)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.target.style.backgroundColor = "transparent")
+                    }
+                  >
+                    Profile Page
+                  </button>
+                  <button
+                    onClick={() => {
+                      setDropdownOpen(false);
+
+                      logout();
+                      navigate("/login");
+                    }}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "#ef4444",
+                      padding: "8px 12px",
+                      textAlign: "left",
+                      fontSize: "12px",
+                      cursor: "pointer",
+                      width: "100%",
+                      fontFamily: "inherit",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.target.style.backgroundColor =
+                        "var(--bg-card-hover, #f1f5f9)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.target.style.backgroundColor = "transparent")
+                    }
+                  >
+                    Logout
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </nav>
     </>

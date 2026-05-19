@@ -16,11 +16,13 @@ import {
 } from "react-icons/fi";
 import { FaRegKeyboard } from "react-icons/fa";
 import { getUser } from "../../../util/common";
+import { useTheme } from "../../../context/ThemeContext";
 
 
 export default function ProfileDropDown() {
   const [open, setOpen] = useState(false);
-  const [dark, setDark] = useState(false);
+  const { theme, toggleTheme } = useTheme();
+  const dark = theme === 'dark';
   const [drawingsPanel, setDrawingsPanel] = useState(true);
   const [language, setLanguage] = useState("English (India)");
   const navigate = useNavigate();
@@ -82,8 +84,8 @@ export default function ProfileDropDown() {
           left: open ? 0 : -300,
           width: 264,
           height: "100vh",
-          background: "#ffffff",
-          boxShadow: "2px 0 16px rgba(0,0,0,0.10)",
+          background: "var(--bg-card, #ffffff)",
+          boxShadow: "2px 0 16px var(--shadow-color, rgba(0,0,0,0.10))",
           zIndex: 1050,
           display: "flex",
           flexDirection: "column",
@@ -201,7 +203,7 @@ export default function ProfileDropDown() {
             icon={<FiMoon size={14} />}
             label="Dark theme"
             value={dark}
-            onChange={() => setDark(!dark)}
+            onChange={toggleTheme}
           />
           <ToggleItem
             icon={<FiLayout size={14} />}
@@ -238,11 +240,11 @@ export default function ProfileDropDown() {
               <kbd
                 style={{
                   fontSize: 11,
-                  background: "#f1f3f5",
-                  border: "1px solid #dee2e6",
+                  background: "var(--bg-main, #f1f3f5)",
+                  border: "1px solid var(--border-color, #dee2e6)",
                   borderRadius: 4,
                   padding: "1px 5px",
-                  color: "#495057",
+                  color: "var(--text-muted, #495057)",
                   fontFamily: "monospace",
                   whiteSpace: "nowrap",
                 }}
@@ -287,7 +289,7 @@ const SectionLabel = ({ label }) => (
     style={{
       fontSize: 10,
       fontWeight: 700,
-      color: "#adb5bd",
+      color: "var(--text-muted, #adb5bd)",
       letterSpacing: "0.85px",
       textTransform: "uppercase",
       padding: "10px 16px 3px",
@@ -301,14 +303,14 @@ const SectionLabel = ({ label }) => (
 const Item = ({ icon, label, right, onClick, danger, badge }) => (
   <div
     onClick={onClick}
-    onMouseEnter={(e) => (e.currentTarget.style.background = "#f8f9fa")}
+    onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-card-hover, #f8f9fa)")}
     onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
     style={{
       display: "flex",
       alignItems: "center",
       padding: "7px 16px",
       cursor: "pointer",
-      color: danger ? "#dc3545" : "#212529",
+      color: danger ? "#dc3545" : "var(--text-main, #212529)",
       fontSize: 13,
       gap: 0,
       userSelect: "none",
@@ -362,7 +364,7 @@ const ToggleItem = ({ icon, label, value, onChange }) => (
       alignItems: "center",
       padding: "7px 16px",
       fontSize: 13,
-      color: "#212529",
+      color: "var(--text-main, #212529)",
       userSelect: "none",
       gap: 0,
     }}
@@ -416,5 +418,5 @@ const ToggleItem = ({ icon, label, value, onChange }) => (
 );
 
 const Divider = () => (
-  <div style={{ height: 1, background: "#f1f3f5", margin: "3px 0" }} />
+  <div style={{ height: 1, background: "var(--border-color, #f1f3f5)", margin: "3px 0" }} />
 );
