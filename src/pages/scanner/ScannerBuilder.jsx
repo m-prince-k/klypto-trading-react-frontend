@@ -33,7 +33,7 @@ import {
   PRICE_FIELDS,
 } from "../../util/scannerFunctions";
 import BacktestResults from "../../components/scanner/BacktestResults";
-import Navbar from "../../components/Navbar";
+import Navbar from "../../components/layout/Navbar";
 import { useLocation, useParams } from "react-router-dom";
 
 export default function ScannerBuilder() {
@@ -63,7 +63,6 @@ export default function ScannerBuilder() {
 
   const location = useLocation();
   const { scanSlug } = useParams();
-
 
   const getUser = () => {
     try {
@@ -114,52 +113,50 @@ export default function ScannerBuilder() {
   //     .catch(console.error);
   // }, [scannerOptions, scanSlug, userId, editingScanId, location.state?.editScan]);
 
+  useEffect(() => {
+    const editScanState = location.state?.editScan;
+
+    if (editScanState) {
+      setEditingScan(editScanState);
+      loadScanIntoBuilder(editScanState);
+      setRunScanTrigger((prev) => !prev);
+      toast.info(`Editing: ${editScanState.label || editScanState.name}`);
+    }
+  }, [location.state]);
 
   useEffect(() => {
-  const editScanState = location.state?.editScan;
+    if (!scanSlug || !userId) return;
 
-  if (editScanState) {
-    setEditingScan(editScanState);
-    loadScanIntoBuilder(editScanState);
-    setRunScanTrigger((prev) => !prev);
-    toast.info(`Editing: ${editScanState.label || editScanState.name}`);
-  }
-}, [location.state]);
+    const fetchScan = async () => {
+      try {
+        const res = await apiService.post("/api/fetchAuthSaveScans", {
+          user_id: userId,
+        });
 
-useEffect(() => {
-  if (!scanSlug || !userId) return;
+        const allScans = Array.isArray(res.data)
+          ? res.data
+          : (res.data?.scans ?? []);
 
-  const fetchScan = async () => {
-    try {
-      const res = await apiService.post("/api/fetchAuthSaveScans", {
-        user_id: userId,
-      });
+        const scan = allScans.find(
+          (s) => String(s.id) === String(editingScanId),
+        );
 
-      const allScans = Array.isArray(res.data)
-        ? res.data
-        : res.data?.scans ?? [];
-
-      const scan = allScans.find(
-        (s) => String(s.id) === String(editingScanId)
-      );
-
-      if (scan) {
-        setEditingScan(scan);
-        loadScanIntoBuilder(scan);
-        setRunScanTrigger((prev) => !prev);
-        toast.info(`Loaded: ${scan.label || scan.name}`);
-      } else {
-        toast.error("Scan not found");
+        if (scan) {
+          setEditingScan(scan);
+          loadScanIntoBuilder(scan);
+          setRunScanTrigger((prev) => !prev);
+          toast.info(`Loaded: ${scan.label || scan.name}`);
+        } else {
+          toast.error("Scan not found");
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load scan");
       }
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to load scan");
-    }
-  };
+    };
 
-  fetchScan();
-}, [scanSlug, userId, editingScanId]);
-
+    fetchScan();
+  }, [scanSlug, userId, editingScanId]);
 
   function mapConditionToRules(conditions = []) {
     return conditions.map((cond) => {
@@ -1270,10 +1267,12 @@ useEffect(() => {
       <Navbar />
       <div className="bg-slate-50 py-5">
         <h5 className=" fs-4  fw-semibold text-start px-4 text-dark mb-1">
-          {editingScan ? (editingScan.label || editingScan.name) : "Scanner"}
+          {editingScan ? editingScan.label || editingScan.name : "Scanner"}
         </h5>
         {editingScan?.description && (
-          <p className="px-4 text-muted text-left small mb-3">{editingScan.description}</p>
+          <p className="px-4 text-muted text-left small mb-3">
+            {editingScan.description}
+          </p>
         )}
 
         <Card className="border-0 shadow-none mx-4 my-1">
@@ -1673,10 +1672,10 @@ useEffect(() => {
       </div>
 
       {saveScan && (
-      <div ref={backtestRef}>
-        <BacktestResults />
-      </div>
-       )} 
+        <div ref={backtestRef}>
+          <BacktestResults />
+        </div>
+      )}
 
       <Modal
         show={timeframePromptConfig.isOpen}

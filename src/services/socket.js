@@ -1,0 +1,11 @@
+import { io } from "socket.io-client";
+
+const socket = io("http://192.168.1.7:7000", {
+// const socket = io("http://localhost:9000", {
+
+  transports: ["websocket", "polling"],
+  reconnection: true,
+});
+console.log("SOCKET FILE LOADED");
+
+export default socket;

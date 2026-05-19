@@ -74,6 +74,7 @@ export default function ChartHeader({
     <div className="w-100 d-flex flex-column gap-3 small">
       <div className="d-flex align-items-center gap-3 px-3 py-2 bg-white shadow-sm">
         {/* Name/Symbol Button */}
+        <ProfileDropDown /> 
         <button
           title="Symbol Search"
           onClick={() => openModal("Symbol Search")}
@@ -220,7 +221,7 @@ export default function ChartHeader({
             </button>
           )}
         </div>
-          <ProfileDropDown />
+          
       </div>
 
       {/* MODAL (UNCHANGED) */}

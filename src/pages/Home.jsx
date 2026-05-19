@@ -1,6 +1,6 @@
 import React from "react";
 import { Container, Row, Col, Button, Card } from "react-bootstrap";
-import { Helmet } from "react-helmet";
+import { Helmet } from "react-helmet-async";
 import "bootstrap/dist/css/bootstrap.min.css";
 import SEO from "../components/SEO";
 

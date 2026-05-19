@@ -15,14 +15,8 @@ import {
   FiUser,
 } from "react-icons/fi";
 import { FaRegKeyboard } from "react-icons/fa";
+import { getUser } from "../../../util/common";
 
-const getUser = () => {
-  try {
-    return JSON.parse(localStorage.getItem("session") || "null");
-  } catch {
-    return null;
-  }
-};
 
 export default function ProfileDropDown() {
   const [open, setOpen] = useState(false);
@@ -42,18 +36,29 @@ export default function ProfileDropDown() {
         onClick={() => setOpen(true)}
         style={{
           background: "none",
-          border: "1px solid #dee2e6",
-          borderRadius: 8,
-          padding: "6px 10px",
           cursor: "pointer",
-          color: "#495057",
           display: "flex",
-          alignItems: "center",
           gap: 6,
-          fontSize: 14,
+          fontSize: 16,
         }}
       >
-        <FiMenu size={16} />
+        <div
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: "50%",
+            backgroundColor: "#0d6efd",
+            color: "#fff",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 13,
+            fontWeight: 600,
+            textTransform: "uppercase",
+          }}
+        >
+          {userInitial}
+        </div>
       </button>
 
       {/* ===== OVERLAY — very light, no blur ===== */}
@@ -175,12 +180,12 @@ export default function ProfileDropDown() {
           <Item
             icon={<FiHome size={14} />}
             label="Home"
-            onClick={() => navigate("/home")}
+            onClick={() => navigate("/dashboard")}
           />
           <Item
             icon={<FiHelpCircle size={14} />}
-            label="Help Center"
-            onClick={() => alert("Help Center")}
+            label="Scanner"
+            onClick={() => navigate("/scannerBuilder")}
           />
           <Item
             icon={<FiZap size={14} />}

@@ -1,0 +1,741 @@
+/* ============================================================
+   ARBITRAGE DASHBOARD — DARK THEME
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* ── Root / Wrapper ────────────────────────────────────────── */
+.arbitrage-wrapper {
+  display: flex;
+  min-height: 100vh;
+  background-color: #0d1117;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #e2e8f0;
+}
+
+/* ── Main Content ──────────────────────────────────────────── */
+.arbitrage-main {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* ── Top Header ────────────────────────────────────────────── */
+.main-header {
+  height: 70px;
+  background-color: #161b22;
+  border-bottom: 1px solid #21262d;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  flex-shrink: 0;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sidebar-toggle-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #8b949e;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 6px;
+  border-radius: 6px;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.sidebar-toggle-btn:hover {
+  background-color: #21262d;
+  color: #e2e8f0;
+}
+
+.header-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #f0f6fc;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.notification-bell-container {
+  position: relative;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.bell-icon {
+  font-size: 20px;
+  color: #8b949e;
+  transition: color 0.2s;
+}
+
+.bell-icon:hover {
+  color: #e2e8f0;
+}
+
+.bell-badge {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 7px;
+  height: 7px;
+  background-color: #3fb950;
+  border-radius: 50%;
+  border: 1.5px solid #161b22;
+}
+
+.header-refresh-btn {
+  background-color: transparent;
+  border: 1px solid #3fb950;
+  color: #3fb950;
+  font-weight: 500;
+  font-size: 13px;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.header-refresh-btn:hover {
+  background-color: rgba(63, 185, 80, 0.08);
+}
+
+/* ── Content Container ─────────────────────────────────────── */
+.content-container {
+  padding: 24px 32px !important;
+}
+
+/* ── Filters Card ──────────────────────────────────────────── */
+.filters-card {
+  background-color: #161b22 !important;
+  border-radius: 12px !important;
+  border: 1px solid #21262d !important;
+}
+
+.select-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #8b949e;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.filter-select,
+.filter-input {
+  height: 40px;
+  border: 1px solid #30363d !important;
+  border-radius: 6px !important;
+  font-size: 13px;
+  color: #c9d1d9 !important;
+  background-color: #0d1117 !important;
+  padding: 0 12px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.filter-select:focus,
+.filter-input:focus {
+  border-color: #388bfd !important;
+  box-shadow: 0 0 0 3px rgba(56, 139, 253, 0.12) !important;
+  outline: none;
+}
+
+/* Dropdown arrow color fix for dark */
+.filter-select option {
+  background-color: #161b22;
+  color: #c9d1d9;
+}
+
+/* ── Toggle ────────────────────────────────────────────────── */
+.auto-refresh-wrapper {
+  display: flex;
+  align-items: center;
+  height: 40px;
+}
+
+.auto-refresh-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #8b949e;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #30363d;
+  transition: 0.3s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #8b949e;
+  transition: 0.3s;
+}
+
+input:checked + .slider {
+  background-color: rgba(63, 185, 80, 0.25);
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+  background-color: #3fb950;
+}
+
+.slider.round { border-radius: 24px; }
+.slider.round:before { border-radius: 50%; }
+
+/* ── Filter Buttons ────────────────────────────────────────── */
+.filter-divider {
+  border-top: 1px solid #21262d !important;
+}
+
+.btn-reset {
+  background-color: #21262d;
+  color: #8b949e;
+  border: 1px solid #30363d;
+  font-weight: 500;
+  font-size: 13px;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.btn-reset:hover {
+  background-color: #30363d;
+  color: #e2e8f0;
+}
+
+.btn-apply {
+  background-color: #238636;
+  color: #ffffff;
+  border: 1px solid #2ea043;
+  font-weight: 500;
+  font-size: 13px;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.btn-apply:hover {
+  background-color: #2ea043;
+}
+
+/* ── Stats Cards ───────────────────────────────────────────── */
+.stats-card {
+  border-radius: 12px !important;
+  border: 1px solid #21262d !important;
+  background-color: #161b22 !important;
+  transition: transform 0.2s, border-color 0.2s;
+  overflow: hidden;
+}
+
+.stats-card:hover {
+  transform: translateY(-2px);
+  border-color: #30363d !important;
+}
+
+.card-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.stats-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.stats-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: #f0f6fc;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.5px;
+  /* Prevent layout shift when value text changes length */
+  min-width: 120px;
+  white-space: nowrap;
+}
+
+.stats-trend {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.text-success-dark {
+  color: #3fb950;
+}
+
+.trend-subtext {
+  font-size: 11px;
+  color: #6e7681;
+  font-weight: 400;
+}
+
+.stats-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  align-self: flex-start;
+  letter-spacing: 0.4px;
+}
+
+.bg-soft-blue-badge {
+  background-color: rgba(56, 139, 253, 0.15);
+}
+
+.badge-blue-text {
+  color: #79c0ff;
+}
+
+/* Icon Wrappers */
+.stats-icon-wrapper {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stats-icon { font-size: 20px; }
+
+.bg-soft-blue  { background-color: rgba(56, 139, 253, 0.1); }
+.bg-soft-green { background-color: rgba(63, 185, 80, 0.1); }
+.bg-soft-purple{ background-color: rgba(188, 140, 255, 0.1); }
+.bg-soft-orange{ background-color: rgba(210, 153, 34, 0.1); }
+
+.icon-blue   { color: #79c0ff; }
+.icon-green  { color: #3fb950; }
+.icon-purple { color: #bc8cff; }
+.icon-orange { color: #d29922; }
+
+/* ── Table Card ────────────────────────────────────────────── */
+.opportunities-card {
+  background-color: #161b22 !important;
+  border-radius: 12px !important;
+  border: 1px solid #21262d !important;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.table-header-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #f0f6fc;
+  letter-spacing: -0.3px;
+}
+
+/* Search Bar */
+.search-bar-wrapper {
+  position: relative;
+  width: 220px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6e7681;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.table-search-input {
+  height: 36px;
+  padding-left: 34px !important;
+  border: 1px solid #30363d !important;
+  border-radius: 6px !important;
+  font-size: 13px;
+  color: #c9d1d9 !important;
+  background-color: #0d1117 !important;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.table-search-input:focus {
+  border-color: #388bfd !important;
+  box-shadow: 0 0 0 3px rgba(56, 139, 253, 0.1) !important;
+  outline: none;
+}
+
+.table-search-input::placeholder {
+  color: #6e7681;
+}
+
+.btn-export {
+  background-color: #21262d;
+  color: #c9d1d9;
+  border: 1px solid #30363d;
+  font-weight: 500;
+  font-size: 13px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-export:hover {
+  background-color: #30363d;
+  color: #e2e8f0;
+}
+
+/* ── Table ─────────────────────────────────────────────────── */
+.arbitrage-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+}
+
+.arbitrage-table thead tr {
+  background-color: #0d1117;
+}
+
+.arbitrage-table th {
+  color: #8b949e;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 13px 18px;
+  border-bottom: 1px solid #21262d;
+  white-space: nowrap;
+}
+
+.arbitrage-table td {
+  padding: 14px 18px;
+  font-size: 13px;
+  color: #c9d1d9;
+  border-bottom: 1px solid #161b22;
+  white-space: nowrap;
+}
+
+.table-row {
+  transition: background-color 0.15s;
+}
+
+.table-row:hover {
+  background-color: rgba(255, 255, 255, 0.025);
+}
+
+.table-row:last-child td {
+  border-bottom: none;
+}
+
+.th-number, .td-number {
+  width: 48px;
+  color: #6e7681 !important;
+  font-size: 12px !important;
+}
+
+.td-instrument {
+  color: #f0f6fc !important;
+  font-weight: 600;
+}
+
+.cursor-pointer { cursor: pointer; }
+
+.sort-icon-active { color: #3fb950; }
+.sort-icon-muted  { color: #6e7681; opacity: 0.5; }
+
+/* Exchange Badge */
+.exchange-badge {
+  font-weight: 500;
+  font-size: 12px;
+  color: #c9d1d9;
+}
+
+.exchange-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.exchange-dot.binance {
+  background-color: #f3ba2f;
+  box-shadow: 0 0 5px rgba(243, 186, 47, 0.5);
+}
+
+.exchange-dot.delta {
+  background-color: #388bfd;
+  box-shadow: 0 0 5px rgba(56, 139, 253, 0.5);
+}
+
+/* Spread values */
+.spread-value {
+  color: #3fb950 !important;
+  font-weight: 600;
+}
+
+/* Trade Button */
+.btn-trade {
+  border: 1px solid #238636;
+  background-color: transparent;
+  color: #3fb950;
+  font-weight: 500;
+  font-size: 12px;
+  padding: 4px 14px;
+  border-radius: 5px;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.btn-trade:hover {
+  background-color: rgba(63, 185, 80, 0.08);
+  border-color: #3fb950;
+}
+
+/* Empty state */
+.empty-state {
+  color: #6e7681;
+  font-size: 14px;
+  padding: 48px 20px !important;
+}
+
+/* ── Price Flash Animations ────────────────────────────────── */
+/*
+  IMPORTANT: price-cell uses a fixed min-width based on the widest
+  possible value to prevent layout shifts during flash animations.
+  The color/animation changes only affect color, not size or layout.
+*/
+.price-cell {
+  /* Reserve enough space so text color changes don't cause reflow */
+  font-variant-numeric: tabular-nums;
+  /* Transition only color, never dimensions */
+  transition: color 0.3s ease;
+}
+
+.flash-up {
+  color: #3fb950 !important;
+  font-weight: 600;
+  animation: highlight-green-dark 1s ease-out forwards;
+}
+
+.flash-down {
+  color: #f85149 !important;
+  font-weight: 600;
+  animation: highlight-red-dark 1s ease-out forwards;
+}
+
+/* Keyframes only animate background-color — never width/height/padding */
+@keyframes highlight-green-dark {
+  0%   { background-color: rgba(63, 185, 80, 0.18); }
+  100% { background-color: transparent; }
+}
+
+@keyframes highlight-red-dark {
+  0%   { background-color: rgba(248, 81, 73, 0.18); }
+  100% { background-color: transparent; }
+}
+
+/* ── Pagination ────────────────────────────────────────────── */
+.entries-info {
+  font-size: 12.5px;
+  color: #6e7681;
+}
+
+.custom-pagination {
+  display: flex;
+  align-items: center;
+}
+
+.pagination-arrow {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid #30363d;
+  background-color: #21262d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8b949e;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.pagination-arrow:hover:not(:disabled) {
+  background-color: #30363d;
+  color: #e2e8f0;
+}
+
+.pagination-arrow:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.pagination-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid #30363d;
+  background-color: #21262d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #8b949e;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin: 0 2px;
+  padding: 0;
+}
+
+.pagination-number:hover {
+  background-color: #30363d;
+  color: #e2e8f0;
+}
+
+.pagination-number.active {
+  background-color: #238636;
+  color: #ffffff;
+  border-color: #2ea043;
+}
+
+.pagination-ellipsis {
+  border: none !important;
+  background-color: transparent !important;
+  color: #6e7681 !important;
+  cursor: default !important;
+}
+
+/* ── Sub-Component Mode ────────────────────────────────────── */
+.arbitrage-main-sub {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background-color: transparent;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.arbitrage-main-sub-content {
+  width: 100%;
+  background-color: transparent;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media (max-width: 1200px) {
+  .content-container {
+    padding: 16px 20px !important;
+  }
+  .main-header {
+    padding: 0 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-header {
+    height: auto;
+    padding: 14px 20px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .header-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .search-bar-wrapper {
+    width: 160px;
+  }
+
+  .stats-value {
+    font-size: 18px;
+    min-width: 80px;
+  }
+}
+
+/* ── FIX 1: Kill Bootstrap's white table override ── */
+.arbitrage-table.table {
+  --bs-table-bg: transparent;
+  --bs-table-striped-bg: transparent;
+  --bs-table-hover-bg: rgba(255, 255, 255, 0.025);
+  --bs-table-border-color: #21262d;
+  --bs-table-color: #c9d1d9;
+  color: #c9d1d9;
+}
+
+.arbitrage-table tbody tr {
+  background-color: #161b22 !important;
+}
+
+.arbitrage-table tbody tr td {
+  background-color: transparent !important;
+  color: #c9d1d9 !important;
+}
+
+.arbitrage-table tbody tr:hover td {
+  background-color: rgba(255, 255, 255, 0.025) !important;
+}
+
+/* ── FIX 2: Equal card heights in row 2 ── */
+.stats-card .card-body {
+  height: 100%;
+}
+
+.stats-card .card-left {
+  min-height: 88px;   /* matches badge card height */
+  justify-content: space-between;
+}
+
+/* ── FIX 3: Coin pair bright white ── */
+.td-instrument {
+  color: #f0f6fc !important;
+  font-weight: 600;
+}

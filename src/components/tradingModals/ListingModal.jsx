@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { Spinner } from "./Spinner";
 import apiService from "../../services/apiServices";
 import { useDebounce } from "../../util/common";
+import IndicatorAlert from "../indicator/IndicatorAlert";
 
 export const ListingModal = ({
   isOpen,
@@ -259,7 +260,7 @@ export const ListingModal = ({
 
         {title === "Alerts" && (
           <div>
-            <h1> Create Alert</h1>
+            <IndicatorAlert/>
           </div>
         )}
       </div>

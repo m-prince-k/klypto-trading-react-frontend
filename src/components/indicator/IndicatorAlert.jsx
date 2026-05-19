@@ -1,21 +1,13 @@
 import { useState } from "react";
 import { FaC } from "react-icons/fa6";
 import { IoMdClose } from "react-icons/io";
+
 export default function IndicatorAlert({ onClose, value, symbol, liveOhlcv }) {
   console.log("Live OHLCV in Alert:", liveOhlcv);
   return (
-    <div className="fixed inset-0 z-99 flex items-center mx-auto justify-center bg-black/40 p-3">
-      <div className="w-full max-w-[520px] bg-white rounded-md shadow-xl">
-        <div className="p-4 sm:p-5">
+      <div className="w-full h-[66px] overflow-y ">
+        <div className=" ">
           {/* Header */}
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base sm:text-lg font-semibold">
-              Create alert on {symbol}
-            </h2>
-            <button onClick={onClose} className="p-1 rounded hover:bg-gray-100">
-              <IoMdClose className="text-gray-500" />
-            </button>
-          </div>
 
           {/* Tabs */}
           <div className="flex gap-4 sm:gap-6 border-b mb-4 text-xs sm:text-sm overflow-x-auto">
@@ -121,6 +113,5 @@ export default function IndicatorAlert({ onClose, value, symbol, liveOhlcv }) {
           </div>
         </div>
       </div>
-    </div>
   );
 }

@@ -1,14 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { BarChart2, ScanSearch, LayoutDashboard, User } from "lucide-react";
-
-const getUser = () => {
-  try {
-    return JSON.parse(localStorage.getItem("session") || "null");
-  } catch {
-    return null;
-  }
-};
+import { getUser } from "../../util/common";
 
 export default function Navbar() {
   const location = useLocation();
@@ -26,10 +19,14 @@ export default function Navbar() {
       label: "Create Scan",
       to: "/scannerBuilder",
       icon: <ScanSearch size={15} />,
+      dropdown: [
+        { label: "Scan Dashboard", to: "/scan_dashboard" },
+        { label: "Alert Listing", to: "/alert_dashboard" },
+      ],
     },
     {
       label: "Dashboard",
-      to: "/scan_dashboard",
+      to: "/cryptoedge",
       icon: <LayoutDashboard size={15} />,
     },
   ];
@@ -45,7 +42,7 @@ export default function Navbar() {
         .klypto-nav {
           position: sticky;
           top: 0;
-          z-index: 9;
+          z-index: 99;
           background: #fff;
           border-bottom: 1px solid #e8e7e0;
           box-shadow: 0 1px 4px rgba(0,0,0,0.04);
@@ -89,6 +86,9 @@ export default function Navbar() {
           margin: 0;
           padding: 0;
         }
+        .klypto-dropdown-wrapper {
+          position: relative;
+        }
         .klypto-link {
           display: flex;
           align-items: center;
@@ -107,6 +107,47 @@ export default function Navbar() {
           color: #1a1a1a;
         }
         .klypto-link.active {
+          background: #eef4fc;
+          color: #185FA5;
+        }
+        .klypto-dropdown {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          background: #ffffff;
+          border: 1px solid #e8e7e0;
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+          padding: 6px 0;
+          min-width: 160px;
+          display: flex;
+          flex-direction: column;
+          opacity: 0;
+          visibility: hidden;
+          transform: translateY(8px);
+          transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+          z-index: 999;
+        }
+        .klypto-dropdown-wrapper:hover .klypto-dropdown {
+          opacity: 1;
+          visibility: visible;
+          transform: translateY(2px);
+        }
+        .klypto-dropdown-item {
+          padding: 8px 16px;
+          font-size: 13px;
+          font-weight: 500;
+          color: #555;
+          text-decoration: none;
+          transition: background 0.12s, color 0.12s;
+          text-align: left;
+          white-space: nowrap;
+        }
+        .klypto-dropdown-item:hover {
+          background: #f5f4f0;
+          color: #1a1a1a;
+        }
+        .klypto-dropdown-item.active {
           background: #eef4fc;
           color: #185FA5;
         }
@@ -152,8 +193,11 @@ export default function Navbar() {
 
           {/* Nav links */}
           <ul className="klypto-links">
-            {navLinks.map(({ label, to, icon }) => (
-              <li key={to}>
+            {navLinks.map(({ label, to, icon, dropdown }) => (
+              <li
+                key={to}
+                className={dropdown ? "klypto-dropdown-wrapper" : ""}
+              >
                 <Link
                   to={to}
                   className={`klypto-link${isActive(to) ? " active" : ""}`}
@@ -161,6 +205,19 @@ export default function Navbar() {
                   {icon}
                   <span className="link-label">{label}</span>
                 </Link>
+                {dropdown && (
+                  <div className="klypto-dropdown">
+                    {dropdown.map((item) => (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        className={`klypto-dropdown-item${isActive(item.to) ? " active" : ""}`}
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </li>
             ))}
           </ul>

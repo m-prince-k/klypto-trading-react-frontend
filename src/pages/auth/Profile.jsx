@@ -3,12 +3,19 @@ import { Link, useLocation } from "react-router-dom";
 import ProfileSection from "../../components/auth/profile/ProfileSection";
 import ScansSection from "../../components/auth/profile/ScanSection";
 import AlertSection from "../../components/auth/profile/AlertSection";
-import Navbar from "../../components/Navbar";
+import Navbar from "../../components/layout/Navbar";
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 
 const ScansIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 16 16"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+  >
     <rect x="2" y="2" width="12" height="12" rx="2" />
     <line x1="5" y1="5.5" x2="11" y2="5.5" />
     <line x1="5" y1="8" x2="11" y2="8" />
@@ -17,21 +24,42 @@ const ScansIcon = () => (
 );
 
 const AlertsIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 16 16"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+  >
     <path d="M8 2a5 5 0 015 5v2l1.5 2.5H1.5L3 9V7a5 5 0 015-5z" />
     <path d="M6.5 12.5a1.5 1.5 0 003 0" />
   </svg>
 );
 
 const ProfileIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 16 16"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+  >
     <circle cx="8" cy="5.5" r="2.5" />
     <path d="M3 13c0-2.761 2.239-4 5-4s5 1.239 5 4" />
   </svg>
 );
 
 const PlusIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 16 16"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+  >
     <line x1="8" y1="2" x2="8" y2="14" />
     <line x1="2" y1="8" x2="14" y2="8" />
   </svg>
@@ -40,9 +68,9 @@ const PlusIcon = () => (
 // ─── Tab config ───────────────────────────────────────────────────────────────
 
 const TABS = [
-  { to: "/scan_dashboard",  icon: <ScansIcon />,   label: "Scans" },
-  { to: "/alert_dashboard", icon: <AlertsIcon />,  label: "Alerts" },
-  { to: "/profile",         icon: <ProfileIcon />, label: "Profile" },
+  { to: "/scan_dashboard", icon: <ScansIcon />, label: "Scans" },
+  { to: "/alert_dashboard", icon: <AlertsIcon />, label: "Alerts" },
+  { to: "/profile", icon: <ProfileIcon />, label: "Profile" },
 ];
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
@@ -141,15 +169,27 @@ function PageLayout({ children }) {
 // ─── Pages ────────────────────────────────────────────────────────────────────
 
 export function ScansPage() {
-  return <PageLayout><ScansSection /></PageLayout>;
+  return (
+    <PageLayout>
+      <ScansSection />
+    </PageLayout>
+  );
 }
 
 export function AlertsPage() {
-  return <PageLayout><AlertSection /></PageLayout>;
+  return (
+    <PageLayout>
+      <AlertSection />
+    </PageLayout>
+  );
 }
 
 export function ProfilePage() {
-  return <PageLayout><ProfileSection /></PageLayout>;
+  return (
+    <PageLayout>
+      <ProfileSection />
+    </PageLayout>
+  );
 }
 
 export default ProfilePage;

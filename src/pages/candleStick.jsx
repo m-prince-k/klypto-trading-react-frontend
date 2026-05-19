@@ -40,12 +40,15 @@ import useChartFunctions from "../util/useChartFunctions";
 import { indicatorComponents } from "../components/indicator/IndicatorIndex";
 import { Spinner } from "../components/tradingModals/Spinner";
 import IndicatorBar from "../components/indicator/IndicatorBar";
+import WatchlistPanel from "../components/watchlist/WatchlistPanel";
+import DetailsPanel from "../components/watchlist/DetailsPanel";
 import {
   indicatorConfigDefault,
   resolvePaneKey,
   indicatorStyleDefault,
   PANE_INDICATORS,
 } from "../util/indicatorFunctions";
+import RightSidebar from "../components/layout/RightSidebar"
 
 export default function Candlestick() {
   const chartRef = useRef();
@@ -84,6 +87,20 @@ export default function Candlestick() {
   const [activeSourceIndicator, setActiveSourceIndicator] = useState(null);
   const [indicatorVisibility, setIndicatorVisibility] = useState({});
   const [activeBarIndicator, setActiveBarIndicator] = useState("");
+  
+  // Watchlist & Details state
+  const [isWatchlistOpen, setIsWatchlistOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isAlertsOpen, setIsAlertsOpen] = useState(false);
+  const [activeWatchlistCurrency, setActiveWatchlistCurrency] = useState(null);
+
+  // Keep activeWatchlistCurrency in sync with selectedCurrency from listing modal
+  useEffect(() => {
+    if (selectedCurrency) {
+      setActiveWatchlistCurrency(selectedCurrency);
+    }
+  }, [selectedCurrency]);
+
   const prevTimeframeRef = useRef(timeframeValue);
   const prevCurrencyRef = useRef(selectedCurrency);
 
@@ -409,56 +426,56 @@ export default function Candlestick() {
     };
   }, []); // Run only once
 
-  useEffect(() => {
-    //   WebSocket Trades
-    const socket = new WebSocket("wss://socket.delta.exchange");
-    socket.onopen = () => {
-      socket.send(
-        JSON.stringify({
-          type: "subscribe",
-          payload: {
-            channels: [
-              {
-                name: "v2/ticker",
-                symbols: [selectedCurrency || "BTCUSD"],
-              },
-            ],
-          },
-        }),
-      );
-    };
+  // useEffect(() => {
+  //   //   WebSocket Trades
+  //   const socket = new WebSocket("wss://socket.delta.exchange");
+  //   socket.onopen = () => {
+  //     socket.send(
+  //       JSON.stringify({
+  //         type: "subscribe",
+  //         payload: {
+  //           channels: [
+  //             {
+  //               name: "v2/ticker",
+  //               symbols: [selectedCurrency || "BTCUSD"],
+  //             },
+  //           ],
+  //         },
+  //       }),
+  //     );
+  //   };
 
-    let currentCandle = null;
-    socket.onmessage = (event) => {
-      const msg = JSON.parse(event.data);
-      if (!msg?.mark_price || !msg?.timestamp) return;
+  //   let currentCandle = null;
+  //   socket.onmessage = (event) => {
+  //     const msg = JSON.parse(event.data);
+  //     if (!msg?.mark_price || !msg?.timestamp) return;
 
-      const price = Number(msg.mark_price);
-      const intervalSec = TIMEFRAME_TO_SECONDS[timeframeValue];
-      const time = Math.floor(msg.timestamp / intervalSec) * intervalSec;
+  //     const price = Number(msg.mark_price);
+  //     const intervalSec = TIMEFRAME_TO_SECONDS[timeframeValue];
+  //     const time = Math.floor(msg.timestamp / intervalSec) * intervalSec;
 
-      if (!currentCandle || currentCandle.time !== time) {
-        currentCandle = {
-          time,
-          open: price,
-          high: price,
-          low: price,
-          close: price,
-        };
-        setLiveOhlcv(currentCandle);
-      } else {
-        currentCandle.high = Math.max(currentCandle.high, price);
-        currentCandle.low = Math.min(currentCandle.low, price);
-        currentCandle.close = price;
+  //     if (!currentCandle || currentCandle.time !== time) {
+  //       currentCandle = {
+  //         time,
+  //         open: price,
+  //         high: price,
+  //         low: price,
+  //         close: price,
+  //       };
+  //       setLiveOhlcv(currentCandle);
+  //     } else {
+  //       currentCandle.high = Math.max(currentCandle.high, price);
+  //       currentCandle.low = Math.min(currentCandle.low, price);
+  //       currentCandle.close = price;
 
-        setLiveOhlcv({ ...currentCandle }); // ← add this line
-      }
-    };
+  //       setLiveOhlcv({ ...currentCandle }); // ← add this line
+  //     }
+  //   };
 
-    return () => {
-      socket.close();
-    };
-  }, [selectedCurrency, timeframeValue]);
+  //   return () => {
+  //     socket.close();
+  //   };
+  // }, [selectedCurrency, timeframeValue]);
 
   const toggleIndicator = useCallback((indicator) => {
     setSelectedIndicator((prev) => {
@@ -943,228 +960,273 @@ export default function Candlestick() {
           </div>
 
           <div
-            className="row"
-            ref={paneContainerRef}
             style={{
-              position: "relative",
-              width: getIndicatorChartProperties.width,
-              height: getIndicatorChartProperties.height,
+              display: "flex",
+              flexDirection: "row",
+              width: "100%",
+              height: "calc(100vh - 100px)",
+              overflow: "hidden",
+              backgroundColor: "#fff"
             }}
           >
-            {/* <div className="col-md-1 p-0 m-0"> */}
-            {/* <ChartLeftSidebar
-                chartRef={chartRef}
-                containerRef={containerRef}
-              /> */}
-            {indicatorLoading && (
-              <div
-                style={{
-                  position: "fixed",
-                  top: "50%",
-                  left: "50%",
-                  transform: "translate(-50%, -50%)",
-                  zIndex: 1000,
-                }}
-              >
-                <Spinner />
-              </div>
-            )}
-            {renderIndicators()}
-          </div>
-          {/* main chart */}
-          <div className="col-md-7">
+            {/* Left Content (Chart + Indicators) */}
             <div
-              ref={containerRef}
               style={{
-                width: ChartProprties.width,
-                height: ChartProprties.height,
-                position: "relative",
-                overflow: "hidden",
+                flex: 1,
                 display: "flex",
                 flexDirection: "column",
+                height: "100%",
+                overflow: "hidden",
+                transition: "flex 0.3s cubic-bezier(0.25, 1, 0.5, 1)"
               }}
             >
-              {mainChartLoading && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "50%",
-                    left: "50%",
-                    transform: "translate(-50%, -50%)",
-                    zIndex: 1000,
-                  }}
-                >
-                  <Spinner />
-                </div>
-              )}
-              {/* -------------------------------sub-header live Values----------------------- */}
-              <div className="flex px-2 top-2 z-10 absolute items-center gap-2 bg-slate-100 justify-start">
-                {/* LEFT: Symbol */}
-                <div className="text-sm text-slate-950">
-                  {selectedCurrency} : {timeframeValue} :
-                </div>
-                <div className="flex items-center justify-center">
-                  <div className="relative">
-                    {/* outer ring */}
-                    <span
-                      className={`absolute inset-0 rounded-full opacity-30 animate-ping ${isMarketOpen ? "bg-green-500" : "bg-red-400"}`}
-                    ></span>
+              <div
+                ref={containerRef}
+                style={{
+                  width: "100%",
+                  height: ChartProprties.height,
+                  position: "relative",
+                  overflow: "hidden",
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
+                {mainChartLoading && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "50%",
+                      left: "50%",
+                      transform: "translate(-50%, -50%)",
+                      zIndex: 1000,
+                    }}
+                  >
+                    <Spinner />
+                  </div>
+                )}
+                {/* -------------------------------sub-header live Values----------------------- */}
+                <div className="flex px-2 top-2 z-10 absolute items-center gap-2 bg-slate-100 justify-start">
+                  {/* LEFT: Symbol */}
+                  <div className="text-sm text-slate-950">
+                    {selectedCurrency} : {timeframeValue} :
+                  </div>
+                  <div className="flex items-center justify-center">
+                    <div className="relative">
+                      {/* outer ring */}
+                      <span
+                        className={`absolute inset-0 rounded-full opacity-30 animate-ping ${isMarketOpen ? "bg-green-500" : "bg-red-400"}`}
+                      ></span>
 
-                    {/* inner dot */}
-                    <span
-                      className={`relative block w-3 h-3 rounded-full ${isMarketOpen ? "bg-green-500" : "bg-red-400"}`}
-                    ></span>
+                      {/* inner dot */}
+                      <span
+                        className={`relative block w-3 h-3 rounded-full ${isMarketOpen ? "bg-green-500" : "bg-red-400"}`}
+                      ></span>
+                    </div>
+                  </div>
+
+                  {/* CENTER: Timeframes */}
+                  <div className="d-flex gap-2 align-items-center">
+                    {SINGLE_VALUE_CHARTS.includes(chartType) ? (
+                      // Line / Area / Baseline → Close only
+                      <h6 className="px-2 py-1 mb-0">
+                        <span className="text-primary">{liveOhlcv?.value}</span>
+                      </h6>
+                    ) : (
+                      // Other charts → OHLC
+                      <>
+                        <h6 className="px-2 py-1 mb-0">
+                          O: <span className={valueColor}>{liveOhlcv?.open}</span>
+                        </h6>
+                        <h6 className="px-2 py-1 mb-0">
+                          H: <span className={valueColor}>{liveOhlcv?.high}</span>
+                        </h6>
+                        <h6 className="px-2 py-1 mb-0">
+                          L: <span className={valueColor}>{liveOhlcv?.low}</span>
+                        </h6>
+                        <h6 className="px-2 py-1 mb-0">
+                          C:{" "}
+                          <span className={valueColor}>{liveOhlcv?.close}</span>
+                        </h6>
+                      </>
+                    )}
                   </div>
                 </div>
 
-                {/* CENTER: Timeframes */}
-                <div className="d-flex gap-2 align-items-center">
-                  {SINGLE_VALUE_CHARTS.includes(chartType) ? (
-                    // Line / Area / Baseline → Close only
-                    <h6 className="px-2 py-1 mb-0">
-                      <span className="text-primary">{liveOhlcv?.value}</span>
-                    </h6>
-                  ) : (
-                    // Other charts → OHLC
-                    <>
-                      <h6 className="px-2 py-1 mb-0">
-                        O: <span className={valueColor}>{liveOhlcv?.open}</span>
-                      </h6>
-                      <h6 className="px-2 py-1 mb-0">
-                        H: <span className={valueColor}>{liveOhlcv?.high}</span>
-                      </h6>
-                      <h6 className="px-2 py-1 mb-0">
-                        L: <span className={valueColor}>{liveOhlcv?.low}</span>
-                      </h6>
-                      <h6 className="px-2 py-1 mb-0">
-                        C:{" "}
-                        <span className={valueColor}>{liveOhlcv?.close}</span>
-                      </h6>
-                    </>
-                  )}
-                </div>
-              </div>
+                {/* -----------------INDICATOR BAR------------------- */}
 
-              {/* -----------------INDICATOR BAR------------------- */}
-
-              {selectedIndicator?.length > 0 && (
-                <div className="absolute top-10 left-2 flex flex-col gap-1 z-50">
-                  {selectedIndicator &&
-                    selectedIndicator?.map((indicator, index) => {
-                      const normalizedType = indicator.replace(/[\s/%]+/g, "");
-                      const baseIndicator = normalizedType.split("_")[0];
-                      const value = liveIndicatorData[normalizedType];
-                      return (
-                        <div
-                          key={index}
-                          className="flex w-full justify-between items-center gap-3 bg-white shadow-sm border border-slate-200 rounded-3 px-3 h-8 text-xs "
-                        >
-                          <span className="font-medium w-full text-slate-800 flex items-center gap-2">
-                            {baseIndicator} :{" "}
-                            {indicatorConfigs?.[normalizedType]?.length ?? ""}{" "}
-                            {indicatorConfigs?.[normalizedType]?.source ?? ""}{" "}
-                            <span style={{ display: "flex", gap: 6 }}>
-                              {renderValue(normalizedType, value)}
+                {selectedIndicator?.length > 0 && (
+                  <div className="absolute top-10 left-2 flex flex-col gap-1 z-50">
+                    {selectedIndicator &&
+                      selectedIndicator?.map((indicator, index) => {
+                        const normalizedType = indicator.replace(/[\s/%]+/g, "");
+                        const baseIndicator = normalizedType.split("_")[0];
+                        const value = liveIndicatorData[normalizedType];
+                        return (
+                          <div
+                            key={index}
+                            className="flex w-full justify-between items-center gap-3 bg-white shadow-sm border border-slate-200 rounded-3 px-3 h-8 text-xs "
+                          >
+                            <span className="font-medium w-full text-slate-800 flex items-center gap-2">
+                              {baseIndicator} :{" "}
+                              {indicatorConfigs?.[normalizedType]?.length ?? ""}{" "}
+                              {indicatorConfigs?.[normalizedType]?.source ?? ""}{" "}
+                              <span style={{ display: "flex", gap: 6 }}>
+                                {renderValue(normalizedType, value)}
+                              </span>
                             </span>
-                          </span>
 
-                          <div className="flex items-center gap-2">
-                            <button
-                              title={
-                                indicatorVisibility[normalizedType]
-                                  ? "Hide Indicator"
-                                  : "Show Indicator"
-                              }
-                              onClick={() =>
-                                toggleIndicatorVisibility(normalizedType)
-                              }
-                              className="text-slate-600"
-                            >
-                              {indicatorVisibility[normalizedType] ? (
-                                <IoEyeOutline size={18} />
-                              ) : (
-                                <IoEyeOffOutline size={18} />
-                              )}
-                            </button>
+                            <div className="flex items-center gap-2">
+                              <button
+                                title={
+                                  indicatorVisibility[normalizedType]
+                                    ? "Hide Indicator"
+                                    : "Show Indicator"
+                                }
+                                onClick={() =>
+                                  toggleIndicatorVisibility(normalizedType)
+                                }
+                                className="text-slate-600"
+                              >
+                                {indicatorVisibility[normalizedType] ? (
+                                  <IoEyeOutline size={18} />
+                                ) : (
+                                  <IoEyeOffOutline size={18} />
+                                )}
+                              </button>
 
-                            <button
-                              title="Indicator Settings"
-                              onClick={() => {
-                                setActiveBarIndicator(indicator);
-                                setIndicatorProperty((prev) => !prev);
-                              }}
-                              className="text-slate-600"
-                            >
-                              <IoSettingsOutline size={18} />
-                            </button>
+                              <button
+                                title="Indicator Settings"
+                                onClick={() => {
+                                  setActiveBarIndicator(indicator);
+                                  setIndicatorProperty((prev) => !prev);
+                                }}
+                                className="text-slate-600"
+                              >
+                                <IoSettingsOutline size={18} />
+                              </button>
 
-                            <button
-                              title="Source Code"
-                              onClick={() => {
-                                setActiveSourceIndicator(indicator);
-                                setShowSourcePanel(true);
-                              }}
-                              className="text-slate-600"
-                            >
-                              <FaCode size={18} />
-                            </button>
+                              <button
+                                title="Source Code"
+                                onClick={() => {
+                                  setActiveSourceIndicator(indicator);
+                                  setShowSourcePanel(true);
+                                }}
+                                className="text-slate-600"
+                              >
+                                <FaCode size={18} />
+                              </button>
 
-                            <button
-                              onClick={() => removeIndicator(normalizedType)}
-                              className="text-slate-600"
-                            >
-                              <IoCloseSharp size={18} />
-                            </button>
+                              <button
+                                onClick={() => removeIndicator(normalizedType)}
+                                className="text-slate-600"
+                              >
+                                <IoCloseSharp size={18} />
+                              </button>
+                            </div>
+
+                            {showAlertForm && (
+                              <IndicatorAlert
+                                onClose={closeAlert}
+                                value={value}
+                                liveOhlcv={liveOhlcv}
+                                symbol={selectedCurrency}
+                              />
+                            )}
                           </div>
+                        );
+                      })}
+                  </div>
+                )}
+              </div>
+              
+              <div
+                ref={paneContainerRef}
+                style={{
+                  position: "relative",
+                  width: "100%",
+                }}
+              >
+                {indicatorLoading && (
+                  <div
+                    style={{
+                      position: "fixed",
+                      top: "50%",
+                      left: "50%",
+                      transform: "translate(-50%, -50%)",
+                      zIndex: 1000,
+                    }}
+                  >
+                    <Spinner />
+                  </div>
+                )}
+                {renderIndicators()}
+              </div>
+            </div>
 
-                          {showAlertForm && (
-                            <IndicatorAlert
-                              onClose={closeAlert}
-                              value={value}
-                              liveOhlcv={liveOhlcv}
-                              symbol={selectedCurrency}
-                            />
-                          )}
-                        </div>
-                      );
-                    })}
-                </div>
-              )}
-              {/* {selectedIndicator.map((indicator, index) => {
-                const value = liveIndicatorData[indicator];
-                const paneIndex = paneIndexRef.current[indicator];
-                if (paneIndex === undefined || paneIndex === 0) return null;
-                return (
-                  <IndicatorBar
-                    key={indicator}
-                    indicator={indicator}
-                    timeframeValue={timeframeValue}
-                    value={value}
-                    renderValue={renderValue}
-                    indicatorVisibility={indicatorVisibility}
-                    toggleIndicatorVisibility={toggleIndicatorVisibility}
-                    removeIndicator={removeIndicator}
-                    setActiveBarIndicator={setActiveBarIndicator}
-                    setIndicatorProperty={setIndicatorProperty}
-                    setActiveSourceIndicator={setActiveSourceIndicator}
-                    setShowSourcePanel={setShowSourcePanel}
-                    setShowAlertForm={setShowAlertForm}
+            {/* Sliding Panel */}
+            <div
+              style={{
+                width: (isWatchlistOpen || isDetailsOpen || isAlertsOpen) ? "400px" : "0px",
+                transition: "width 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+                overflow: "hidden",
+                borderLeft: (isWatchlistOpen || isDetailsOpen || isAlertsOpen) ? "1px solid #e0e3eb" : "none",
+                backgroundColor: "#fff",
+                height: "100%",
+                flexShrink: 0
+              }}
+            >
+              <div style={{ width: "400px", height: "100%" }}>
+                {isWatchlistOpen && (
+                  <WatchlistPanel
+                    onClose={() => setIsWatchlistOpen(false)}
+                    activeCurrency={activeWatchlistCurrency}
+                    setActiveCurrency={(symbol) => {
+                      setActiveWatchlistCurrency(symbol);
+                      setSelectedCurrency(symbol);
+                    }}
                   />
-                );
-              })} */}
+                )}
+                {isDetailsOpen && (
+                  <DetailsPanel
+                    onClose={() => setIsDetailsOpen(false)}
+                    symbol={activeWatchlistCurrency || selectedCurrency}
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* Right Sidebar */}
+            <div style={{ width: "50px", height: "100%", flexShrink: 0 }}>
+              <RightSidebar
+                isWatchlistOpen={isWatchlistOpen}
+                toggleWatchlist={() => {
+                  setIsWatchlistOpen(!isWatchlistOpen);
+                  setIsDetailsOpen(false);
+                  setIsAlertsOpen(false);
+                }}
+                isDetailsOpen={isDetailsOpen}
+                toggleDetails={() => {
+                  setIsDetailsOpen(!isDetailsOpen);
+                  setIsWatchlistOpen(false);
+                  setIsAlertsOpen(false);
+                }}
+                isAlertsOpen={isAlertsOpen}
+                toggleAlerts={() => {
+                  setIsAlertsOpen(!isAlertsOpen);
+                  setIsWatchlistOpen(false);
+                  setIsDetailsOpen(false);
+                }}
+              />
             </div>
           </div>
-          {/* <div className="col-md-3">
-            <ChartRightSidebar />
-          </div> */}
         </div>
-        {/* </div> */}
 
         <SourceCodePanel
           show={showSourcePanel}
           indicator={activeSourceIndicator}
           onClose={() => setShowSourcePanel(false)}
         />
+        
       </section>
       <section className="market-trading-part">
         <div className="container p-0 m-0">

@@ -1,0 +1,963 @@
+/* 
+  ✨ Social Intelligence Premium TradingView-Style Stylesheet
+  Curated Harmony Palette: Slate Dark Mode, Outlined Premium Elements, Vibrant Badges 
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+.si-workspace {
+  display: flex;
+  background-color: #07090e;
+  color: #e2e8f0;
+  font-family: 'Inter', -apple-system, sans-serif;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  position: relative;
+}
+
+/* 1. LEFT TOOLBAR STYLE */
+.si-left-toolbar {
+  width: 45px;
+  background-color: #0b0e17;
+  border-right: 1px solid #161e31;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  z-index: 10;
+}
+
+.si-toolbar-top, .si-toolbar-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  align-items: center;
+}
+
+.si-tool-btn {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #78869b;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+.si-tool-btn:hover {
+  background-color: #1a2235;
+  color: #ffffff;
+}
+
+.si-tool-btn.active {
+  background-color: #1e293b;
+  color: #38bdf8;
+  border-left: 2px solid #38bdf8;
+  border-radius: 0 4px 4px 0;
+}
+
+/* MAIN CONTENT SPLIT */
+.si-main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background-color: #07090e;
+}
+
+/* 2. TOPBAR STYLE */
+.si-topbar {
+  height: 48px;
+  background-color: #0b0e17;
+  border-bottom: 1px solid #161e31;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  user-select: none;
+}
+
+.si-topbar-left, .si-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.si-brand-logo {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  background-color: #ef4444;
+  color: #ffffff;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.si-pair-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.si-pair-selector:hover {
+  background-color: #161e31;
+}
+
+.si-topbar-divider {
+  width: 1px;
+  height: 18px;
+  background-color: #161e31;
+}
+
+.si-timeframe-selector {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.si-tf-btn {
+  font-size: 12px;
+  color: #78869b;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.si-tf-btn:hover {
+  background-color: #161e31;
+  color: #ffffff;
+}
+
+.si-tf-btn.active {
+  color: #38bdf8;
+  background-color: #14213d;
+  font-weight: 600;
+}
+
+.si-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #78869b;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.si-action-btn:hover {
+  background-color: #161e31;
+  color: #ffffff;
+}
+
+.si-save-txt {
+  font-size: 12px;
+  color: #78869b;
+  font-weight: 500;
+}
+
+.si-save-sub {
+  color: #38bdf8;
+  cursor: pointer;
+}
+
+.si-topbar-icon-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #78869b;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.si-topbar-icon-btn:hover {
+  background-color: #161e31;
+  color: #ffffff;
+}
+
+.si-publish-btn {
+  background-color: #2563eb;
+  color: #ffffff;
+  border: none;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s ease-in-out;
+}
+
+.si-publish-btn:hover {
+  background-color: #1d4ed8;
+}
+
+/* SCROLL AREA */
+.si-scrollable-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 24px;
+}
+
+/* 3. CHART CONTAINER */
+.si-chart-container {
+  height: 480px;
+  width: 100%;
+  background-color: #0b0e17;
+  border-bottom: 1px solid #161e31;
+  position: relative;
+}
+
+.si-chart-iframe-wrapper {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+/* 4. SUBHEADER TABS STYLE */
+.si-tabs-row {
+  display: flex;
+  background-color: #0b0e17;
+  border-bottom: 1px solid #161e31;
+  padding: 0 16px;
+  gap: 24px;
+}
+
+.si-tab-item {
+  font-size: 13px;
+  color: #78869b;
+  padding: 12px 0;
+  cursor: pointer;
+  position: relative;
+  font-weight: 500;
+  transition: color 0.15s ease-in-out;
+}
+
+.si-tab-item:hover {
+  color: #ffffff;
+}
+
+.si-tab-item.active {
+  color: #38bdf8;
+  font-weight: 600;
+}
+
+.si-tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #38bdf8;
+}
+
+/* 5. SOCIAL INTELLIGENCE SECTION STYLE */
+.si-intelligence-section {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.si-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.si-section-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+}
+
+.si-beta-badge {
+  background-color: #1e293b;
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+/* GRID LAYOUTS */
+.si-grid-row-1 {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 16px;
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.si-grid-row-2 {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr;
+  gap: 16px;
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.si-grid-row-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  width: 100%;
+}
+
+.si-gauge-number, .si-stat-number, .si-donut-val, .si-stat-change, .si-score-total {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* CARDS STYLING */
+.si-card {
+  background-color: #0b0e17;
+  border: 1px solid #161e31;
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-height: 200px;
+}
+
+.si-card.flex-2 {
+  grid-column: span 1;
+}
+
+.si-card-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #78869b;
+  margin: 0 0 16px 0;
+}
+
+/* Card 1 Specifics (Gauge Arc) */
+.si-gauge-container {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.si-gauge-svg {
+  width: 170px;
+  height: auto;
+}
+
+.si-gauge-center-text {
+  position: absolute;
+  bottom: 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.si-gauge-number {
+  font-size: 32px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.si-gauge-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #10b981;
+  margin-top: 4px;
+}
+
+.si-gauge-legend {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 24px;
+  border-top: 1px solid #161e31;
+  padding-top: 12px;
+}
+
+.si-leg-item {
+  font-size: 11px;
+  color: #78869b;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.si-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.si-dot.green { background-color: #10b981; }
+.si-dot.yellow { background-color: #f59e0b; }
+.si-dot.red { background-color: #ef4444; }
+
+.si-leg-val {
+  color: #ffffff;
+}
+
+/* Card 2 Specifics (Line Chart) */
+.si-card-header-with-action {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.si-card-dropdown {
+  background-color: #161e31;
+  border: 1px solid #23314e;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: #ffffff;
+}
+
+.si-linechart-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  justify-content: space-between;
+}
+
+.si-linechart-svg {
+  width: 100%;
+  height: 120px;
+}
+
+.si-chart-xaxis {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid #161e31;
+  font-size: 10px;
+  color: #78869b;
+}
+
+/* Card 3 Specifics (Donut Sources) */
+.si-sources-body {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex: 1;
+}
+
+.si-donut-container {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.si-donut-svg {
+  transform: rotate(-90deg);
+  width: 100%;
+  height: 100%;
+}
+
+.si-donut-center-text {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.si-donut-val {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.si-donut-lbl {
+  font-size: 8px;
+  color: #78869b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+
+.si-sources-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.si-source-row {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+}
+
+.si-leg-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  margin-right: 8px;
+}
+
+.si-source-name {
+  color: #78869b;
+  flex: 1;
+}
+
+.si-source-pct {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* Card 4 & 5 (Social Volume / Engagement) */
+.si-card-stat-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.si-stat-number {
+  font-size: 26px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.si-stat-change {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.si-stat-change.positive {
+  color: #10b981;
+}
+
+.si-stat-comparison {
+  font-size: 11px;
+  color: #78869b;
+  margin-top: 2px;
+}
+
+.si-barchart-container {
+  margin-top: auto;
+  height: 45px;
+  width: 100%;
+}
+
+.si-barchart-svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Card 6 (Buzz Score) */
+.si-score-total {
+  font-size: 14px;
+  color: #78869b;
+  font-weight: 400;
+  margin-left: 2px;
+}
+
+.si-buzz-tag {
+  color: #c084fc;
+  background-color: #2e1065;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  align-self: flex-start;
+  margin-top: 4px;
+}
+
+.si-buzz-chart-container {
+  margin-top: auto;
+  height: 40px;
+  width: 100%;
+}
+
+.si-buzz-chart-svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Card 7 (Trend Prediction) */
+.si-prediction-sub {
+  font-size: 11px;
+  color: #78869b;
+  margin-bottom: 12px;
+}
+
+.si-prediction-display {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.si-arrow-badge {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  background-color: #064e3b;
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.si-prediction-result {
+  font-size: 22px;
+  font-weight: 700;
+  color: #10b981;
+}
+
+.si-confidence-text {
+  font-size: 12px;
+  color: #78869b;
+  margin-top: auto;
+  border-top: 1px solid #161e31;
+  padding-top: 12px;
+}
+
+.si-confidence-val {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* 6. BOTTOM BAR STYLE */
+.si-bottombar {
+  height: 36px;
+  background-color: #0b0e17;
+  border-top: 1px solid #161e31;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  font-size: 12px;
+}
+
+.si-bottombar-left {
+  display: flex;
+  gap: 20px;
+}
+
+.si-bottom-tab {
+  color: #78869b;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.si-bottom-tab:hover {
+  color: #ffffff;
+}
+
+.si-bottom-tab.active {
+  color: #38bdf8;
+  font-weight: 600;
+}
+
+.si-clock {
+  color: #78869b;
+}
+
+/* 7. RIGHT SUMMARY SIDEBAR STYLE */
+.si-right-sidebar {
+  width: 300px;
+  background-color: #0b0e17;
+  border-left: 1px solid #161e31;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  z-index: 5;
+}
+
+.si-widget {
+  padding: 20px;
+  border-bottom: 1px solid #161e31;
+}
+
+.si-widget-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.si-widget-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+}
+
+.si-widget-dropdown {
+  background-color: #161e31;
+  border: 1px solid #23314e;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  color: #ffffff;
+}
+
+.si-widget-section-label {
+  font-size: 11px;
+  color: #78869b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+/* Top Topics List */
+.si-topics-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.si-topic-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.si-topic-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.si-topic-num {
+  font-size: 12px;
+  color: #475569;
+  font-weight: 600;
+}
+
+.si-topic-name-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.si-topic-name {
+  font-size: 13px;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.si-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 2px;
+  align-self: flex-start;
+}
+
+.si-badge.trending {
+  background-color: #064e3b;
+  color: #10b981;
+}
+
+.si-badge.rising {
+  background-color: #1e293b;
+  color: #94a3b8;
+}
+
+.si-topic-mentions {
+  font-size: 11px;
+  color: #78869b;
+}
+
+.si-widget-link {
+  font-size: 11px;
+  color: #38bdf8;
+  cursor: pointer;
+  margin-top: 14px;
+  font-weight: 500;
+  transition: text-decoration 0.15s ease-in-out;
+}
+
+.si-widget-link:hover {
+  text-decoration: underline;
+}
+
+/* Top Influencers */
+.si-influencers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.si-influencer-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.si-inf-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.si-inf-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 12px;
+  color: #ffffff;
+}
+
+.si-inf-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.si-inf-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.si-inf-handle {
+  font-size: 11px;
+  color: #78869b;
+}
+
+.si-inf-followers {
+  font-size: 10px;
+  color: #475569;
+  margin-top: 1px;
+}
+
+.si-bullish-badge {
+  font-size: 10px;
+  color: #10b981;
+  background-color: #064e3b;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+/* Events Timeline */
+.si-events-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+  padding-left: 12px;
+  margin-left: 6px;
+  border-left: 1px solid #161e31;
+}
+
+.si-timeline-item {
+  position: relative;
+}
+
+.si-timeline-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  position: absolute;
+  left: -16px;
+  top: 4px;
+}
+
+.si-timeline-dot.green {
+  background-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
+}
+
+.si-timeline-dot.blue {
+  background-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+}
+
+.si-timeline-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.si-timeline-time {
+  font-size: 11px;
+  color: #78869b;
+  font-weight: 500;
+}
+
+.si-timeline-text {
+  font-size: 12px;
+  color: #ffffff;
+  margin: 3px 0 0 0;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+/* Responsive Customisations */
+@media (max-width: 1200px) {
+  .si-grid-row-1 {
+    grid-template-columns: 1fr;
+  }
+  .si-grid-row-2 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* -------------------------------------------------------------
+   ✨ Sub-Workspace Embedding Styles (Within main dashboard tabs)
+   ------------------------------------------------------------- */
+.si-workspace-sub {
+  display: flex;
+  background-color: transparent;
+  color: #e2e8f0;
+  font-family: 'Inter', -apple-system, sans-serif;
+  width: 100%;
+  position: relative;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.si-main-area-sub {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: transparent;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}

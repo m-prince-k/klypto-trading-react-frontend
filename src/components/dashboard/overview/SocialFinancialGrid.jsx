@@ -1,0 +1,151 @@
+import React from 'react';
+
+const SocialFinancialGrid = ({ tvlData, socialStats, financials }) => {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+      
+      {/* Card 1: TVL Protocol Table */}
+      <div className="premium-card">
+        <div className="card-header-row">
+          <h4 className="card-title-main">Top Protocols by TVL</h4>
+          <span className="glow-tag-green">DEFILLAMA</span>
+        </div>
+        <table className="custom-crypto-table">
+          <thead>
+            <tr>
+              <th align="left">Protocol</th>
+              <th align="left">Category</th>
+              <th align="right">TVL</th>
+              <th align="right">7D Change</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tvlData.protocols ? tvlData.protocols.map((proto, index) => {
+              const isUp = proto.change >= 0;
+              return (
+                <tr key={`tvl-proto-${index}`}>
+                  <td align="left">
+                    <div className="coin-icon-small" style={{ backgroundColor: proto.color }}>{proto.icon}</div>
+                    {proto.name}
+                  </td>
+                  <td align="left" style={{ color: '#8f9cae' }}>{proto.cat}</td>
+                  <td align="right" style={{ fontWeight: 'bold' }}>${proto.val.toFixed(2)}B</td>
+                  <td align="right" style={{ color: isUp ? '#10b981' : '#ef4444', fontWeight: 'bold' }}>
+                    {isUp ? '▲ +' : '▼ '}{proto.change.toFixed(2)}%
+                  </td>
+                </tr>
+              );
+            }) : (
+              <tr><td colSpan="4" align="center">Loading protocols...</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Card 2: Social Radar (LunarCrush) */}
+      <div 
+        className="premium-card" 
+        style={{ cursor: 'pointer' }} 
+        onClick={() => window.location.href = '/social-intelligence'}
+      >
+        <div className="card-header-row">
+          <h4 className="card-title-main" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            Social Intelligence <span style={{ fontSize: '10px', color: '#a78bfa' }}>↗</span>
+          </h4>
+          <span className="glow-tag-purple">LUNARCRUSH</span>
+        </div>
+
+        {/* Purple Radar Spider web SVG */}
+        <div style={{ height: '90px', width: '100%', position: 'relative', margin: '6px 0' }}>
+          <svg width="100%" height="100%" viewBox="0 0 100 100">
+            {/* Pentagon Grid lines */}
+            <polygon points="50,10 88,38 73,83 27,83 12,38" fill="none" stroke="#141c2c" strokeWidth="1" />
+            <polygon points="50,25 78.5,46 67.5,72 32.5,72 21.5,46" fill="none" stroke="#141c2c" strokeWidth="1" />
+            <polygon points="50,40 69,54 62.5,63.5 37.5,63.5 31,54" fill="none" stroke="#141c2c" strokeWidth="1" />
+            {/* Center axis lines */}
+            <line x1="50" y1="50" x2="50" y2="10" stroke="#141c2c" strokeWidth="0.8" />
+            <line x1="50" y1="50" x2="88" y2="38" stroke="#141c2c" strokeWidth="0.8" />
+            <line x1="50" y1="50" x2="73" y2="83" stroke="#141c2c" strokeWidth="0.8" />
+            <line x1="50" y1="50" x2="27" y2="83" stroke="#141c2c" strokeWidth="0.8" />
+            <line x1="50" y1="50" x2="12" y2="38" stroke="#141c2c" strokeWidth="0.8" />
+
+            {/* Glowing radar polygon */}
+            <polygon points="50,18 80,41 68,78 34,75 22,42" fill="#a78bfa" fillOpacity="0.25" stroke="#a78bfa" strokeWidth="1.5" />
+            {/* Point nodes */}
+            <circle cx="50" cy="18" r="2.5" fill="#a78bfa" />
+            <circle cx="80" cy="41" r="2.5" fill="#a78bfa" />
+            <circle cx="68" cy="78" r="2.5" fill="#a78bfa" />
+            <circle cx="34" cy="75" r="2.5" fill="#a78bfa" />
+            <circle cx="22" cy="42" r="2.5" fill="#a78bfa" />
+          </svg>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', fontSize: '9.5px', color: '#8f9cae', textAlign: 'center' }}>
+          <div>Social Vol: <span style={{ color: '#ffffff', fontWeight: 'bold' }}>{socialStats.radarValues.vol}%</span></div>
+          <div>Engagement: <span style={{ color: '#ffffff', fontWeight: 'bold' }}>{socialStats.radarValues.eng}%</span></div>
+        </div>
+      </div>
+
+      {/* Card 3: Financial Double-Donut */}
+      <div className="premium-card">
+        <div className="card-header-row">
+          <h4 className="card-title-main">Crypto Financials</h4>
+          <span className="glow-tag-orange">TOKEN TERMINAL</span>
+        </div>
+
+        {/* Concentric Double Donut SVG */}
+        <div style={{ height: '90px', width: '100%', position: 'relative', margin: '4px 0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width="84" height="84" viewBox="0 0 36 36">
+            {/* Inner gray ring */}
+            <circle cx="18" cy="18" r="14" fill="none" stroke="#121824" strokeWidth="2.5" />
+            {/* Outer gray ring */}
+            <circle cx="18" cy="18" r="10" fill="none" stroke="#121824" strokeWidth="2" />
+
+            {/* Outer Concentric segment (Revenue) */}
+            <circle cx="18" cy="18" r="14" fill="none" stroke="#f97316" strokeWidth="2.5" strokeDasharray="70 100" strokeDashoffset="15" strokeLinecap="round" />
+            {/* Inner Concentric segment (Expenses) */}
+            <circle cx="18" cy="18" r="10" fill="none" stroke="#3b82f6" strokeWidth="2" strokeDasharray="50 100" strokeDashoffset="45" strokeLinecap="round" />
+
+            <text x="18" y="20.5" textAnchor="middle" fill="#ffffff" fontSize="6.5" fontWeight="bold">REV</text>
+          </svg>
+          <div style={{ position: 'absolute', right: '0', top: '15px', display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '9px' }}>
+            <div style={{ color: '#f97316', fontWeight: '600' }}>Revenues</div>
+            <div style={{ color: '#3b82f6', fontWeight: '600' }}>Fees</div>
+          </div>
+        </div>
+        <div style={{ fontSize: '11px', textAlign: 'center', color: '#cbd5e1' }}>
+          Total 30D Revenue: <span style={{ fontWeight: 'bold', color: '#ffffff' }}>{financials.revenue}</span>
+        </div>
+      </div>
+
+      {/* Card 4: Whale Buying / Smart Money flow split donut */}
+      <div className="premium-card">
+        <div className="card-header-row">
+          <h4 className="card-title-main">Market Movers</h4>
+          <span className="glow-tag-orange">TOKEN TERMINAL</span>
+        </div>
+
+        {/* Slit Donut Pie SVG */}
+        <div style={{ height: '90px', width: '100%', position: 'relative', margin: '4px 0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width="84" height="84" viewBox="0 0 36 36">
+            <circle cx="18" cy="18" r="12.5" fill="none" stroke="#121824" strokeWidth="3.5" />
+            {/* Green Buyer arc (Whales buying) */}
+            <circle cx="18" cy="18" r="12.5" fill="none" stroke="#10b981" strokeWidth="3.8" strokeDasharray="68 100" strokeDashoffset="0" strokeLinecap="round" />
+            {/* Red Seller arc (Whales selling) */}
+            <circle cx="18" cy="18" r="12.5" fill="none" stroke="#ef4444" strokeWidth="3.8" strokeDasharray="28 100" strokeDashoffset="-70" strokeLinecap="round" />
+
+            <text x="18" y="20.5" textAnchor="middle" fill="#ffffff" fontSize="6.2" fontWeight="bold">FLOW</text>
+          </svg>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9.5px' }}>
+          <span style={{ color: '#10b981', fontWeight: 'bold' }}>Buy: ${financials.whaleBuy}</span>
+          <span style={{ color: '#ef4444', fontWeight: 'bold' }}>Sell: ${financials.whaleSell}</span>
+        </div>
+      </div>
+
+    </div>
+  );
+};
+
+export default SocialFinancialGrid;

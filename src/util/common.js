@@ -13,6 +13,7 @@ import { toast } from "react-toastify";
 export const ChartProprties = {
   width: 1350,
   height: 515,
+  autoSize: true,
 
   layout: {
     background: { type: "solid", color: "#ffffff" },
@@ -2034,4 +2035,12 @@ export const getMaxTimeframe = (tfs = []) => {
   return tfs.reduce((max, curr) => {
     return tfToMinutes(curr) > tfToMinutes(max) ? curr : max;
   });
+};
+
+export const getUser = () => {
+  try {
+    return JSON.parse(localStorage.getItem("session") || "null");
+  } catch {
+    return null;
+  }
 };
