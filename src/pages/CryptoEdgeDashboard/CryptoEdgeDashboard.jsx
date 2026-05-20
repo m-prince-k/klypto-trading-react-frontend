@@ -11,7 +11,11 @@ import SocialIntelligence from "./socialIntellingence/socialIntellingence";
 import Arbitrage from "./arbitrage/Arbitrage";
 import Financials from "./financials/Financial";
 import MarketData from "./marketData/MarketData";
+import OnChain from "./onChain/onChain";
+import WatchlistPanel from "../../components/watchlist/WatchlistPanel";
+import MarketSentiment from "./marketSentiment/MarketSentiment";
 import socket from "../../services/socket";
+import Settings from "./settings/Settings";
 
 const CryptoEdgeDashboard = () => {
   const { theme } = useTheme();
@@ -32,6 +36,7 @@ const CryptoEdgeDashboard = () => {
   };
 
   const [activeTab, setActiveTab] = useState(getInitialTab());
+  const [activeCurrency, setActiveCurrency] = useState("BTCUSDT");
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -68,57 +73,58 @@ const CryptoEdgeDashboard = () => {
   const tvContainerRef = useRef(null);
 
   // Dynamically load the Official TradingView Technical Analysis Widget
-  useEffect(() => {
-    let script = document.getElementById("tradingview-widget-script");
-    if (!script) {
-      script = document.createElement("script");
-      script.id = "tradingview-widget-script";
-      script.src = "https://s3.tradingview.com/tv.js";
-      script.type = "text/javascript";
-      script.async = true;
-      document.head.appendChild(script);
+useEffect(() => {
+  if (activeTab !== "Overview") return; // 👈 ONLY run when visible
+
+  let script = document.getElementById("tradingview-widget-script");
+
+  const initWidget = () => {
+    if (typeof window.TradingView !== "undefined" && tvContainerRef.current) {
+      tvContainerRef.current.innerHTML = "";
+
+      const tvDivId = `tv-embed-${selectedSymbol.toLowerCase()}`;
+      const tvDiv = document.createElement("div");
+
+      tvDiv.id = tvDivId;
+      tvDiv.style.width = "100%";
+      tvDiv.style.height = "100%";
+
+      tvContainerRef.current.appendChild(tvDiv);
+
+      new window.TradingView.widget({
+        autosize: true,
+        symbol: `BINANCE:${selectedSymbol}`,
+        interval: "1",
+        timezone: "Etc/UTC",
+        theme: theme,
+        style: "1",
+        locale: "en",
+        enable_publishing: false,
+        hide_side_toolbar: false,
+        allow_symbol_change: true,
+        container_id: tvDivId,
+        studies: ["RSI@tv-basicstudies", "MASimple@tv-basicstudies"],
+        backgroundColor: theme === "dark" ? "#07090e" : "#ffffff",
+        gridColor:
+          theme === "dark"
+            ? "rgba(255,255,255,0.02)"
+            : "rgba(0,0,0,0.04)",
+      });
     }
+  };
 
-    const initWidget = () => {
-      if (typeof window.TradingView !== "undefined" && tvContainerRef.current) {
-        tvContainerRef.current.innerHTML = ""; // Clear prior embedded chart
-        const tvDivId = `tv-embed-${selectedSymbol.toLowerCase()}`;
-        const tvDiv = document.createElement("div");
-        tvDiv.id = tvDivId;
-        tvDiv.style.width = "100%";
-        tvDiv.style.height = "100%";
-        tvContainerRef.current.appendChild(tvDiv);
+  if (!script) {
+    script = document.createElement("script");
+    script.id = "tradingview-widget-script";
+    script.src = "https://s3.tradingview.com/tv.js";
+    script.async = true;
+    script.onload = initWidget;
+    document.head.appendChild(script);
+  } else {
+    initWidget(); // 👈 THIS WAS MISSING BEHAVIOR
+  }
 
-        new window.TradingView.widget({
-          autosize: true,
-          symbol: `BINANCE:${selectedSymbol}`,
-          interval: "1", // 1-minute interval for ultra-fast, live tick updates
-          timezone: "Etc/UTC",
-          theme: theme,
-          style: "1", // Candlesticks style
-          locale: "en",
-          enable_publishing: false,
-          hide_side_toolbar: false, // Show technical analysis side tools
-          allow_symbol_change: true, // Allow user to search and change symbols!
-          container_id: tvDivId,
-          studies: ["RSI@tv-basicstudies", "MASimple@tv-basicstudies"],
-          show_popup_button: false,
-          backgroundColor: theme === "dark" ? "#07090e" : "#ffffff",
-          gridColor:
-            theme === "dark"
-              ? "rgba(255, 255, 255, 0.02)"
-              : "rgba(0, 0, 0, 0.04)",
-        });
-      }
-    };
-
-    if (window.TradingView) {
-      initWidget();
-    } else {
-      script.addEventListener("load", initWidget);
-    }
-  }, [selectedSymbol, theme]);
-
+}, [selectedSymbol, theme, activeTab]); // 👈 ADD activeTab
   const [orderBook, setOrderBook] = useState({
     asks: [],
     bids: [],
@@ -491,15 +497,6 @@ const CryptoEdgeDashboard = () => {
 
             {/* Scrollable Core Workspace */}
             <div className="scrollable-content-area">
-              <div className="subheader-row">
-                <div className="update-stamp">
-                  <div className="update-stamp-dot"></div>
-                  <span>Updated: Just now</span>
-                </div>
-                <button className="customize-btn">
-                  <span>⚙</span> Customize Workspace
-                </button>
-              </div>
 
               {activeTab === "Overview" && (
                 <Overview
@@ -513,6 +510,7 @@ const CryptoEdgeDashboard = () => {
                   financials={financials}
                   arbitrage={arbitrage}
                   alerts={alerts}
+                   activeTab={activeTab}
                 />
               )}
 
@@ -541,6 +539,34 @@ const CryptoEdgeDashboard = () => {
                 <MarketData
                   isSubComponent={true}
                   selectedSymbol={selectedSymbol}
+                />
+              )}
+
+              {activeTab === "On-Chain (TVL)" && (
+                <OnChain
+                  isSubComponent={true}
+                />
+              )}
+              {activeTab === "Market Sentiment" && (
+                <MarketSentiment
+                  isSubComponent={true}
+                />
+              )}
+
+              {activeTab === "Watchlist" && (
+                <WatchlistPanel
+                  onClose={() => setActiveTab("Overview")}
+                  activeCurrency={activeCurrency}
+                  setActiveCurrency={(sym) => {
+                    setActiveCurrency(sym);
+                    setSelectedSymbol(sym);
+                  }}
+                />
+              )}
+
+              {activeTab === "Settings" && (
+                <Settings
+                  isSubComponent={true}
                 />
               )}
             </div>

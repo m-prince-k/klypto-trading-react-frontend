@@ -10,15 +10,16 @@ import FinancialTechOnChain from '../../../../src/components/dashboard/financial
 import FinancialSocialRisk from '../../../../src/components/dashboard/financials/FinancialSocialRisk';
 import FinancialAdvancedAnalytics from '../../../../src/components/dashboard/financials/FinancialAdvancedAnalytics';
 import FinancialFooter from '../../../../src/components/dashboard/financials/FinancialFooter';
+import apiService from '../../../services/apiServices';
+import socket from '../../../services/socket';
 
-const API_BASE = 'http://192.168.1.13:7000';
 
 const cleanSymbol = (sym) => {
   if (!sym) return 'BTC';
   return sym.replace(/USDT|BUSD|USD/gi, '').toUpperCase();
 };
 
-export default function Financial({ setActiveTab = () => {}, isSubComponent = false, selectedSymbol: selectedSymbolProp = "" }) {
+export default function Financial({ setActiveTab = () => { }, isSubComponent = false, selectedSymbol: selectedSymbolProp = "" }) {
   const [selectedSymbol, setSelectedSymbol] = useState(cleanSymbol(selectedSymbolProp));
   const [selectedPeriod, setSelectedPeriod] = useState('3M');
   const [data, setData] = useState(null);
@@ -46,9 +47,9 @@ export default function Financial({ setActiveTab = () => {}, isSubComponent = fa
   const fetchRESTData = useCallback(async (sym, period) => {
     try {
       const [klinesRes, marketRes, depthRes] = await Promise.allSettled([
-        fetch(`${API_BASE}/financial/klines?symbol=${sym}&period=${period}`).then(r => r.json()),
-        fetch(`${API_BASE}/financial/market?symbol=${sym}`).then(r => r.json()),
-        fetch(`${API_BASE}/financial/orderbook-depth?symbol=${sym}`).then(r => r.json()),
+        apiService.get(`/financial/klines?symbol=${sym}&period=${period}`),
+        apiService.get(`/financial/market?symbol=${sym}`),
+        apiService.get(`/financial/orderbook-depth?symbol=${sym}`),
       ]);
 
       if (klinesRes.status === 'fulfilled' && klinesRes.value.success)
@@ -63,10 +64,9 @@ export default function Financial({ setActiveTab = () => {}, isSubComponent = fa
       // TVL (separate, CoinGecko-independent)
       const tvlProtocol = TVL_PROTOCOL_MAP[sym];
       if (tvlProtocol) {
-        fetch(`${API_BASE}/financial/tvl?protocol=${tvlProtocol}`)
-          .then(r => r.json())
+        apiService.get(`/financial/tvl?protocol=${tvlProtocol}`)
           .then(d => { if (d.success) setTvlData(d); })
-          .catch(() => {});
+          .catch(() => { });
       }
     } catch (e) {
       console.error('REST fetch error:', e);
@@ -139,7 +139,7 @@ export default function Financial({ setActiveTab = () => {}, isSubComponent = fa
       adx: 28, adxSignal: 'Strong',
     },
     predictions: {
-      p7d:  { min: 65000, avg: 70000, max: 75000 },
+      p7d: { min: 65000, avg: 70000, max: 75000 },
       p30d: { min: 60000, avg: 75000, max: 85000 },
       p90d: { min: 55000, avg: 80000, max: 100000 },
     },
@@ -151,16 +151,14 @@ export default function Financial({ setActiveTab = () => {}, isSubComponent = fa
     setData(prev => prev || MOCK_DATA);
     setLoading(false);
 
-    let socket;
     try {
-      socket = io(API_BASE, { timeout: 4000 });
       socket.emit('subscribe-financial', { symbol: selectedSymbol });
       socket.on('finance-dashboard-update', (payload) => {
         setData(payload);
       });
     } catch (e) { /* backend unavailable — mock data already shown */ }
 
-    return () => { try { socket?.disconnect(); } catch(e) {} };
+    return () => { try { socket?.disconnect(); } catch (e) { } };
   }, [selectedSymbol]); // eslint-disable-line
 
   // Use mock data as base while waiting for socket
@@ -176,7 +174,7 @@ export default function Financial({ setActiveTab = () => {}, isSubComponent = fa
   const changeColor = isUp ? 'text-green' : 'text-red';
   const changeSign = isUp ? '+' : '';
 
-  const formatNum = (num, min=2, max=2) => Number(num).toLocaleString(undefined, {minimumFractionDigits: min, maximumFractionDigits: max});
+  const formatNum = (num, min = 2, max = 2) => Number(num).toLocaleString(undefined, { minimumFractionDigits: min, maximumFractionDigits: max });
   const formatLarge = (num) => {
     if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
     if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
@@ -188,7 +186,7 @@ export default function Financial({ setActiveTab = () => {}, isSubComponent = fa
 
   // ── Dynamic Computations for Gauge, Radar & Ratings ─────────────────
   const sentimentAngle = (Number(social?.sentiment || 50) / 100) * 180 - 90;
-  
+
   const contractRisk = 2.0;
   const marketRisk = change24h < -5 ? 8.0 : change24h < 0 ? 5.0 : 3.0;
   const liqRisk = activeDepth?.liquidityRisk === 'High' ? 7.0 : activeDepth?.liquidityRisk === 'Medium' ? 4.5 : 2.0;

@@ -58,7 +58,8 @@
 .brand-subtitle {
   font-size: 10px;
   color: var(--text-muted);
-  margin-left: 30px;
+  text-align: left;
+  margin-left: 40px;
   margin-top: -3px;
   font-weight: 500;
 }

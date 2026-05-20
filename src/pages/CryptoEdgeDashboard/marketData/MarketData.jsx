@@ -270,49 +270,6 @@ const MarketData = () => {
     );
   };
 
-  const renderDetailChart = (dataPoints, change) => {
-    if (!dataPoints || dataPoints.length === 0) return null;
-    const isUp = change >= 0;
-    const min = Math.min(...dataPoints);
-    const max = Math.max(...dataPoints);
-    const range = max - min || 1;
-    const width = 500,
-      height = 140,
-      paddingX = 15,
-      paddingY = 15;
-    const points = dataPoints.map((p, idx) => {
-      const x =
-        paddingX + (idx / (dataPoints.length - 1)) * (width - 2 * paddingX);
-      const y =
-        height - paddingY - ((p - min) / range) * (height - 2 * paddingY);
-      return { x, y };
-    });
-    const linePath = `M ${points.map((p) => `${p.x},${p.y}`).join(" L ")}`;
-    const fillPath = `${linePath} L ${points[points.length - 1].x},${height} L ${points[0].x},${height} Z`;
-    const strokeColor = isUp ? "var(--color-green)" : "var(--color-red)";
-    return (
-      <svg viewBox={`0 0 ${width} ${height}`} className="coin-detail-chart-svg">
-        <defs>
-          <linearGradient id="detail-glow-gradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={strokeColor} stopOpacity="0.22" />
-            <stop offset="100%" stopColor={strokeColor} stopOpacity="0.0" />
-          </linearGradient>
-        </defs>
-        <path d={fillPath} fill="url(#detail-glow-gradient)" />
-        <path
-          d={linePath}
-          fill="none"
-          stroke={strokeColor}
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        {points.map((p, idx) => (
-          <circle key={idx} cx={p.x} cy={p.y} r="3" fill={strokeColor} />
-        ))}
-      </svg>
-    );
-  };
 
   const renderOverviewChart = (timeframe) => {
     const data = overviewChartData[timeframe] || [
@@ -439,7 +396,7 @@ const MarketData = () => {
             Real-time market overview and cryptocurrency data
           </p>
         </div> */}
-        {isSocketConnected && (
+        {/* {isSocketConnected && (
           <div className="socket-live-indicator d-flex align-items-center gap-2">
             <span className="live-dot animate-pulse"></span>
             <span
@@ -452,7 +409,7 @@ const MarketData = () => {
               LIVE STREAMING ACTIVE
             </span>
           </div>
-        )}
+        )} */}
       </header>
 
       {/* STATS TICKER GRID */}
@@ -1005,7 +962,7 @@ const MarketData = () => {
                 className="side-card-more-link"
                 onClick={() => setActiveTab("Top Gainers")}
               >
-                More{" "}
+                More
                 <svg
                   width="8"
                   height="8"

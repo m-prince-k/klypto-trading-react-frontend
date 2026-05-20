@@ -15,6 +15,7 @@ export default function Overview({
   financials,
   arbitrage,
   alerts,
+  activeTab
 }) {
   const getBaseSymbol = (sym) => {
     if (!sym) return "";
@@ -42,6 +43,7 @@ export default function Overview({
         orderBook={orderBook}
         tvlData={tvlData}
         tvContainerRef={tvContainerRef}
+        activeTab={activeTab} 
       />
       {/* Row 3: Social & Financial Metrics Grid */}
       <SocialFinancialGrid

@@ -1,0 +1,275 @@
+/* MarketSentiment.css */
+
+/* ─── CSS Variables ─── */
+[data-theme="dark"] {
+    --ms-bg: #0b0e11;
+    --ms-card-bg: #181a20;
+    --ms-card-hover: #1e2329;
+    --ms-border: #2b3139;
+    --ms-text-main: #eaecef;
+    --ms-text-muted: #848e9c;
+    --ms-input-bg: #2b3139;
+    --ms-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="light"] {
+    --ms-bg: #f0f2f5;
+    --ms-card-bg: #ffffff;
+    --ms-card-hover: #f5f5f5;
+    --ms-border: #e0e3eb;
+    --ms-text-main: #1e2329;
+    --ms-text-muted: #707a8a;
+    --ms-input-bg: #eaecef;
+    --ms-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* ─── Layout ─── */
+.binance-dashboard-layout {
+    background-color: var(--ms-bg);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.dashboard-content {
+    background-color: var(--ms-bg);
+}
+
+/* ─── Cards ─── */
+.binance-card {
+    background-color: var(--ms-card-bg);
+    border-radius: 8px;
+    border: 1px solid var(--ms-border);
+    box-shadow: var(--ms-shadow);
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.card-header {
+    background-color: transparent;
+    border-bottom: none;
+    padding: 16px 20px;
+}
+
+.title {
+    color: var(--ms-text-main);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.info-icon {
+    color: var(--ms-text-muted);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+/* ─── Typography ─── */
+.extremely-small {
+    font-size: 11px;
+}
+
+/* Override Bootstrap text colors to use theme-aware values */
+.text-white {
+    color: var(--ms-text-main) !important;
+}
+
+.text-muted {
+    color: var(--ms-text-muted) !important;
+}
+
+/* Sentiment colors stay the same in both themes */
+.text-success {
+    color: #0ecb81 !important;
+}
+
+.text-danger {
+    color: #f6465d !important;
+}
+
+.text-warning {
+    color: #f0b90b !important;
+}
+
+/* ─── Dark Layer (tabs, filter pills) ─── */
+.bg-dark-layer {
+    background-color: var(--ms-input-bg);
+}
+
+/* ─── Filter Buttons ─── */
+.filter-btn {
+    color: var(--ms-text-muted);
+    font-size: 12px;
+    cursor: pointer;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.filter-btn:hover {
+    color: var(--ms-text-main);
+}
+
+.filter-btn.active {
+    background-color: var(--ms-card-bg);
+    color: var(--ms-text-main);
+}
+
+/* ─── Legend Dots ─── */
+.legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+/* ─── Breakdown Tabs ─── */
+.breakdown-tabs .tab {
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--ms-text-muted);
+}
+
+.breakdown-tabs .tab.active {
+    background-color: var(--ms-card-bg) !important;
+    color: var(--ms-text-main) !important;
+}
+
+/* ─── Indicator Boxes ─── */
+.indicator-box {
+    background-color: var(--ms-card-hover);
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+}
+
+/* Icon circle dim backgrounds */
+.bg-warning-dim {
+    background-color: rgba(240, 185, 11, 0.15);
+}
+
+.bg-success-dim {
+    background-color: rgba(14, 203, 129, 0.15);
+}
+
+/* ─── Tables ─── */
+.binance-table {
+    --bs-table-bg: transparent;
+    color: var(--ms-text-main);
+    font-size: 14px;
+}
+
+.binance-table th,
+.binance-table td {
+    background-color: transparent !important;
+    color: var(--ms-text-main) !important;
+    box-shadow: none !important;
+}
+
+.binance-table th {
+    color: var(--ms-text-muted) !important;
+    font-weight: 500;
+    font-size: 11px;
+    /* reduced from 12px */
+    padding: 10px 8px;
+    /* reduced from 12px 16px */
+    border-bottom: 1px solid var(--ms-border) !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.binance-table td {
+    padding: 10px 8px;
+    /* reduced from 14px 16px */
+    vertical-align: middle;
+    border-bottom: 1px solid var(--ms-border) !important;
+    font-size: 13px;
+    /* slightly smaller for fit */
+}
+
+.binance-table tbody tr:last-child td {
+    border-bottom: none !important;
+}
+
+.binance-table tbody tr:hover td {
+    background-color: var(--ms-card-hover) !important;
+}
+
+.border-bottom-secondary {
+    border-bottom: 1px solid var(--ms-border) !important;
+}
+
+/* ─── Progress Bar ─── */
+.sentiment-progress {
+    height: 6px;
+    background-color: var(--ms-border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+/* ─── Trending Tags ─── */
+.trending-tag {
+    background-color: var(--ms-card-hover);
+    color: var(--ms-text-main);
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 16px;
+    border: 1px solid var(--ms-border);
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+}
+
+/* ─── News ─── */
+.news-title {
+    font-size: 13px;
+    color: var(--ms-text-main);
+}
+
+/* ─── Gauge SVG text ─── */
+.gauge-svg text {
+    fill: var(--ms-text-main);
+}
+
+/* ─── Utility ─── */
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.hover-white:hover {
+    color: var(--ms-text-main) !important;
+}
+
+.hover-underline:hover {
+    text-decoration: underline !important;
+}
+
+/* ─── Light mode extra overrides ─── */
+[data-theme="light"] .binance-card {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .sentiment-progress {
+    background-color: #e0e3eb;
+}
+
+[data-theme="light"] .trending-tag {
+    background-color: #f0f2f5;
+    border-color: #d5d8de;
+}
+
+[data-theme="light"] .indicator-box {
+    background-color: #f7f8fa;
+}
+
+[data-theme="light"] .bg-dark-layer {
+    background-color: #eaecef;
+}
+
+[data-theme="light"] .filter-btn.active {
+    background-color: #ffffff;
+}
+
+[data-theme="light"] .breakdown-tabs .tab.active {
+    background-color: #ffffff !important;
+}
