@@ -3,7 +3,7 @@
   color: var(--text-main, #e2e8f0);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   min-height: 100vh;
-  padding: 16px;
+  padding: 2px 4px !important;
   font-size: 11px;
 }
 
@@ -117,11 +117,13 @@
 
 /* Card System */
 .fin-card {
-  background-color: var(--bg-card, #0f172a);
-  border: 1px solid var(--border-color, #1e293b);
-  border-radius: 6px;
-  padding: 12px;
+  background-color: var(--bg-card, #161b22) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 12px !important;
+  padding: 16px !important;
   height: 100%;
+  display: flex;
+  flex-direction: column;
   box-shadow: 0 4px 6px -1px var(--shadow-color, rgba(0, 0, 0, 0.1));
 }
 
@@ -147,8 +149,8 @@
 /* Grid System */
 .fin-grid-row {
   display: flex;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: 16px;
+  margin-bottom: 16px;
 }
 
 .fin-col-3 { width: 25%; }
@@ -161,7 +163,7 @@
 .fin-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .fin-list-item {
@@ -177,7 +179,9 @@
 .fin-list-val {
   color: var(--text-main, #f8fafc);
   font-weight: 500;
-  text-align: right;
+  text-align: left;
+  word-wrap: break-word;
+  word-break: break-word;
 }
 
 .text-green { color: #10b981 !important; }

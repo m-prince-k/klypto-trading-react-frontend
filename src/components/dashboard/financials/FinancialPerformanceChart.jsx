@@ -27,10 +27,10 @@ export default function FinancialPerformanceChart({
             </span>
           ))}
         </div>
-        <div style={{position: 'absolute', right: '25px', top: '55px', textAlign: 'right'}}>
+        {/* <div style={{position: 'absolute', right: '25px', top: '55px', textAlign: 'right'}}>
           <div style={{fontSize: '9px', color: '#94a3b8'}}>Current Price</div>
           <div style={{fontSize: '16px', fontWeight: 'bold'}} className={changeColor}>${formatNum(price, 2, 4)}</div>
-        </div>
+        </div> */}
 
         {/* Real Klines SVG Chart */}
         <div className="fin-chart-mock" style={{marginTop: '8px'}}>

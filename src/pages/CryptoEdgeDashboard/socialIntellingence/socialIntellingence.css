@@ -221,9 +221,11 @@
 .si-chart-container {
   height: 480px;
   width: 100%;
-  background-color: var(--header-bg);
-  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-card, #161b22) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 12px;
   position: relative;
+  overflow: hidden;
 }
 
 .si-chart-iframe-wrapper {
@@ -272,7 +274,7 @@
 
 /* 5. SOCIAL INTELLIGENCE SECTION STYLE */
 .si-intelligence-section {
-  padding: 24px;
+  padding: 24px 32px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -333,9 +335,9 @@
 /* CARDS STYLING */
 .si-card {
   background-color: #0b0e17;
-  border: 1px solid #161e31;
-  border-radius: 8px;
-  padding: 20px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   position: relative;

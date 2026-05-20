@@ -14,7 +14,7 @@ export default function FinancialSocialRisk({
   return (
     <>
       {/* 7. SOCIAL & COMMUNITY METRICS */}
-      <div className="fin-col-3">
+      <div className="fin-col-4">
         <div className="fin-card">
           <div className="fin-card-title"><span className="icon">💬</span> 7. SOCIAL & COMMUNITY METRICS</div>
           
@@ -76,10 +76,10 @@ export default function FinancialSocialRisk({
       </div>
 
       {/* 8. RISK ANALYSIS */}
-      <div className="fin-col-3">
+      <div className="fin-col-4">
         <div className="fin-card">
           <div className="fin-card-title"><span className="icon">🛡️</span> 8. RISK ANALYSIS</div>
-          <div style={{display: 'flex', height: '100%'}}>
+          <div style={{display: 'flex', flex: 1}}>
             <div className="fin-list" style={{flex: 1, paddingRight: '10px', borderRight: '1px solid var(--border-color, #1e293b)'}}>
               <div className="fin-list-item"><span className="fin-list-label">Smart Contract Risk</span><span className="fin-list-val text-green">Low</span></div>
               <div className="fin-list-item"><span className="fin-list-label">Market Risk</span><span className={change24h < -5 ? 'text-red' : 'text-yellow'}>{change24h < -5 ? 'High' : 'Medium'}</span></div>
@@ -113,6 +113,45 @@ export default function FinancialSocialRisk({
                   })}
                   <polygon points={radarPoints} fill="rgba(16, 185, 129, 0.25)" stroke="#10b981" strokeWidth="1.2" />
                 </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 9. TEAM & INVESTORS */}
+      <div className="fin-col-4">
+        <div className="fin-card">
+          <div className="fin-card-title"><span className="icon">👥</span> 9. TEAM & INVESTORS</div>
+          
+          <div style={{display: 'flex', gap: '16px'}}>
+            <div style={{flex: 1}}>
+              <div style={{fontSize: '9px', color: 'var(--text-muted, #94a3b8)', marginBottom: '8px', textTransform: 'uppercase'}}>CORE TEAM</div>
+              <div className="fin-list" style={{gap: '12px'}}>
+                {fundamentals?.team?.slice(0, 4).map((member, i) => (
+                  <div key={i} className="d-flex-center justify-content-between">
+                    <div className="d-flex-center">
+                      <div className="fin-team-avatar d-flex-center justify-content-center" style={{fontSize:'12px'}}>👨‍💻</div>
+                      <div className='text-left'>
+                        <div style={{color: 'var(--text-main, #fff)', fontSize: '11px', fontWeight: 'bold'}}>{member.name}</div>
+                        <div style={{color: 'var(--text-muted, #94a3b8)', fontSize: '9px'}}>{member.role}</div>
+                      </div>
+                    </div>
+                    <div style={{color: 'var(--accent-color, #3b82f6)', background: 'var(--bg-card-hover, rgba(59, 130, 246, 0.1))', padding: '2px 4px', borderRadius: '4px', fontSize: '9px'}}>in</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div style={{flex: 1}}>
+              <div style={{fontSize: '9px', color: 'var(--text-muted, #94a3b8)', marginBottom: '8px', textTransform: 'uppercase'}}>INVESTORS</div>
+              <div className="fin-list" style={{gap: '12px'}}>
+                {fundamentals?.investors?.slice(0, 5).map((inv, i) => (
+                  <div key={i} className="d-flex-center">
+                    <span style={{color: ['#f59e0b','#3b82f6','#8b5cf6','#10b981','#f43f5e'][i%5], marginRight: '6px'}}>{inv.charAt(0)}</span> 
+                    <span style={{color: 'var(--text-main, #fff)', fontSize: '10px'}}>{inv}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

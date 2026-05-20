@@ -18,7 +18,7 @@ export default function FinancialOverviewSupply({
   return (
     <>
       {/* 1. PROJECT OVERVIEW */}
-      <div className="fin-col-3">
+      <div className="fin-col-4">
         <div className="fin-card">
           <div className="fin-card-title"><span className="icon">👤</span> 1. PROJECT OVERVIEW</div>
           <div className="fin-list">
@@ -30,7 +30,7 @@ export default function FinancialOverviewSupply({
             <div className="fin-list-item"><span className="fin-list-label">Whitepaper</span><span className="fin-list-val text-blue" style={{cursor:'pointer'}}>View Whitepaper</span></div>
             <div className="fin-list-item"><span className="fin-list-label">Launch Date</span><span className="fin-list-val">{marketExtra?.genesisDate || fundamentals?.launchDate}</span></div>
             <div className="fin-list-item"><span className="fin-list-label">Consensus</span><span className="fin-list-val">{fundamentals?.consensus}</span></div>
-            <div className="fin-list-item" style={{alignItems:'flex-start'}}><span className="fin-list-label">Use Case</span><span className="fin-list-val" style={{textAlign:'right'}}>{fundamentals?.useCase}</span></div>
+            <div className="fin-list-item" style={{alignItems:'flex-start'}}><span className="fin-list-label">Use Case</span><span className="fin-list-val" style={{textAlign:'right', wordBreak: 'break-word', maxWidth: '140px'}}>{fundamentals?.useCase}</span></div>
           </div>
         </div>
       </div>
@@ -71,7 +71,7 @@ export default function FinancialOverviewSupply({
       </div>
 
       {/* 3. MARKET METRICS */}
-      <div className="fin-col-3">
+      <div className="fin-col-4">
         <div className="fin-card">
           <div className="fin-card-title"><span className="icon">📈</span> 3. MARKET METRICS</div>
           <div className="fin-list">

@@ -28,7 +28,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 32px;
+  padding: 0 25px;
   flex-shrink: 0;
 }
 
@@ -264,7 +264,7 @@ input:checked + .slider:before {
 /* ── Stats Cards ───────────────────────────────────────────── */
 .stats-card {
   border-radius: 12px !important;
-  border: 1px solid #21262d !important;
+  border: 1px solid var(--border-color) !important;
   background-color: #161b22 !important;
   transition: transform 0.2s, border-color 0.2s;
   overflow: hidden;
@@ -742,7 +742,7 @@ input:checked + .slider:before {
 
 /* ── Sub-Component Alignment Tweaks ── */
 .arbitrage-main-sub .content-container {
-  padding: 16px 0 !important;
+  padding: 0 0 !important;
 }
 
 /* ── Light Theme Responsive Overrides ── */

@@ -10,7 +10,7 @@ export default function FinancialTechOnChain({
   return (
     <>
       {/* 5. TECHNOLOGY & FUNDAMENTALS */}
-      <div className="fin-col-3">
+      <div className="fin-col-4">
         <div className="fin-card">
           <div className="fin-card-title"><span className="icon">⚙️</span> 5. TECHNOLOGY & FUNDAMENTALS</div>
           <div className="fin-list">
@@ -36,7 +36,7 @@ export default function FinancialTechOnChain({
       </div>
 
       {/* 6. FINANCIAL METRICS (ON-CHAIN) */}
-      <div className="fin-col-3">
+      <div className="fin-col-4">
         <div className="fin-card">
           <div className="fin-card-title"><span className="icon">⛓️</span> 6. FINANCIAL METRICS (ON-CHAIN)</div>
           <div className="fin-list" style={{marginBottom: '12px'}}>

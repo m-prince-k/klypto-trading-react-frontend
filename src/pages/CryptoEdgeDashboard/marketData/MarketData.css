@@ -18,158 +18,21 @@
   background-color: var(--bg-primary);
   color: var(--text-primary);
   min-height: 100vh;
-  padding: 0;
+  /* padding: 24px 32px !important; */
   margin: 0;
   overflow-x: hidden;
 }
 
-/* ================= HEADER NAVBAR ================= */
-.binance-navbar {
-  border-bottom: 1px solid var(--border-color);
-  padding: 10px 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.nav-left {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-}
-
-.binance-logo {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  text-decoration: none;
-  font-weight: 700;
-  font-size: 20px;
-  color: var(--binance-yellow);
-}
-
-.logo-icon {
-  width: 24px;
-  height: 24px;
-  background-color: var(--binance-yellow);
-  clip-path: polygon(50% 0%, 83% 12%, 100% 43%, 94% 78%, 68% 100%, 32% 100%, 6% 78%, 0% 43%, 17% 12%);
-  display: inline-block;
-}
-
-.nav-menu {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.nav-link-item {
-  color: var(--text-primary);
-  text-decoration: none;
-  font-size: 13.5px;
-  font-weight: 500;
-  padding: 6px 4px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-  transition: color 0.15s ease;
-}
-
-.nav-link-item:hover {
-  color: var(--binance-yellow);
-}
-
-.nav-right {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.nav-search-box {
-  position: relative;
-  width: 200px;
-}
-
-.nav-search-input {
-  width: 100%;
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 6px 12px 6px 30px;
-  font-size: 12px;
-  color: var(--text-primary);
-  transition: all 0.2s ease;
-}
-
-.nav-search-input:focus {
-  outline: none;
-  border-color: var(--binance-yellow);
-  background-color: var(--bg-primary);
-}
-
-.nav-search-icon {
-  position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-secondary);
-  font-size: 12px;
-  pointer-events: none;
-}
-
-.btn-deposit {
-  background-color: var(--binance-yellow);
-  color: #12161a;
-  border: none;
-  border-radius: 4px;
-  padding: 6px 14px;
-  font-size: 12.5px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  transition: background-color 0.15s ease;
-}
-
-.btn-deposit:hover {
-  background-color: var(--binance-yellow-hover);
-}
-
-.nav-icon-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-primary);
-  font-size: 16px;
-  cursor: pointer;
-  padding: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-.nav-icon-btn:hover {
-  background-color: var(--bg-secondary);
-  color: var(--binance-yellow);
-}
 
 /* ================= TITLE & HERO HEADER ================= */
 .hero-header {
-  padding: 24px 24px 16px 24px;
+  padding: 0px;
 }
 
 .hero-title {
   font-size: 28px;
   font-weight: 700;
-  margin: 0 0 6px 0;
+  margin: 0 0 0 0;
   color: var(--text-primary);
   letter-spacing: -0.5px;
 }
@@ -185,7 +48,7 @@
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 16px;
-  padding: 0 24px 24px 24px;
+  padding: 0 0 24px 0;
 }
 
 @media (max-width: 1200px) {
@@ -201,10 +64,10 @@
 }
 
 .stat-card {
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 16px;
+  background-color: var(--bg-card, #161b22) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 12px !important;
+  padding: 16px !important;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -325,7 +188,7 @@
   display: grid;
   grid-template-columns: 7.2fr 2.8fr;
   gap: 20px;
-  padding: 0 24px 24px 24px;
+  padding: 0;
 }
 
 @media (max-width: 1100px) {
@@ -338,10 +201,10 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 20px;
+  background-color: var(--bg-card, #161b22) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 12px !important;
+  padding: 20px !important;
 }
 
 .side-column {
@@ -640,10 +503,10 @@
 
 /* Chart Overview Card */
 .market-overview-card {
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 16px;
+  background-color: var(--bg-card, #161b22) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 12px !important;
+  padding: 16px !important;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -756,10 +619,10 @@
 
 /* Side List Cards (Gainers & Losers) */
 .side-list-card {
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 16px;
+  background-color: var(--bg-card, #161b22) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 12px !important;
+  padding: 16px !important;
   display: flex;
   flex-direction: column;
   gap: 12px;

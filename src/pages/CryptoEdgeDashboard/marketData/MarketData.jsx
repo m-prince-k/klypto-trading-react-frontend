@@ -433,12 +433,12 @@ const MarketData = () => {
 
       {/* HERO HEADER */}
       <header className="hero-header d-flex justify-content-between align-items-center">
-        <div>
+        {/* <div>
           <h1 className="hero-title text-left">Market Data</h1>
           <p className="hero-subtitle">
             Real-time market overview and cryptocurrency data
           </p>
-        </div>
+        </div> */}
         {isSocketConnected && (
           <div className="socket-live-indicator d-flex align-items-center gap-2">
             <span className="live-dot animate-pulse"></span>

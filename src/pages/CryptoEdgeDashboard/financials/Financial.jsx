@@ -11,7 +11,7 @@ import FinancialSocialRisk from '../../../../src/components/dashboard/financials
 import FinancialAdvancedAnalytics from '../../../../src/components/dashboard/financials/FinancialAdvancedAnalytics';
 import FinancialFooter from '../../../../src/components/dashboard/financials/FinancialFooter';
 
-const API_BASE = 'http://192.168.1.5:7000';
+const API_BASE = 'http://192.168.1.13:7000';
 
 const cleanSymbol = (sym) => {
   if (!sym) return 'BTC';
@@ -264,7 +264,10 @@ export default function Financial({ setActiveTab = () => {}, isSubComponent = fa
           changeColor={changeColor}
           changeSign={changeSign}
         />
+      </div>
 
+      {/* ROW 2 */}
+      <div className="fin-grid-row">
         <FinancialPerformanceChart
           price={price}
           change24h={change24h}
@@ -276,10 +279,7 @@ export default function Financial({ setActiveTab = () => {}, isSubComponent = fa
           formatLarge={formatLarge}
           changeColor={changeColor}
         />
-      </div>
 
-      {/* ROW 2 */}
-      <div className="fin-grid-row">
         <FinancialTechOnChain
           fundamentals={fundamentals}
           tvlData={tvlData}
@@ -287,7 +287,10 @@ export default function Financial({ setActiveTab = () => {}, isSubComponent = fa
           formatNum={formatNum}
           formatLarge={formatLarge}
         />
+      </div>
 
+      {/* ROW 3 */}
+      <div className="fin-grid-row">
         <FinancialSocialRisk
           social={social}
           fundamentals={fundamentals}
@@ -301,7 +304,7 @@ export default function Financial({ setActiveTab = () => {}, isSubComponent = fa
         />
       </div>
 
-      {/* ROW 3 */}
+      {/* ROW 4 */}
       <div className="fin-grid-row">
         <FinancialAdvancedAnalytics
           price={price}

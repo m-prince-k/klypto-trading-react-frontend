@@ -88,7 +88,14 @@ const Sidebar = ({ activeTab = "Overview", setActiveTab = () => {} }) => {
             </span>
           </a>
 
-          <a href="#onchain" className="nav-item">
+          <a
+            href="#onchain"
+            className={`nav-item ${activeTab === "On-Chain (TVL)" ? "active" : ""}`}
+            onClick={(e) => {
+              e.preventDefault();
+              setActiveTab("On-Chain (TVL)");
+            }}
+          >
             <span className="nav-label-group">
               <span className="nav-icon">
                 <svg
@@ -161,7 +168,14 @@ const Sidebar = ({ activeTab = "Overview", setActiveTab = () => {} }) => {
             </span>
           </a>
 
-          <a href="#financials" className="nav-item">
+          <a
+            href="#financials"
+            className={`nav-item ${activeTab === "Financials" ? "active" : ""}`}
+            onClick={(e) => {
+              e.preventDefault();
+              setActiveTab("Financials");
+            }}
+          >
             <span className="nav-label-group">
               <span className="nav-icon">
                 <svg
@@ -207,7 +221,14 @@ const Sidebar = ({ activeTab = "Overview", setActiveTab = () => {} }) => {
             </span>
           </a>
 
-          <a href="#watchlist" className="nav-item">
+          <a
+            href="#watchlist"
+            className={`nav-item ${activeTab === "Watchlist" ? "active" : ""}`}
+            onClick={(e) => {
+              e.preventDefault();
+              setActiveTab("Watchlist");
+            }}
+          >
             <span className="nav-label-group">
               <span className="nav-icon">
                 <svg
@@ -225,7 +246,14 @@ const Sidebar = ({ activeTab = "Overview", setActiveTab = () => {} }) => {
             </span>
           </a>
 
-          <a href="#alerts" className="nav-item">
+          <a
+            href="#alerts"
+            className={`nav-item ${activeTab === "Alerts" ? "active" : ""}`}
+            onClick={(e) => {
+              e.preventDefault();
+              setActiveTab("Alerts");
+            }}
+          >
             <span className="nav-label-group">
               <span className="nav-icon">
                 <svg
@@ -244,7 +272,14 @@ const Sidebar = ({ activeTab = "Overview", setActiveTab = () => {} }) => {
             </span>
           </a>
 
-          <a href="#api" className="nav-item">
+          <a
+            href="#api"
+            className={`nav-item ${activeTab === "API Status" ? "active" : ""}`}
+            onClick={(e) => {
+              e.preventDefault();
+              setActiveTab("API Status");
+            }}
+          >
             <span className="nav-label-group">
               <span className="nav-icon">
                 <svg
@@ -263,7 +298,14 @@ const Sidebar = ({ activeTab = "Overview", setActiveTab = () => {} }) => {
             </span>
           </a>
 
-          <a href="#settings" className="nav-item">
+          <a
+            href="#settings"
+            className={`nav-item ${activeTab === "Settings" ? "active" : ""}`}
+            onClick={(e) => {
+              e.preventDefault();
+              setActiveTab("Settings");
+            }}
+          >
             <span className="nav-label-group">
               <span className="nav-icon">
                 <svg

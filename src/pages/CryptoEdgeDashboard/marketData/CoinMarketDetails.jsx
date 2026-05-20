@@ -19,6 +19,8 @@ const CoinMarketDetails = () => {
   const [coin, setCoin] = useState(null);
   const [isSocketConnected, setIsSocketConnected] = useState(false);
   const [flashState, setFlashState] = useState(null);
+  const [activeTab, setActiveTab] = useState("Chart");
+  const [activeTimeframe, setActiveTimeframe] = useState("1D");
 
   // ── STEP 1: API polling for initial coin state + periodic refresh ──
   useEffect(() => {
@@ -202,19 +204,23 @@ const CoinMarketDetails = () => {
       width: chartContainerRef.current.clientWidth || 800,
       height: 450,
       layout: {
-        background: { color: isDark ? "#181a20" : "#ffffff" },
-        textColor: isDark ? "#848e9c" : "#64748b",
+        background: { type: 'solid', color: 'transparent' },
+        textColor: "#848e9c",
       },
       grid: {
-        vertLines: { color: isDark ? "rgba(43, 49, 57, 0.5)" : "rgba(226, 232, 240, 0.8)" },
-        horzLines: { color: isDark ? "rgba(43, 49, 57, 0.5)" : "rgba(226, 232, 240, 0.8)" },
+        vertLines: { visible: false },
+        horzLines: { visible: false },
+      },
+      leftPriceScale: {
+        visible: true,
+        borderColor: "#2b3139",
       },
       rightPriceScale: {
-        borderColor: isDark ? "#2b3139" : "#e2e8f0",
-        autoScale: true,
+        visible: true,
+        borderColor: "transparent",
       },
       timeScale: {
-        borderColor: isDark ? "#2b3139" : "#e2e8f0",
+        borderColor: "#2b3139",
         timeVisible: true,
         secondsVisible: false,
       },
@@ -222,9 +228,17 @@ const CoinMarketDetails = () => {
 
     const areaSeries = chart.addSeries(AreaSeries, {
       lineColor: "#f0b90b",
-      topColor: "rgba(240, 185, 11, 0.3)",
-      bottomColor: "rgba(240, 185, 11, 0)",
-      lineWidth: 2,
+      topColor: "rgba(240, 185, 11, 0.5)",
+      bottomColor: "rgba(240, 185, 11, 0.0)",
+      lineWidth: 3,
+      crosshairMarkerVisible: true,
+      crosshairMarkerRadius: 6,
+      crosshairMarkerBorderColor: "#181a20",
+      crosshairMarkerBackgroundColor: "#f0b90b",
+      lastValueVisible: true,
+      priceLineVisible: true,
+      priceLineColor: "rgba(240, 185, 11, 0.6)",
+      priceLineStyle: 3, // dashed
       priceFormat: {
         type: "price",
         precision: symbol.toUpperCase() === "SHIB" ? 6 : 2,
@@ -307,127 +321,133 @@ const CoinMarketDetails = () => {
 
   const isUp = coin.change24h >= 0;
 
+  const tabs = ["Chart", "Analysis", "News", "FAQ", "Trending Crypto", "Trading Pairs"];
+  const timeframes = ["1D", "7D", "1M", "3M", "1Y", "YTD"];
+
   return (
     <div className="coin-detail-page">
-      {/* Detail Header Navigation */}
-      <header className="detail-page-header">
-        <button className="btn-back" onClick={() => navigate("/market")}>
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <line x1="19" y1="12" x2="5" y2="12"></line>
-            <polyline points="12 19 5 12 12 5"></polyline>
-          </svg>
-          Back to Markets
-        </button>
-        <div className="live-status">
-          <span
-            className={`live-dot ${isSocketConnected ? "animate-pulse" : ""}`}
-            style={{
-              backgroundColor: isSocketConnected
-                ? "var(--color-green)"
-                : "var(--color-red)",
-            }}
-          ></span>
-          <span className="live-status-text">
-            {isSocketConnected ? "Live Connection" : "Reconnecting..."}
-          </span>
-        </div>
-      </header>
-
-      {/* Main Content Body */}
       <main className="detail-page-body">
         {/* Coin Info Bar */}
-        <section className="coin-info-bar">
-          <div className="coin-info-left">
-            <div
-              className="coin-details-logo"
-              style={{ backgroundColor: coin.logoColor }}
-            >
-              {coin.symbol[0]}
-            </div>
-            <div className="coin-details-title">
-              <h1 className="coin-details-name">{coin.name}</h1>
-              <span className="coin-details-symbol">{coin.symbol}/USDT</span>
-            </div>
+        <section className="coin-header-top">
+          <div
+            className="coin-details-logo"
+            style={{ backgroundColor: coin.logoColor || "#f7931a" }}
+          >
+            {coin.symbol === "BTC" ? "₿" : coin.symbol[0]}
           </div>
-
-          <div className="coin-info-right-grid">
-            <div className="info-stat-box">
-              <span className="info-stat-label">Live Price</span>
-              <span
-                className={`info-stat-value price-display ${flashState === "up" ? "flash-up" : flashState === "down" ? "flash-down" : ""}`}
-              >
-                $
-                {coin.price.toLocaleString(undefined, {
+          <div className="coin-title-section">
+            <div className="coin-name-row">
+              <span className="coin-name-text">{coin.name} Price ({coin.symbol})</span>
+              <span className="badge-hot">HOT</span>
+            </div>
+            <div className="coin-price-row">
+              <h1 className={`price-display ${flashState === "up" ? "flash-up" : flashState === "down" ? "flash-down" : ""}`}>
+                ${coin.price.toLocaleString(undefined, {
                   minimumFractionDigits: coin.price < 1 ? 4 : 2,
                   maximumFractionDigits: coin.price < 1 ? 4 : 2,
                 })}
-              </span>
+              </h1>
             </div>
-            <div className="info-stat-box">
-              <span className="info-stat-label">24h Change</span>
-              <span
-                className={`info-stat-value percentage-text ${isUp ? "up" : "down"}`}
-              >
-                {isUp ? "▲" : "▼"} {Math.abs(coin.change24h).toFixed(2)}%
+            <div className="coin-portfolio-row">
+              <span className={`change-text ${isUp ? "up" : "down"}`}>
+                {isUp ? "+" : ""}{coin.change24h.toFixed(2)}% in the past 24 hrs
               </span>
-            </div>
-            <div className="info-stat-box">
-              <span className="info-stat-label">24h High</span>
-              <span className="info-stat-value">
-                $
-                {(coin.high || coin.price).toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                })}
-              </span>
-            </div>
-            <div className="info-stat-box">
-              <span className="info-stat-label">24h Low</span>
-              <span className="info-stat-value">
-                $
-                {(coin.low || coin.price).toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                })}
-              </span>
-            </div>
-            <div className="info-stat-box">
-              <span className="info-stat-label">24h Volume (USDT)</span>
-              <span className="info-stat-value">
-                $
-                {coin.volume24h.toLocaleString(undefined, {
-                  maximumFractionDigits: 0,
-                })}
-              </span>
-            </div>
-            <div className="info-stat-box">
-              <span className="info-stat-label">Circulating Supply</span>
-              <span className="info-stat-value">
-                {coin.supply.toLocaleString()} {coin.symbol}
+              <span className="dot-separator">•</span>
+              <span className="portfolio-text">
+                You have 0 {coin.name} in portfolio <span className="add-now-link">Add Now</span>
               </span>
             </div>
           </div>
         </section>
 
+        {/* Tabs Navigation */}
+        <nav className="coin-tabs-nav">
+          {tabs.map((tab) => (
+            <button
+              key={tab}
+              className={`tab-btn ${activeTab === tab ? "active" : ""}`}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tab}
+            </button>
+          ))}
+        </nav>
+
         {/* Live Chart Section */}
         <section className="detail-chart-wrapper">
-          <div className="chart-header-bar">
-            <span className="chart-header-title">Live Ticker Area Chart</span>
-            <div className="chart-controls">
-              <span className="control-badge">Real-time Stream</span>
-            </div>
+          <div className="timeframe-controls">
+            {timeframes.map((tf) => (
+              <button
+                key={tf}
+                className={`time-btn ${activeTimeframe === tf ? "active" : ""}`}
+                onClick={() => setActiveTimeframe(tf)}
+              >
+                {tf}
+              </button>
+            ))}
+            <div className="chart-right-header">USD</div>
           </div>
           <div
             className="lightweight-chart-container"
             ref={chartContainerRef}
           ></div>
+        </section>
+
+        {/* Market Stats Section */}
+        <section className="market-stats-section">
+          <h2 className="market-stats-title">{coin.name} Market Stats</h2>
+          <div className="market-stats-grid">
+            <div className="stat-item">
+              <span className="stat-label">
+                Popularity 
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+              </span>
+              <span className="stat-value">#1</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-label">
+                Market Cap 
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+              </span>
+              <span className="stat-value">$1.5T</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-label">
+                Volume (24hours) 
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+              </span>
+              <span className="stat-value">
+                ${(coin.volume24h / 1e9).toFixed(1)}B
+              </span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-label">
+                Circulation Supply 
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+              </span>
+              <span className="stat-value">
+                {(coin.supply / 1e6).toFixed(0)}M • 95.39%
+              </span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-label">
+                Total Maximum Supply 
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+              </span>
+              <span className="stat-value">21M</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-label">
+                Fully Diluted Market Cap 
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+              </span>
+              <span className="stat-value">$1.6T</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-label">Issue Date</span>
+              <span className="stat-value">3 Jan 2009</span>
+            </div>
+          </div>
         </section>
       </main>
     </div>
