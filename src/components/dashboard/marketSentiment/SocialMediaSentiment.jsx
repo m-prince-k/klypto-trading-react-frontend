@@ -17,13 +17,13 @@ const SocialMediaSentiment = ({ data, getColorClass }) => (
                 <div className="progress-bar bg-success" role="progressbar" style={{ width: `${data.socialMedia.distribution.greed}%` }}></div>
                 <div className="progress-bar bg-danger" role="progressbar" style={{ width: `${data.socialMedia.distribution.fear}%` }}></div>
             </div>
-            <div className="d-flex justify-content-between extremely-small text-muted mb-4 pb-2 border-bottom border-secondary border-opacity-25">
+            <div className="d-flex justify-content-between small text-muted mb-4 mt-2 pb-2 border-bottom border-secondary border-opacity-25">
                 <span>{data.socialMedia.distribution.neutral}% Neutral</span>
                 <span>{data.socialMedia.distribution.greed}% Greed</span>
                 <span>{data.socialMedia.distribution.fear}% Fear</span>
             </div>
-            <div className="extremely-small text-muted mb-3">Top Trending Coins on Social Media</div>
-            <div className="d-flex flex-wrap gap-2 mb-4">
+            <div className="small text-muted mb-3">Top Trending Coins on Social Media</div>
+            <div className="d-flex flex-wrap gap-2 mb-4 mt-2">
                 {data.socialMedia.trending.map((t, i) => (
                     <span className="trending-tag" key={i}>#{i + 1} {t}</span>
                 ))}

@@ -125,6 +125,8 @@ useEffect(() => {
   }
 
 }, [selectedSymbol, theme, activeTab]); // 👈 ADD activeTab
+
+const [sidebarOpen, setSidebarOpen] = useState(true);
   const [orderBook, setOrderBook] = useState({
     asks: [],
     bids: [],
@@ -479,22 +481,25 @@ useEffect(() => {
 
   return (
     <>
-      <div className="crypto-dashboard container-fluid p-0">
-        <div className="dashboard-wrapper">
+      <div className="crypto-dashboard container-fluid p-0" style={{ flexDirection: 'column' }}>
+        {/* Top Real-Time Tickers Row */}
+        <TopTickerBar prices={prices} selectedSymbol={selectedSymbol} />
+
+        {/* Premium Header Controls (Search & Active Pair Dropdown) */}
+        <HeaderControls
+          selectedSymbol={selectedSymbol}
+          setSelectedSymbol={setSelectedSymbol}
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+        />
+
+        <div className="dashboard-wrapper" style={{ flexGrow: 1, minHeight: 0 }}>
           {/* Modular Left Sidebar */}
-          <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+          <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} sidebarOpen={sidebarOpen}
+  setSidebarOpen={setSidebarOpen} />
 
           {/* Main Dashboard Panel */}
           <main className="main-workspace">
-            {/* Top Real-Time Tickers Row */}
-            <TopTickerBar prices={prices} selectedSymbol={selectedSymbol} />
-
-            {/* Premium Header Controls (Search & Active Pair Dropdown) */}
-            <HeaderControls
-              selectedSymbol={selectedSymbol}
-              setSelectedSymbol={setSelectedSymbol}
-            />
-
             {/* Scrollable Core Workspace */}
             <div className="scrollable-content-area">
 

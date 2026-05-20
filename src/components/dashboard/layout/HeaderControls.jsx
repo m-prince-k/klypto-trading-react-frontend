@@ -4,7 +4,7 @@ import { getUser } from "../../../util/common";
 import apiService from "../../../services/apiServices";
 import { logout } from "../../../pages/auth/protected";
 
-const HeaderControls = ({ selectedSymbol, setSelectedSymbol }) => {
+const HeaderControls = ({ selectedSymbol, setSelectedSymbol, sidebarOpen, setSidebarOpen }) => {
   const navigate = useNavigate();
 
   const user = getUser();
@@ -30,7 +30,46 @@ const HeaderControls = ({ selectedSymbol, setSelectedSymbol }) => {
   return (
     <div className="workspace-header-controls">
       <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-       
+
+        {/* Logo */}
+        <div className="brand-logo-section">
+          <div className="brand-title">
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              style={{ marginRight: "8px" }}
+            >
+              <path d="M12 2L2 7l10 5 10-5-10-5z" fill="#6366f1" />
+              <path
+                d="M2 17l10 5 10-5M2 12l10 5 10-5"
+                stroke="#a78bfa"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <span>CryptoEdge</span>
+          </div>
+          <div className="brand-subtitle">All Markets. One Edge.</div>
+        </div>
+
+        <button
+          onClick={() => setSidebarOpen(prev => !prev)}
+          style={{
+            background: "transparent",
+            border: "1px solid var(--border-color)",
+            color: "var(--text-main)",
+            borderRadius: "8px",
+            padding: "4px 8px",
+            cursor: "pointer",
+            fontSize: "12px"
+          }}
+        >
+          ☰
+        </button>
+
 
         {/* Premium Asset Selector Dropdown */}
         <div
@@ -84,7 +123,7 @@ const HeaderControls = ({ selectedSymbol, setSelectedSymbol }) => {
           </select>
         </div>
 
-         <div className="search-container">
+        <div className="search-container">
           <input
             type="text"
             className="search-input"

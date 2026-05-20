@@ -146,7 +146,7 @@ export default function MarketDataCoinsTable({
                 const flashClass = flashStates[priceFlashKey] === 'up' ? 'flash-up' : flashStates[priceFlashKey] === 'down' ? 'flash-down' : '';
 
                 return (
-                  <tr key={coin.id}>
+                  <tr key={coin.symbol}>
                     <td style={{ color: 'var(--text-secondary)' }}>{index + 1}</td>
                     <td>
                       <div className="coin-name-cell">

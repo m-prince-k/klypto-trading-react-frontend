@@ -2,25 +2,25 @@
 
 /* ─── CSS Variables ─── */
 [data-theme="dark"] {
-    --ms-bg: #0b0e11;
-    --ms-card-bg: #181a20;
-    --ms-card-hover: #1e2329;
-    --ms-border: #2b3139;
-    --ms-text-main: #eaecef;
-    --ms-text-muted: #848e9c;
-    --ms-input-bg: #2b3139;
-    --ms-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    --ms-bg: var(--bg-main);
+    --ms-card-bg: var(--bg-card);
+    --ms-card-hover: var(--bg-card-hover);
+    --ms-border: var(--border-color);
+    --ms-text-main: var(--text-main);
+    --ms-text-muted: var(--text-muted);
+    --ms-input-bg: var(--bg-input, #2b3139);
+    --ms-shadow: var(--shadow-lg);
 }
 
 [data-theme="light"] {
-    --ms-bg: #f0f2f5;
-    --ms-card-bg: #ffffff;
-    --ms-card-hover: #f5f5f5;
-    --ms-border: #e0e3eb;
-    --ms-text-main: #1e2329;
-    --ms-text-muted: #707a8a;
-    --ms-input-bg: #eaecef;
-    --ms-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --ms-bg: var(--bg-main);
+    --ms-card-bg: var(--bg-card);
+    --ms-card-hover: var(--bg-card-hover);
+    --ms-border: var(--border-color);
+    --ms-text-main: var(--text-main);
+    --ms-text-muted: var(--text-muted);
+    --ms-input-bg: var(--bg-input, #eaecef);
+    --ms-shadow: var(--shadow-lg);
 }
 
 /* ─── Layout ─── */

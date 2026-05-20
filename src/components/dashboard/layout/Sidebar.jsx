@@ -1,10 +1,13 @@
 import React from "react";
 
-const Sidebar = ({ activeTab = "Overview", setActiveTab = () => {} }) => {
+const Sidebar = ({ sidebarOpen, activeTab = "Overview", setActiveTab = () => { } }) => {
   return (
     <aside
-      className="sidebar-panel"
+      className={`sidebar-panel ${sidebarOpen ? "open" : "collapsed"}`}
       style={{
+        width: sidebarOpen ? "240px" : "70px",
+        transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        overflow: "hidden",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
@@ -12,29 +15,7 @@ const Sidebar = ({ activeTab = "Overview", setActiveTab = () => {} }) => {
       }}
     >
       <div>
-        {/* Logo */}
-        <div className="brand-logo-section">
-          <div className="brand-title">
-            <svg
-              width="22"
-              height="22"
-              viewBox="0 0 24 24"
-              fill="none"
-              style={{ marginRight: "8px" }}
-            >
-              <path d="M12 2L2 7l10 5 10-5-10-5z" fill="#6366f1" />
-              <path
-                d="M2 17l10 5 10-5M2 12l10 5 10-5"
-                stroke="#a78bfa"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <span>CryptoEdge</span>
-          </div>
-          <div className="brand-subtitle">All Markets. One Edge.</div>
-        </div>
+
 
         {/* Menu Links */}
         <nav className="nav-links">
@@ -57,7 +38,7 @@ const Sidebar = ({ activeTab = "Overview", setActiveTab = () => {} }) => {
                   <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
                 </svg>
               </span>
-              Overview
+              <span style={{ opacity: sidebarOpen ? 1 : 0, transition: "opacity 0.2s ease", whiteSpace: "nowrap" }}>Overview</span>
             </span>
           </a>
 
@@ -84,7 +65,7 @@ const Sidebar = ({ activeTab = "Overview", setActiveTab = () => {} }) => {
                   <line x1="6" y1="20" x2="6" y2="14" />
                 </svg>
               </span>
-              Market Data
+              <span style={{ opacity: sidebarOpen ? 1 : 0, transition: "opacity 0.2s ease", whiteSpace: "nowrap" }}>Market Data</span>
             </span>
           </a>
 
@@ -110,7 +91,7 @@ const Sidebar = ({ activeTab = "Overview", setActiveTab = () => {} }) => {
                   <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
                 </svg>
               </span>
-              On-Chain (TVL)
+              <span style={{ opacity: sidebarOpen ? 1 : 0, transition: "opacity 0.2s ease", whiteSpace: "nowrap" }}>On-Chain (TVL)</span>
             </span>
           </a>
 
@@ -136,7 +117,7 @@ const Sidebar = ({ activeTab = "Overview", setActiveTab = () => {} }) => {
                   <circle cx="9" cy="7" r="4" />
                 </svg>
               </span>
-              Social Intelligence
+              <span style={{ opacity: sidebarOpen ? 1 : 0, transition: "opacity 0.2s ease", whiteSpace: "nowrap" }}>Social Intelligence</span>
             </span>
           </a>
 
@@ -164,7 +145,7 @@ const Sidebar = ({ activeTab = "Overview", setActiveTab = () => {} }) => {
                   <line x1="15" y1="9" x2="15.01" y2="9" />
                 </svg>
               </span>
-              Market Sentiment
+              <span style={{ opacity: sidebarOpen ? 1 : 0, transition: "opacity 0.2s ease", whiteSpace: "nowrap" }}>Market Sentiment</span>
             </span>
           </a>
 
@@ -192,7 +173,7 @@ const Sidebar = ({ activeTab = "Overview", setActiveTab = () => {} }) => {
                   <line x1="3" y1="10" x2="21" y2="10" />
                 </svg>
               </span>
-              Financials
+              <span style={{ opacity: sidebarOpen ? 1 : 0, transition: "opacity 0.2s ease", whiteSpace: "nowrap" }}>Financials</span>
             </span>
           </a>
 
@@ -217,7 +198,7 @@ const Sidebar = ({ activeTab = "Overview", setActiveTab = () => {} }) => {
                   <path d="M17 1l4 4-4 4M21 5H9M7 23l-4-4 4-4M3 19h12" />
                 </svg>
               </span>
-              Arbitrage
+              <span style={{ opacity: sidebarOpen ? 1 : 0, transition: "opacity 0.2s ease", whiteSpace: "nowrap" }}>Arbitrage</span>
             </span>
           </a>
 
@@ -242,7 +223,7 @@ const Sidebar = ({ activeTab = "Overview", setActiveTab = () => {} }) => {
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                 </svg>
               </span>
-              Watchlist
+              <span style={{ opacity: sidebarOpen ? 1 : 0, transition: "opacity 0.2s ease", whiteSpace: "nowrap" }}>Watchlist</span>
             </span>
           </a>
 
@@ -268,7 +249,7 @@ const Sidebar = ({ activeTab = "Overview", setActiveTab = () => {} }) => {
                   <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                 </svg>
               </span>
-              Alerts
+              <span style={{ opacity: sidebarOpen ? 1 : 0, transition: "opacity 0.2s ease", whiteSpace: "nowrap" }}>Alerts</span>
             </span>
           </a>
 
@@ -294,7 +275,7 @@ const Sidebar = ({ activeTab = "Overview", setActiveTab = () => {} }) => {
                   <polyline points="8 6 2 12 8 18" />
                 </svg>
               </span>
-              API Status
+              <span style={{ opacity: sidebarOpen ? 1 : 0, transition: "opacity 0.2s ease", whiteSpace: "nowrap" }}>API Status</span>
             </span>
           </a>
 
@@ -317,10 +298,10 @@ const Sidebar = ({ activeTab = "Overview", setActiveTab = () => {} }) => {
                   strokeWidth="2"
                 >
                   <circle cx="12" cy="12" r="3" />
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
                 </svg>
               </span>
-              Settings
+              <span style={{ opacity: sidebarOpen ? 1 : 0, transition: "opacity 0.2s ease", whiteSpace: "nowrap" }}>Settings</span>
             </span>
           </a>
         </nav>

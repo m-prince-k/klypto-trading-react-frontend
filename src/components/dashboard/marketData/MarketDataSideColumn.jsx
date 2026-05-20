@@ -53,7 +53,7 @@ export default function MarketDataSideColumn({
 
         <div className="side-list-container">
           {gainers.map((coin, index) => (
-            <div className="side-list-row" key={coin.id}>
+            <div className="side-list-row" key={coin.symbol}>
               <div className="side-list-left">
                 <span className="side-list-index">{index + 1}</span>
                 <div className="side-list-coin">
@@ -85,7 +85,7 @@ export default function MarketDataSideColumn({
 
         <div className="side-list-container">
           {losers.map((coin, index) => (
-            <div className="side-list-row" key={coin.id}>
+            <div className="side-list-row" key={coin.symbol}>
               <div className="side-list-left">
                 <span className="side-list-index">{index + 1}</span>
                 <div className="side-list-coin">
