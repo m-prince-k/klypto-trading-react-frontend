@@ -28,9 +28,9 @@ export default function FinancialHeader({
           value={selectedSymbol}
           onChange={(e) => setSelectedSymbol(e.target.value)}
           style={{
-            background: '#1e293b', 
-            color: '#fff', 
-            border: '1px solid #334155', 
+            background: 'var(--bg-card-hover, #1e293b)', 
+            color: 'var(--text-main, #fff)', 
+            border: '1px solid var(--border-color, #334155)', 
             borderRadius: '4px', 
             padding: '6px 12px', 
             outline: 'none', 
@@ -51,7 +51,7 @@ export default function FinancialHeader({
             </svg>
           </div>
           <div>
-            <div style={{color: '#94a3b8', fontSize: '9px', marginBottom: '2px'}}>COIN / TOKEN</div>
+            <div style={{color: 'var(--text-muted, #94a3b8)', fontSize: '9px', marginBottom: '2px'}}>COIN / TOKEN</div>
             <h2 className="fin-coin-name">{name} ({symbol})</h2>
             <div className="fin-coin-tags">
               <span className="fin-tag">Blockchain: {fundamentals?.blockchain}</span>
@@ -85,12 +85,12 @@ export default function FinancialHeader({
         </div>
         
         <div className="fin-date-box">
-          <div className="fin-stat-label" style={{color: '#fff'}}>Report Date</div>
-          <div style={{color: '#94a3b8', fontSize: '10px'}}>
+          <div className="fin-stat-label" style={{color: 'var(--text-main, #fff)'}}>Report Date</div>
+          <div style={{color: 'var(--text-muted, #94a3b8)', fontSize: '10px'}}>
             {new Date().toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'})}
           </div>
-          <div style={{color: '#94a3b8', fontSize: '10px'}}>Time</div>
-          <div style={{color: '#94a3b8', fontSize: '10px'}}>
+          <div style={{color: 'var(--text-muted, #94a3b8)', fontSize: '10px'}}>Time</div>
+          <div style={{color: 'var(--text-muted, #94a3b8)', fontSize: '10px'}}>
             {new Date().toLocaleTimeString('en-GB', {timeZone:'UTC'})} UTC
           </div>
         </div>

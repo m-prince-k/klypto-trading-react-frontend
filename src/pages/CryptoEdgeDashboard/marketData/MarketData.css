@@ -1,19 +1,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 .market-data-container {
-  --bg-secondary: #181a20;
-  --bg-tertiary: #1e2329;
-  --text-primary: #eaecef;
-  --text-secondary: #848e9c;
+  --bg-primary: var(--bg-main, #0b0f19);
+  --bg-secondary: var(--bg-card, #161b22);
+  --bg-tertiary: var(--bg-card-hover, #1e293b);
+  --text-primary: var(--text-main, #ffffff);
+  --text-secondary: var(--text-muted, #8f9cae);
   --binance-yellow: #f0b90b;
   --binance-yellow-hover: #fcd535;
   --color-green: #0ecb81;
   --color-red: #f6465d;
-  --border-color: #2b3139;
+  --border-color: var(--border-color, rgba(255, 255, 255, 0.05));
   --border-glow: rgba(240, 185, 11, 0.15);
   --font-main: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 
   font-family: var(--font-main);
+  background-color: var(--bg-primary);
   color: var(--text-primary);
   min-height: 100vh;
   padding: 0;
@@ -730,7 +732,8 @@
 }
 
 .chart-grid-line {
-  stroke: rgba(255, 255, 255, 0.03);
+  stroke: var(--border-color);
+  opacity: 0.4;
   stroke-width: 1;
 }
 

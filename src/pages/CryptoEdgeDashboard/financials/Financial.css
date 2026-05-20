@@ -1,6 +1,6 @@
 .finance-dashboard {
-  background-color: #060b14;
-  color: #e2e8f0;
+  background-color: var(--bg-main, #060b14);
+  color: var(--text-main, #e2e8f0);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   min-height: 100vh;
   padding: 16px;
@@ -17,7 +17,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
-  border-bottom: 1px solid #1e293b;
+  border-bottom: 1px solid var(--border-color, #1e293b);
   padding-bottom: 12px;
 }
 
@@ -25,7 +25,7 @@
   font-size: 24px;
   font-weight: 800;
   margin: 0;
-  color: #f8fafc;
+  color: var(--text-main, #f8fafc);
   letter-spacing: 1px;
 }
 
@@ -38,7 +38,7 @@
 }
 
 .fin-title-desc {
-  color: #94a3b8;
+  color: var(--text-muted, #94a3b8);
   font-size: 10px;
 }
 
@@ -57,7 +57,7 @@
 .fin-coin-icon {
   width: 40px;
   height: 40px;
-  background-color: #1e293b;
+  background-color: var(--bg-card-hover, #1e293b);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -68,7 +68,7 @@
 .fin-coin-name {
   font-size: 18px;
   font-weight: bold;
-  color: #fff;
+  color: var(--text-main, #fff);
   margin: 0;
 }
 
@@ -79,8 +79,8 @@
 }
 
 .fin-tag {
-  background-color: #1e293b;
-  color: #cbd5e1;
+  background-color: var(--bg-card-hover, #1e293b);
+  color: var(--text-muted, #cbd5e1);
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 9px;
@@ -92,13 +92,13 @@
 }
 
 .fin-stat-label {
-  color: #94a3b8;
+  color: var(--text-muted, #94a3b8);
   font-size: 10px;
   margin-bottom: 2px;
 }
 
 .fin-stat-val {
-  color: #f8fafc;
+  color: var(--text-main, #f8fafc);
   font-size: 14px;
   font-weight: 600;
 }
@@ -106,37 +106,37 @@
 .fin-price-val {
   font-size: 22px;
   font-weight: bold;
-  color: #fff;
+  color: var(--text-main, #fff);
 }
 
 .fin-date-box {
   text-align: right;
-  border-left: 1px solid #1e293b;
+  border-left: 1px solid var(--border-color, #1e293b);
   padding-left: 16px;
 }
 
 /* Card System */
 .fin-card {
-  background-color: #0f172a;
-  border: 1px solid #1e293b;
+  background-color: var(--bg-card, #0f172a);
+  border: 1px solid var(--border-color, #1e293b);
   border-radius: 6px;
   padding: 12px;
   height: 100%;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px -1px var(--shadow-color, rgba(0, 0, 0, 0.1));
 }
 
 .fin-card-title {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #e2e8f0;
+  color: var(--text-main, #e2e8f0);
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 12px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #1e293b;
+  border-bottom: 1px solid var(--border-color, #1e293b);
 }
 
 .fin-card-title .icon {
@@ -171,11 +171,11 @@
 }
 
 .fin-list-label {
-  color: #94a3b8;
+  color: var(--text-muted, #94a3b8);
 }
 
 .fin-list-val {
-  color: #f8fafc;
+  color: var(--text-main, #f8fafc);
   font-weight: 500;
   text-align: right;
 }
@@ -215,7 +215,7 @@
   content: "";
   width: 50px;
   height: 50px;
-  background-color: #0f172a;
+  background-color: var(--bg-card, #0f172a);
   border-radius: 50%;
   position: absolute;
 }
@@ -259,7 +259,7 @@
 }
 
 .fin-chart-filter {
-  color: #94a3b8;
+  color: var(--text-muted, #94a3b8);
   font-size: 10px;
   cursor: pointer;
 }
@@ -289,7 +289,7 @@
   height: 30px;
   border-top-left-radius: 30px;
   border-top-right-radius: 30px;
-  background-color: #0f172a;
+  background-color: var(--bg-card, #0f172a);
 }
 .fin-gauge-needle {
   position: absolute;
@@ -297,7 +297,7 @@
   left: 39px;
   width: 2px;
   height: 35px;
-  background-color: #f8fafc;
+  background-color: var(--text-main, #f8fafc);
   transform-origin: bottom center;
   transform: rotate(30deg);
   z-index: 2;
@@ -309,10 +309,10 @@
   height: 100px;
   margin: 0 auto;
   background: 
-    linear-gradient(0deg, transparent 49%, #1e293b 49%, #1e293b 51%, transparent 51%),
-    linear-gradient(90deg, transparent 49%, #1e293b 49%, #1e293b 51%, transparent 51%);
+    linear-gradient(0deg, transparent 49%, var(--border-color, #1e293b) 49%, var(--border-color, #1e293b) 51%, transparent 51%),
+    linear-gradient(90deg, transparent 49%, var(--border-color, #1e293b) 49%, var(--border-color, #1e293b) 51%, transparent 51%);
   border-radius: 50%;
-  border: 1px solid #1e293b;
+  border: 1px solid var(--border-color, #1e293b);
   position: relative;
 }
 .fin-radar-poly {
@@ -328,8 +328,8 @@
 
 /* Footer Metrics */
 .fin-footer {
-  background-color: #0f172a;
-  border: 1px solid #1e293b;
+  background-color: var(--bg-card, #0f172a);
+  border: 1px solid var(--border-color, #1e293b);
   border-radius: 6px;
   padding: 16px;
   margin-top: 12px;
@@ -341,7 +341,7 @@
   font-weight: 700;
   letter-spacing: 1px;
   margin-bottom: 16px;
-  color: #f8fafc;
+  color: var(--text-main, #f8fafc);
 }
 
 .fin-footer-grid {
@@ -352,7 +352,7 @@
 
 .fin-footer-col h4 {
   font-size: 10px;
-  color: #94a3b8;
+  color: var(--text-muted, #94a3b8);
   text-transform: uppercase;
   margin-bottom: 8px;
 }
@@ -367,13 +367,13 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #cbd5e1;
+  color: var(--text-muted, #cbd5e1);
 }
 
 /* Progress bar */
 .fin-progress-bar {
   height: 6px;
-  background-color: #1e293b;
+  background-color: var(--bg-card-hover, #1e293b);
   border-radius: 3px;
   overflow: hidden;
   margin-top: 4px;
@@ -390,16 +390,16 @@
 }
 .fin-table th {
   text-align: left;
-  color: #94a3b8;
+  color: var(--text-muted, #94a3b8);
   font-size: 9px;
   padding-bottom: 6px;
   font-weight: normal;
-  border-bottom: 1px solid #1e293b;
+  border-bottom: 1px solid var(--border-color, #1e293b);
 }
 .fin-table td {
   padding: 6px 0;
-  color: #e2e8f0;
-  border-bottom: 1px solid rgba(30, 41, 59, 0.5);
+  color: var(--text-main, #e2e8f0);
+  border-bottom: 1px solid var(--border-color, rgba(30, 41, 59, 0.5));
 }
 
 .fin-team-avatar {

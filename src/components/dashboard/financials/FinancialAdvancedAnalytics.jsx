@@ -22,30 +22,30 @@ export default function FinancialAdvancedAnalytics({
           
           <div style={{display: 'flex', gap: '16px'}}>
             <div style={{flex: 1}}>
-              <div style={{fontSize: '9px', color: '#94a3b8', marginBottom: '8px', textTransform: 'uppercase'}}>CORE TEAM</div>
+              <div style={{fontSize: '9px', color: 'var(--text-muted, #94a3b8)', marginBottom: '8px', textTransform: 'uppercase'}}>CORE TEAM</div>
               <div className="fin-list" style={{gap: '12px'}}>
                 {fundamentals?.team?.slice(0, 4).map((member, i) => (
                   <div key={i} className="d-flex-center justify-content-between">
                     <div className="d-flex-center">
                       <div className="fin-team-avatar d-flex-center justify-content-center" style={{fontSize:'12px'}}>👨‍💻</div>
                       <div>
-                        <div style={{color: '#fff', fontSize: '11px', fontWeight: 'bold'}}>{member.name}</div>
-                        <div style={{color: '#94a3b8', fontSize: '9px'}}>{member.role}</div>
+                        <div style={{color: 'var(--text-main, #fff)', fontSize: '11px', fontWeight: 'bold'}}>{member.name}</div>
+                        <div style={{color: 'var(--text-muted, #94a3b8)', fontSize: '9px'}}>{member.role}</div>
                       </div>
                     </div>
-                    <div style={{color: '#3b82f6', background: '#1e3a8a', padding: '2px 4px', borderRadius: '4px', fontSize: '9px'}}>in</div>
+                    <div style={{color: 'var(--accent-color, #3b82f6)', background: 'var(--bg-card-hover, rgba(59, 130, 246, 0.1))', padding: '2px 4px', borderRadius: '4px', fontSize: '9px'}}>in</div>
                   </div>
                 ))}
               </div>
             </div>
             
             <div style={{flex: 1}}>
-              <div style={{fontSize: '9px', color: '#94a3b8', marginBottom: '8px', textTransform: 'uppercase'}}>INVESTORS</div>
+              <div style={{fontSize: '9px', color: 'var(--text-muted, #94a3b8)', marginBottom: '8px', textTransform: 'uppercase'}}>INVESTORS</div>
               <div className="fin-list" style={{gap: '12px'}}>
                 {fundamentals?.investors?.slice(0, 5).map((inv, i) => (
                   <div key={i} className="d-flex-center">
                     <span style={{color: ['#f59e0b','#3b82f6','#8b5cf6','#10b981','#f43f5e'][i%5], marginRight: '6px'}}>{inv.charAt(0)}</span> 
-                    <span style={{color: '#fff', fontSize: '10px'}}>{inv}</span>
+                    <span style={{color: 'var(--text-main, #fff)', fontSize: '10px'}}>{inv}</span>
                   </div>
                 ))}
               </div>
@@ -111,8 +111,8 @@ export default function FinancialAdvancedAnalytics({
               </table>
             </div>
             
-            <div style={{flex: 1, borderLeft: '1px solid #1e293b', paddingLeft: '20px'}}>
-              <div style={{fontSize: '9px', color: '#94a3b8', marginBottom: '8px', textTransform: 'uppercase'}}>PRICE PREDICTION MODEL</div>
+            <div style={{flex: 1, borderLeft: '1px solid var(--border-color, #1e293b)', paddingLeft: '20px'}}>
+              <div style={{fontSize: '9px', color: 'var(--text-muted, #94a3b8)', marginBottom: '8px', textTransform: 'uppercase'}}>PRICE PREDICTION MODEL</div>
               {predictions && (
                 <table className="fin-table">
                   <thead>
@@ -147,8 +147,8 @@ export default function FinancialAdvancedAnalytics({
               )}
               
               <div style={{marginTop: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
-                <span style={{fontSize: '9px', color: '#94a3b8', textTransform: 'uppercase'}}>CONFIDENCE LEVEL</span>
-                <span style={{color: '#fff', fontWeight: 'bold'}}>78%</span>
+                <span style={{fontSize: '9px', color: 'var(--text-muted, #94a3b8)', textTransform: 'uppercase'}}>CONFIDENCE LEVEL</span>
+                <span style={{color: 'var(--text-main, #fff)', fontWeight: 'bold'}}>78%</span>
               </div>
               <div className="fin-progress-bar" style={{height: '8px', marginTop: '6px'}}>
                 <div className="fin-progress-fill" style={{width: '78%', backgroundColor: '#f59e0b'}}></div>
@@ -165,28 +165,28 @@ export default function FinancialAdvancedAnalytics({
           
           <div style={{display: 'flex', gap: '20px'}}>
             <div style={{flex: 1.5}}>
-              <div style={{fontSize: '9px', color: '#94a3b8', marginBottom: '12px', textTransform: 'uppercase'}}>KEY HIGHLIGHTS</div>
+              <div style={{fontSize: '9px', color: 'var(--text-muted, #94a3b8)', marginBottom: '12px', textTransform: 'uppercase'}}>KEY HIGHLIGHTS</div>
               <div className="fin-list" style={{gap: '12px'}}>
-                <div className="d-flex-center"><span className="text-green" style={{marginRight: '8px'}}>✓</span> <span style={{color: '#e2e8f0', fontSize: '11px'}}>Consensus: {fundamentals?.consensus} ({fundamentals?.blockchain})</span></div>
-                <div className="d-flex-center"><span className="text-green" style={{marginRight: '8px'}}>✓</span> <span style={{color: '#e2e8f0', fontSize: '11px'}}>On-Chain: {formatNum(onChain?.transactions, 0, 0)} live tx / {formatNum(onChain?.activeAddresses, 0, 0)} active users</span></div>
-                <div className="d-flex-center"><span className="text-green" style={{marginRight: '8px'}}>✓</span> <span style={{color: '#e2e8f0', fontSize: '11px'}}>Dev Activity: {fundamentals?.devActivity || 'High'} ({fundamentals?.progress || 75}% Progress)</span></div>
-                <div className="d-flex-center"><span className="text-green" style={{marginRight: '8px'}}>✓</span> <span style={{color: '#e2e8f0', fontSize: '11px'}}>Key Investor: {fundamentals?.investors?.[0] || 'Tier-1 VCs'}</span></div>
+                <div className="d-flex-center"><span className="text-green" style={{marginRight: '8px'}}>✓</span> <span style={{color: 'var(--text-main, #e2e8f0)', fontSize: '11px'}}>Consensus: {fundamentals?.consensus} ({fundamentals?.blockchain})</span></div>
+                <div className="d-flex-center"><span className="text-green" style={{marginRight: '8px'}}>✓</span> <span style={{color: 'var(--text-main, #e2e8f0)', fontSize: '11px'}}>On-Chain: {formatNum(onChain?.transactions, 0, 0)} live tx / {formatNum(onChain?.activeAddresses, 0, 0)} active users</span></div>
+                <div className="d-flex-center"><span className="text-green" style={{marginRight: '8px'}}>✓</span> <span style={{color: 'var(--text-main, #e2e8f0)', fontSize: '11px'}}>Dev Activity: {fundamentals?.devActivity || 'High'} ({fundamentals?.progress || 75}% Progress)</span></div>
+                <div className="d-flex-center"><span className="text-green" style={{marginRight: '8px'}}>✓</span> <span style={{color: 'var(--text-main, #e2e8f0)', fontSize: '11px'}}>Key Investor: {fundamentals?.investors?.[0] || 'Tier-1 VCs'}</span></div>
               </div>
             </div>
             
-            <div style={{flex: 1, borderLeft: '1px solid #1e293b', paddingLeft: '20px'}}>
-              <div style={{fontSize: '9px', color: '#94a3b8', marginBottom: '12px', textTransform: 'uppercase'}}>OUTLOOK</div>
+            <div style={{flex: 1, borderLeft: '1px solid var(--border-color, #1e293b)', paddingLeft: '20px'}}>
+              <div style={{fontSize: '9px', color: 'var(--text-muted, #94a3b8)', marginBottom: '12px', textTransform: 'uppercase'}}>OUTLOOK</div>
               <div className="fin-list" style={{gap: '12px'}}>
-                <div className="fin-list-item"><span style={{color: '#cbd5e1', fontSize: '10px'}}>Short Term</span><span className={change24h > 0 ? "text-green" : "text-red"} style={{fontWeight: 'bold', fontSize: '11px'}}>{change24h > 0 ? 'Bullish' : 'Bearish'}</span></div>
-                <div className="fin-list-item"><span style={{color: '#cbd5e1', fontSize: '10px'}}>Mid Term</span><span className={indicators?.macdSignal === 'Bullish' || change24h > 2 ? "text-green" : "text-yellow"} style={{fontWeight: 'bold', fontSize: '11px'}}>{indicators?.macdSignal === 'Bullish' || change24h > 2 ? 'Bullish' : 'Neutral'}</span></div>
+                <div className="fin-list-item"><span style={{color: 'var(--text-muted, #cbd5e1)', fontSize: '10px'}}>Short Term</span><span className={change24h > 0 ? "text-green" : "text-red"} style={{fontWeight: 'bold', fontSize: '11px'}}>{change24h > 0 ? 'Bullish' : 'Bearish'}</span></div>
+                <div className="fin-list-item"><span style={{color: 'var(--text-muted, #cbd5e1)', fontSize: '10px'}}>Mid Term</span><span className={indicators?.macdSignal === 'Bullish' || change24h > 2 ? "text-green" : "text-yellow"} style={{fontWeight: 'bold', fontSize: '11px'}}>{indicators?.macdSignal === 'Bullish' || change24h > 2 ? 'Bullish' : 'Neutral'}</span></div>
               </div>
               
               <div style={{marginTop: '30px'}}>
-                <div style={{fontSize: '9px', color: '#94a3b8', marginBottom: '8px', textTransform: 'uppercase'}}>OVERALL RATING</div>
+                <div style={{fontSize: '9px', color: 'var(--text-muted, #94a3b8)', marginBottom: '8px', textTransform: 'uppercase'}}>OVERALL RATING</div>
                 <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                   <div style={{color: '#f59e0b', fontSize: '14px'}}>{starsStr}</div>
                   <div style={{textAlign: 'right'}}>
-                    <div style={{color: '#fff', fontWeight: 'bold', fontSize: '14px'}}>{ratingVal.toFixed(1)} / 5</div>
+                    <div style={{color: 'var(--text-main, #fff)', fontWeight: 'bold', fontSize: '14px'}}>{ratingVal.toFixed(1)} / 5</div>
                     <div className="text-green" style={{fontSize: '10px', fontWeight: 'bold'}}>{ratingText}</div>
                   </div>
                 </div>

@@ -48,7 +48,7 @@ export default function FinancialOverviewSupply({
               <div className="fin-list-item"><span className="fin-list-label">Token Type</span><span className="fin-list-val">{fundamentals?.tokenType}</span></div>
             </div>
             <div style={{flex: '0 0 100px', display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
-              <div style={{fontSize: '9px', color: '#94a3b8', marginBottom: '8px'}}>TOKEN ALLOCATION</div>
+              <div style={{fontSize: '9px', color: 'var(--text-muted, #94a3b8)', marginBottom: '8px'}}>TOKEN ALLOCATION</div>
               <div className="fin-donut-wrapper" style={{marginTop: 0, gap: '8px'}}>
                 <div className="fin-donut" style={{width: '60px', height: '60px'}}></div>
                 <div className="fin-legend" style={{fontSize: '8px'}}>
@@ -62,7 +62,7 @@ export default function FinancialOverviewSupply({
             </div>
           </div>
           <div style={{marginTop: '12px'}}>
-            <div style={{fontSize: '10px', color: '#94a3b8', borderBottom: '1px solid #1e293b', paddingBottom: '4px', marginBottom: '6px'}}>VESTING SCHEDULE</div>
+            <div style={{fontSize: '10px', color: 'var(--text-muted, #94a3b8)', borderBottom: '1px solid var(--border-color, #1e293b)', paddingBottom: '4px', marginBottom: '6px'}}>VESTING SCHEDULE</div>
             <div className="fin-list-item" style={{fontSize: '10px'}}><span className="fin-list-label">Team</span><span className="fin-list-val">12 months cliff, 36 months vesting</span></div>
             <div className="fin-list-item" style={{fontSize: '10px'}}><span className="fin-list-label">Investors</span><span className="fin-list-val">6 months cliff, 24 months vesting</span></div>
             <div className="fin-list-item" style={{fontSize: '10px'}}><span className="fin-list-label">Advisors</span><span className="fin-list-val">6 months cliff, 24 months vesting</span></div>

@@ -5,8 +5,10 @@ import { createChart, AreaSeries } from "lightweight-charts";
 import "./CoinMarketDetails.css";
 import apiService from "../../../services/apiServices";
 import socket from "../../../services/socket";
+import { useTheme } from "../../../context/ThemeContext";
 
 const CoinMarketDetails = () => {
+  const { theme } = useTheme();
   const { symbol } = useParams();
   const navigate = useNavigate();
   const chartContainerRef = useRef(null);
@@ -195,23 +197,24 @@ const CoinMarketDetails = () => {
     if (!isCoinLoaded || !chartContainerRef.current) return;
     if (chartRef.current) return;
 
+    const isDark = theme === "dark";
     const chart = createChart(chartContainerRef.current, {
       width: chartContainerRef.current.clientWidth || 800,
       height: 450,
       layout: {
-        background: { color: "#181a20" },
-        textColor: "#848e9c",
+        background: { color: isDark ? "#181a20" : "#ffffff" },
+        textColor: isDark ? "#848e9c" : "#64748b",
       },
       grid: {
-        vertLines: { color: "rgba(43, 49, 57, 0.5)" },
-        horzLines: { color: "rgba(43, 49, 57, 0.5)" },
+        vertLines: { color: isDark ? "rgba(43, 49, 57, 0.5)" : "rgba(226, 232, 240, 0.8)" },
+        horzLines: { color: isDark ? "rgba(43, 49, 57, 0.5)" : "rgba(226, 232, 240, 0.8)" },
       },
       rightPriceScale: {
-        borderColor: "#2b3139",
+        borderColor: isDark ? "#2b3139" : "#e2e8f0",
         autoScale: true,
       },
       timeScale: {
-        borderColor: "#2b3139",
+        borderColor: isDark ? "#2b3139" : "#e2e8f0",
         timeVisible: true,
         secondsVisible: false,
       },
@@ -291,7 +294,7 @@ const CoinMarketDetails = () => {
       chartRef.current = null;
       areaSeriesRef.current = null;
     };
-  }, [isCoinLoaded, symbol]);
+  }, [isCoinLoaded, symbol, theme]);
 
   if (!coin) {
     return (

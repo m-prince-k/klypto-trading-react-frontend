@@ -24,7 +24,7 @@ export default function FinancialTechOnChain({
             <div className="fin-list-item"><span className="fin-list-label">GitHub Commits (24h)</span><span className="fin-list-val">{fundamentals?.devCommits || 0}</span></div>
           </div>
           <div style={{marginTop: '12px'}}>
-            <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '10px'}}>
+            <div style={{display: 'flex', justifycontent: 'space-between', fontSize: '10px'}}>
               <span className="fin-list-label">Roadmap Progress</span>
               <span className="fin-list-val">{fundamentals?.progress || 75}%</span>
             </div>
@@ -60,10 +60,10 @@ export default function FinancialTechOnChain({
           
           <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginTop: '12px'}}>
             <div className="fin-donut" style={{width: '40px', height: '40px', background: 'conic-gradient(#3b82f6 0% 45%, #8b5cf6 45% 70%, #10b981 70% 100%)'}}>
-              <div style={{width: '24px', height: '24px', background: '#0f172a', borderRadius: '50%', position: 'absolute'}}></div>
+              <div style={{width: '24px', height: '24px', background: 'var(--bg-card, #0f172a)', borderRadius: '50%', position: 'absolute'}}></div>
             </div>
             <div className="fin-legend" style={{fontSize: '8px'}}>
-              <div style={{color: '#94a3b8', marginBottom: '2px'}}>HOLDER DISTRIBUTION</div>
+              <div style={{color: 'var(--text-muted, #94a3b8)', marginBottom: '2px'}}>HOLDER DISTRIBUTION</div>
               <div className="fin-legend-item"><div className="fin-legend-dot" style={{backgroundColor: '#3b82f6'}}></div> Whales ({`>1%`}) 45.20%</div>
               <div className="fin-legend-item"><div className="fin-legend-dot" style={{backgroundColor: '#8b5cf6'}}></div> Investors (0.1-1%) 25.30%</div>
               <div className="fin-legend-item"><div className="fin-legend-dot" style={{backgroundColor: '#10b981'}}></div> Retail ({`<0.1%`}) 29.50%</div>

@@ -779,7 +779,7 @@ const MarketData = () => {
                 <path
                   d="M 10,38 A 30,30 0 0,1 70,38"
                   fill="none"
-                  stroke="#2b3139"
+                  stroke="var(--border-color, #2b3139)"
                   strokeWidth="5.5"
                   strokeLinecap="round"
                 />

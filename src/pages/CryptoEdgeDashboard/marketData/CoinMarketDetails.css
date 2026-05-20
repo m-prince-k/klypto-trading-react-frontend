@@ -1,7 +1,7 @@
 /* CoinMarketDetails.css */
 .coin-detail-page {
-  background-color: #0b0e11;
-  color: #eaecef;
+  background-color: var(--bg-main, #0b0e11);
+  color: var(--text-main, #eaecef);
   min-height: 100vh;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   display: flex;
@@ -13,14 +13,14 @@
   justify-content: space-between;
   align-items: center;
   padding: 16px 24px;
-  background-color: #181a20;
-  border-bottom: 1px solid #2b3139;
+  background-color: var(--bg-card, #181a20);
+  border-bottom: 1px solid var(--border-color, #2b3139);
 }
 
 .btn-back {
   background: none;
   border: none;
-  color: #eaecef;
+  color: var(--text-main, #eaecef);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -33,7 +33,7 @@
 }
 
 .btn-back:hover {
-  background-color: #2b3139;
+  background-color: var(--bg-card-hover, #2b3139);
   color: #f0b90b;
 }
 
@@ -45,7 +45,7 @@
 
 .live-status-text {
   font-size: 12.5px;
-  color: #848e9c;
+  color: var(--text-muted, #848e9c);
   font-weight: 500;
 }
 
@@ -58,8 +58,8 @@
 }
 
 .coin-info-bar {
-  background-color: #181a20;
-  border: 1px solid #2b3139;
+  background-color: var(--bg-card, #181a20);
+  border: 1px solid var(--border-color, #2b3139);
   border-radius: 8px;
   padding: 20px 24px;
   display: flex;
@@ -96,12 +96,12 @@
   font-size: 24px;
   font-weight: 700;
   margin: 0;
-  color: #ffffff;
+  color: var(--text-main, #ffffff);
 }
 
 .coin-details-symbol {
   font-size: 14px;
-  color: #848e9c;
+  color: var(--text-muted, #848e9c);
   font-weight: 500;
 }
 
@@ -119,14 +119,14 @@
 
 .info-stat-label {
   font-size: 11.5px;
-  color: #848e9c;
+  color: var(--text-muted, #848e9c);
   font-weight: 500;
 }
 
 .info-stat-value {
   font-size: 15px;
   font-weight: 600;
-  color: #eaecef;
+  color: var(--text-main, #eaecef);
 }
 
 .info-stat-value.price-display {
@@ -145,8 +145,8 @@
 
 /* Detail Chart Wrapper */
 .detail-chart-wrapper {
-  background-color: #181a20;
-  border: 1px solid #2b3139;
+  background-color: var(--bg-card, #181a20);
+  border: 1px solid var(--border-color, #2b3139);
   border-radius: 8px;
   padding: 20px;
   display: flex;
@@ -164,7 +164,7 @@
 .chart-header-title {
   font-size: 15px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-main, #ffffff);
 }
 
 .control-badge {
@@ -179,7 +179,7 @@
 .lightweight-chart-container {
   width: 100%;
   height: 450px;
-  background-color: #181a20;
+  background-color: var(--bg-card, #181a20);
 }
 
 /* Loading & Spinner Styles */
@@ -189,15 +189,15 @@
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background-color: #0b0e11;
-  color: #eaecef;
+  background-color: var(--bg-main, #0b0e11);
+  color: var(--text-main, #eaecef);
   gap: 16px;
 }
 
 .detail-spinner {
   width: 48px;
   height: 48px;
-  border: 4px solid rgba(240, 185, 11, 0.1);
+  border: 4px solid rgba(240, 185, 11, 0.15);
   border-top-color: #f0b90b;
   border-radius: 50%;
   animation: detail-spin 1s linear infinite;
