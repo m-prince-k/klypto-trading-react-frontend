@@ -11,7 +11,7 @@ import FinancialSocialRisk from '../../../../src/components/dashboard/financials
 import FinancialAdvancedAnalytics from '../../../../src/components/dashboard/financials/FinancialAdvancedAnalytics';
 import FinancialFooter from '../../../../src/components/dashboard/financials/FinancialFooter';
 
-const API_BASE = 'http://192.168.1.17:7000';
+const API_BASE = 'http://192.168.1.5:7000';
 
 const cleanSymbol = (sym) => {
   if (!sym) return 'BTC';

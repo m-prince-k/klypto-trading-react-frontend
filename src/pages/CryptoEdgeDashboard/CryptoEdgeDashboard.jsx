@@ -19,11 +19,13 @@ const CryptoEdgeDashboard = () => {
   // Dynamic Real-time States
   // -------------------------------------------------------------
   const [selectedSymbol, setSelectedSymbol] = useState("BTCUSDT"); // 'BTCUSDT', 'ETHUSDT', etc.
+  const [marketCoins, setMarketCoins] = useState([]);
   const getInitialTab = () => {
     const hash = window.location.hash.replace("#", "");
     if (hash) {
       if (hash === "social-intelligence") return "Social Intelligence";
       if (hash === "market-sentiment") return "Market Sentiment";
+      if (hash === "market-data") return "Market Data";
       return hash.charAt(0).toUpperCase() + hash.slice(1);
     }
     return "Overview";
@@ -40,9 +42,13 @@ const CryptoEdgeDashboard = () => {
   }, []);
 
   useEffect(() => {
-    let hashName = activeTab.toLowerCase();
-    if (activeTab === "Social Intelligence") hashName = "social-intelligence";
-    if (activeTab === "Market Sentiment") hashName = "market-sentiment";
+    // Use hyphen-separated lowercase for clean URLs
+    const TAB_TO_HASH = {
+      "Social Intelligence": "social-intelligence",
+      "Market Sentiment": "market-sentiment",
+      "Market Data": "market-data", 
+    };
+    const hashName = TAB_TO_HASH[activeTab] ?? activeTab.toLowerCase();
     if (window.location.hash.replace("#", "") !== hashName) {
       window.history.replaceState(null, null, `#${hashName}`);
     }

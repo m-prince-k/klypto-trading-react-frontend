@@ -99,7 +99,7 @@ export default function Candlestick() {
 
   // Resizable layout states
   const [sidebarWidth, setSidebarWidth] = useState(350);
-  const [detailsHeight, setDetailsHeight] = useState(350);
+  const [detailsHeight, setDetailsHeight] = useState(200);
   const [isDraggingWidth, setIsDraggingWidth] = useState(false);
   const [isDraggingHeight, setIsDraggingHeight] = useState(false);
 

@@ -1,11 +1,10 @@
-// ... ALL YOUR IMPORTS SAME
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 import { createChart, AreaSeries } from "lightweight-charts";
 import "./CoinMarketDetails.css";
-import socket from "../../../services/socket";
 import apiService from "../../../services/apiServices";
+import socket from "../../../services/socket";
 
 const CoinMarketDetails = () => {
   const { symbol } = useParams();
@@ -19,7 +18,7 @@ const CoinMarketDetails = () => {
   const [isSocketConnected, setIsSocketConnected] = useState(false);
   const [flashState, setFlashState] = useState(null);
 
-  // ✅ YOUR EXISTING API POLLING (UNCHANGED)
+  // ── STEP 1: API polling for initial coin state + periodic refresh ──
   useEffect(() => {
     let intervalId;
 
@@ -29,14 +28,21 @@ const CoinMarketDetails = () => {
           `api/listing?symbol=${symbol.toUpperCase()}USDT&interval=1m&limit=1000`,
         );
 
-        const data = response?.data?.data;
+        const data = response?.data;
 
-        if (!data || !Array.isArray(data)) return;
+        if (!data || !Array.isArray(data)) {
+          console.warn(
+            "⚠️ CoinMarketDetails: unexpected response shape",
+            response,
+          );
+          return;
+        }
 
         const latest = data[data.length - 1];
         const newPrice = Number(latest.close);
 
         setCoin((prevCoin) => {
+          // Only use API to build initial state — socket handles live updates after that
           if (!prevCoin) {
             return {
               symbol: symbol.toUpperCase(),
@@ -52,25 +58,9 @@ const CoinMarketDetails = () => {
             };
           }
 
-          const oldPrice = prevCoin.price;
-
-          if (oldPrice && newPrice !== oldPrice) {
-            const direction = newPrice >= oldPrice ? "up" : "down";
-            setFlashState(direction);
-            setTimeout(() => setFlashState(null), 800);
-          }
-
-          if (areaSeriesRef.current) {
-            const time = Math.floor(Date.now() / 1000);
-            areaSeriesRef.current.update({
-              time,
-              value: newPrice,
-            });
-          }
-
+          // After initial load, only update OHLCV from API — price comes from socket
           return {
             ...prevCoin,
-            price: newPrice,
             high: Number(latest.high),
             low: Number(latest.low),
             volume24h: Number(latest.volume),
@@ -83,17 +73,124 @@ const CoinMarketDetails = () => {
     }
 
     fetchCoinData();
-
     intervalId = setInterval(fetchCoinData, 2000);
 
+    return () => clearInterval(intervalId);
+  }, [symbol]);
+
+  // ── STEP 2: Socket.IO for live price ticks ─────────────────────────
+  useEffect(() => {
+    socket.on("connect", () => {
+      setIsSocketConnected(true);
+    });
+
+    socket.on("disconnect", () => {
+      setIsSocketConnected(false);
+    });
+
+    // Handle initial coins list from server — seed coin state if API hasn't loaded yet
+    socket.on("market-coins-init", (data) => {
+      if (data && data.success) {
+        const found = data.coins.find(
+          (c) => c.symbol.toUpperCase() === symbol.toUpperCase(),
+        );
+        if (found) {
+          setCoin((prevCoin) => {
+            // Only use socket init if API hasn't populated state yet
+            if (prevCoin) return prevCoin;
+            return found;
+          });
+          // Seed chart with history if chart is already initialized
+          if (areaSeriesRef.current && found.history) {
+            const chartData = found.history.map((price, idx) => ({
+              time:
+                Math.floor(Date.now() / 1000) -
+                (found.history.length - idx) * 10,
+              value: price,
+            }));
+            areaSeriesRef.current.setData(chartData);
+          }
+        }
+      }
+    });
+
+    socket.emit("subscribe-live-tick", {
+      symbol: `${symbol.toUpperCase()}USDT`,
+      interval: "5m",
+    });
+
+    // Handle live tick stream — this is the primary price update source
+    socket.on("live-tick-update", (data) => {
+      console.log("📡 LIVE CANDLE:", data);
+
+      if (!data || !data.symbol || !data.ohlcv) return;
+
+      const symbolKey = data.symbol.replace("USDT", "").toUpperCase();
+
+      if (symbolKey !== symbol.toUpperCase()) return;
+
+      const { open, high, low, close, volume } = data.ohlcv;
+
+      const newPrice = Number(close);
+
+      console.log("💰 Candle Close:", newPrice);
+
+      setCoin((prevCoin) => {
+        console.log("🧠 Prev Coin:", prevCoin);
+
+        if (!prevCoin) return null;
+
+        const oldPrice = prevCoin.price;
+
+        console.log("📊 Old vs New:", oldPrice, newPrice);
+
+        // Flash logic
+        if (oldPrice > 0 && newPrice !== oldPrice) {
+          const direction = newPrice >= oldPrice ? "up" : "down";
+          setFlashState(direction);
+          setTimeout(() => setFlashState(null), 800);
+        }
+
+        // ✅ Chart update (IMPORTANT CHANGE)
+        if (areaSeriesRef.current) {
+          const time = Math.floor(data.timestamp / 1000); // use backend timestamp
+
+          console.log("📈 Chart Update:", time, newPrice);
+
+          areaSeriesRef.current.update({
+            time,
+            value: newPrice,
+          });
+
+          lastChartTimeRef.current = time;
+        }
+
+        // ✅ Update history safely
+        const updatedHistory = Array.isArray(prevCoin.history)
+          ? [...prevCoin.history.slice(1), newPrice]
+          : [newPrice];
+
+        return {
+          ...prevCoin,
+          price: newPrice,
+          change24h: Number(data.changePct ?? prevCoin.change24h),
+          volume24h: Number(volume || prevCoin.volume24h),
+          high: Number(high || prevCoin.high),
+          low: Number(low || prevCoin.low),
+          history: updatedHistory,
+        };
+      });
+    });
+
     return () => {
-      clearInterval(intervalId);
+      socket.off("live-tick-update");
+      // socket.disconnect();
     };
   }, [symbol]);
 
   const isCoinLoaded = !!coin;
 
-  // ✅ ONLY CHANGE DONE HERE (fetch → apiService)
+  // ── STEP 3: Initialize chart + fetch 365d historical data ──────────
   useEffect(() => {
     if (!isCoinLoaded || !chartContainerRef.current) return;
     if (chartRef.current) return;
@@ -141,30 +238,31 @@ const CoinMarketDetails = () => {
           `api/listing?symbol=${symbol.toUpperCase()}USDT&interval=1d&limit=365`,
         );
 
-        const json = response?.data;
-        console.log(json, "resssssssss");
+        const json = response;
 
         if (json && json.data && Array.isArray(json.data)) {
           const formattedData = json.data
             .map((d) => ({
-              time: Number(d.time),
+              // Auto-detect ms vs seconds timestamp
+              time:
+                Number(d.time) > 1e10
+                  ? Math.floor(Number(d.time) / 1000)
+                  : Number(d.time),
               value: Number(d.close),
             }))
-            .sort((a, b) => a.time - b.time);
+            .sort((a, b) => a.time - b.time)
+            .filter((v, i, a) => i === 0 || v.time !== a[i - 1].time);
 
-          const uniqueData = formattedData.filter(
-            (v, i, a) => a.findIndex((t) => t.time === v.time) === i,
-          );
-
-          if (uniqueData.length > 0) {
-            areaSeries.setData(uniqueData);
-            lastChartTimeRef.current = uniqueData[uniqueData.length - 1].time;
+          if (formattedData.length > 0) {
+            areaSeries.setData(formattedData);
+            lastChartTimeRef.current =
+              formattedData[formattedData.length - 1].time;
             chart.timeScale().fitContent();
           }
         }
       } catch (err) {
         console.error("Failed to fetch historical data for detail chart:", err);
-
+        // Fallback to polling history if API fails
         if (coin && coin.history) {
           const fallbackData = coin.history.map((price, idx) => ({
             time:
@@ -298,7 +396,7 @@ const CoinMarketDetails = () => {
               </span>
             </div>
             <div className="info-stat-box">
-              <span className="info-stat-label">24h Volume(USDT)</span>
+              <span className="info-stat-label">24h Volume (USDT)</span>
               <span className="info-stat-value">
                 $
                 {coin.volume24h.toLocaleString(undefined, {

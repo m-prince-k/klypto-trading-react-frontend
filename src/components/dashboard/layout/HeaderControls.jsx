@@ -39,18 +39,18 @@ const HeaderControls = ({ selectedSymbol, setSelectedSymbol }) => {
             display: "flex",
             alignItems: "center",
             gap: "8px",
-            background: "#0e121b",
-            border: "1px solid rgba(255, 255, 255, 0.05)",
+            background: "var(--header-bg)",
+            border: "1px solid var(--border-color)",
             borderRadius: "20px",
             padding: "2px 14px",
-            boxShadow: "0 0 10px rgba(0,0,0,0.2)",
+            boxShadow: "var(--shadow-lg)",
           }}
         >
           <span
             style={{
               fontSize: "9.5px",
               fontWeight: "bold",
-              color: "#64748b",
+              color: "var(--text-muted)",
               letterSpacing: "0.5px",
             }}
           >
@@ -63,7 +63,7 @@ const HeaderControls = ({ selectedSymbol, setSelectedSymbol }) => {
             style={{
               background: "transparent",
               border: "none",
-              color: "#ffffff",
+              color: "var(--text-main)",
               fontSize: "11.5px",
               fontWeight: "bold",
               cursor: "pointer",
@@ -76,7 +76,7 @@ const HeaderControls = ({ selectedSymbol, setSelectedSymbol }) => {
               <option
                 key={item.symbol}
                 value={item.symbol}
-                style={{ background: "#0e121b", color: "#ffffff" }}
+                style={{ background: "var(--bg-card)", color: "var(--text-main)" }}
               >
                 {item.label || item.symbol}
               </option>
@@ -155,7 +155,7 @@ const HeaderControls = ({ selectedSymbol, setSelectedSymbol }) => {
           <span
             style={{
               fontSize: "10.5px",
-              color: "#64748b",
+              color: "var(--text-muted)",
               marginLeft: "4px",
               fontWeight: "bold",
             }}

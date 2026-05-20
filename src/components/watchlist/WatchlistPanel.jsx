@@ -100,42 +100,6 @@ const styles = `
     color: #f23645;
   }
 
-  .wl-search-bar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 10px 12px;
-    padding: 6px 10px;
-    background: var(--bg-main, #f7f8fb);
-    border: 1px solid var(--border-color, #e2e6ee);
-    border-radius: 6px;
-    transition: border-color 0.15s, background 0.15s;
-  }
-
-  .wl-search-bar:focus-within {
-    border-color: #2962ff;
-    background: var(--bg-card, #ffffff);
-  }
-
-  .wl-search-bar svg {
-    color: #b0bac9;
-    flex-shrink: 0;
-  }
-
-  .wl-search-input {
-    border: none;
-    background: transparent;
-    outline: none;
-    font-size: 12px;
-    font-family: 'IBM Plex Sans', sans-serif;
-    color: var(--text-main, #2d3748);
-    width: 100%;
-  }
-
-  .wl-search-input::placeholder {
-    color: #b0bac9;
-  }
-
   .wl-col-header {
     display: flex;
     align-items: center;
@@ -172,7 +136,7 @@ const styles = `
   .wl-row {
     display: flex;
     align-items: center;
-    padding: 9px 14px;
+    padding: 6px 10px;
     cursor: pointer;
     border-left: 2px solid transparent;
     transition: background 0.1s, border-color 0.1s;
@@ -506,24 +470,6 @@ export default function WatchlistPanel({
               </div>
             </div>
 
-            {/* Search Bar */}
-            <div className="wl-search-bar">
-              <FiSearch size={12} />
-              <input
-                className="wl-search-input"
-                placeholder="Search exchange symbols..."
-                value={searchAll}
-                onChange={(e) => setSearchAll(e.target.value)}
-              />
-              {searchAll && (
-                <IoMdClose
-                  size={12}
-                  style={{ cursor: "pointer", color: "#4a5568" }}
-                  onClick={() => setSearchAll("")}
-                />
-              )}
-            </div>
-
             {/* List Exchange Currencies */}
             <div className="wl-list">
               {loadingAll ? (
@@ -552,9 +498,9 @@ export default function WatchlistPanel({
                       >
                         <div className="wl-symbol">
                           <span className="wl-symbol-name">{curr.symbol}</span>
-                          <span className="wl-symbol-label">
+                          {/* <span className="wl-symbol-label">
                             {curr.name || curr.symbol}
-                          </span>
+                          </span> */}
                         </div>
                         <div>
                           <button
@@ -643,29 +589,14 @@ export default function WatchlistPanel({
             </div>
 
             {/* Search filter for active list */}
-            <div className="wl-search-bar">
-              <FiSearch size={12} />
-              <input
-                className="wl-search-input"
-                placeholder="Filter symbols..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-              {search && (
-                <IoMdClose
-                  size={12}
-                  style={{ cursor: "pointer", color: "#4a5568" }}
-                  onClick={() => setSearch("")}
-                />
-              )}
-            </div>
+            
 
             {/* Column Headers */}
             <div className="wl-col-header">
-              <div style={{ flex: "2" }}>Symbol</div>
-              <div style={{ flex: "1.5", textAlign: "right" }}>Last</div>
-              <div style={{ flex: "1", textAlign: "right" }}>Chg</div>
-              <div style={{ flex: "1.1", textAlign: "right" }}>Chg%</div>
+              <div style={{ flex: "1.5",textAlign: "left" }}>Symbol</div>
+              <div style={{ flex: "1.5", textAlign: "center" }}>Last</div>
+              <div style={{ flex: "1.5", textAlign: "center" }}>Chg</div>
+              <div style={{ flex: "1.1", textAlign: "center" }}>Chg%</div>
             </div>
 
             {/* List Active Items */}
@@ -693,9 +624,9 @@ export default function WatchlistPanel({
                   >
                     <div className="wl-symbol">
                       <span className="wl-symbol-name">{item.symbol}</span>
-                      <span className="wl-symbol-label">
+                      {/* <span className="wl-symbol-label">
                         {SYMBOL_LABELS[item.symbol] || ""}
-                      </span>
+                      </span> */}
                     </div>
 
                     <div className="wl-price" style={{ color }}>
@@ -737,11 +668,6 @@ export default function WatchlistPanel({
               )}
             </div>
 
-            {/* Footer */}
-            <div className="wl-footer">
-              <span className="wl-count">{watchlist.length} symbols</span>
-              <div className="wl-dot" title="Live" />
-            </div>
           </>
         )}
       </div>

@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { IoMdClose } from "react-icons/io";
-import { FiTrendingUp, FiTrendingDown, FiActivity, FiGlobe } from "react-icons/fi";
+import {
+  FiTrendingUp,
+  FiTrendingDown,
+  FiActivity,
+  FiGlobe,
+} from "react-icons/fi";
 import socket from "../../services/socket";
 import SocketEvents from "../../services/socketEvents";
 
@@ -42,9 +47,9 @@ export default function DetailsPanel({ onClose, symbol }) {
 
       // Normalize API fields: price -> lastPrice, changePct -> changePercent
       const normalized = {
-        lastPrice:     tick.price     ?? tick.lastPrice,
-        change:        tick.change,
-        changePercent: tick.changePct  ?? tick.changePercent,
+        lastPrice: tick.price ?? tick.lastPrice,
+        change: tick.change,
+        changePercent: tick.changePct ?? tick.changePercent,
       };
 
       setPriceData((prev) => {
@@ -60,8 +65,8 @@ export default function DetailsPanel({ onClose, symbol }) {
 
         return {
           ...prev,
-          lastPrice:     nextPrice,
-          change:        normalized.change        ?? prev.change,
+          lastPrice: nextPrice,
+          change: normalized.change ?? prev.change,
           changePercent: normalized.changePercent ?? prev.changePercent,
         };
       });
@@ -85,10 +90,15 @@ export default function DetailsPanel({ onClose, symbol }) {
           textAlign: "center",
         }}
       >
-        <FiActivity size={48} className="text-muted mb-3" style={{ opacity: 0.5 }} />
+        <FiActivity
+          size={48}
+          className="text-muted mb-3"
+          style={{ opacity: 0.5 }}
+        />
         <h5 className="fw-semibold mb-1">No Symbol Selected</h5>
         <p className="text-secondary small">
-          Select a trading asset from the watchlist or sidebar to view real-time market statistics.
+          Select a trading asset from the watchlist or sidebar to view real-time
+          market statistics.
         </p>
       </div>
     );
@@ -102,7 +112,8 @@ export default function DetailsPanel({ onClose, symbol }) {
     const val = priceData.changePercent;
     if (val > 1.5) return { text: "Strong Buy", color: "#089981", percent: 85 };
     if (val > 0.2) return { text: "Buy", color: "#26a69a", percent: 65 };
-    if (val < -1.5) return { text: "Strong Sell", color: "#f23645", percent: 15 };
+    if (val < -1.5)
+      return { text: "Strong Sell", color: "#f23645", percent: 15 };
     if (val < -0.2) return { text: "Sell", color: "#ff5252", percent: 35 };
     return { text: "Neutral", color: "#787b86", percent: 50 };
   };
@@ -111,11 +122,12 @@ export default function DetailsPanel({ onClose, symbol }) {
 
   return (
     <div
-      className="d-flex flex-column h-100"
+      className="d-flex flex-column h-100 details-scroll"
       style={{
         backgroundColor: "var(--bg-card, #ffffff)",
         color: "var(--text-main, #131722)",
-        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        fontFamily:
+          "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       }}
     >
       <style>{`
@@ -138,9 +150,27 @@ export default function DetailsPanel({ onClose, symbol }) {
         }
         .detail-label { color: var(--text-muted, #787b86); }
         .detail-val { font-weight: 500; color: var(--text-main, inherit); }
-      `}</style>
+        /* SAME scrollbar as watchlist */
+.details-scroll {
+  overflow-y: auto;
+  flex: 1;
+  scrollbar-width: thin;
+  scrollbar-color: #dde1eb transparent;
+}
 
-    
+.details-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.details-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.details-scroll::-webkit-scrollbar-thumb {
+  background: #dde1eb;
+  border-radius: 2px;
+}
+      `}</style>
 
       <div className="flex-1 p-3">
         {/* Coin Title */}
@@ -165,10 +195,20 @@ export default function DetailsPanel({ onClose, symbol }) {
             </div>
             <div>
               <div className="d-flex align-items-center gap-2">
-                <h5 className="mb-0 fw-bold" style={{ letterSpacing: "-0.5px" }}>{symbol}</h5>
+                <h5
+                  className="mb-0 fw-bold"
+                  style={{ letterSpacing: "-0.5px" }}
+                >
+                  {symbol}
+                </h5>
                 <span
                   className="badge"
-                  style={{ backgroundColor: "var(--bg-main, #f1f3f6)", color: "var(--text-muted, #475569)", fontSize: "10px", fontWeight: "600" }}
+                  style={{
+                    backgroundColor: "var(--bg-main, #f1f3f6)",
+                    color: "var(--text-muted, #475569)",
+                    fontSize: "10px",
+                    fontWeight: "600",
+                  }}
                 >
                   SPOT
                 </span>
@@ -182,11 +222,24 @@ export default function DetailsPanel({ onClose, symbol }) {
         </div>
 
         {/* Price Widget */}
-        <div className="p-3 rounded-3 mb-3" style={{ backgroundColor: "var(--bg-main, #f8f9fa)" }}>
+        <div
+          className="p-3 rounded-3 mb-3"
+          style={{ backgroundColor: "var(--bg-main, #f8f9fa)" }}
+        >
           <div className="d-flex align-items-baseline gap-2">
-            <h2 className={`mb-0 fw-bold ${flashClass}`} style={{ fontSize: "28px", letterSpacing: "-1px", transition: 'color 0.1s' }}>
+            <h2
+              className={`mb-0 fw-bold ${flashClass}`}
+              style={{
+                fontSize: "28px",
+                letterSpacing: "-1px",
+                transition: "color 0.1s",
+              }}
+            >
               {priceData.lastPrice > 0
-                ? priceData.lastPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })
+                ? priceData.lastPrice.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 4,
+                  })
                 : "---"}
             </h2>
             <span className="text-secondary small fw-medium">{quoteAsset}</span>
@@ -196,7 +249,9 @@ export default function DetailsPanel({ onClose, symbol }) {
             <span
               className="d-flex align-items-center gap-1 px-2 rounded"
               style={{
-                backgroundColor: isUp ? "rgba(8,153,129,0.1)" : "rgba(242,54,69,0.1)",
+                backgroundColor: isUp
+                  ? "rgba(8,153,129,0.1)"
+                  : "rgba(242,54,69,0.1)",
                 color: priceColor,
                 fontSize: "12px",
                 fontWeight: "600",
@@ -204,11 +259,14 @@ export default function DetailsPanel({ onClose, symbol }) {
               }}
             >
               {isUp ? <FiTrendingUp size={12} /> : <FiTrendingDown size={12} />}
-              {isUp ? "+" : ""}{priceData.change?.toFixed(4)}
+              {isUp ? "+" : ""}
+              {priceData.change?.toFixed(4)}
             </span>
             <span
               style={{
-                backgroundColor: isUp ? "rgba(8,153,129,0.1)" : "rgba(242,54,69,0.1)",
+                backgroundColor: isUp
+                  ? "rgba(8,153,129,0.1)"
+                  : "rgba(242,54,69,0.1)",
                 color: priceColor,
                 fontSize: "12px",
                 fontWeight: "600",
@@ -216,25 +274,52 @@ export default function DetailsPanel({ onClose, symbol }) {
                 borderRadius: "4px",
               }}
             >
-              {isUp ? "+" : ""}{priceData.changePercent?.toFixed(2)}%
+              {isUp ? "+" : ""}
+              {priceData.changePercent?.toFixed(2)}%
             </span>
-            <span className="text-muted" style={{ fontSize: "11px" }}>24H</span>
+            <span className="text-muted" style={{ fontSize: "11px" }}>
+              24H
+            </span>
           </div>
         </div>
 
         {/* Signal Gauge */}
-        <div className="p-3 border rounded-3 mb-3" style={{ borderColor: "var(--border-color, #e0e3eb)" }}>
+        <div
+          className="p-3 border rounded-3 mb-3"
+          style={{ borderColor: "var(--border-color, #e0e3eb)" }}
+        >
           <div className="d-flex justify-content-between align-items-center mb-2">
-            <span className="fw-semibold text-secondary" style={{ fontSize: "12px" }}>
+            <span
+              className="fw-semibold text-secondary"
+              style={{ fontSize: "12px" }}
+            >
               SIGNAL
             </span>
-            <span className="badge" style={{ fontSize: "10px", backgroundColor: "var(--bg-main, #f8f9fa)", color: "var(--text-muted, #131722)" }}>Based on Chg%</span>
+            <span
+              className="badge"
+              style={{
+                fontSize: "10px",
+                backgroundColor: "var(--bg-main, #f8f9fa)",
+                color: "var(--text-muted, #131722)",
+              }}
+            >
+              Based on Chg%
+            </span>
           </div>
           <div className="text-center py-1">
-            <div className="fs-5 fw-bold mb-2" style={{ color: rating.color, transition: "color 0.3s" }}>
+            <div
+              className="fs-5 fw-bold mb-2"
+              style={{ color: rating.color, transition: "color 0.3s" }}
+            >
               {rating.text}
             </div>
-            <div style={{ height: "4px", backgroundColor: "var(--bg-main, #f1f3f6)", borderRadius: "2px" }}>
+            <div
+              style={{
+                height: "4px",
+                backgroundColor: "var(--bg-main, #f1f3f6)",
+                borderRadius: "2px",
+              }}
+            >
               <div
                 style={{
                   height: "100%",
@@ -245,7 +330,10 @@ export default function DetailsPanel({ onClose, symbol }) {
                 }}
               />
             </div>
-            <div className="d-flex justify-content-between text-secondary mt-1" style={{ fontSize: "10px" }}>
+            <div
+              className="d-flex justify-content-between text-secondary mt-1"
+              style={{ fontSize: "10px" }}
+            >
               <span>Strong Sell</span>
               <span>Neutral</span>
               <span>Strong Buy</span>
@@ -254,13 +342,18 @@ export default function DetailsPanel({ onClose, symbol }) {
         </div>
 
         {/* Stats: only the 3 fields we receive */}
-        <h6 className="fw-bold mb-2" style={{ fontSize: "13px" }}>Stats</h6>
+        <h6 className="fw-bold mb-2" style={{ fontSize: "13px" }}>
+          Stats
+        </h6>
         <div className="mb-3">
           <div className="detail-row">
             <span className="detail-label">Last Price</span>
             <span className="detail-val" style={{ color: priceColor }}>
               {priceData.lastPrice > 0
-                ? priceData.lastPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })
+                ? priceData.lastPrice.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 4,
+                  })
                 : "---"}
             </span>
           </div>

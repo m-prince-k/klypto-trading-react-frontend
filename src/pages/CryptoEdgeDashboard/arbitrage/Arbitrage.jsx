@@ -99,6 +99,8 @@ export default function Arbitrage({ setActiveTab = () => {}, isSubComponent = fa
     });
 
     return () => {
+      socket.off("arbitrage-response");
+      socket.off("arbitrage-update");
       console.log("❌ Disconnected from Klypto Arbitrage stream.");
     };
   }, []);
