@@ -231,7 +231,7 @@ export default function Financial({ setActiveTab = () => {}, isSubComponent = fa
   return (
     <div className="finance-dashboard">
       {/* HEADER */}
-      <FinancialHeader
+      {/* <FinancialHeader
         selectedSymbol={selectedSymbol}
         setSelectedSymbol={setSelectedSymbol}
         name={name}
@@ -245,7 +245,7 @@ export default function Financial({ setActiveTab = () => {}, isSubComponent = fa
         formatLarge={formatLarge}
         changeColor={changeColor}
         changeSign={changeSign}
-      />
+      /> */}
 
       {/* ROW 1 */}
       <div className="fin-grid-row">
