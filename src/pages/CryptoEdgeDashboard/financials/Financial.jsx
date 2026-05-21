@@ -11,7 +11,7 @@ import FinancialSocialRisk from '../../../../src/components/dashboard/financials
 import FinancialAdvancedAnalytics from '../../../../src/components/dashboard/financials/FinancialAdvancedAnalytics';
 import FinancialFooter from '../../../../src/components/dashboard/financials/FinancialFooter';
 import apiService from '../../../services/apiServices';
-import socket from '../../../services/socket';
+import socket from '../../../services/websocket/socket';
 
 
 const cleanSymbol = (sym) => {

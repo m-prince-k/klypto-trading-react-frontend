@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './MarketSentiment.css';
-import socket from '../../../services/socket';
+import socket from '../../../services/websocket/socket';
 
 import MarketSentimentHeader from '../../../components/dashboard/marketSentiment/MarketSentimentHeader';
 import OverallMarketSentiment from '../../../components/dashboard/marketSentiment/OverallMarketSentiment';

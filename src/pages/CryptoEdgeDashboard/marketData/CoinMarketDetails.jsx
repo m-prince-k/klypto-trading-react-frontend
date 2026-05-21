@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import io from "socket.io-client";
 import { createChart, AreaSeries } from "lightweight-charts";
 import "./CoinMarketDetails.css";
 import apiService from "../../../services/apiServices";
-import socket from "../../../services/socket";
+import socket from "../../../services/websocket/socket";
 import { useTheme } from "../../../context/ThemeContext";
 
 const CoinMarketDetails = () => {

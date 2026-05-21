@@ -1,18 +1,18 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { 
+import {
   FiSearch, FiRefreshCw, FiMenu, FiBell, FiChevronDown, FiChevronUp,
-  FiSliders, FiUsers, FiSettings, FiGrid, FiTrendingUp, 
-  FiPercent, FiClock, FiDownload, FiDollarSign, FiFilter, 
+  FiSliders, FiUsers, FiSettings, FiGrid, FiTrendingUp,
+  FiPercent, FiClock, FiDownload, FiDollarSign, FiFilter,
   FiRotateCcw, FiChevronRight, FiChevronLeft, FiFileText
 } from 'react-icons/fi';
 import io from 'socket.io-client';
 import './Arbitrage.css';
-import socket from '../../../services/socket';
+import socket from '../../../services/websocket/socket';
 import ArbitrageStats from '../../../../src/components/dashboard/arbitrage/ArbitrageStats';
 import ArbitrageFilters from '../../../../src/components/dashboard/arbitrage/ArbitrageFilters';
 import ArbitrageTable from '../../../../src/components/dashboard/arbitrage/ArbitrageTable';
 
-export default function Arbitrage({ setActiveTab = () => {}, isSubComponent = false, selectedSymbol = "" }) {
+export default function Arbitrage({ setActiveTab = () => { }, isSubComponent = false, selectedSymbol = "" }) {
   const [activeMenu, setActiveMenu] = useState("Arbitrage");
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
@@ -26,7 +26,7 @@ export default function Arbitrage({ setActiveTab = () => {}, isSubComponent = fa
   const [minSpreadRs, setMinSpreadRs] = useState("");
   const [minSpreadPct, setMinSpreadPct] = useState("");
   const [autoRefresh, setAutoRefresh] = useState(true);
-  
+
   const autoRefreshRef = useRef(autoRefresh);
   useEffect(() => {
     autoRefreshRef.current = autoRefresh;

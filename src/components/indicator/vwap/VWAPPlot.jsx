@@ -2,14 +2,13 @@ import { useEffect, useRef } from "react";
 import { LineSeries } from "lightweight-charts";
 
 export default function VWAPPlot({
-  indicator,
   result,
   indicatorStyle,
   indicatorSeriesRef,
   addSeries,
   chart,
   containerRef,
-  indicatorConfigs
+  indicatorConfigs,
 }) {
   const canvasRef = useRef(null);
 
@@ -21,19 +20,18 @@ export default function VWAPPlot({
     console.log("🔥 VWAP CREATE TRIGGERED");
 
     // CLEAR OLD
-    if (indicatorSeriesRef.current?.[indicator]) {
+    if (indicatorSeriesRef.current?.VWAP) {
       console.log("🧹 Clearing old VWAP series");
 
-      Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {
+      Object.values(indicatorSeriesRef.current.VWAP).forEach((s) => {
         if (s?.setData) {
           try {
             s.setData([]);
-            try { chart.removeSeries(s); } catch {}
           } catch {}
         }
       });
 
-      indicatorSeriesRef.current[indicator] = null;
+      indicatorSeriesRef.current.VWAP = null;
     }
 
     const groupedSeries = {};
@@ -58,10 +56,10 @@ export default function VWAPPlot({
       console.log("✅ VWAP plotting", vwap.length);
 
       const s = addSeries("VWAP-vwap", LineSeries, {
-        color: indicatorStyle?.[indicator]?.vwap?.color,
-        lineWidth: indicatorStyle?.[indicator]?.vwap?.width,
-        lineStyle: indicatorStyle?.[indicator]?.vwap?.lineStyle,
-        visible: indicatorStyle?.[indicator]?.vwap?.visible,
+        color: indicatorStyle?.VWAP?.vwap?.color,
+        lineWidth: indicatorStyle?.VWAP?.vwap?.width,
+        lineStyle: indicatorStyle?.VWAP?.vwap?.lineStyle,
+        visible: indicatorStyle?.VWAP?.vwap?.visible,
         priceLineVisible: false,
       });
 
@@ -84,8 +82,8 @@ export default function VWAPPlot({
       const upperKey = `upperBand${id}`;
       const lowerKey = `lowerBand${id}`;
 
-      const upperStyle = indicatorStyle?.[indicator]?.[upperKey] || {};
-      const lowerStyle = indicatorStyle?.[indicator]?.[lowerKey] || {};
+      const upperStyle = indicatorStyle?.VWAP?.[upperKey] || {};
+      const lowerStyle = indicatorStyle?.VWAP?.[lowerKey] || {};
 
       console.log(`👉 Creating band${id}`, {
         upper: upperData.length,
@@ -123,7 +121,7 @@ export default function VWAPPlot({
     createBand(2, upper2, lower2);
     createBand(3, upper3, lower3);
 
-    indicatorSeriesRef.current[indicator] = groupedSeries;
+    indicatorSeriesRef.current.VWAP = groupedSeries;
 
     console.log("✅ FINAL SERIES", groupedSeries);
 }, [
@@ -136,13 +134,13 @@ export default function VWAPPlot({
   /* ================= STYLE UPDATE ================= */
 
   useEffect(() => {
-    const group = indicatorSeriesRef.current?.[indicator];
+    const group = indicatorSeriesRef.current?.VWAP;
     if (!group) return;
 
     Object.entries(group).forEach(([key, series]) => {
       if (!series?.applyOptions) return;
 
-      const style = indicatorStyle?.[indicator]?.[key];
+      const style = indicatorStyle?.VWAP?.[key];
       if (!style) return;
 
       series.applyOptions({
@@ -174,7 +172,7 @@ export default function VWAPPlot({
   /* ================= DRAW FILL ================= */
 
   const drawBands = () => {
-    const group = indicatorSeriesRef.current?.[indicator];
+    const group = indicatorSeriesRef.current?.VWAP;
     if (!group || !canvasRef.current || !chart) return;
 
     const canvas = canvasRef.current;
@@ -188,7 +186,7 @@ export default function VWAPPlot({
 
     const drawSingleBand = (id) => {
       const bandCfg = indicatorConfigs?.VWAP?.[`band${id}`];
-      const fillStyle = indicatorStyle?.[indicator]?.[`bandFill${id}`];
+      const fillStyle = indicatorStyle?.VWAP?.[`bandFill${id}`];
 
       if (!bandCfg?.enabled) {
         console.log(`🚫 Skip fill band${id} (disabled)`);
@@ -281,8 +279,8 @@ export default function VWAPPlot({
 
       canvasRef.current = null;
 
-      if (indicatorSeriesRef.current?.[indicator]) {
-        indicatorSeriesRef.current[indicator] = null;
+      if (indicatorSeriesRef.current?.VWAP) {
+        indicatorSeriesRef.current.VWAP = null;
       }
     };
   }, []);

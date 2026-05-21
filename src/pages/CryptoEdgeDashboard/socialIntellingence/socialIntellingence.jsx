@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import "./socialIntellingence.css"
-import socket from '../../../services/socket';
+import socket from '../../../services/websocket/socket';
 import SentimentRow from '../../../components/dashboard/socialIntelligence/SentimentRow';
 import SocialMetricsRow from '../../../components/dashboard/socialIntelligence/SocialMetricsRow';
 import TrendPredictionRow from '../../../components/dashboard/socialIntelligence/TrendPredictionRow';
@@ -17,7 +17,7 @@ const parseRawNumber = (val) => {
   return num;
 };
 
-export default function SocialIntelligence({ setActiveTab = () => {}, isSubComponent = false, selectedSymbol = "BTCUSDT" }) {
+export default function SocialIntelligence({ setActiveTab = () => { }, isSubComponent = false, selectedSymbol = "BTCUSDT" }) {
   const [activeTab, setActiveTabInternal] = useState('Sentiment');
   const [timeframe, setTimeframe] = useState('24H');
   const [currentTime, setCurrentTime] = useState('');

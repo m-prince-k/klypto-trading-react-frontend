@@ -12,7 +12,7 @@ import { toast } from "react-toastify";
 
 export const ChartProprties = {
   width: 1350,
-  height: 515,
+  height: 570,
   autoSize: true,
 
   layout: {

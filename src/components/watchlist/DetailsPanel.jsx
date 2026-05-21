@@ -6,8 +6,8 @@ import {
   FiActivity,
   FiGlobe,
 } from "react-icons/fi";
-import socket from "../../services/socket";
-import SocketEvents from "../../services/socketEvents";
+import socket from "../../services/websocket/socket";
+import SocketEvents from "../../services/websocket/socketEvents";
 
 export default function DetailsPanel({ onClose, symbol }) {
   const [priceData, setPriceData] = useState({
@@ -72,10 +72,10 @@ export default function DetailsPanel({ onClose, symbol }) {
       });
     };
 
-    socket.on(SocketEvents.WATCHLIST_UPDATE, handleWatchlistUpdate);
+    socket.on("watchlist-update", handleWatchlistUpdate);
 
     return () => {
-      socket.off(SocketEvents.WATCHLIST_UPDATE, handleWatchlistUpdate);
+      socket.off("watchlist-update", handleWatchlistUpdate);
     };
   }, [symbol]);
 
@@ -237,9 +237,9 @@ export default function DetailsPanel({ onClose, symbol }) {
             >
               {priceData.lastPrice > 0
                 ? priceData.lastPrice.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 4,
-                  })
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 4,
+                })
                 : "---"}
             </h2>
             <span className="text-secondary small fw-medium">{quoteAsset}</span>
@@ -351,9 +351,9 @@ export default function DetailsPanel({ onClose, symbol }) {
             <span className="detail-val" style={{ color: priceColor }}>
               {priceData.lastPrice > 0
                 ? priceData.lastPrice.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 4,
-                  })
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 4,
+                })
                 : "---"}
             </span>
           </div>

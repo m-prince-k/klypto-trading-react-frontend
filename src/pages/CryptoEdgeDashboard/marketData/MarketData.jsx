@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import "./MarketData.css";
-import socket from "../../../services/socket"; // ← use shared socket, not io()
+import socket from "../../../services/websocket/socket"; // ← use shared socket, not io()
 import MarketDataHeader from "../../../components/dashboard/marketData/MarketDataHeader";
 import MarketDataTickerGrid from "../../../components/dashboard/marketData/MarketDataTickerGrid";
 import MarketDataCoinsTable from "../../../components/dashboard/marketData/MarketDataCoinsTable";
@@ -358,10 +358,10 @@ const MarketData = () => {
       list.sort((a, b) => a.change24h - b.change24h);
     else if (activeTab === "24h Volume")
       list.sort((a, b) => b.volume24h - a.volume24h);
-    
+
     if (activeCategory !== "All")
       list = list.filter((coin) => coin.category?.includes(activeCategory));
-      
+
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       list = list.filter(
@@ -370,7 +370,7 @@ const MarketData = () => {
           coin.symbol.toLowerCase().includes(query),
       );
     }
-    
+
     if (sortConfig.key) {
       list.sort((a, b) => {
         let aVal = a[sortConfig.key],
@@ -393,10 +393,10 @@ const MarketData = () => {
   return (
     <div className="market-data-container container-fluid p-0">
       <MarketDataHeader isSocketConnected={isSocketConnected} />
-      
-      <MarketDataTickerGrid 
-        marketMetrics={marketMetrics} 
-        renderSparkline={renderSparkline} 
+
+      <MarketDataTickerGrid
+        marketMetrics={marketMetrics}
+        renderSparkline={renderSparkline}
       />
 
       <section className="dashboard-body-grid">

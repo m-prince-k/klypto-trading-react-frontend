@@ -3,12 +3,13 @@ import { io } from 'socket.io-client';
 import * as XLSX from 'xlsx';
 import './onChain.css';
 
+import apiService from '../../../services/apiServices';
 import OnChainHeader from '../../../components/dashboard/onChain/OnChainHeader';
 import OnChainStats from '../../../components/dashboard/onChain/OnChainStats';
 import OnChainCharts from '../../../components/dashboard/onChain/OnChainCharts';
 import OnChainTables from '../../../components/dashboard/onChain/OnChainTables';
 import OnChainModals from '../../../components/dashboard/onChain/OnChainModals';
-import socket from '../../../services/socket';
+import socket from '../../../services/websocket/socket';
 
 const OnChain = ({ isSubComponent = false }) => {
   const [data, setData] = useState(null);
@@ -17,7 +18,7 @@ const OnChain = ({ isSubComponent = false }) => {
   const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
   const [activeModal, setActiveModal] = useState(null); // 'chains' | 'protocols' | 'history' | null
   const [modalSearch, setModalSearch] = useState('');
-  
+
   // Date Picker States
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [dateRangePreset, setDateRangePreset] = useState('Last 30 Days'); // 'Last 7 Days' | 'Last 30 Days' | 'Last 90 Days' | 'Custom'
@@ -26,8 +27,7 @@ const OnChain = ({ isSubComponent = false }) => {
 
   useEffect(() => {
     // 1. Fetch initial data dynamically from backend REST API
-    fetch('http://192.168.1.6:7000/api/onchain/data')
-      .then(res => res.json())
+    apiService.post('/api/onchain/data')
       .then(json => {
         if (json && json.success) {
           setData(json.data);
@@ -36,7 +36,7 @@ const OnChain = ({ isSubComponent = false }) => {
       .catch(err => console.error("Error fetching initial on-chain data:", err));
 
     // 2. Establish live websocket subscription
-    
+
     socket.on('connect', () => {
       console.log('🔌 Connected to OnChain WebSockets');
       socket.emit('subscribe_onchain');
@@ -50,7 +50,7 @@ const OnChain = ({ isSubComponent = false }) => {
 
     return () => {
       socket.emit('unsubscribe_onchain');
-    //   socket.disconnect();
+      //   socket.disconnect();
     };
   }, []);
 
@@ -70,7 +70,7 @@ const OnChain = ({ isSubComponent = false }) => {
 
   const handleExport = (format) => {
     if (!data) return;
-    
+
     const chainsData = data.chains.map(c => ({
       Rank: c.n,
       Chain: c.chain,
@@ -80,7 +80,7 @@ const OnChain = ({ isSubComponent = false }) => {
       Change_30d: c.c30,
       Dominance: c.dom
     }));
-    
+
     const protocolsData = data.protocols.map(p => ({
       Rank: p.n,
       Protocol: p.name,
@@ -132,7 +132,7 @@ const OnChain = ({ isSubComponent = false }) => {
         <div style={{ textAlign: 'center' }}>
           <div className="logo-icon" style={{ margin: '0 auto 16px auto', width: '48px', height: '48px' }}>
             <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: '24px', height: '24px' }}>
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
           <p style={{ color: '#848e9c', fontSize: '14px' }}>Loading DeFi Analytics...</p>
@@ -156,7 +156,7 @@ const OnChain = ({ isSubComponent = false }) => {
     const start = isFiltered ? 0 : (idx === 0 ? 0 : arr.slice(0, idx).reduce((sum, ch) => sum + parseFloat(ch.dom), 0));
     return `${c.color} ${start}% ${start + pct}%`;
   });
-  
+
   if (!isFiltered) {
     let accumulatedPercent = data.chains.reduce((sum, c) => sum + parseFloat(c.dom), 0);
     conicParts.push(`var(--color-opt) ${accumulatedPercent}% ${accumulatedPercent + 2.4}%`);
@@ -169,15 +169,15 @@ const OnChain = ({ isSubComponent = false }) => {
   };
 
   // Scale historical TVL values dynamically based on selected chain dominance
-  const displayHistory = isFiltered && filteredChainObj 
+  const displayHistory = isFiltered && filteredChainObj
     ? data.tvlHistory.map((pt, idx) => {
-        const dominanceFactor = parseFloat(filteredChainObj.dom) / 100;
-        const drift = 1 + Math.sin(idx / 3) * 0.02;
-        return {
-          ...pt,
-          tvl: (parseFloat(pt.tvl) * dominanceFactor * drift).toFixed(2)
-        };
-      })
+      const dominanceFactor = parseFloat(filteredChainObj.dom) / 100;
+      const drift = 1 + Math.sin(idx / 3) * 0.02;
+      return {
+        ...pt,
+        tvl: (parseFloat(pt.tvl) * dominanceFactor * drift).toFixed(2)
+      };
+    })
     : data.tvlHistory;
 
   // Filter historical series by selected date picker presets/ranges
@@ -230,7 +230,7 @@ const OnChain = ({ isSubComponent = false }) => {
 
       linePath = points.map((p, idx) => `${idx === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
       areaPath = `${linePath} L500,200 L0,200 Z`;
-      
+
       const lastPt = points[points.length - 1];
       lastCircleX = lastPt.x;
       lastCircleY = lastPt.y;
@@ -256,7 +256,7 @@ const OnChain = ({ isSubComponent = false }) => {
     <div className={isSubComponent ? "onchain-wrapper-sub" : "onchain-layout"}>
       <main className="onchain-main">
         {/* Header */}
-        <OnChainHeader 
+        <OnChainHeader
           chainsList={chainsList}
           selectedChain={selectedChain}
           setSelectedChain={setSelectedChain}
@@ -276,14 +276,14 @@ const OnChain = ({ isSubComponent = false }) => {
         />
 
         {/* Stats Grid */}
-        <OnChainStats 
+        <OnChainStats
           data={data}
           displayTvl={displayTvl}
           displayTvlChange={displayTvlChange}
         />
 
         {/* Middle Charts Row */}
-        <OnChainCharts 
+        <OnChainCharts
           dateRangePreset={dateRangePreset}
           setDateRangePreset={setDateRangePreset}
           yAxisLabels={yAxisLabels}
@@ -303,7 +303,7 @@ const OnChain = ({ isSubComponent = false }) => {
         />
 
         {/* Bottom Tables Row */}
-        <OnChainTables 
+        <OnChainTables
           data={data}
           setActiveModal={setActiveModal}
           setModalSearch={setModalSearch}
@@ -311,7 +311,7 @@ const OnChain = ({ isSubComponent = false }) => {
       </main>
 
       {/* Dynamic Popups/Modals */}
-      <OnChainModals 
+      <OnChainModals
         activeModal={activeModal}
         setActiveModal={setActiveModal}
         modalSearch={modalSearch}

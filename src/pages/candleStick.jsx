@@ -51,7 +51,7 @@ import {
 } from "../util/indicatorFunctions";
 import RightSidebar from "../components/layout/RightSidebar";
 import { Button } from "react-bootstrap";
-import socket from "../services/socket";
+import socket from "../services/websocket/socket";
 
 export default function Candlestick() {
   const { theme } = useTheme();
@@ -66,6 +66,7 @@ export default function Candlestick() {
   const syncingRef = useRef(false);
   const fetchedIndicatorsRef = useRef(new Set());
   const mainChartHeightRef = useRef(500);
+  const zoomBtnRef = useRef(null);
 
   const [openForm, setOpenForm] = useState(false);
   const params = new URLSearchParams(window.location.search);
@@ -102,6 +103,7 @@ export default function Candlestick() {
   const [detailsHeight, setDetailsHeight] = useState(200);
   const [isDraggingWidth, setIsDraggingWidth] = useState(false);
   const [isDraggingHeight, setIsDraggingHeight] = useState(false);
+  const [showZoomButtons, setShowZoomButtons] = useState(false);
 
   const sidebarContainerRef = useRef(null);
 
@@ -273,13 +275,13 @@ export default function Candlestick() {
 
             try {
               chart.removeSeries(series);
-            } catch {}
+            } catch { }
           });
         } else {
           /* SINGLE SERIES */
           try {
             chart.removeSeries(entry);
-          } catch {}
+          } catch { }
         }
 
         // Keep it empty so the Plot component knows it needs to create a new one
@@ -443,14 +445,14 @@ export default function Candlestick() {
       seriesToRemove.forEach((s) => {
         try {
           chart.removeSeries(s);
-        } catch {}
+        } catch { }
       });
 
       // 3. IMPORTANT: force chart to recompute pane layout
       requestAnimationFrame(() => {
         try {
           chart.timeScale().fitContent();
-        } catch {}
+        } catch { }
       });
 
       // 4. Remove internal references
@@ -478,13 +480,13 @@ export default function Candlestick() {
 
         try {
           chart.removeSeries(series);
-        } catch {}
+        } catch { }
       });
     } else {
       /* SINGLE SERIES */
       try {
         chart.removeSeries(entry);
-      } catch {}
+      } catch { }
     }
 
     delete indicatorSeriesRef.current[indicator];
@@ -840,7 +842,7 @@ export default function Candlestick() {
   // ATTACH CROSSHAIR
 
   const attachCrosshair = useCallback((chart) => {
-    if (!chart) return () => {};
+    if (!chart) return () => { };
     const handler = (param) => {
       const charts = [
         chartRef.current,
@@ -910,7 +912,7 @@ export default function Candlestick() {
         if (seriesRef.current) {
           try {
             chartRef.current.removeSeries(seriesRef.current);
-          } catch (e) {}
+          } catch (e) { }
           seriesRef.current = null;
         }
 
@@ -1087,8 +1089,16 @@ export default function Candlestick() {
         url="https://yourdomain.com/"
         image="https://yourdomain.com/banner.jpg"
       />
-      <section className="trading-view-wrapper overflow-x-hidden">
-        <div className="container-fluid p-0 m-0">
+      <section className="trading-view-wrapper overflow-x-hidden" style={{
+        display: "flex",
+        flexDirection: "column",
+        minHeight: "100vh"
+      }}>
+        <div className="container-fluid p-0 m-0" style={{
+          display: "flex",
+          flexDirection: "column",
+          minHeight: "100vh"
+        }}>
           <div className="row">
             <div className="col-md-12">
               <div className="trading-chart-header">
@@ -1114,8 +1124,12 @@ export default function Candlestick() {
               display: "flex",
               flexDirection: "row",
               width: "100%",
-              height: "calc(100vh - 100px)",
-              overflow: "hidden",
+              // height: "calc(100vh - 100px)",
+              height: "100vh",          // ✅ FORCE SCREEN HEIGHT
+              maxHeight: "100vh",       // ✅ PREVENT OVERFLOW
+              minHeight: 0,
+              flex: 1,
+              minHeight: 0,
               backgroundColor: "var(--bg-main, #ffffff)",
             }}
           >
@@ -1132,6 +1146,8 @@ export default function Candlestick() {
             >
               <div
                 ref={containerRef}
+                onMouseEnter={() => { if (zoomBtnRef.current) zoomBtnRef.current.style.opacity = "1"; }}
+                onMouseLeave={() => { if (zoomBtnRef.current) zoomBtnRef.current.style.opacity = "0"; }}
                 style={{
                   width: "100%",
                   height: ChartProprties.height,
@@ -1304,9 +1320,9 @@ export default function Candlestick() {
                     >
                       {livePrice !== null && livePrice !== undefined
                         ? livePrice.toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 6,
-                          })
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 6,
+                        })
                         : "—"}
                     </span>
                     <span
@@ -1373,9 +1389,9 @@ export default function Candlestick() {
                     >
                       {livePrice !== null && livePrice !== undefined
                         ? livePrice.toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 6,
-                          })
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 6,
+                        })
                         : "—"}
                     </span>
                     <span
@@ -1487,6 +1503,109 @@ export default function Candlestick() {
                       })}
                   </div>
                 )}
+                {/* ── Zoom Buttons (TradingView style, hover to reveal) ── */}
+                <div
+                  ref={zoomBtnRef}
+                  style={{
+                    position: "absolute",
+                    bottom: "12px",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    zIndex: 50,
+                    display: "flex",
+                    flexDirection: "row",
+                    gap: "4px",
+                    opacity: 0,
+                    transition: "opacity 0.2s ease",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "0")}
+                >
+                  <button
+                    onClick={zoomIn}
+                    title="Zoom In"
+                    style={{
+                      width: "28px",
+                      height: "28px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: "var(--bg-card, #ffffff)",
+                      border: "1px solid var(--border-color, #e2e8f0)",
+                      borderRadius: "6px",
+                      color: "var(--text-main, #131722)",
+                      cursor: "pointer",
+                      boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+                      transition: "background 0.15s, border-color 0.15s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "var(--bg-card-hover, #f1f5f9)";
+                      e.currentTarget.style.borderColor = "var(--accent-color, #2962ff)";
+                      e.currentTarget.style.color = "var(--accent-color, #2962ff)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "var(--bg-card, #ffffff)";
+                      e.currentTarget.style.borderColor = "var(--border-color, #e2e8f0)";
+                      e.currentTarget.style.color = "var(--text-main, #131722)";
+                    }}
+                  >
+                    <LuCirclePlus size={15} />
+                  </button>
+
+                  <button
+                    onClick={zoomOut}
+                    title="Zoom Out"
+                    style={{
+                      width: "28px",
+                      height: "28px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: "var(--bg-card, #ffffff)",
+                      border: "1px solid var(--border-color, #e2e8f0)",
+                      borderRadius: "6px",
+                      color: "var(--text-main, #131722)",
+                      cursor: "pointer",
+                      boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+                      transition: "background 0.15s, border-color 0.15s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "var(--bg-card-hover, #f1f5f9)";
+                      e.currentTarget.style.borderColor = "var(--accent-color, #2962ff)";
+                      e.currentTarget.style.color = "var(--accent-color, #2962ff)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "var(--bg-card, #ffffff)";
+                      e.currentTarget.style.borderColor = "var(--border-color, #e2e8f0)";
+                      e.currentTarget.style.color = "var(--text-main, #131722)";
+                    }}
+                  >
+                    <LuCircleMinus size={15} />
+                  </button>
+
+                  <button
+                    onClick={resetZoom}
+                    title="Reset Zoom"
+                    style={{
+                      width: "28px",
+                      height: "28px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: "var(--accent-color, #2962ff)",
+                      border: "1px solid var(--accent-color, #2962ff)",
+                      borderRadius: "6px",
+                      color: "#ffffff",
+                      cursor: "pointer",
+                      boxShadow: "0 1px 4px rgba(41,98,255,0.25)",
+                      transition: "opacity 0.15s",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
+                    onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+                  >
+                    <RiResetRightLine size={14} />
+                  </button>
+                </div>
               </div>
 
               <div
@@ -1526,10 +1645,13 @@ export default function Candlestick() {
                   ? "1px solid var(--border-color, #e2e8f0)"
                   : "none",
                 backgroundColor: "var(--bg-card, #ffffff)",
-                height: "100%",
+                height: "100vh",          // ✅ FORCE SCREEN HEIGHT
+                maxHeight: "100vh",       // ✅ PREVENT OVERFLOW
+                minHeight: 0,
                 flexShrink: 0,
                 display: "flex",
                 flexDirection: "column",
+                minHeight: 0,
               }}
             >
               {/* Width Resizer Handle on the left edge */}
@@ -1566,13 +1688,15 @@ export default function Candlestick() {
                   height: "100%",
                   display: "flex",
                   flexDirection: "column",
+                  minHeight: 0,
                 }}
               >
                 {/* Watchlist Panel (Top) */}
                 <div
                   style={{
                     flex: 1,
-                    overflow: "hidden",
+                    overflowY: "auto",
+                    overflowX: "hidden",
                     display: "flex",
                     flexDirection: "column",
                   }}
@@ -1619,6 +1743,7 @@ export default function Candlestick() {
                         height: `${detailsHeight}px`,
                         overflow: "hidden",
                         display: "flex",
+
                         flexDirection: "column",
                       }}
                     >
@@ -1668,218 +1793,27 @@ export default function Candlestick() {
         />
       </section>
       <section
-        className="market-trading-part"
-        style={{ backgroundColor: "var(--bg-main, #ffffff)" }}
+
       >
-        <div className="container p-0 m-0">
-          <div className="row">
-            <div className="d-flex align-items-center position-relative">
-              <div className="mx-auto d-flex align-items-center gap-2">
-                {/* Zoom In */}
-                <button
-                  onClick={zoomIn}
-                  title="Zoom in"
-                  className="d-flex align-items-center gap-2 fw-semibold"
-                  style={{
-                    borderColor: "var(--border-color, #e2e8f0)",
-                    color: "var(--text-main, #131722)",
-                    background: "var(--bg-card, #ffffff)",
-                    borderRadius: "10px",
-                    borderWidth: "1.5px",
-                    borderStyle: "solid",
-                    fontSize: "0.8rem",
-                    letterSpacing: "0.01em",
-                    padding: "6px 14px",
-                    boxShadow:
-                      "0 1px 3px var(--shadow-color, rgba(0,0,0,0.05))",
-                    transition: "all 0.22s cubic-bezier(0.4, 0, 0.2, 1)",
-                    cursor: "pointer",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor =
-                      "var(--accent-color, #3b82f6)";
-                    e.currentTarget.style.color =
-                      "var(--accent-color, #3b82f6)";
-                    e.currentTarget.style.background =
-                      "var(--bg-card-hover, #f1f5f9)";
-                    e.currentTarget.style.boxShadow =
-                      "0 4px 14px var(--shadow-color, rgba(0,0,0,0.1))";
-                    e.currentTarget.querySelector("svg").style.transform =
-                      "scale(1.15) rotate(90deg)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor =
-                      "var(--border-color, #e2e8f0)";
-                    e.currentTarget.style.color = "var(--text-main, #131722)";
-                    e.currentTarget.style.background =
-                      "var(--bg-card, #ffffff)";
-                    e.currentTarget.style.boxShadow =
-                      "0 1px 3px var(--shadow-color, rgba(0,0,0,0.05))";
-                    e.currentTarget.querySelector("svg").style.transform =
-                      "scale(1) rotate(0deg)";
-                  }}
-                  onMouseDown={(e) =>
-                    (e.currentTarget.style.transform = "scale(0.97)")
-                  }
-                  onMouseUp={(e) =>
-                    (e.currentTarget.style.transform = "scale(1)")
-                  }
-                >
-                  <LuCirclePlus
-                    size={14}
-                    style={{ transition: "transform 0.3s ease" }}
-                  />
-                  Zoom In
-                </button>
 
-                {/* Divider */}
-                <div
-                  style={{
-                    width: "1px",
-                    height: "22px",
-                    background: "var(--border-color, #d1d5db)",
-                  }}
-                />
 
-                {/* Zoom Out */}
-                <button
-                  onClick={zoomOut}
-                  title="Zoom out"
-                  className="d-flex align-items-center gap-2 fw-semibold"
-                  style={{
-                    borderColor: "var(--border-color, #e2e8f0)",
-                    color: "var(--text-main, #131722)",
-                    background: "var(--bg-card, #ffffff)",
-                    borderRadius: "10px",
-                    borderWidth: "1.5px",
-                    borderStyle: "solid",
-                    fontSize: "0.8rem",
-                    letterSpacing: "0.01em",
-                    padding: "6px 14px",
-                    boxShadow:
-                      "0 1px 3px var(--shadow-color, rgba(0,0,0,0.05))",
-                    transition: "all 0.22s cubic-bezier(0.4, 0, 0.2, 1)",
-                    cursor: "pointer",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor =
-                      "var(--accent-color, #3b82f6)";
-                    e.currentTarget.style.color =
-                      "var(--accent-color, #3b82f6)";
-                    e.currentTarget.style.background =
-                      "var(--bg-card-hover, #f1f5f9)";
-                    e.currentTarget.style.boxShadow =
-                      "0 4px 14px var(--shadow-color, rgba(0,0,0,0.1))";
-                    e.currentTarget.querySelector("svg").style.transform =
-                      "scale(1.15) rotate(90deg)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor =
-                      "var(--border-color, #e2e8f0)";
-                    e.currentTarget.style.color = "var(--text-main, #131722)";
-                    e.currentTarget.style.background =
-                      "var(--bg-card, #ffffff)";
-                    e.currentTarget.style.boxShadow =
-                      "0 1px 3px var(--shadow-color, rgba(0,0,0,0.05))";
-                    e.currentTarget.querySelector("svg").style.transform =
-                      "scale(1) rotate(0deg)";
-                  }}
-                  onMouseDown={(e) =>
-                    (e.currentTarget.style.transform = "scale(0.97)")
-                  }
-                  onMouseUp={(e) =>
-                    (e.currentTarget.style.transform = "scale(1)")
-                  }
-                >
-                  <LuCircleMinus
-                    size={14}
-                    style={{ transition: "transform 0.3s ease" }}
-                  />
-                  Zoom Out
-                </button>
 
-                {/* Divider */}
-                <div
-                  style={{
-                    width: "1px",
-                    height: "22px",
-                    background: "var(--border-color, #d1d5db)",
-                  }}
-                />
+        {/* --------------indicator sub part property show in modal-------------- */}
+        <IndicatorPropertyDialog
+          setIndicatorProperty={setIndicatorProperty}
+          indicatorProperty={indicatorProperty}
+          activeBarIndicator={activeBarIndicator}
+          setIndicatorConfigs={setIndicatorConfigs}
+          indicatorConfigs={indicatorConfigs}
+          indicatorStyle={indicatorStyle}
+          setIndicatorStyle={setIndicatorStyle}
+          indicatorSeriesRef={indicatorSeriesRef}
+          selectedCurrency={selectedCurrency}
+          timeframeValue={timeframeValue}
+          latestIndicatorValuesRef={latestIndicatorValuesRef}
+        />
 
-                {/* Reset — filled/primary style */}
-                <button
-                  onClick={resetZoom}
-                  title="Reset zoom"
-                  className="d-flex align-items-center gap-2 fw-semibold"
-                  style={{
-                    borderColor: "var(--accent-color, #3b82f6)",
-                    color: "#ffffff",
-                    background: "var(--accent-color, #3b82f6)",
-                    borderRadius: "10px",
-                    borderWidth: "1.5px",
-                    borderStyle: "solid",
-                    fontSize: "0.8rem",
-                    letterSpacing: "0.01em",
-                    padding: "6px 14px",
-                    boxShadow: "0 1px 3px var(--shadow-color, rgba(0,0,0,0.1))",
-                    transition: "all 0.22s cubic-bezier(0.4, 0, 0.2, 1)",
-                    cursor: "pointer",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background =
-                      "var(--accent-color, #3b82f6)";
-                    e.currentTarget.style.borderColor =
-                      "var(--accent-color, #3b82f6)";
-                    e.currentTarget.style.opacity = "0.9";
-                    e.currentTarget.style.boxShadow =
-                      "0 4px 14px var(--shadow-color, rgba(0,0,0,0.15))";
-                    e.currentTarget.querySelector("svg").style.transform =
-                      "rotate(360deg)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background =
-                      "var(--accent-color, #3b82f6)";
-                    e.currentTarget.style.borderColor =
-                      "var(--accent-color, #3b82f6)";
-                    e.currentTarget.style.opacity = "1";
-                    e.currentTarget.style.boxShadow =
-                      "0 1px 3px var(--shadow-color, rgba(0,0,0,0.1))";
-                    e.currentTarget.querySelector("svg").style.transform =
-                      "rotate(0deg)";
-                  }}
-                  onMouseDown={(e) =>
-                    (e.currentTarget.style.transform = "scale(0.97)")
-                  }
-                  onMouseUp={(e) =>
-                    (e.currentTarget.style.transform = "scale(1)")
-                  }
-                >
-                  <RiResetRightLine
-                    size={14}
-                    style={{ transition: "transform 0.5s ease" }}
-                  />
-                  Reset
-                </button>
-              </div>
-            </div>
 
-            {/* --------------indicator sub part property show in modal-------------- */}
-            <IndicatorPropertyDialog
-              setIndicatorProperty={setIndicatorProperty}
-              indicatorProperty={indicatorProperty}
-              activeBarIndicator={activeBarIndicator}
-              setIndicatorConfigs={setIndicatorConfigs}
-              indicatorConfigs={indicatorConfigs}
-              indicatorStyle={indicatorStyle}
-              setIndicatorStyle={setIndicatorStyle}
-              indicatorSeriesRef={indicatorSeriesRef}
-              selectedCurrency={selectedCurrency}
-              timeframeValue={timeframeValue}
-              latestIndicatorValuesRef={latestIndicatorValuesRef}
-            />
-          </div>
-        </div>
       </section>
     </>
   );

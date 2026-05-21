@@ -668,8 +668,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { FiPlus, FiSearch, FiChevronLeft, FiTrash2 } from "react-icons/fi";
 import { IoMdClose } from "react-icons/io";
 import { VscTriangleDown } from "react-icons/vsc";
-import socket from "../../services/socket";
-import SocketEvents from "../../services/socketEvents";
+import socket from "../../services/websocket/socket";
+import SocketEvents from "../../services/websocket/socketEvents";
 import apiService from "../../services/apiServices";
 import { useDebounce } from "../../util/common";
 
@@ -684,6 +684,7 @@ const styles = `
     flex-direction: column;
     height: 100%;
     color: var(--text-main, #2d3748);
+    overflow-x: hidden;
   }
 
   .wl-header {
@@ -1067,7 +1068,7 @@ export default function WatchlistPanel({
 
   // 1. WebSocket Live Ticks & Watchlist Baseline
   useEffect(() => {
-    socket.emit(SocketEvents.GET_WATCHLIST_DATA);
+    socket.emit("get-watchlist");
 
     const handleWatchlistResponse = (res) => {
       console.log("[WatchlistPanel] WATCHLIST_RESPONSE:", res);
@@ -1134,12 +1135,12 @@ export default function WatchlistPanel({
       });
     };
 
-    socket.on(SocketEvents.WATCHLIST_RESPONSE, handleWatchlistResponse);
-    socket.on(SocketEvents.WATCHLIST_UPDATE, handleWatchlistUpdate);
+    socket.on("watchlist-response", handleWatchlistResponse);
+    socket.on("watchlist-update", handleWatchlistUpdate);
 
     return () => {
-      socket.off(SocketEvents.WATCHLIST_RESPONSE, handleWatchlistResponse);
-      socket.off(SocketEvents.WATCHLIST_UPDATE, handleWatchlistUpdate);
+      socket.off("watchlist-response", handleWatchlistResponse);
+      socket.off("watchlist-update", handleWatchlistUpdate);
     };
   }, []);
 
