@@ -1,6 +1,7 @@
 import React from 'react';
 
 const ChartAndOrderBook = ({ selectedSymbol, baseSymbol, prices, orderBook, tvlData, tvContainerRef }) => {
+  console.log("ChartAndOrderBook orderBook:", orderBook);
   const currentPriceObj = prices[baseSymbol] || prices[selectedSymbol] || {};
 
   const formatSymbol = (sym) => {
@@ -49,23 +50,23 @@ const ChartAndOrderBook = ({ selectedSymbol, baseSymbol, prices, orderBook, tvlD
             {/* Asks (Sell Orders) */}
             {orderBook.asks.map((ask, i) => (
               <tr key={`ask-${i}`} className="ob-ask-row">
-                <td align="left">{ask.price}</td>
-                <td align="right">{ask.size}</td>
-                <td align="right">{ask.total}</td>
+                <td align="left">{Number(ask[0]).toFixed(2)}</td>
+                <td align="right">{Number(ask[1]).toFixed(4)}</td>
+                <td align="right">{(Number(ask[0]) * Number(ask[1])).toFixed(2)}</td>
               </tr>
             ))}
             {/* Live spread divider */}
             <tr style={{ backgroundColor: 'rgba(255,255,255,0.02)' }}>
               <td colSpan="3" align="center" style={{ fontSize: '9px', fontWeight: 'bold', color: '#8f9cae', padding: '4px 0' }}>
-                Spread: {orderBook.spread}
+                Spread: {orderBook?.spread}
               </td>
             </tr>
             {/* Bids (Buy Orders) */}
             {orderBook.bids.map((bid, i) => (
               <tr key={`bid-${i}`} className="ob-bid-row">
-                <td align="left">{bid.price}</td>
-                <td align="right">{bid.size}</td>
-                <td align="right">{bid.total}</td>
+                <td align="left">{Number(bid[0]).toFixed(2)}</td>
+                <td align="right">{Number(bid[1]).toFixed(4)}</td>
+                <td align="right">{(Number(bid[0]) * Number(bid[1])).toFixed(2)}</td>
               </tr>
             ))}
           </tbody>
@@ -78,7 +79,7 @@ const ChartAndOrderBook = ({ selectedSymbol, baseSymbol, prices, orderBook, tvlD
           <h4 className="card-title-main">Total Value Locked</h4>
           <span className="glow-tag-green">DEFILLAMA</span>
         </div>
-        <div style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--text-main, #ffffff)' }}>{tvlData.total}</div>
+        <div style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--text-main, #ffffff)' }}>{tvlData?.total}</div>
         <div style={{ fontSize: '9.5px', color: '#10b981', fontWeight: 'bold', marginTop: '-3px' }}>▲ +2.34% (7D growth)</div>
 
         {/* Rainbow stacked area wave SVG */}
@@ -114,15 +115,15 @@ const ChartAndOrderBook = ({ selectedSymbol, baseSymbol, prices, orderBook, tvlD
 
         {/* Micro-list for distributions */}
         <div className="tvl-stack-side-list">
-          {tvlData.chains.map((chain, i) => (
+          {tvlData?.chains?.map((chain, i) => (
             <div key={`tvl-chain-${i}`} className="tvl-stack-item">
               <div className="tvl-item-label">
-                <div className="tvl-item-dot" style={{ backgroundColor: chain.color }}></div>
-                <span>{chain.name}</span>
+                <div className="tvl-item-dot" style={{ backgroundColor: chain?.color }}></div>
+                <span>{chain?.name}</span>
               </div>
               <div style={{ display: 'flex', gap: '6px' }}>
-                <span className="tvl-item-val">${chain.val}</span>
-                <span className="tvl-item-change">{chain.pct}%</span>
+                <span className="tvl-item-val">${chain?.val}</span>
+                <span className="tvl-item-change">{chain?.pct}%</span>
               </div>
             </div>
           ))}

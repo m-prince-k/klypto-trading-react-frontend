@@ -2,6 +2,13 @@ import { useEffect } from "react";
 import { createSocketManager } from "./socketManager";
 import EVENTS from "./socketEvents";
 
+// Global cache to persist data across route transitions (e.g. going to Details and back)
+export const globalCache = {
+  marketCoins: null,
+  marketMetrics: null,
+  overviewChartData: null,
+};
+
 export const useSocket = ({
   setPrices,
   setOrderBook,
@@ -9,80 +16,461 @@ export const useSocket = ({
   setSocialStats,
   setTvlData,
   setFinancials,
-  setArbitrage,
   setAlerts,
   selectedSymbolRef,
   getBaseSymbol,
+
+  // Chart
+  setChartData,
+
+  // Watchlist
+  setWatchlist,
+
+  // On-chain
+  setOnchainData,
+
+  // Arbitrage
+  setOpportunities,
+  setLastUpdated,
+  setPriceFlash,
+
+  //Financials
+  setKlines,
+  setDepthData,
+  setMarketExtra,
+  setFinanceData,
+  selectedSymbol,
+  cleanSymbol,
+
+  // MarketData
+  setCoins,
+  setMarketMetrics,
+  setOverviewChartData,
+  setFlashStates,
+
+  // MarketSentiment
+  setSentimentData,
+
+  // CoinMarketDetails
+  setCoinDetail,
+  areaSeriesRef,
+  setFlashState,
 }) => {
   useEffect(() => {
     const handlers = {
-      watchlistResponse: (res) => {
-        if (!res?.data) return;
-        setPrices((prev) => {
-          const updated = { ...prev };
-          res.data.forEach((item) => {
-            const base = getBaseSymbol(item.symbol);
+
+      /* ───────────────── MARKET INIT ───────────────── */
+      marketCoinsInit: (res) => {
+        console.log("[useSocket] market-coins-init Payload:", res);
+        if (setSentimentData) setSentimentData(res);
+        if (res.coins) globalCache.marketCoins = res.coins;
+        if (res.metrics) globalCache.marketMetrics = res.metrics;
+        if (res.overviewChart) globalCache.overviewChartData = res.overviewChart;
+
+        if (setCoins) setCoins(res.coins || []);
+        if (setMarketMetrics && res.metrics) setMarketMetrics((prev) => ({ ...prev, ...res.metrics }));
+        if (setOverviewChartData && res.overviewChart) setOverviewChartData(res.overviewChart);
+        
+        if (setCoinDetail && res.coins) {
+            const found = res.coins.find(c => c.symbol.toUpperCase() === selectedSymbol?.toUpperCase());
+            if (found) {
+                setCoinDetail((prevCoin) => prevCoin ? prevCoin : found);
+                if (areaSeriesRef?.current && found.history) {
+                    const chartData = found.history.map((price, idx) => ({
+                        time: Math.floor(Date.now() / 1000) - (found.history.length - idx) * 10,
+                        value: price,
+                    }));
+                    areaSeriesRef.current.setData(chartData);
+                }
+            }
+        }
+
+        if (!res?.coins) return;
+
+        setPrices?.(() => {
+          const updated = {};
+
+          res.coins.forEach((coin) => {
+            const base = getBaseSymbol ? getBaseSymbol(coin.symbol) : coin.symbol.replace("USDT", "");
+
             updated[base] = {
-              price: Number(item.lastPrice).toFixed(2),
-              change: item.changePercent,
+              price: Number(coin.price).toFixed(2),
+              change: coin.change24h,
             };
           });
+
           return updated;
         });
       },
 
-      watchlistUpdate: (tick) => {
-        if (!tick?.symbol) return;
-        const base = getBaseSymbol(tick.symbol);
+      marketSentiment: (data) => {
+        // binance-sentiment
+        console.log("[useSocket] binance-sentiment Payload:", data);
+        if (setSentimentData) setSentimentData(data);
+        if (data.fearGreed) setFearGreed?.(data.fearGreed);
+        if (data.socialStats) setSocialStats?.(data.socialStats);
+        if (data.tvlData) setTvlData?.(data.tvlData);
+        if (data.financials) setFinancials?.(data.financials);
+        
+        setMarketMetrics?.((prev) => ({
+          ...prev,
+          btcDominance: parseFloat(data.socialStats?.btcDominance) || prev.btcDominance,
+          fearGreedIndex: parseInt(data.fearGreed?.value) || prev.fearGreedIndex,
+          volume24h: parseFloat(data.tvlData?.total?.replace("$", "").replace("B", "")) || prev.volume24h,
+        }));
+      },
 
-        setPrices((prev) => ({
+      marketSentimentData: (data) => {
+        // market-sentiment-data — real API sentiment stream
+        setFearGreed?.(data);
+        setSentimentData?.(data);
+      },
+
+      /* ───────────────── BINANCE TICKER ───────────────── */
+      binanceTicker: (data) => {
+        // data: { symbol, price, change24h, ... }
+        if (!data?.symbol) return;
+        const symbolKey = data.symbol.replace("USDT", "").toUpperCase();
+        const base = getBaseSymbol ? getBaseSymbol(data.symbol) : symbolKey;
+
+        setCoins?.((prevCoins) => {
+            const coinExists = prevCoins.some((c) => c.symbol === symbolKey);
+            if (!coinExists) return prevCoins;
+            const originalCoin = prevCoins.find((c) => c.symbol === symbolKey);
+            const originalPrice = originalCoin ? originalCoin.price : 0;
+            const newPrice = Number(data.price);
+    
+            if (originalPrice > 0 && newPrice !== originalPrice && setFlashStates) {
+              const direction = newPrice >= originalPrice ? "up" : "down";
+              const flashKey = `${symbolKey}-price`;
+              setFlashStates((prev) => ({ ...prev, [flashKey]: direction }));
+              setTimeout(() => {
+                setFlashStates((prev) => {
+                  const next = { ...prev };
+                  delete next[flashKey];
+                  return next;
+                });
+              }, 800);
+            }
+    
+            return prevCoins.map((coin) => {
+              if (coin.symbol === symbolKey) {
+                const updatedHistory = [...coin.history.slice(1), newPrice];
+                return {
+                  ...coin,
+                  price: newPrice,
+                  change24h: Number(data.changePct),
+                  volume24h: Number(data.volume),
+                  high: Number(data.high),
+                  low: Number(data.low),
+                  history: updatedHistory,
+                };
+              }
+              return coin;
+            });
+          });
+
+        if (globalCache.marketCoins) {
+          const coinIdx = globalCache.marketCoins.findIndex((c) => c.symbol === symbolKey);
+          if (coinIdx !== -1) {
+            globalCache.marketCoins[coinIdx] = {
+              ...globalCache.marketCoins[coinIdx],
+              price: Number(data.price),
+              change24h: Number(data.changePct),
+              volume24h: Number(data.volume),
+              high: Number(data.high),
+              low: Number(data.low),
+            };
+          }
+        }
+
+        setPrices?.((prev) => ({
           ...prev,
           [base]: {
-            price: Number(tick.price).toFixed(2),
-            change: tick.changePct,
-          },
-        }));
-      },
-
-      ticker: (data) => {
-        const key = getBaseSymbol(data.symbol);
-        setPrices((prev) => ({
-          ...prev,
-          [key]: {
             price: Number(data.price).toFixed(2),
-            change: data.changePct,
+            change: data.change24h ?? prev[base]?.change ?? 0,
           },
         }));
       },
 
-      orderbook: (data) => {
-        if (!data || data.symbol !== selectedSymbolRef.current) return;
+      /* ───────────────── KLINE / CHART ───────────────── */
+      klineUpdate: (data) => {
+        // data: { symbol, interval, openTime, open, high, low, close, volume, isClosed }
+        if (!data) return;
 
-        setOrderBook({
-          asks: data.asks,
-          bids: data.bids,
-          spread: Number(data.asks[0][0]) - Number(data.bids[0][0]),
+        setChartData?.((prev) => {
+          if (!prev?.length) return prev;
+
+          const updated = [...prev];
+          const last = updated[updated.length - 1];
+
+          if (last?.time === data.openTime) {
+            // update the current forming candle in place
+            updated[updated.length - 1] = {
+              ...last,
+              high: Math.max(last.high, Number(data.high)),
+              low: Math.min(last.low, Number(data.low)),
+              close: Number(data.close),
+              volume: Number(data.volume),
+            };
+          } else if (data.isClosed) {
+            // candle closed — push a new one
+            updated.push({
+              time: data.openTime,
+              open: Number(data.open),
+              high: Number(data.high),
+              low: Number(data.low),
+              close: Number(data.close),
+              volume: Number(data.volume),
+            });
+          }
+
+          return updated;
         });
       },
 
-      kline: (data) => {
-        if (data?.candle?.isFinal) {
-          setAlerts((prev) => [
-            {
-              id: Date.now(),
-              msg: `${data.symbol} candle closed`,
-              type: "signal",
-            },
-            ...prev.slice(0, 4),
-          ]);
-        }
+      klineListingUpdate: (data) => {
+        // listing-update — bulk historical candles for initial chart load
+        if (!data?.candles) return;
+
+        setChartData?.(
+          data.candles.map((c) => ({
+            time: c.openTime,
+            open: Number(c.open),
+            high: Number(c.high),
+            low: Number(c.low),
+            close: Number(c.close),
+            volume: Number(c.volume),
+          }))
+        );
       },
 
-      sentiment: (data) => {
-        setFearGreed(data.fearGreed);
-        setSocialStats(data.socialStats);
-        setTvlData(data.tvlData);
-        setFinancials(data.financials);
+      /* ───────────────── SOCIAL ───────────────── */
+      socialIntelResponse: (res) => {
+        if (!res?.data) return;
+        setSocialStats?.(res.data);
+      },
+
+      socialIntelUpdate: (data) => {
+        setSocialStats?.(data);
+      },
+
+      /* ───────────────── LIVE TICK ───────────────── */
+      liveTickUpdate: (tick) => {
+        if (!tick || !tick.symbol || !tick.ohlcv) return;
+        const key = getBaseSymbol ? getBaseSymbol(tick.symbol) : tick.symbol.replace("USDT", "").toUpperCase();
+
+        if (setCoinDetail && selectedSymbol && key === selectedSymbol.toUpperCase()) {
+            const { open, high, low, close, volume } = tick.ohlcv;
+            const newPrice = Number(close);
+            setCoinDetail((prevCoin) => {
+                if (!prevCoin) return null;
+                const oldPrice = prevCoin.price;
+                if (oldPrice > 0 && newPrice !== oldPrice && setFlashState) {
+                  const direction = newPrice >= oldPrice ? "up" : "down";
+                  setFlashState(direction);
+                  setTimeout(() => setFlashState(null), 800);
+                }
+                if (areaSeriesRef?.current) {
+                  const time = Math.floor(tick.timestamp / 1000);
+                  areaSeriesRef.current.update({ time, value: newPrice });
+                }
+                const updatedHistory = Array.isArray(prevCoin.history) ? [...prevCoin.history.slice(1), newPrice] : [newPrice];
+                return {
+                  ...prevCoin,
+                  price: newPrice,
+                  change24h: Number(tick.changePct ?? prevCoin.change24h),
+                  volume24h: Number(volume || prevCoin.volume24h),
+                  high: Number(high || prevCoin.high),
+                  low: Number(low || prevCoin.low),
+                  history: updatedHistory,
+                };
+            });
+        }
+
+        setPrices?.((prev) => ({
+          ...prev,
+          [key]: {
+            price: Number(tick.ohlcv.close).toFixed(2),
+            change: prev[key]?.change || 0,
+          },
+        }));
+      },
+
+      /* ───────────────── LISTING ───────────────── */
+      listingResponse: (res) => {
+        if (!res?.data || !Array.isArray(res.data)) return;
+
+        setPrices?.((prev) => {
+          const updated = { ...prev };
+
+          res.data.forEach((candle) => {
+            const base = getBaseSymbol ? getBaseSymbol(res.symbol) : res.symbol.replace("USDT", "");
+
+            updated[base] = {
+              price: Number(candle.close).toFixed(2),
+              change: 0,
+            };
+          });
+
+          return updated;
+        });
+      },
+
+      listingError: (err) => {
+        console.error("Listing error:", err);
+      },
+
+      // Duplicate orderbook handler removed
+
+      /* ───────────────── INDICATORS ───────────────── */
+      indicatorDetailsData: (res) => {
+        console.log("Indicator details:", res);
+      },
+
+      indicatorUpdateData: (res) => {
+        console.log("Indicator updated:", res);
+      },
+
+      indicatorTickUpdate: (tick) => {
+        console.log("Indicator tick:", tick);
+      },
+
+      indicatorError: (err) => {
+        console.error("Indicator error:", err);
+      },
+
+
+
+      /* ───────────────── ARBITRAGE ───────────────── */
+      arbitrageResponse: (res) => {
+        if (!res?.data) return;
+        setOpportunities?.(res.data);
+        setLastUpdated?.(new Date().toLocaleTimeString());
+      },
+
+      arbitrageUpdate: (res) => {
+        if (!res?.success || !res.data || !Array.isArray(res.data)) return;
+
+        setOpportunities?.((prev) => {
+          const flashes = {};
+
+          res.data.forEach((newOpp) => {
+            const oldOpp = prev.find((o) => o.id === newOpp.id);
+            if (!oldOpp) return;
+
+            if (newOpp.buyPrice !== oldOpp.buyPrice) {
+              flashes[`${newOpp.id}-buy`] =
+                newOpp.buyPrice > oldOpp.buyPrice ? "up" : "down";
+            }
+
+            if (newOpp.sellPrice !== oldOpp.sellPrice) {
+              flashes[`${newOpp.id}-sell`] =
+                newOpp.sellPrice > oldOpp.sellPrice ? "up" : "down";
+            }
+          });
+
+          setPriceFlash?.((prev) => ({ ...prev, ...flashes }));
+
+          return res.data;
+        });
+
+        setLastUpdated?.(new Date().toLocaleTimeString());
+      },
+
+      /* ───────────────── WATCHLIST ───────────────── */
+      watchlistResponse: (res) => {
+        if (!res?.data) return;
+        setWatchlist?.(res.data);
+      },
+
+      watchlistUpdate: (data) => {
+        setWatchlist?.(data);
+      },
+
+      /* ───────────────── ONCHAIN ───────────────── */
+      onchainUpdate: (data) => {
+        if (!data) return;
+        setOnchainData?.(data.success ? data.data : data);
+      },
+
+      /* ───────────────── FINANCIAL ───────────────── */
+      financeDashboardUpdate: (data) => {
+        console.log("[useSocket] Received finance-dashboard-update Payload:", data);
+        if (setFinanceData) setFinanceData(data);
+        
+        if (data.fearGreed) setFearGreed?.(data.fearGreed);
+        if (data.socialStats) setSocialStats?.(data.socialStats);
+        if (data.tvlData) setTvlData?.(data.tvlData);
+        if (data.financials) setFinancials?.(data.financials);
+        if (data.marketExtra) setMarketExtra?.(data.marketExtra);
+      },
+
+      /* ───────────────── KLINE / CHART ───────────────── */
+      klineUpdate: (data) => {
+        if (!data || (cleanSymbol && selectedSymbol && cleanSymbol(data.symbol) !== selectedSymbol)) return; // filter by symbol
+        setKlines?.((prev) => {
+          if (!prev?.length) return prev;
+          const updated = [...prev];
+          const last = updated[updated.length - 1];
+          if (last?.time === data.openTime) {
+            updated[updated.length - 1] = {
+              ...last,
+              high: Math.max(last.high, Number(data.high)),
+              low: Math.min(last.low, Number(data.low)),
+              close: Number(data.close),
+              volume: Number(data.volume),
+            };
+          } else if (data.isClosed) {
+            updated.push({
+              time: data.openTime,
+              open: Number(data.open),
+              high: Number(data.high),
+              low: Number(data.low),
+              close: Number(data.close),
+              volume: Number(data.volume),
+            });
+          }
+          return updated;
+        });
+      },
+
+      klineListingUpdate: (data) => {
+        if (!data?.candles) return;
+        setKlines?.(data.candles.map((c) => ({
+          time: c.openTime,
+          open: Number(c.open),
+          high: Number(c.high),
+          low: Number(c.low),
+          close: Number(c.close),
+          volume: Number(c.volume),
+        })));
+      },
+
+      orderbook: (data) => {
+        const currentSymbol = selectedSymbolRef?.current;
+        if (!data || !currentSymbol) return;
+
+        const normalizedDataSymbol = data.symbol ? data.symbol.replace(/[^a-zA-Z0-9]/g, "").toUpperCase() : "";
+        const normalizedCurrentSymbol = currentSymbol ? currentSymbol.replace(/[^a-zA-Z0-9]/g, "").toUpperCase() : "";
+        
+        // console.log("ORDERBOOK MATCH:", { currentSymbol, normalizedCurrentSymbol });
+
+        if (normalizedDataSymbol !== normalizedCurrentSymbol) return;
+
+        setOrderBook?.({
+          asks: data.asks,
+          bids: data.bids,
+          spread: Number(data.asks?.[0]?.[0]) - Number(data.bids?.[0]?.[0]),
+        });
+
+        setDepthData?.({                    // ← add this
+          liquidityRisk: data.asks?.length > 20 ? "Low" : "Medium",
+          spreadPct: (
+            (Number(data.asks?.[0]?.[0]) - Number(data.bids?.[0]?.[0])) /
+            Number(data.asks?.[0]?.[0]) * 100
+          ).toFixed(4),
+        });
       },
     };
 
@@ -90,11 +478,67 @@ export const useSocket = ({
 
     manager.register();
 
-    // optional init
-    manager.emit(EVENTS.WATCHLIST.GET);
+    const safeSymbol = (() => {
+      if (!selectedSymbol) return null;
+      const upper = selectedSymbol.toUpperCase();
+      if (upper.endsWith('USDT') || upper.endsWith('BTC') || upper.endsWith('ETH') || upper.endsWith('USDC') || upper.endsWith('BUSD')) {
+        return upper;
+      }
+      return `${upper}USDT`;
+    })();
+
+    const bootstrap = () => {
+      manager.emit(EVENTS.WATCHLIST.GET);
+
+      if (setCoins) {
+        if (globalCache.marketCoins) {
+          setCoins(globalCache.marketCoins);
+        }
+        if (setMarketMetrics && globalCache.marketMetrics) {
+          setMarketMetrics(globalCache.marketMetrics);
+        }
+        if (setOverviewChartData && globalCache.overviewChartData) {
+          setOverviewChartData(globalCache.overviewChartData);
+        }
+        manager.emit("get-market-coins");
+      }
+
+      if (setOnchainData) {
+        manager.emit(EVENTS.ONCHAIN.SUBSCRIBE);
+      }
+
+      if (setCoinDetail && safeSymbol) {
+        manager.emit("get-market-coins");
+      }
+
+      if (safeSymbol) {
+        manager.emit(EVENTS.LIVE_TICK.SUBSCRIBE, {
+          symbol: safeSymbol,
+          interval: "5m",
+        });
+        
+        console.log("EMITTING SUBSCRIBE FOR:", safeSymbol);
+        manager.emit(EVENTS.FINANCIAL.SUBSCRIBE, { symbol: safeSymbol });
+        manager.emit(EVENTS.LISTING.GET, { symbol: safeSymbol, interval: "1d", limit: 90 });
+        
+        // Backend listens on "binance-orderbook" to receive the requested symbol!
+        manager.emit(EVENTS.ORDERBOOK.UPDATE, { symbol: safeSymbol });
+      }
+    };
+
+    manager.socket.on("connect", bootstrap);
+    if (manager.socket.connected) {
+      bootstrap();
+    }
 
     return () => {
+      if (safeSymbol) {
+        console.log("EMITTING UNSUBSCRIBE FOR:", safeSymbol);
+        manager.emit(EVENTS.LIVE_TICK.UNSUBSCRIBE, { symbol: safeSymbol, interval: "5m" });
+        manager.emit("unsubscribe-financial", { symbol: safeSymbol });
+      }
+      manager.socket.off("connect", bootstrap);
       manager.unregister();
     };
-  }, []);
+  }, [selectedSymbol]);
 };

@@ -1,6 +1,8 @@
 import React from 'react';
 
-const OverallMarketSentiment = ({ data, getColorClass }) => (
+const OverallMarketSentiment = ({ data, getColorClass }) => {
+    console.log("OverallMarketSentiment data:", data);
+    return (
     <div className="col-lg-4">
         <div className="binance-card h-100">
             <div className="card-header d-flex align-items-center">
@@ -10,7 +12,24 @@ const OverallMarketSentiment = ({ data, getColorClass }) => (
            <div className="card-body d-flex pt-0 align-items-center" style={{ minHeight: '200px' }}>
     <div className="gauge-container position-relative flex-grow-1 d-flex justify-content-center align-items-end pb-3 pt-3">
         <svg viewBox="0 0 200 110" className="gauge-svg" style={{ width: '100%', maxWidth: '180px' }}>
-            {/* SVG unchanged */}
+            <defs>
+                <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#f6465d" />
+                    <stop offset="35%" stopColor="#f0b90b" />
+                    <stop offset="65%" stopColor="#f0b90b" />
+                    <stop offset="100%" stopColor="#0ecb81" />
+                </linearGradient>
+            </defs>
+            {/* Background Track */}
+            <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#1f2937" strokeWidth="18" strokeLinecap="round" />
+            {/* Gradient Arc */}
+            <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="url(#gaugeGradient)" strokeWidth="18" strokeDasharray={`${(data.overall.score / 100) * 251.2} 251.2`} strokeLinecap="round" />
+            
+            {/* Needle */}
+            <g transform={`rotate(${ (data.overall.score / 100) * 180 - 90 }, 100, 100)`}>
+                <line x1="100" y1="100" x2="100" y2="35" stroke="#ffffff" strokeWidth="4" strokeLinecap="round" />
+                <circle cx="100" cy="100" r="8" fill="#ffffff" />
+            </g>
         </svg>
         <div className="gauge-labels position-absolute w-100 d-flex justify-content-between px-3" style={{ bottom: '0' }}>
             <div className="text-center">
@@ -40,6 +59,7 @@ const OverallMarketSentiment = ({ data, getColorClass }) => (
 </div>
         </div>
     </div>
-);
+    );
+};
 
 export default OverallMarketSentiment;

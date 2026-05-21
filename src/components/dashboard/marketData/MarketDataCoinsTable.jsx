@@ -21,6 +21,7 @@ export default function MarketDataCoinsTable({
   visibleLimit,
   navigate
 }) {
+  console.log("MarketDataCoinsTable visibleCoins:", visibleCoins);
   return (
     <div className="main-column">
       {/* Sub Navigation Tabs */}

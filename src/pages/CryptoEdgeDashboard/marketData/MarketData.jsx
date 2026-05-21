@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import "./MarketData.css";
-import socket from "../../../services/websocket/socket"; // ← use shared socket, not io()
+import { useSocket } from "../../../services/websocket/useSocket";
 import MarketDataHeader from "../../../components/dashboard/marketData/MarketDataHeader";
 import MarketDataTickerGrid from "../../../components/dashboard/marketData/MarketDataTickerGrid";
 import MarketDataCoinsTable from "../../../components/dashboard/marketData/MarketDataCoinsTable";
 import MarketDataSideColumn from "../../../components/dashboard/marketData/MarketDataSideColumn";
 
-const MarketData = () => {
+const MarketData = ({ coins, setCoins, marketMetrics, setMarketMetrics, overviewChartData, setOverviewChartData, flashStates, setFlashStates }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("Coins");
   const [activeCategory, setActiveCategory] = useState("All");
@@ -22,9 +22,7 @@ const MarketData = () => {
     "Infrastructure",
   ];
   const [visibleLimit, setVisibleLimit] = useState(8);
-  const [isSocketConnected, setIsSocketConnected] = useState(false);
-  const [coins, setCoins] = useState([]);
-  const [overviewChartData, setOverviewChartData] = useState({});
+  const [isSocketConnected, setIsSocketConnected] = useState(true);
   const [selectedCoinSymbol, setSelectedCoinSymbol] = useState(null);
   const [gainers, setGainers] = useState([]);
   const [losers, setLosers] = useState([]);
@@ -32,129 +30,6 @@ const MarketData = () => {
     key: null,
     direction: "desc",
   });
-  const [flashStates, setFlashStates] = useState({});
-  const [marketMetrics, setMarketMetrics] = useState({
-    totalMarketCap: 2.56,
-    totalMarketCapChange: 1.35,
-    volume24h: 68.24,
-    volume24hChange: 8.72,
-    btcDominance: 51.24,
-    btcDominanceChange: -0.45,
-    ethDominance: 16.17,
-    ethDominanceChange: 0.35,
-    fearGreedIndex: 64,
-  });
-
-  // ── WebSocket Integration (shared socket) ─────────────────────────
-  useEffect(() => {
-    // Request data from server on mount — this is what was missing
-    socket.emit("get-market-coins");
-
-    const handleConnect = () => {
-      console.log("🟢 MarketData: socket connected");
-      setIsSocketConnected(true);
-      // Re-request on reconnect in case we missed the initial emit
-      socket.emit("get-market-coins");
-    };
-
-    const handleDisconnect = () => {
-      console.log("🔴 MarketData: socket disconnected");
-      setIsSocketConnected(false);
-    };
-
-    const handleCoinsInit = (data) => {
-      console.log("📥 market-coins-init received in MarketData:", data);
-      if (
-        data &&
-        data.success &&
-        Array.isArray(data.coins) &&
-        data.coins.length > 0
-      ) {
-        setCoins(data.coins);
-        if (data.metrics) {
-          setMarketMetrics((prev) => ({ ...prev, ...data.metrics }));
-        }
-        if (data.overviewChartData) {
-          setOverviewChartData(data.overviewChartData);
-        }
-      }
-    };
-
-    const handleTicker = (data) => {
-      if (!data || !data.symbol) return;
-      const symbolKey = data.symbol.replace("USDT", "").toUpperCase();
-
-      setCoins((prevCoins) => {
-        const coinExists = prevCoins.some((c) => c.symbol === symbolKey);
-        if (!coinExists) return prevCoins;
-
-        const originalCoin = prevCoins.find((c) => c.symbol === symbolKey);
-        const originalPrice = originalCoin ? originalCoin.price : 0;
-        const newPrice = Number(data.price);
-
-        if (originalPrice > 0 && newPrice !== originalPrice) {
-          const direction = newPrice >= originalPrice ? "up" : "down";
-          const flashKey = `${symbolKey}-price`;
-          setFlashStates((prev) => ({ ...prev, [flashKey]: direction }));
-          setTimeout(() => {
-            setFlashStates((prev) => {
-              const next = { ...prev };
-              delete next[flashKey];
-              return next;
-            });
-          }, 800);
-        }
-
-        return prevCoins.map((coin) => {
-          if (coin.symbol === symbolKey) {
-            const updatedHistory = [...coin.history.slice(1), newPrice];
-            return {
-              ...coin,
-              price: newPrice,
-              change24h: Number(data.changePct),
-              volume24h: Number(data.volume),
-              high: Number(data.high),
-              low: Number(data.low),
-              history: updatedHistory,
-            };
-          }
-          return coin;
-        });
-      });
-    };
-
-    const handleSentiment = (data) => {
-      if (!data) return;
-      setMarketMetrics((prev) => ({
-        ...prev,
-        btcDominance:
-          parseFloat(data.socialStats?.btcDominance) || prev.btcDominance,
-        fearGreedIndex: parseInt(data.fearGreed?.value) || prev.fearGreedIndex,
-        volume24h:
-          parseFloat(data.tvlData?.total?.replace("$", "").replace("B", "")) ||
-          prev.volume24h,
-      }));
-    };
-
-    socket.on("connect", handleConnect);
-    socket.on("disconnect", handleDisconnect);
-    socket.on("market-coins-init", handleCoinsInit);
-    socket.on("binance-ticker", handleTicker);
-    socket.on("binance-sentiment", handleSentiment);
-
-    // If socket is already connected when this component mounts, set state
-    if (socket.connected) {
-      setIsSocketConnected(true);
-    }
-
-    return () => {
-      socket.off("connect", handleConnect);
-      socket.off("disconnect", handleDisconnect);
-      socket.off("market-coins-init", handleCoinsInit);
-      socket.off("binance-ticker", handleTicker);
-      socket.off("binance-sentiment", handleSentiment);
-    };
-  }, []);
 
   // ── Simulated Fallback ticks when WebSocket is offline ────────────
   useEffect(() => {

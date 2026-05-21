@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './MarketSentiment.css';
-import socket from '../../../services/websocket/socket';
+import { useSocket } from "../../../services/websocket/useSocket";
 
 import MarketSentimentHeader from '../../../components/dashboard/marketSentiment/MarketSentimentHeader';
 import OverallMarketSentiment from '../../../components/dashboard/marketSentiment/OverallMarketSentiment';
@@ -77,14 +77,26 @@ const getColorClass = (label) => {
 const MarketSentiment = () => {
     const [sentimentData, setSentimentData] = useState(null);
 
-    useEffect(() => {
-        socket.on("connect", () => console.log("✅ Successfully connected to Market Sentiment WebSocket"));
-        socket.on("connect_error", (error) => console.error("❌ WebSocket Connection Error:", error.message));
-        socket.on("market-sentiment-data", (data) => setSentimentData(data));
-        return () => { socket.off("market-sentiment-data"); };
-    }, []);
+    useSocket({
+        setSentimentData
+    });
 
-    const data = sentimentData || DEFAULT_DATA;
+    useEffect(() => {
+        if (sentimentData) {
+            console.log("[MarketSentiment.jsx] WebSocket Response:", sentimentData);
+        }
+    }, [sentimentData]);
+
+    const data = sentimentData?.overall ? sentimentData : {
+        ...DEFAULT_DATA,
+        ...(sentimentData?.value && !sentimentData?.overall ? {
+            overall: {
+                ...DEFAULT_DATA.overall,
+                score: sentimentData.value || DEFAULT_DATA.overall.score,
+                label: sentimentData.label || DEFAULT_DATA.overall.label
+            }
+        } : {})
+    };
 
     return (
         <div>  {/* removed binance-dashboard-layout class */}
@@ -105,9 +117,14 @@ const MarketSentiment = () => {
                 <div className="row g-3">
                     <SectorSentiment data={data} getColorClass={getColorClass} />
                     <TopGainersLosers data={data} getColorClass={getColorClass} />
+                </div>
 
-                    <div className="col-lg-3 d-flex flex-column gap-3">
+                {/* Social and News Row */}
+                <div className="row g-3 mt-1">
+                    <div className="col-lg-6">
                         <SocialMediaSentiment data={data} getColorClass={getColorClass} />
+                    </div>
+                    <div className="col-lg-6">
                         <NewsSentiment data={data} getColorClass={getColorClass} />
                     </div>
                 </div>

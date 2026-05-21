@@ -1087,7 +1087,7 @@ export default function WatchlistPanel({
     };
 
     const handleWatchlistUpdate = (tick) => {
-      console.log("[WatchlistPanel] WATCHLIST_UPDATE tick:", tick);
+      // console.log("[WatchlistPanel] WATCHLIST_UPDATE tick:", tick);
       if (!tick || !tick.symbol) return;
 
       const normalized = {

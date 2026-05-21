@@ -7,7 +7,7 @@ const KeySentimentIndicators = ({ data, getColorClass }) => (
             <i className="bi bi-info-circle ms-2 info-icon"></i>
         </div>
         <div className="card-body py-3">
-            <div className="row g-3 row-cols-1 row-cols-md-3 row-cols-xl-5">
+            <div className="row g-2 row-cols-1 row-cols-md-3 row-cols-xl-5">
 
                 {/* Bitcoin Dominance */}
                 <div className="col">

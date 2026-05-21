@@ -1,12 +1,12 @@
 import React from 'react';
 
 const NewsSentiment = ({ data, getColorClass }) => (
-    <div className="binance-card flex-grow-1">
-        <div className="card-header pb-2 d-flex align-items-center">
+    <div className="binance-card flex-grow-1 h-100">
+        <div className="card-header p-4 pb-2 d-flex align-items-center">
             <span className="title">News Sentiment</span>
             <i className="bi bi-info-circle ms-2 info-icon"></i>
         </div>
-        <div className="card-body pt-2 pb-4">
+        <div className="card-body p-4 pt-2 pb-4">
             <div className="d-flex align-items-baseline mb-3">
                 <span className={`fs-2 fw-bold ${getColorClass(data.news.label)} me-2`}>{data.news.score}</span>
                 <span className={`${getColorClass(data.news.label)} fw-medium`}>{data.news.label}</span>

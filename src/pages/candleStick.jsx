@@ -574,57 +574,6 @@ export default function Candlestick() {
     });
   }, [theme]);
 
-  // useEffect(() => {
-  //   //   WebSocket Trades
-  //   const socket = new WebSocket("wss://socket.delta.exchange");
-  //   socket.onopen = () => {
-  //     socket.send(
-  //       JSON.stringify({
-  //         type: "subscribe",
-  //         payload: {
-  //           channels: [
-  //             {
-  //               name: "v2/ticker",
-  //               symbols: [selectedCurrency || "BTCUSD"],
-  //             },
-  //           ],
-  //         },
-  //       }),
-  //     );
-  //   };
-
-  //   let currentCandle = null;
-  //   socket.onmessage = (event) => {
-  //     const msg = JSON.parse(event.data);
-  //     if (!msg?.mark_price || !msg?.timestamp) return;
-
-  //     const price = Number(msg.mark_price);
-  //     const intervalSec = TIMEFRAME_TO_SECONDS[timeframeValue];
-  //     const time = Math.floor(msg.timestamp / intervalSec) * intervalSec;
-
-  //     if (!currentCandle || currentCandle.time !== time) {
-  //       currentCandle = {
-  //         time,
-  //         open: price,
-  //         high: price,
-  //         low: price,
-  //         close: price,
-  //       };
-  //       setLiveOhlcv(currentCandle);
-  //     } else {
-  //       currentCandle.high = Math.max(currentCandle.high, price);
-  //       currentCandle.low = Math.min(currentCandle.low, price);
-  //       currentCandle.close = price;
-
-  //       setLiveOhlcv({ ...currentCandle }); // ← add this line
-  //     }
-  //   };
-
-  //   return () => {
-  //     socket.close();
-  //   };
-  // }, [selectedCurrency, timeframeValue]);
-
   const toggleIndicator = useCallback((indicator) => {
     setSelectedIndicator((prev) => {
       if (prev.length >= 10) {
@@ -1047,6 +996,74 @@ export default function Candlestick() {
     };
   }, [chartType, timeframeValue, selectedCurrency]);
 
+  // Subscribe to live ticks for real-time candle formation
+  useEffect(() => {
+    if (!selectedCurrency || !timeframeValue) return;
+
+    const symbol = selectedCurrency;
+    const interval = timeframeValue;
+
+    socket.emit("subscribe-live-tick", { symbol, interval });
+
+    const handleLiveTick = (tick) => {
+      console.log("LIVE TICK RECEIVED:", tick);
+      if (!tick) return;
+      // Backend might wrap it in `ohlcv` or send it directly.
+      const tickData = tick.ohlcv || tick;
+      if (!tickData.time || !seriesRef.current) return;
+      if (tick.symbol && tick.symbol !== symbol) return;
+
+      setLivePrice(Number(tickData.close));
+      setLiveOhlcv(tickData);
+
+      try {
+        let parsedTime = Number(tickData.time);
+        if (parsedTime > 1e10) {
+          parsedTime = Math.floor(parsedTime / 1000);
+        }
+        switch (chartType) {
+          case "line":
+          case "area":
+          case "baseline":
+            seriesRef.current.update({
+              time: parsedTime,
+              value: Number(tickData.close),
+            });
+            break;
+          case "histogram":
+            seriesRef.current.update({
+              time: parsedTime,
+              value: Number(tickData.volume),
+              color: Number(tickData.close) >= Number(tickData.open) ? "#26a69a" : "#f23645",
+            });
+            break;
+          case "bar":
+          case "hollowcandles":
+          case "heikinashi":
+          default:
+            seriesRef.current.update({
+              time: parsedTime,
+              open: Number(tickData.open),
+              high: Number(tickData.high),
+              low: Number(tickData.low),
+              close: Number(tickData.close),
+            });
+            break;
+        }
+      } catch (err) {
+        console.error("Lightweight charts update error:", err, "tickData:", tickData);
+        // Ignore lightweight-charts error if we try to update an older time
+      }
+    };
+
+    socket.on("live-tick-update", handleLiveTick);
+
+    return () => {
+      socket.emit("unsubscribe-live-tick", { symbol, interval });
+      socket.off("live-tick-update", handleLiveTick);
+    };
+  }, [selectedCurrency, timeframeValue, chartType]);
+
   const { fetchDataByCurrency, fetchIndicatorData } = useChartFunctions({
     chartRef,
     addSeries,
@@ -1092,15 +1109,17 @@ export default function Candlestick() {
       <section className="trading-view-wrapper overflow-x-hidden" style={{
         display: "flex",
         flexDirection: "column",
-        minHeight: "100vh"
+        height: "100vh",
+        overflow: "hidden"
       }}>
         <div className="container-fluid p-0 m-0" style={{
           display: "flex",
           flexDirection: "column",
-          minHeight: "100vh"
+          height: "100%",
+          overflow: "hidden"
         }}>
-          <div className="row">
-            <div className="col-md-12">
+          <div className="row m-0">
+            <div className="col-md-12 p-0">
               <div className="trading-chart-header">
                 <ChartHeader
                   timeframeValue={timeframeValue}
@@ -1124,12 +1143,9 @@ export default function Candlestick() {
               display: "flex",
               flexDirection: "row",
               width: "100%",
-              // height: "calc(100vh - 100px)",
-              height: "100vh",          // ✅ FORCE SCREEN HEIGHT
-              maxHeight: "100vh",       // ✅ PREVENT OVERFLOW
-              minHeight: 0,
               flex: 1,
               minHeight: 0,
+              overflow: "hidden",
               backgroundColor: "var(--bg-main, #ffffff)",
             }}
           >
@@ -1645,9 +1661,7 @@ export default function Candlestick() {
                   ? "1px solid var(--border-color, #e2e8f0)"
                   : "none",
                 backgroundColor: "var(--bg-card, #ffffff)",
-                height: "100vh",          // ✅ FORCE SCREEN HEIGHT
-                maxHeight: "100vh",       // ✅ PREVENT OVERFLOW
-                minHeight: 0,
+                height: "100%",
                 flexShrink: 0,
                 display: "flex",
                 flexDirection: "column",

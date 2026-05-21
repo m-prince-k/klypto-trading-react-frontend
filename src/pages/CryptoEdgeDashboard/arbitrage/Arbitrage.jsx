@@ -11,6 +11,7 @@ import socket from '../../../services/websocket/socket';
 import ArbitrageStats from '../../../../src/components/dashboard/arbitrage/ArbitrageStats';
 import ArbitrageFilters from '../../../../src/components/dashboard/arbitrage/ArbitrageFilters';
 import ArbitrageTable from '../../../../src/components/dashboard/arbitrage/ArbitrageTable';
+import { useSocket } from '../../../services/websocket/useSocket';
 
 export default function Arbitrage({ setActiveTab = () => { }, isSubComponent = false, selectedSymbol = "" }) {
   const [activeMenu, setActiveMenu] = useState("Arbitrage");
@@ -54,56 +55,69 @@ export default function Arbitrage({ setActiveTab = () => { }, isSubComponent = f
     }
   }, [selectedSymbol]);
 
-  useEffect(() => {
-    console.log("🔌 Connecting to Klypto Arbitrage Real-Time WebSocket stream...");
+  // useEffect(() => {
+  //   console.log("🔌 Connecting to Klypto Arbitrage Real-Time WebSocket stream...");
 
-    socket.emit("get-arbitrage");
+  //   socket.emit("get-arbitrage");
 
-    socket.on("arbitrage-response", (res) => {
-      if (res && res.success && res.data) {
-        setOpportunities(res.data);
-        setLastUpdated(new Date().toLocaleTimeString());
-      }
-    });
+  //   socket.on("arbitrage-response", (res) => {
+  //     if (res && res.success && res.data) {
+  //       setOpportunities(res.data);
+  //       setLastUpdated(new Date().toLocaleTimeString());
+  //     }
+  //   });
 
-    socket.on("arbitrage-update", (res) => {
-      if (!autoRefreshRef.current) return;
-      if (res && res.success && res.data) {
-        setOpportunities(prev => {
-          const flashes = {};
-          res.data.forEach(newOpp => {
-            const oldOpp = prev.find(o => o.id === newOpp.id);
-            if (oldOpp) {
-              if (newOpp.buyPrice !== oldOpp.buyPrice) {
-                flashes[`${newOpp.id}-buy`] = newOpp.buyPrice > oldOpp.buyPrice ? 'up' : 'down';
-              }
-              if (newOpp.sellPrice !== oldOpp.sellPrice) {
-                flashes[`${newOpp.id}-sell`] = newOpp.sellPrice > oldOpp.sellPrice ? 'up' : 'down';
-              }
-            }
-          });
-          if (Object.keys(flashes).length > 0) {
-            setPriceFlash(prevFlashes => ({ ...prevFlashes, ...flashes }));
-            setTimeout(() => {
-              setPriceFlash(prevFlashes => {
-                const copy = { ...prevFlashes };
-                Object.keys(flashes).forEach(k => delete copy[k]);
-                return copy;
-              });
-            }, 1000);
-          }
-          return res.data;
-        });
-        setLastUpdated(new Date().toLocaleTimeString());
-      }
-    });
+  //   socket.on("arbitrage-update", (res) => {
+  //     if (!autoRefreshRef.current) return;
+  //     if (res && res.success && res.data) {
+  //       setOpportunities(prev => {
+  //         const flashes = {};
+  //         res.data.forEach(newOpp => {
+  //           const oldOpp = prev.find(o => o.id === newOpp.id);
+  //           if (oldOpp) {
+  //             if (newOpp.buyPrice !== oldOpp.buyPrice) {
+  //               flashes[`${newOpp.id}-buy`] = newOpp.buyPrice > oldOpp.buyPrice ? 'up' : 'down';
+  //             }
+  //             if (newOpp.sellPrice !== oldOpp.sellPrice) {
+  //               flashes[`${newOpp.id}-sell`] = newOpp.sellPrice > oldOpp.sellPrice ? 'up' : 'down';
+  //             }
+  //           }
+  //         });
+  //         if (Object.keys(flashes).length > 0) {
+  //           setPriceFlash(prevFlashes => ({ ...prevFlashes, ...flashes }));
+  //           setTimeout(() => {
+  //             setPriceFlash(prevFlashes => {
+  //               const copy = { ...prevFlashes };
+  //               Object.keys(flashes).forEach(k => delete copy[k]);
+  //               return copy;
+  //             });
+  //           }, 1000);
+  //         }
+  //         return res.data;
+  //       });
+  //       setLastUpdated(new Date().toLocaleTimeString());
+  //     }
+  //   });
 
-    return () => {
-      socket.off("arbitrage-response");
-      socket.off("arbitrage-update");
-      console.log("❌ Disconnected from Klypto Arbitrage stream.");
-    };
-  }, []);
+  //   return () => {
+  //     socket.off("arbitrage-response");
+  //     socket.off("arbitrage-update");
+  //     console.log("❌ Disconnected from Klypto Arbitrage stream.");
+  //   };
+  // }, []);
+  useSocket({
+    setPrices: () => { },
+    setOrderBook: () => { },
+    setFearGreed: () => { },
+    setSocialStats: () => { },
+    setTvlData: () => { },
+    setFinancials: () => { },
+    setAlerts: () => { },
+    setOpportunities,
+    setPriceFlash,
+    setLastUpdated,
+    getBaseSymbol: (sym) => sym?.replace(/USDT|BUSD|USDC|BTC|ETH$/i, "") ?? "", // ← add this
+  });
 
   const handleApplyFilters = () => {
     setAppliedFilters({

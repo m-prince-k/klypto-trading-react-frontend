@@ -56,13 +56,13 @@ const AdvancedMetricsGrid = ({ selectedSymbol = "SOL", fearGreed, socialStats, p
             <circle cx="20" cy="20" r="2.5" fill="#ffffff" />
           </svg>
           <div>
-            <div style={{ fontSize: '19px', fontWeight: 'bold', color: 'var(--text-main)' }}>{fearGreed.value}</div>
-            <div style={{ fontSize: '10px', color: '#10b981', fontWeight: '700' }}>{fearGreed.label}</div>
+            <div style={{ fontSize: '19px', fontWeight: 'bold', color: 'var(--text-main)' }}>{fearGreed?.value}</div>
+            <div style={{ fontSize: '10px', color: '#10b981', fontWeight: '700' }}>{fearGreed?.label}</div>
           </div>
         </div>
         <div className="fg-historical">
-          <div>Yesterday: <span>{fearGreed.yesterday}</span></div>
-          <div>Last Week: <span>{fearGreed.lastWeek}</span></div>
+          <div>Yesterday: <span>{fearGreed?.yesterday}</span></div>
+          <div>Last Week: <span>{fearGreed?.lastWeek}</span></div>
         </div>
       </div>
 
@@ -84,7 +84,7 @@ const AdvancedMetricsGrid = ({ selectedSymbol = "SOL", fearGreed, socialStats, p
             <circle cx="18" cy="18" r="6" fill="#a78bfa" fillOpacity="0.25" stroke="#a78bfa" strokeWidth="1.5" />
           </svg>
           <div>
-            <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#a78bfa' }}>{socialStats.btcDominance}</div>
+            <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#a78bfa' }}>{socialStats?.btcDominance}</div>
             <div style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: 'bold' }}>BTC DOMINANCE</div>
           </div>
         </div>
@@ -106,7 +106,7 @@ const AdvancedMetricsGrid = ({ selectedSymbol = "SOL", fearGreed, socialStats, p
             <text x="18" y="21.5" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="bold">#1</text>
           </svg>
           <div>
-            <div style={{ fontSize: '17px', fontWeight: 'bold', color: 'var(--text-main)' }}>{socialStats.altRank}</div>
+            <div style={{ fontSize: '17px', fontWeight: 'bold', color: 'var(--text-main)' }}>{socialStats?.altRank}</div>
             <div style={{ fontSize: '9px', color: '#6366f1', fontWeight: 'bold' }}>{baseAsset} RANK</div>
           </div>
         </div>

@@ -266,8 +266,8 @@ export default function SocialIntelligence({ setActiveTab = () => { }, isSubComp
           <div className="si-chart-container">
             <div className="si-chart-iframe-wrapper">
               <iframe
-                title="TradingView Live BTC Chart"
-                src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview_btc&symbol=BINANCE%3ABTCUSDT&interval=60&hidesidetoolbar=1&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=%5B%5D&theme=dark&style=1&timezone=Asia%2FKolkata&studies_overrides=%7B%7D&overrides=%7B%7D&enabled_features=%5B%5D&disabled_features=%5B%5D&locale=en&utm_source=localhost&utm_medium=widget&utm_campaign=chart&utm_term=BINANCE%3ABTCUSDT"
+                title="TradingView Live Chart"
+                src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview_btc&symbol=BINANCE%3A${selectedSymbol}&interval=60&hidesidetoolbar=1&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=%5B%5D&theme=dark&style=1&timezone=Asia%2FKolkata&studies_overrides=%7B%7D&overrides=%7B%7D&enabled_features=%5B%5D&disabled_features=%5B%5D&locale=en&utm_source=localhost&utm_medium=widget&utm_campaign=chart&utm_term=BINANCE%3A${selectedSymbol}`}
                 style={{ width: '100%', height: '100%', border: 'none' }}
               />
             </div>

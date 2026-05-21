@@ -3,7 +3,7 @@ import React from 'react';
 const SocialFinancialGrid = ({ tvlData, socialStats, financials }) => {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-      
+
       {/* Card 1: TVL Protocol Table */}
       <div className="premium-card">
         <div className="card-header-row">
@@ -20,7 +20,7 @@ const SocialFinancialGrid = ({ tvlData, socialStats, financials }) => {
             </tr>
           </thead>
           <tbody>
-            {tvlData.protocols ? tvlData.protocols.map((proto, index) => {
+            {tvlData?.protocols ? tvlData?.protocols?.map((proto, index) => {
               const isUp = proto.change >= 0;
               return (
                 <tr key={`tvl-proto-${index}`}>
@@ -43,9 +43,9 @@ const SocialFinancialGrid = ({ tvlData, socialStats, financials }) => {
       </div>
 
       {/* Card 2: Social Radar (LunarCrush) */}
-      <div 
-        className="premium-card" 
-        style={{ cursor: 'pointer' }} 
+      <div
+        className="premium-card"
+        style={{ cursor: 'pointer' }}
         onClick={() => window.location.href = '/dashboard#social-intelligence'}
       >
         <div className="card-header-row">
@@ -81,9 +81,19 @@ const SocialFinancialGrid = ({ tvlData, socialStats, financials }) => {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', fontSize: '9.5px', color: 'var(--text-muted)', textAlign: 'center' }}>
-          <div>Social Vol: <span style={{ color: 'var(--text-main)', fontWeight: 'bold' }}>{socialStats.radarValues.vol}%</span></div>
-          <div>Engagement: <span style={{ color: 'var(--text-main)', fontWeight: 'bold' }}>{socialStats.radarValues.eng}%</span></div>
-        </div>
+          <div>
+            Social Vol:{" "}
+            <span style={{ color: "var(--text-main)", fontWeight: "bold" }}>
+              {socialStats?.radarValues?.vol ?? 0}%
+            </span>
+          </div>
+
+          <div>
+            Engagement:{" "}
+            <span style={{ color: "var(--text-main)", fontWeight: "bold" }}>
+              {socialStats?.radarValues?.eng ?? 0}%
+            </span>
+          </div>  </div>
       </div>
 
       {/* Card 3: Financial Double-Donut */}
@@ -114,7 +124,7 @@ const SocialFinancialGrid = ({ tvlData, socialStats, financials }) => {
           </div>
         </div>
         <div style={{ fontSize: '11px', textAlign: 'center', color: 'var(--text-muted)' }}>
-          Total 30D Revenue: <span style={{ fontWeight: 'bold', color: 'var(--text-main)' }}>{financials.revenue}</span>
+          Total 30D Revenue: <span style={{ fontWeight: 'bold', color: 'var(--text-main)' }}>{financials?.revenue}</span>
         </div>
       </div>
 
@@ -139,11 +149,10 @@ const SocialFinancialGrid = ({ tvlData, socialStats, financials }) => {
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9.5px' }}>
-          <span style={{ color: '#10b981', fontWeight: 'bold' }}>Buy: ${financials.whaleBuy}</span>
-          <span style={{ color: '#ef4444', fontWeight: 'bold' }}>Sell: ${financials.whaleSell}</span>
+          <span style={{ color: '#10b981', fontWeight: 'bold' }}>Buy: ${financials?.whaleBuy}</span>
+          <span style={{ color: '#ef4444', fontWeight: 'bold' }}>Sell: ${financials?.whaleSell}</span>
         </div>
       </div>
-
     </div>
   );
 };

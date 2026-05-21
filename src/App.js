@@ -77,7 +77,14 @@ function App() {
               {/* <Route path="/" element={<Form />} /> */}
               <Route path="/testing" element={<Testing />} />
               <Route path="/tradingview" element={<TradingViewChart />} />
-              <Route path="/dashboard" element={<CryptoEdgeDashboard />} />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <CryptoEdgeDashboard />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/social-intelligence"
                 element={<SocialIntellingence />}

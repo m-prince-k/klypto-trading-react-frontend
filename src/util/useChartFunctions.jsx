@@ -1,5 +1,6 @@
 import apiService from "../services/apiServices";
 import { getRowsByIndicator } from "./common";
+import socket from "../services/websocket/socket";
 
 export default function useChartFunctions({
   indicatorSeriesRef,
@@ -12,11 +13,29 @@ export default function useChartFunctions({
     const symbol = selectedCurrency || "BTCUSD";
     const interval = timeframeValue || "1m";
 
-    const response = await apiService.post(
-      `api/listing?symbol=${symbol}&interval=${interval}&limit=1000`,
-    );
+    // const response = await apiService.post(
+    //   `api/listing?symbol=${symbol}&interval=${interval}&limit=1000`,
+    // );
+    // return response;
 
-    return response;
+    return new Promise((resolve, reject) => {
+      const handleResponse = (res) => {
+        socket.off("listing-response", handleResponse);
+        socket.off("listing-error", handleError);
+        resolve(res);
+      };
+
+      const handleError = (err) => {
+        socket.off("listing-response", handleResponse);
+        socket.off("listing-error", handleError);
+        reject(err);
+      };
+
+      socket.on("listing-response", handleResponse);
+      socket.on("listing-error", handleError);
+
+      socket.emit("get-listing", { symbol, interval, limit: 1000 });
+    });
   }
 
   /* ================= FETCH INDICATORS ================= */

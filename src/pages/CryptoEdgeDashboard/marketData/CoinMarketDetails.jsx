@@ -3,7 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { createChart, AreaSeries } from "lightweight-charts";
 import "./CoinMarketDetails.css";
 import apiService from "../../../services/apiServices";
-import socket from "../../../services/websocket/socket";
+import { useSocket } from "../../../services/websocket/useSocket";
+import { globalCache } from "../../../services/websocket/useSocket";
 import { useTheme } from "../../../context/ThemeContext";
 
 const CoinMarketDetails = () => {
@@ -16,6 +17,7 @@ const CoinMarketDetails = () => {
   const lastChartTimeRef = useRef(null);
 
   const [coin, setCoin] = useState(null);
+  const [marketStats, setMarketStats] = useState(null);
   const [isSocketConnected, setIsSocketConnected] = useState(false);
   const [flashState, setFlashState] = useState(null);
   const [activeTab, setActiveTab] = useState("Chart");
@@ -75,121 +77,50 @@ const CoinMarketDetails = () => {
       }
     }
 
+    function fetchMarketStats() {
+      // Derive name directly from market-coins-init response stored in globalCache
+      const cachedCoin = globalCache.marketCoins?.find(
+        c => c.symbol.toUpperCase() === symbol.toUpperCase() || c.symbol.toUpperCase() === symbol.toUpperCase() + 'USDT'
+      );
+
+      if (!cachedCoin) {
+        // If websocket hasn't initialized the coins list yet, wait and try again
+        setTimeout(fetchMarketStats, 500);
+        return;
+      }
+
+      const fullName = cachedCoin.name.toLowerCase().replace(/\s+/g, '-');
+      
+      apiService.get(`api/marketStats/${fullName}`)
+        .then(res => {
+          console.log(res, "dataaaa");
+          if (res && res.data) {
+            setMarketStats(res.data);
+          } else if (res) {
+            setMarketStats(res);
+          }
+        })
+        .catch(err => console.error("MarketStats fetch error:", err));
+    }
+
     fetchCoinData();
+    fetchMarketStats();
     intervalId = setInterval(fetchCoinData, 2000);
 
     return () => clearInterval(intervalId);
   }, [symbol]);
 
   // ── STEP 2: Socket.IO for live price ticks ─────────────────────────
+  useSocket({
+    setCoinDetail: setCoin,
+    areaSeriesRef,
+    setFlashState,
+    selectedSymbol: symbol,
+  });
+
   useEffect(() => {
-    socket.on("connect", () => {
-      setIsSocketConnected(true);
-    });
-
-    socket.on("disconnect", () => {
-      setIsSocketConnected(false);
-    });
-
-    // Handle initial coins list from server — seed coin state if API hasn't loaded yet
-    socket.on("market-coins-init", (data) => {
-      if (data && data.success) {
-        const found = data.coins.find(
-          (c) => c.symbol.toUpperCase() === symbol.toUpperCase(),
-        );
-        if (found) {
-          setCoin((prevCoin) => {
-            // Only use socket init if API hasn't populated state yet
-            if (prevCoin) return prevCoin;
-            return found;
-          });
-          // Seed chart with history if chart is already initialized
-          if (areaSeriesRef.current && found.history) {
-            const chartData = found.history.map((price, idx) => ({
-              time:
-                Math.floor(Date.now() / 1000) -
-                (found.history.length - idx) * 10,
-              value: price,
-            }));
-            areaSeriesRef.current.setData(chartData);
-          }
-        }
-      }
-    });
-
-    socket.emit("subscribe-live-tick", {
-      symbol: `${symbol.toUpperCase()}USDT`,
-      interval: "5m",
-    });
-
-    // Handle live tick stream — this is the primary price update source
-    socket.on("live-tick-update", (data) => {
-      console.log("📡 LIVE CANDLE:", data);
-
-      if (!data || !data.symbol || !data.ohlcv) return;
-
-      const symbolKey = data.symbol.replace("USDT", "").toUpperCase();
-
-      if (symbolKey !== symbol.toUpperCase()) return;
-
-      const { open, high, low, close, volume } = data.ohlcv;
-
-      const newPrice = Number(close);
-
-      console.log("💰 Candle Close:", newPrice);
-
-      setCoin((prevCoin) => {
-        console.log("🧠 Prev Coin:", prevCoin);
-
-        if (!prevCoin) return null;
-
-        const oldPrice = prevCoin.price;
-
-        console.log("📊 Old vs New:", oldPrice, newPrice);
-
-        // Flash logic
-        if (oldPrice > 0 && newPrice !== oldPrice) {
-          const direction = newPrice >= oldPrice ? "up" : "down";
-          setFlashState(direction);
-          setTimeout(() => setFlashState(null), 800);
-        }
-
-        // ✅ Chart update (IMPORTANT CHANGE)
-        if (areaSeriesRef.current) {
-          const time = Math.floor(data.timestamp / 1000); // use backend timestamp
-
-          console.log("📈 Chart Update:", time, newPrice);
-
-          areaSeriesRef.current.update({
-            time,
-            value: newPrice,
-          });
-
-          lastChartTimeRef.current = time;
-        }
-
-        // ✅ Update history safely
-        const updatedHistory = Array.isArray(prevCoin.history)
-          ? [...prevCoin.history.slice(1), newPrice]
-          : [newPrice];
-
-        return {
-          ...prevCoin,
-          price: newPrice,
-          change24h: Number(data.changePct ?? prevCoin.change24h),
-          volume24h: Number(volume || prevCoin.volume24h),
-          high: Number(high || prevCoin.high),
-          low: Number(low || prevCoin.low),
-          history: updatedHistory,
-        };
-      });
-    });
-
-    return () => {
-      socket.off("live-tick-update");
-      // socket.disconnect();
-    };
-  }, [symbol]);
+    setIsSocketConnected(true);
+  }, []);
 
   const isCoinLoaded = !!coin;
 
@@ -321,19 +252,28 @@ const CoinMarketDetails = () => {
   const isUp = coin.change24h >= 0;
 
   const tabs = ["Chart", "Analysis", "News", "FAQ", "Trending Crypto", "Trading Pairs"];
-  const timeframes = ["1D", "7D", "1M", "3M", "1Y", "YTD"];
+  const timeframes = ["1D", "1W", "1M", "1Y", "ALL", "YTD"];
 
   return (
     <div className="coin-detail-page">
       <main className="detail-page-body">
         {/* Coin Info Bar */}
         <section className="coin-header-top">
-          <div
-            className="coin-details-logo"
-            style={{ backgroundColor: coin.logoColor || "#f7931a" }}
-          >
-            {coin.symbol === "BTC" ? "₿" : coin.symbol[0]}
-          </div>
+          {marketStats?.image ? (
+            <img 
+              src={marketStats.image} 
+              alt={`${coin.name} logo`} 
+              className="coin-details-logo-img" 
+              style={{ width: "48px", height: "48px", borderRadius: "50%" }}
+            />
+          ) : (
+            <div
+              className="coin-details-logo"
+              style={{ backgroundColor: coin.logoColor || "#f7931a" }}
+            >
+              {coin.symbol === "BTC" ? "₿" : coin.symbol[0]}
+            </div>
+          )}
           <div className="coin-title-section">
             <div className="coin-name-row">
               <span className="coin-name-text">{coin.name} Price ({coin.symbol})</span>
@@ -398,53 +338,53 @@ const CoinMarketDetails = () => {
           <div className="market-stats-grid">
             <div className="stat-item">
               <span className="stat-label">
-                Popularity 
+                Popularity
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
               </span>
-              <span className="stat-value">#1</span>
+              <span className="stat-value">#{marketStats?.popularityRank || "N/A"}</span>
             </div>
             <div className="stat-item">
               <span className="stat-label">
-                Market Cap 
+                Market Cap
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
               </span>
-              <span className="stat-value">$1.5T</span>
+              <span className="stat-value">{marketStats?.marketCap ? (marketStats.marketCap >= 1e12 ? `$${(marketStats.marketCap / 1e12).toFixed(2)}T` : `$${(marketStats.marketCap / 1e9).toFixed(1)}B`) : "N/A"}</span>
             </div>
             <div className="stat-item">
               <span className="stat-label">
-                Volume (24hours) 
+                Volume (24hours)
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
               </span>
               <span className="stat-value">
-                ${(coin.volume24h / 1e9).toFixed(1)}B
+                ${(((marketStats?.volume24h) || coin.volume24h || 0) / 1e9).toFixed(1)}B
               </span>
             </div>
             <div className="stat-item">
               <span className="stat-label">
-                Circulation Supply 
+                Circulation Supply
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
               </span>
               <span className="stat-value">
-                {(coin.supply / 1e6).toFixed(0)}M • 95.39%
+                {marketStats?.circulatingSupply ? `${(marketStats.circulatingSupply / 1e6).toFixed(0)}M` : `${((coin.supply || 0) / 1e6).toFixed(0)}M`} {marketStats?.circulatingSupply && marketStats?.maxSupply ? `• ${((marketStats.circulatingSupply / marketStats.maxSupply) * 100).toFixed(2)}%` : ""}
               </span>
             </div>
             <div className="stat-item">
               <span className="stat-label">
-                Total Maximum Supply 
+                Total Maximum Supply
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
               </span>
-              <span className="stat-value">21M</span>
+              <span className="stat-value">{marketStats?.maxSupply ? `${(marketStats.maxSupply / 1e6).toFixed(0)}M` : "N/A"}</span>
             </div>
             <div className="stat-item">
               <span className="stat-label">
-                Fully Diluted Market Cap 
+                Fully Diluted Market Cap
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
               </span>
-              <span className="stat-value">$1.6T</span>
+              <span className="stat-value">{marketStats?.fullyDilutedMarketCap ? (marketStats.fullyDilutedMarketCap >= 1e12 ? `$${(marketStats.fullyDilutedMarketCap / 1e12).toFixed(2)}T` : `$${(marketStats.fullyDilutedMarketCap / 1e9).toFixed(1)}B`) : "N/A"}</span>
             </div>
             <div className="stat-item">
               <span className="stat-label">Issue Date</span>
-              <span className="stat-value">3 Jan 2009</span>
+              <span className="stat-value">{marketStats?.issueDate || "N/A"}</span>
             </div>
           </div>
         </section>

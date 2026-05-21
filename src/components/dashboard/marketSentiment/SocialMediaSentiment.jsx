@@ -1,12 +1,12 @@
 import React from 'react';
 
 const SocialMediaSentiment = ({ data, getColorClass }) => (
-    <div className="binance-card flex-grow-1">
-        <div className="card-header pb-2 d-flex align-items-center">
+    <div className="binance-card flex-grow-1 h-100">
+        <div className="card-header p-4 pb-2 d-flex align-items-center">
             <span className="title">Social Media Sentiment</span>
             <i className="bi bi-info-circle ms-2 info-icon"></i>
         </div>
-        <div className="card-body pt-2 pb-4 position-relative">
+        <div className="card-body p-4 pt-2 pb-4 position-relative">
             <i className="bi bi-chat-left-dots position-absolute end-0 top-0 me-4 mt-2 text-secondary fs-2 opacity-25"></i>
             <div className="d-flex align-items-baseline mb-3">
                 <span className={`fs-2 fw-bold ${getColorClass(data.socialMedia.label)} me-2`}>{data.socialMedia.score}</span>

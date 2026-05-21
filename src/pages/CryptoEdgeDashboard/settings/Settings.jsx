@@ -1,21 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import './Settings.css';
+import apiService from '../../../services/apiServices';
+
+import ProfileSettings from '../../../components/dashboard/settings/ProfileSettings';
+import PreferencesSettings from '../../../components/dashboard/settings/PreferencesSettings';
+import NotificationsSettings from '../../../components/dashboard/settings/NotificationsSettings';
+import WithdrawalSettings from '../../../components/dashboard/settings/WithdrawalSettings';
+import TradeSettings from '../../../components/dashboard/settings/TradeSettings';
+import LinkAccountSettings from '../../../components/dashboard/settings/LinkAccountSettings';
+import PrivacySettings from '../../../components/dashboard/settings/PrivacySettings';
+import { toast } from 'react-toastify';
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState('profile');
-  
+
   // Modal State
-  const [modalConfig, setModalConfig] = useState({ isOpen: false, field: null, title: '', type: 'text', options: [] });
+  const [modalConfig, setModalConfig] = useState({ isOpen: false, field: null, title: '', type: 'text', options: [], errorMsg: '' });
   const [tempValue, setTempValue] = useState('');
 
-  // Mock User Data
+  // User Data State
   const [userData, setUserData] = useState({
     // Profile
-    nickname: 'CryptoTrader99',
-    email: 'user****@gmail.com',
-    phone: '***-***-8992',
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
     // Preferences
     currency: 'USD',
     language: 'English',
@@ -40,9 +51,47 @@ const Settings = () => {
     appleLinked: false
   });
 
+  useEffect(() => {
+
+
+    // 2. Fetch from API endpoint
+    const fetchProfile = async () => {
+      try {
+        const res = await apiService.get("api/viewProfile");
+        console.log(res, "dataaaaaaaaaaa")
+        const data = res?.data?.firstName ? res.data : (res?.firstName ? res : res?.data);
+        if (data) {
+          setUserData(prev => ({
+            ...prev,
+            firstName: data.firstName || prev.firstName,
+            lastName: data.lastName || prev.lastName,
+            email: data.email || prev.email,
+            phone: data.mobile || data.phone || prev.phone,
+          }));
+        }
+      } catch (error) {
+        console.error("Failed to fetch profile from API:", error);
+      }
+    };
+    fetchProfile();
+  }, []);
+
   const handleEdit = (field, title, type, options = []) => {
-    setTempValue(userData[field]);
-    setModalConfig({ isOpen: true, field, title, type, options });
+    let initialValue = userData[field];
+    if (field === 'phone') {
+      const phoneStr = initialValue || '';
+      if (phoneStr.includes(' ')) {
+        initialValue = phoneStr.split(' ').slice(1).join(' ');
+      } else if (phoneStr.startsWith('+')) {
+        // Assuming +XX... format without space, strip first 3 characters (+91)
+        initialValue = phoneStr.substring(3);
+      } else {
+        // Just the number itself
+        initialValue = phoneStr;
+      }
+    }
+    setTempValue(initialValue);
+    setModalConfig({ isOpen: true, field, title, type, options, errorMsg: '' });
   };
 
   const handleLinkAction = (field) => {
@@ -56,7 +105,7 @@ const Settings = () => {
       status: updatedValue ? 'Linked' : 'Not Linked',
       fullUserData: updatedData
     };
-    alert(`Payload Submitted:\n\n${JSON.stringify(payload, null, 2)}`);
+    // alert(`Payload Submitted:\n\n${JSON.stringify(payload, null, 2)}`);
   };
 
   const handleToggle = (field) => {
@@ -70,13 +119,61 @@ const Settings = () => {
       newValue: updatedValue,
       fullUserData: updatedData
     };
-    alert(`Payload Submitted:\n\n${JSON.stringify(payload, null, 2)}`);
+    // alert(`Payload Submitted:\n\n${JSON.stringify(payload, null, 2)}`);
   };
 
   const handleSave = () => {
     if (modalConfig.field) {
-      const updatedData = { ...userData, [modalConfig.field]: tempValue };
+      let finalValue = tempValue;
+
+      if (modalConfig.field === 'phone') {
+        const phoneStr = userData.phone || '';
+        const countryCode = phoneStr.includes(' ') 
+          ? phoneStr.split(' ')[0] 
+          : (phoneStr.startsWith('+') ? phoneStr.substring(0, 3) : '+91');
+        
+        finalValue = `${countryCode} ${tempValue}`;
+
+        const phoneRegex = /^\+[1-9]\d{0,2}[\s-]?\d{10,}$/;
+        if (!phoneRegex.test(finalValue)) {
+          setModalConfig({ ...modalConfig, errorMsg: "Please enter a valid phone number. It must include at least 10 digits." });
+          return;
+        }
+      }
+
+      const updatedData = { ...userData, [modalConfig.field]: finalValue };
       setUserData(updatedData);
+
+      // Save user-related fields to session storage if applicable
+      const userFields = ['firstName', 'lastName', 'phone'];
+      if (userFields.includes(modalConfig.field)) {
+        try {
+          const sessionStr = localStorage.getItem("session");
+          if (sessionStr) {
+            const session = JSON.parse(sessionStr);
+            if (session.user) {
+              session.user[modalConfig.field] = finalValue;
+            } else {
+              session[modalConfig.field] = finalValue;
+            }
+            localStorage.setItem("session", JSON.stringify(session));
+          }
+
+          // API Call to updateProfile
+          const apiField = modalConfig.field === 'phone' ? 'mobile' : modalConfig.field;
+
+          apiService.put("api/updateProfile", {
+            [apiField]: finalValue
+          })
+          .then(() => {
+            toast.success("Profile updated successfully!");
+          })
+          .catch(err => console.error("API update error:", err));
+
+        } catch (error) {
+          console.error("Error saving to local storage or API", error);
+        }
+      }
 
       const payload = {
         action: 'UPDATE_FIELD',
@@ -84,7 +181,6 @@ const Settings = () => {
         newValue: tempValue,
         fullUserData: updatedData
       };
-      alert(`Payload Submitted:\n\n${JSON.stringify(payload, null, 2)}`);
     }
     setModalConfig({ ...modalConfig, isOpen: false });
   };
@@ -103,13 +199,13 @@ const Settings = () => {
     <div className="settings-container">
       <div className="container">
         <div className="row">
-          
+
           {/* Sidebar Navigation */}
           <div className="col-md-3 settings-sidebar">
             <h2 className="settings-header">Settings</h2>
             <div className="d-flex flex-column">
               {tabs.map(tab => (
-                <div 
+                <div
                   key={tab.id}
                   className={`settings-nav-item ${activeTab === tab.id ? 'active' : ''}`}
                   onClick={() => setActiveTab(tab.id)}
@@ -123,273 +219,14 @@ const Settings = () => {
 
           {/* Main Content Area */}
           <div className="col-md-9 settings-content">
-            
-            {/* 1. Profile Section */}
-            {activeTab === 'profile' && (
-              <div>
-                <h3 className="settings-header mb-4">Profile Settings</h3>
-                <div className="settings-section">
-                  <div className="settings-section-title"><i className="bi bi-person-badge"></i> Basic Information</div>
-                  <div className="setting-item">
-                    <div className="setting-info">
-                      <h4>Nickname</h4>
-                      <p>{userData.nickname}</p>
-                    </div>
-                    <button className="btn-edit" onClick={() => handleEdit('nickname', 'Edit Nickname', 'text')}>Edit</button>
-                  </div>
-                  <div className="setting-item">
-                    <div className="setting-info">
-                      <h4>User ID</h4>
-                      <p>94328104 <span className="status-badge ms-2">Verified</span></p>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="settings-section">
-                  <div className="settings-section-title"><i className="bi bi-shield-check"></i> Security Contacts</div>
-                  <div className="setting-item">
-                    <div className="setting-info">
-                      <h4>Email Address</h4>
-                      <p>{userData.email}</p>
-                    </div>
-                    <button className="btn-edit" onClick={() => handleEdit('email', 'Change Email', 'email')}>Change</button>
-                  </div>
-                  <div className="setting-item">
-                    <div className="setting-info">
-                      <h4>Phone Number</h4>
-                      <p>{userData.phone}</p>
-                    </div>
-                    <button className="btn-edit" onClick={() => handleEdit('phone', 'Change Phone', 'text')}>Change</button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* 2. Preferences Section */}
-            {activeTab === 'preferences' && (
-              <div>
-                <h3 className="settings-header mb-4">Preferences</h3>
-                <div className="settings-section">
-                  <div className="setting-item">
-                    <div className="setting-info">
-                      <h4>Language</h4>
-                      <p>{userData.language}</p>
-                    </div>
-                    <button className="btn-edit" onClick={() => handleEdit('language', 'Select Language', 'select', ['English', 'Spanish', 'Hindi', 'French'])}>Edit</button>
-                  </div>
-                  <div className="setting-item">
-                    <div className="setting-info">
-                      <h4>Local Currency</h4>
-                      <p>{userData.currency}</p>
-                    </div>
-                    <button className="btn-edit" onClick={() => handleEdit('currency', 'Select Currency', 'select', ['USD', 'EUR', 'GBP', 'INR', 'JPY'])}>Edit</button>
-                  </div>
-                  <div className="setting-item">
-                    <div className="setting-info">
-                      <h4>Theme</h4>
-                      <p>{userData.theme} Mode</p>
-                    </div>
-                    <button className="btn-edit" onClick={() => handleEdit('theme', 'Select Theme', 'select', ['Dark', 'Light', 'System'])}>Edit</button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* 3. Notifications */}
-            {activeTab === 'notifications' && (
-              <div>
-                <h3 className="settings-header mb-4">Notifications</h3>
-                <div className="settings-section">
-                  <div className="setting-item">
-                    <div className="setting-info">
-                      <h4>System Messages</h4>
-                      <p>Receive notifications for account activities, deposits, and withdrawals.</p>
-                    </div>
-                    <label className="custom-switch">
-                      <input type="checkbox" checked={userData.systemMessages} onChange={() => handleToggle('systemMessages')} />
-                      <span className="switch-slider"></span>
-                    </label>
-                  </div>
-                  <div className="setting-item">
-                    <div className="setting-info">
-                      <h4>Marketing & Promotions</h4>
-                      <p>Receive emails about new features, promotions, and crypto news.</p>
-                    </div>
-                    <label className="custom-switch">
-                      <input type="checkbox" checked={userData.marketingEmails} onChange={() => handleToggle('marketingEmails')} />
-                      <span className="switch-slider"></span>
-                    </label>
-                  </div>
-                  <div className="setting-item">
-                    <div className="setting-info">
-                      <h4>Order Updates</h4>
-                      <p>Get notified when your trades are executed.</p>
-                    </div>
-                    <label className="custom-switch">
-                      <input type="checkbox" checked={userData.orderUpdates} onChange={() => handleToggle('orderUpdates')} />
-                      <span className="switch-slider"></span>
-                    </label>
-                  </div>
-                  <div className="setting-item">
-                    <div className="setting-info">
-                      <h4>Price Alerts</h4>
-                      <p>Push notifications when your saved coins hit a target price.</p>
-                    </div>
-                    <label className="custom-switch">
-                      <input type="checkbox" checked={userData.priceAlerts} onChange={() => handleToggle('priceAlerts')} />
-                      <span className="switch-slider"></span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* 4. Withdrawal */}
-            {activeTab === 'withdrawal' && (
-              <div>
-                <h3 className="settings-header mb-4">Withdrawal Settings</h3>
-                <div className="settings-section">
-                  <div className="setting-item">
-                    <div className="setting-info">
-                      <h4>24H Withdrawal Limit</h4>
-                      <p>{userData.withdrawalLimit} (Level 2 Verified)</p>
-                    </div>
-                    <button className="btn-edit">Upgrade Limit</button>
-                  </div>
-                  <div className="setting-item">
-                    <div className="setting-info">
-                      <h4>Address Whitelist</h4>
-                      <p>Only allow withdrawals to whitelisted addresses. <span className="status-badge ms-2">Recommended</span></p>
-                    </div>
-                    <label className="custom-switch">
-                      <input type="checkbox" checked={userData.withdrawalAddressWhitelist} onChange={() => handleToggle('withdrawalAddressWhitelist')} />
-                      <span className="switch-slider"></span>
-                    </label>
-                  </div>
-                  <div className="setting-item">
-                    <div className="setting-info">
-                      <h4>Whitelisted Addresses</h4>
-                      <p>Manage your saved crypto addresses.</p>
-                    </div>
-                    <button className="btn-edit">Manage</button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* 5. Trade */}
-            {activeTab === 'trade' && (
-              <div>
-                <h3 className="settings-header mb-4">Trade Settings</h3>
-                <div className="settings-section">
-                  <div className="setting-item">
-                    <div className="setting-info">
-                      <h4>Spot Order Confirmation</h4>
-                      <p>Show confirmation dialog before placing a spot order.</p>
-                    </div>
-                    <label className="custom-switch">
-                      <input type="checkbox" checked={userData.spotConfirmation} onChange={() => handleToggle('spotConfirmation')} />
-                      <span className="switch-slider"></span>
-                    </label>
-                  </div>
-                  <div className="setting-item">
-                    <div className="setting-info">
-                      <h4>Margin Order Confirmation</h4>
-                      <p>Show confirmation dialog before placing a margin order.</p>
-                    </div>
-                    <label className="custom-switch">
-                      <input type="checkbox" checked={userData.marginConfirmation} onChange={() => handleToggle('marginConfirmation')} />
-                      <span className="switch-slider"></span>
-                    </label>
-                  </div>
-                  <div className="setting-item">
-                    <div className="setting-info">
-                      <h4>Default Trading Layout</h4>
-                      <p>{userData.defaultLayout}</p>
-                    </div>
-                    <button className="btn-edit" onClick={() => handleEdit('defaultLayout', 'Select Default Layout', 'select', ['Classic', 'Advanced', 'Full Screen'])}>Edit</button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* 6. Link Account */}
-            {activeTab === 'link_account' && (
-              <div>
-                <h3 className="settings-header mb-4">Link Account</h3>
-                <div className="settings-section">
-                  <div className="setting-item">
-                    <div className="setting-info">
-                      <h4><i className="bi bi-google me-2"></i> Google Account</h4>
-                      {userData.googleLinked ? (
-                        <p><span className="status-badge">Linked</span></p>
-                      ) : (
-                        <p>Link your Google account for faster login.</p>
-                      )}
-                    </div>
-                    <button className={userData.googleLinked ? "btn-edit" : "btn-primary-custom"} onClick={() => handleLinkAction('googleLinked')}>
-                      {userData.googleLinked ? "Unlink" : "Link"}
-                    </button>
-                  </div>
-                  <div className="setting-item">
-                    <div className="setting-info">
-                      <h4><i className="bi bi-apple me-2"></i> Apple ID</h4>
-                      {userData.appleLinked ? (
-                        <p><span className="status-badge">Linked</span></p>
-                      ) : (
-                        <p>Not Linked</p>
-                      )}
-                    </div>
-                    <button className={userData.appleLinked ? "btn-edit" : "btn-primary-custom"} onClick={() => handleLinkAction('appleLinked')}>
-                      {userData.appleLinked ? "Unlink" : "Link"}
-                    </button>
-                  </div>
-                  <div className="setting-item">
-                    <div className="setting-info">
-                      <h4>API Management</h4>
-                      <p>Create and manage API keys for algorithmic trading.</p>
-                    </div>
-                    <button className="btn-edit" onClick={() => alert("API Management clicked")}>Manage APIs</button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* 7. Privacy */}
-            {activeTab === 'privacy' && (
-              <div>
-                <h3 className="settings-header mb-4">Privacy</h3>
-                <div className="settings-section">
-                  <div className="setting-item">
-                    <div className="setting-info">
-                      <h4>Hide Small Balances</h4>
-                      <p>Hide assets with a value less than 0.001 BTC.</p>
-                    </div>
-                    <label className="custom-switch">
-                      <input type="checkbox" checked={userData.hideSmallBalances} onChange={() => handleToggle('hideSmallBalances')} />
-                      <span className="switch-slider"></span>
-                    </label>
-                  </div>
-                  <div className="setting-item">
-                    <div className="setting-info">
-                      <h4>Share Portfolio View</h4>
-                      <p>Allow others to see your portfolio performance via a public link.</p>
-                    </div>
-                    <label className="custom-switch">
-                      <input type="checkbox" checked={userData.sharePortfolio} onChange={() => handleToggle('sharePortfolio')} />
-                      <span className="switch-slider"></span>
-                    </label>
-                  </div>
-                  <div className="setting-item">
-                    <div className="setting-info">
-                      <h4>Delete Account</h4>
-                      <p className="text-danger mb-0 mt-1">Permanently delete your account and all associated data.</p>
-                    </div>
-                    <button className="btn-edit" style={{color: '#f6465d', backgroundColor: 'rgba(246, 70, 93, 0.1)'}}>Delete</button>
-                  </div>
-                </div>
-              </div>
-            )}
+            {activeTab === 'profile' && <ProfileSettings userData={userData} handleEdit={handleEdit} />}
+            {activeTab === 'preferences' && <PreferencesSettings userData={userData} handleEdit={handleEdit} />}
+            {activeTab === 'notifications' && <NotificationsSettings userData={userData} handleToggle={handleToggle} />}
+            {activeTab === 'withdrawal' && <WithdrawalSettings userData={userData} handleToggle={handleToggle} />}
+            {activeTab === 'trade' && <TradeSettings userData={userData} handleToggle={handleToggle} handleEdit={handleEdit} />}
+            {activeTab === 'link_account' && <LinkAccountSettings userData={userData} handleLinkAction={handleLinkAction} />}
+            {activeTab === 'privacy' && <PrivacySettings userData={userData} handleToggle={handleToggle} />}
 
           </div>
         </div>
@@ -397,35 +234,66 @@ const Settings = () => {
 
       {/* Global Edit Modal */}
       {modalConfig.isOpen && (
-        <div className="settings-modal-overlay" onClick={() => setModalConfig({...modalConfig, isOpen: false})}>
+        <div className="settings-modal-overlay" onClick={() => setModalConfig({ ...modalConfig, isOpen: false })}>
           <div className="settings-modal" onClick={e => e.stopPropagation()}>
             <div className="settings-modal-header">
-              <h5>{modalConfig.title}</h5>
-              <button className="settings-modal-close" onClick={() => setModalConfig({...modalConfig, isOpen: false})}>&times;</button>
+              <h4>{modalConfig.title}</h4>
+              <i className="bi bi-x fs-4" style={{ cursor: 'pointer' }} onClick={() => setModalConfig({ ...modalConfig, isOpen: false })}></i>
             </div>
             <div className="settings-modal-body">
               {modalConfig.type === 'select' ? (
-                <select 
-                  className="custom-input" 
-                  value={tempValue} 
+                <select
+                  className="form-control form-control-dark"
+                  value={tempValue}
                   onChange={(e) => setTempValue(e.target.value)}
                 >
-                  {modalConfig.options.map(opt => (
-                    <option key={opt} value={opt}>{opt}</option>
+                  {modalConfig.options.map((opt, i) => (
+                    <option key={i} value={opt}>{opt}</option>
                   ))}
                 </select>
+              ) : modalConfig.field === 'phone' ? (
+                <div>
+                  <div className="input-group">
+                    <span className="input-group-text bg-dark text-light border-secondary">
+                      {userData.phone 
+                        ? (userData.phone.includes(' ') 
+                            ? userData.phone.split(' ')[0] 
+                            : (userData.phone.startsWith('+') ? userData.phone.substring(0, 3) : '+91')) 
+                        : '+91'}
+                    </span>
+                    <input
+                      type={modalConfig.type}
+                      className="form-control form-control-dark"
+                      value={tempValue}
+                      onChange={(e) => {
+                        setTempValue(e.target.value);
+                        if (modalConfig.errorMsg) setModalConfig({ ...modalConfig, errorMsg: '' });
+                      }}
+                      placeholder="Enter 10 digit number"
+                      style={{ backgroundColor: '#2a2d35', color: '#fff', border: '1px solid var(--border-color)' }}
+                    />
+                  </div>
+                  {modalConfig.errorMsg && <div style={{ color: '#ff4d4f', fontSize: '13px', marginTop: '6px', textAlign: 'left' }}>{modalConfig.errorMsg}</div>}
+                </div>
               ) : (
-                <input 
-                  type={modalConfig.type} 
-                  className="custom-input" 
-                  value={tempValue} 
-                  onChange={(e) => setTempValue(e.target.value)}
-                />
+                <div>
+                  <input
+                    type={modalConfig.type}
+                    className="form-control form-control-dark"
+                    value={tempValue}
+                    onChange={(e) => {
+                      setTempValue(e.target.value);
+                      if (modalConfig.errorMsg) setModalConfig({ ...modalConfig, errorMsg: '' });
+                    }}
+                    style={{ backgroundColor: '#2a2d35', color: '#fff', border: '1px solid var(--border-color)' }}
+                  />
+                  {modalConfig.errorMsg && <div style={{ color: '#ff4d4f', fontSize: '13px', marginTop: '6px', textAlign: 'left' }}>{modalConfig.errorMsg}</div>}
+                </div>
               )}
             </div>
             <div className="settings-modal-footer">
-              <button className="btn-edit" onClick={() => setModalConfig({...modalConfig, isOpen: false})}>Cancel</button>
-              <button className="btn-primary-custom" onClick={handleSave}>Save Changes</button>
+              <button className="btn-cancel" onClick={() => setModalConfig({ ...modalConfig, isOpen: false })}>Cancel</button>
+              <button className="btn-save" onClick={handleSave}>Save Changes</button>
             </div>
           </div>
         </div>

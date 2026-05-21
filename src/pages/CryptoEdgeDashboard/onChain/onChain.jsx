@@ -9,7 +9,7 @@ import OnChainStats from '../../../components/dashboard/onChain/OnChainStats';
 import OnChainCharts from '../../../components/dashboard/onChain/OnChainCharts';
 import OnChainTables from '../../../components/dashboard/onChain/OnChainTables';
 import OnChainModals from '../../../components/dashboard/onChain/OnChainModals';
-import socket from '../../../services/websocket/socket';
+import { useSocket } from '../../../services/websocket/useSocket';
 
 const OnChain = ({ isSubComponent = false }) => {
   const [data, setData] = useState(null);
@@ -34,25 +34,11 @@ const OnChain = ({ isSubComponent = false }) => {
         }
       })
       .catch(err => console.error("Error fetching initial on-chain data:", err));
-
-    // 2. Establish live websocket subscription
-
-    socket.on('connect', () => {
-      console.log('🔌 Connected to OnChain WebSockets');
-      socket.emit('subscribe_onchain');
-    });
-
-    socket.on('onchain_update', (payload) => {
-      if (payload && payload.success) {
-        setData(payload.data);
-      }
-    });
-
-    return () => {
-      socket.emit('unsubscribe_onchain');
-      //   socket.disconnect();
-    };
   }, []);
+
+  useSocket({
+    setOnchainData: setData
+  });
 
   // Close dropdowns on outside click
   useEffect(() => {

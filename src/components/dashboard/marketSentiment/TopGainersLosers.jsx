@@ -43,7 +43,7 @@ const CoinTable = ({ rows, trendStroke, getColorClass }) => (
 );
 
 const TopGainersLosers = ({ data, getColorClass }) => (
-    <div className="col-lg-5 d-flex flex-column gap-3">
+    <div className="col-lg-6 d-flex flex-column gap-3">
         {/* Top Gainers */}
         <div className="binance-card flex-grow-1 d-flex flex-column">
             <div className="card-header d-flex justify-content-between align-items-center pb-2">

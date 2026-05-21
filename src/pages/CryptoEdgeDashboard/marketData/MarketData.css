@@ -186,7 +186,7 @@
 /* ================= MAIN DASHBOARD BODY LAYOUT ================= */
 .dashboard-body-grid {
   display: grid;
-  grid-template-columns: 7.2fr 2.8fr;
+  grid-template-columns: 1fr;
   gap: 20px;
   padding: 0;
 }
@@ -208,9 +208,21 @@
 }
 
 .side-column {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
+}
+
+@media (max-width: 1200px) {
+  .side-column {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .side-column {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ================= MAIN COLUMN TABS ================= */

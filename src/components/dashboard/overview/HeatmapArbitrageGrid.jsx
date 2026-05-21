@@ -61,7 +61,7 @@ const HeatmapArbitrageGrid = ({ socialStats, arbitrage, alerts }) => {
                 fontWeight: "bold",
               }}
             >
-              {socialStats.narrativeScores.DeFi}
+              {socialStats?.narrativeScores?.DeFi}
             </span>
           </div>
 
@@ -100,7 +100,7 @@ const HeatmapArbitrageGrid = ({ socialStats, arbitrage, alerts }) => {
                 fontWeight: "bold",
               }}
             >
-              {socialStats.narrativeScores.AI}
+              {socialStats?.narrativeScores?.AI}
             </span>
           </div>
 
@@ -134,7 +134,7 @@ const HeatmapArbitrageGrid = ({ socialStats, arbitrage, alerts }) => {
             <span
               style={{ fontSize: "8px", color: "#fcd34d", fontWeight: "bold" }}
             >
-              {socialStats.narrativeScores.Memecoons}
+              {socialStats?.narrativeScores?.Memecoons}
             </span>
           </div>
 
@@ -168,7 +168,7 @@ const HeatmapArbitrageGrid = ({ socialStats, arbitrage, alerts }) => {
             <span
               style={{ fontSize: "8px", color: "#6ee7b7", fontWeight: "bold" }}
             >
-              {socialStats.narrativeScores.Layer2}
+              {socialStats?.narrativeScores?.Layer2}
             </span>
           </div>
 
@@ -202,7 +202,7 @@ const HeatmapArbitrageGrid = ({ socialStats, arbitrage, alerts }) => {
             <span
               style={{ fontSize: "8px", color: "#93c5fd", fontWeight: "bold" }}
             >
-              {socialStats.narrativeScores.RWA}
+              {socialStats?.narrativeScores?.RWA}
             </span>
           </div>
         </div>

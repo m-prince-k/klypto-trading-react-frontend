@@ -12,6 +12,7 @@ import FinancialAdvancedAnalytics from '../../../../src/components/dashboard/fin
 import FinancialFooter from '../../../../src/components/dashboard/financials/FinancialFooter';
 import apiService from '../../../services/apiServices';
 import socket from '../../../services/websocket/socket';
+import { useSocket } from '../../../services/websocket/useSocket';
 
 
 const cleanSymbol = (sym) => {
@@ -44,39 +45,57 @@ export default function Financial({ setActiveTab = () => { }, isSubComponent = f
   }, [selectedSymbolProp]);
 
   // ── Fetch REST APIs on symbol/period change ─────────────────────────
-  const fetchRESTData = useCallback(async (sym, period) => {
-    try {
-      const [klinesRes, marketRes, depthRes] = await Promise.allSettled([
-        apiService.get(`/financial/klines?symbol=${sym}&period=${period}`),
-        apiService.get(`/financial/market?symbol=${sym}`),
-        apiService.get(`/financial/orderbook-depth?symbol=${sym}`),
-      ]);
+  // const fetchRESTData = useCallback(async (sym, period) => {
+  //   try {
+  //     const [klinesRes, marketRes, depthRes] = await Promise.allSettled([
+  //       apiService.get(`/financial/klines?symbol=${sym}&period=${period}`),
+  //       apiService.get(`/financial/market?symbol=${sym}`),
+  //       apiService.get(`/financial/orderbook-depth?symbol=${sym}`),
+  //     ]);
 
-      if (klinesRes.status === 'fulfilled' && klinesRes.value.success)
-        setKlines(klinesRes.value.klines || []);
+  //     if (klinesRes.status === 'fulfilled' && klinesRes.value.success)
+  //       setKlines(klinesRes.value.klines || []);
 
-      if (marketRes.status === 'fulfilled' && marketRes.value.success)
-        setMarketExtra(marketRes.value);
+  //     if (marketRes.status === 'fulfilled' && marketRes.value.success)
+  //       setMarketExtra(marketRes.value);
 
-      if (depthRes.status === 'fulfilled' && depthRes.value.success)
-        setDepthData(depthRes.value);
+  //     if (depthRes.status === 'fulfilled' && depthRes.value.success)
+  //       setDepthData(depthRes.value);
 
-      // TVL (separate, CoinGecko-independent)
-      const tvlProtocol = TVL_PROTOCOL_MAP[sym];
-      if (tvlProtocol) {
-        apiService.get(`/financial/tvl?protocol=${tvlProtocol}`)
-          .then(d => { if (d.success) setTvlData(d); })
-          .catch(() => { });
-      }
-    } catch (e) {
-      console.error('REST fetch error:', e);
-    }
-  }, []);
+  //     // TVL (separate, CoinGecko-independent)
+  //     const tvlProtocol = TVL_PROTOCOL_MAP[sym];
+  //     if (tvlProtocol) {
+  //       apiService.get(`/financial/tvl?protocol=${tvlProtocol}`)
+  //         .then(d => { if (d.success) setTvlData(d); })
+  //         .catch(() => { });
+  //     }
+  //   } catch (e) {
+  //     console.error('REST fetch error:', e);
+  //   }
+  // }, []);
 
-  useEffect(() => {
-    setLoading(true);
-    fetchRESTData(selectedSymbol, selectedPeriod);
-  }, [selectedSymbol, selectedPeriod, fetchRESTData]);
+  // useEffect(() => {
+  //   setLoading(true);
+  //   fetchRESTData(selectedSymbol, selectedPeriod);
+  // }, [selectedSymbol, selectedPeriod, fetchRESTData]);
+
+  useSocket({
+  // setFearGreed,
+  cleanSymbol,
+  setTvlData,
+  setKlines,         // ← new
+  setDepthData,      // ← new
+  setMarketExtra,    // ← new
+  setFinanceData: setData,
+  // selectedSymbolRef,
+  // getBaseSymbol,
+  // no-ops for unused handlers
+  setPrices: () => {},
+  setOrderBook: () => {},
+  setSocialStats: () => {},
+  setFinancials: () => {},
+  setAlerts: () => {},
+});
 
   // ── Mock fallback data so tab renders without backend ─────────────
   const MOCK_DATA = {
@@ -147,18 +166,9 @@ export default function Financial({ setActiveTab = () => { }, isSubComponent = f
 
   // ── Socket.IO for live updates (optional — falls back to mock) ────
   useEffect(() => {
-    // Set mock data immediately so tab renders
-    setData(prev => prev || MOCK_DATA);
+    // Set mock data immediately so tab renders instantly with the new symbol
+    setData(MOCK_DATA);
     setLoading(false);
-
-    try {
-      socket.emit('subscribe-financial', { symbol: selectedSymbol });
-      socket.on('finance-dashboard-update', (payload) => {
-        setData(payload);
-      });
-    } catch (e) { /* backend unavailable — mock data already shown */ }
-
-    return () => { try { socket?.disconnect(); } catch (e) { } };
   }, [selectedSymbol]); // eslint-disable-line
 
   // Use mock data as base while waiting for socket
@@ -318,9 +328,6 @@ export default function Financial({ setActiveTab = () => { }, isSubComponent = f
           formatLarge={formatLarge}
         />
       </div>
-
-      {/* FOOTER METRICS */}
-      <FinancialFooter />
     </div>
   );
 }

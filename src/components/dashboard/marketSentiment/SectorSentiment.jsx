@@ -1,7 +1,7 @@
 import React from 'react';
 
 const SectorSentiment = ({ data, getColorClass }) => (
-    <div className="col-lg-4">
+    <div className="col-lg-6">
         <div className="binance-card h-100 d-flex flex-column">
             <div className="card-header pb-2">
                 <div className="d-flex align-items-center mb-3">

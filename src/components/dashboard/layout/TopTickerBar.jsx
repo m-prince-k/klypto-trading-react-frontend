@@ -38,7 +38,8 @@ const TopTickerBar = ({ prices, selectedSymbol }) => {
           padding: '2px 8px',
           display: 'flex',
           alignItems: 'center',
-          gap: '6px'
+          gap: '6px',
+          
         }}>
           <span className="ticker-name" style={{ color: '#818cf8', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}>
             <span style={{ color: '#a78bfa' }}>★</span> {formatSymbol(selectedSymbol)}
