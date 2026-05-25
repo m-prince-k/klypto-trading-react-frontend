@@ -23,7 +23,7 @@ const cleanSymbol = (sym) => {
 
 export default function Financial({ setActiveTab = () => { }, isSubComponent = false, selectedSymbol: selectedSymbolProp = "" }) {
   const [selectedSymbol, setSelectedSymbol] = useState(cleanSymbol(selectedSymbolProp));
-  const [selectedPeriod, setSelectedPeriod] = useState('3M');
+  const [selectedPeriod, setSelectedPeriod] = useState('1d');
   const [data, setData] = useState(null);
   const [klines, setKlines] = useState([]);
   const [marketExtra, setMarketExtra] = useState(null);
@@ -76,12 +76,13 @@ export default function Financial({ setActiveTab = () => { }, isSubComponent = f
   // }, [selectedSymbol, selectedPeriod, fetchRESTData]);
 
   useSocket({
-  // setFearGreed,
+  selectedSymbol,
   cleanSymbol,
+  selectedPeriod,
   setTvlData,
-  setKlines,         // ← new
-  setDepthData,      // ← new
-  setMarketExtra,    // ← new
+  setKlines,
+  setDepthData,
+  setMarketExtra,
   setFinanceData: (newData) => {
     setData(newData);
     setLoading(false);

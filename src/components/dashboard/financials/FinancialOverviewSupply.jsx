@@ -36,7 +36,7 @@ export default function FinancialOverviewSupply({
       </div>
 
       {/* 2. SUPPLY & TOKENOMICS */}
-      <div className="fin-col-4">
+      <div className="fin-col-5">
         <div className="fin-card">
           <div className="fin-card-title"><span className="icon">📊</span> 2. SUPPLY & TOKENOMICS</div>
           <div style={{display: 'flex', gap: '16px'}}>
@@ -71,7 +71,7 @@ export default function FinancialOverviewSupply({
       </div>
 
       {/* 3. MARKET METRICS */}
-      <div className="fin-col-4">
+      <div className="fin-col-3">
         <div className="fin-card">
           <div className="fin-card-title"><span className="icon">📈</span> 3. MARKET METRICS</div>
           <div className="fin-list">

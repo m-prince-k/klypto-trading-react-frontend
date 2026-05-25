@@ -282,12 +282,6 @@ const CryptoEdgeDashboard = () => {
               )}
             </div>
 
-            {/* Initial Loading Spinner Overlay */}
-            {!marketMetrics && (
-              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 50 }}>
-                <Spinner />
-              </div>
-            )}
           </main>
         </div>
       </div>

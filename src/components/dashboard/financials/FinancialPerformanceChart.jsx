@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
+import { CandlestickSeries, createChart, HistogramSeries } from 'lightweight-charts';
 
 export default function FinancialPerformanceChart({
   price,
@@ -11,76 +12,171 @@ export default function FinancialPerformanceChart({
   formatLarge,
   changeColor
 }) {
+  const chartContainerRef = useRef(null);
+  const chartInstanceRef = useRef(null);
+  const candleSeriesRef = useRef(null);
+  const volumeSeriesRef = useRef(null);
+
+  useEffect(() => {
+    if (!chartContainerRef.current) return;
+
+    const chart = createChart(chartContainerRef.current, {
+      layout: {
+        background: { type: 'solid', color: 'transparent' },
+        textColor: '#64748b',
+      },
+      grid: {
+        vertLines: { color: 'rgba(255,255,255,0.05)' },
+        horzLines: { color: 'rgba(255,255,255,0.05)' },
+      },
+      crosshair: {
+        mode: 1, // normal
+      },
+      timeScale: {
+        timeVisible: true,
+        secondsVisible: false,
+      },
+      rightPriceScale: {
+        borderColor: 'rgba(255,255,255,0.1)',
+      },
+    });
+
+    const candleSeries = chart.addSeries(CandlestickSeries,{
+      upColor: '#10b981',
+      downColor: '#ef4444',
+      borderVisible: false,
+      wickUpColor: '#10b981',
+      wickDownColor: '#ef4444',
+    });
+
+    const volumeSeries = chart.addSeries(HistogramSeries, {
+      priceFormat: {
+        type: 'volume',
+      },
+      priceScaleId: '', // set as an overlay
+      scaleMargins: {
+        top: 0.8,
+        bottom: 0,
+      },
+    });
+
+    chartInstanceRef.current = chart;
+    candleSeriesRef.current = candleSeries;
+    volumeSeriesRef.current = volumeSeries;
+
+    const handleResize = () => {
+      if (chartContainerRef.current && chartInstanceRef.current) {
+        chartInstanceRef.current.applyOptions({
+          width: chartContainerRef.current.clientWidth,
+          height: chartContainerRef.current.clientHeight,
+        });
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    
+    // Set initial size with a small delay to ensure container is fully mounted
+    setTimeout(handleResize, 50);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      chart.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!klines || !klines.length || !candleSeriesRef.current || !volumeSeriesRef.current) return;
+    
+    // Sort array by time ascending to satisfy lightweight-charts requirement
+    const sortedKlines = [...klines].sort((a, b) => a.time - b.time);
+
+    // Deduplicate array by time to prevent Lightweight Charts Duplicate Time Error
+    const uniqueKlines = [];
+    const seenTimes = new Set();
+    for (const k of sortedKlines) {
+       // Convert to seconds if it's in ms
+       const timeSeconds = k.time > 1e11 ? Math.floor(k.time / 1000) : Math.floor(k.time);
+       if (!seenTimes.has(timeSeconds)) {
+           seenTimes.add(timeSeconds);
+           uniqueKlines.push({
+             ...k,
+             time: timeSeconds
+           });
+       }
+    }
+
+    const candleData = uniqueKlines.map(k => ({
+      time: k.time,
+      open: Number(k.open),
+      high: Number(k.high),
+      low: Number(k.low),
+      close: Number(k.close),
+    }));
+
+    const volumeData = uniqueKlines.map(k => ({
+      time: k.time,
+      value: Number(k.volume),
+      color: Number(k.close) >= Number(k.open) ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)',
+    }));
+
+    try {
+      candleSeriesRef.current.setData(candleData);
+      volumeSeriesRef.current.setData(volumeData);
+      
+      if (chartInstanceRef.current) {
+        chartInstanceRef.current.timeScale().fitContent();
+      }
+    } catch (err) {
+      console.error("Error setting chart data:", err);
+    }
+  }, [klines]);
+
   return (
     <div className="fin-col-4">
-      <div className="fin-card">
+      <div className="fin-card" style={{ display: 'flex', flexDirection: 'column' }}>
         <div className="fin-card-title"><span className="icon">📊</span> 4. PRICE PERFORMANCE & CHARTS</div>
-        <div className="fin-chart-filters">
-          {['1D','7D','1M','3M','6M','1Y','ALL'].map(p => (
+        <div className="fin-chart-filters" style={{ marginBottom: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {['15m','1h','4h','1d','1w','1M'].map(p => (
             <span 
               key={p} 
               className={`fin-chart-filter ${selectedPeriod === p ? 'active' : ''}`}
-              style={{cursor:'pointer'}} 
+              style={{
+                cursor: 'pointer', 
+                padding: '4px 10px', 
+                borderRadius: '6px', 
+                fontSize: '10px',
+                fontWeight: selectedPeriod === p ? '600' : '500',
+                backgroundColor: selectedPeriod === p ? '#3b82f6' : 'rgba(255,255,255,0.05)',
+                color: selectedPeriod === p ? '#ffffff' : '#94a3b8',
+                border: '1px solid',
+                borderColor: selectedPeriod === p ? '#3b82f6' : 'rgba(255,255,255,0.1)',
+                transition: 'all 0.2s ease',
+                textTransform: 'uppercase'
+              }} 
               onClick={() => setSelectedPeriod(p)}
             >
               {p}
             </span>
           ))}
         </div>
-        {/* <div style={{position: 'absolute', right: '25px', top: '55px', textAlign: 'right'}}>
-          <div style={{fontSize: '9px', color: '#94a3b8'}}>Current Price</div>
-          <div style={{fontSize: '16px', fontWeight: 'bold'}} className={changeColor}>${formatNum(price, 2, 4)}</div>
-        </div> */}
 
-        {/* Real Klines SVG Chart */}
-        <div className="fin-chart-mock" style={{marginTop: '8px'}}>
-          {klines.length > 1 ? (() => {
-            const closes = klines.map(k => k.close);
-            const minP = Math.min(...closes), maxP = Math.max(...closes);
-            const range = maxP - minP || 1;
-            const pts = closes.map((c, i) => {
-              const x = (i / (closes.length - 1)) * 100;
-              const y = 38 - ((c - minP) / range) * 36;
-              return `${x},${y}`;
-            });
-            const lineD = 'M' + pts.join(' L');
-            const areaD = lineD + ` L100,40 L0,40 Z`;
-            const stroke = closes[closes.length-1] >= closes[0] ? '#10b981' : '#ef4444';
-            const fill   = closes[closes.length-1] >= closes[0] ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)';
-            return (
-              <svg className="fin-chart-svg" viewBox="0 0 100 40" preserveAspectRatio="none">
-                <path d={areaD} fill={fill} />
-                <path d={lineD} fill="none" stroke={stroke} strokeWidth="1.5" />
-              </svg>
-            );
-          })() : (
-            <div style={{color:'#334155', fontSize:'10px', textAlign:'center', paddingTop:'40px'}}>Loading chart...</div>
+        {/* Lightweight Charts Container */}
+        <div 
+          ref={chartContainerRef} 
+          style={{ width: '100%', flex: 1, minHeight: '300px', position: 'relative' }}
+        >
+          {(!klines || klines.length === 0) && (
+            <div style={{
+              position: 'absolute', top: '50%', left: '50%', 
+              transform: 'translate(-50%, -50%)', 
+              color:'#334155', fontSize:'12px', zIndex: 10
+            }}>
+              Loading chart data...
+            </div>
           )}
         </div>
 
-        {/* X-axis dates */}
-        {klines.length > 1 && (
-          <div style={{display:'flex', justifyContent:'space-between', fontSize:'8px', color:'#64748b', marginTop:'4px'}}>
-            {[0, Math.floor(klines.length/4), Math.floor(klines.length/2), Math.floor(klines.length*3/4), klines.length-1]
-              .map(i => (
-                <span key={i}>
-                  {new Date(klines[i].time * 1000).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}
-                </span>
-              ))}
-          </div>
-        )}
-
-        {/* Real Volume Bars */}
-        <div style={{height:'28px', marginTop:'10px', display:'flex', alignItems:'flex-end', gap:'1px'}}>
-          {(klines.length > 1 ? klines : Array.from({length:45}, () => null)).map((k, i) => {
-            const isGreen = k ? k.close >= k.open : Math.random() > 0.4;
-            const vols = klines.map(x => x.volume);
-            const maxV = Math.max(...vols, 1);
-            const h = k ? Math.max(8, (k.volume / maxV) * 100) : Math.max(8, Math.random()*100);
-            return <div key={i} style={{flex:1, backgroundColor: isGreen ? '#10b981' : '#ef4444', height:`${h}%`}}></div>;
-          })}
-        </div>
-        <div style={{textAlign:'right', fontSize:'8px', color:'#94a3b8', marginTop:'2px'}}>
+        <div style={{textAlign:'right', fontSize:'10px', color:'#94a3b8', marginTop:'8px'}}>
           24h Volume: ${formatLarge(volume24h)}
         </div>
       </div>

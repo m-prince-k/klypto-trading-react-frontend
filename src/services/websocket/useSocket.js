@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { createSocketManager } from "./socketManager";
 import EVENTS from "./socketEvents";
+import socket from "./socket";
 
 // Global cache to persist data across route transitions (e.g. going to Details and back)
 export const globalCache = {
@@ -48,6 +49,7 @@ export const useSocket = ({
   setFinanceData,
   selectedSymbol,
   cleanSymbol,
+  selectedPeriod,
 
   // MarketData
   setCoins,
@@ -82,19 +84,19 @@ export const useSocket = ({
         if (setCoins) setCoins(res.coins || []);
         if (setMarketMetrics && res.metrics) setMarketMetrics((prev) => ({ ...prev, ...res.metrics }));
         if (setOverviewChartData && res.overviewChart) setOverviewChartData(res.overviewChart);
-        
+
         if (setCoinDetail && res.coins) {
-            const found = res.coins.find(c => c.symbol.toUpperCase() === selectedSymbol?.toUpperCase());
-            if (found) {
-                setCoinDetail((prevCoin) => prevCoin ? prevCoin : found);
-                if (areaSeriesRef?.current && found.history) {
-                    const chartData = found.history.map((price, idx) => ({
-                        time: Math.floor(Date.now() / 1000) - (found.history.length - idx) * 10,
-                        value: price,
-                    }));
-                    areaSeriesRef.current.setData(chartData);
-                }
+          const found = res.coins.find(c => c.symbol.toUpperCase() === selectedSymbol?.toUpperCase());
+          if (found) {
+            setCoinDetail((prevCoin) => prevCoin ? prevCoin : found);
+            if (areaSeriesRef?.current && found.history) {
+              const chartData = found.history.map((price, idx) => ({
+                time: Math.floor(Date.now() / 1000) - (found.history.length - idx) * 10,
+                value: price,
+              }));
+              areaSeriesRef.current.setData(chartData);
             }
+          }
         }
 
         if (!res?.coins) return;
@@ -119,7 +121,7 @@ export const useSocket = ({
         // binance-sentiment
         console.log("[useSocket] binance-sentiment Payload:", data);
         if (setSentimentData) setSentimentData(data);
-        
+
         const mergeValidProps = (prev, incoming) => {
           if (!incoming || typeof incoming !== 'object') return prev;
           const updated = { ...prev };
@@ -135,7 +137,7 @@ export const useSocket = ({
         if (data.socialStats) setSocialStats?.((prev) => mergeValidProps(prev, data.socialStats));
         if (data.tvlData) setTvlData?.((prev) => mergeValidProps(prev, data.tvlData));
         if (data.financials) setFinancials?.((prev) => mergeValidProps(prev, data.financials));
-        
+
         setMarketMetrics?.((prev) => ({
           ...prev,
           btcDominance: parseFloat(data.socialStats?.btcDominance) || prev.btcDominance,
@@ -170,41 +172,41 @@ export const useSocket = ({
         const base = getBaseSymbol ? getBaseSymbol(data.symbol) : symbolKey;
 
         setCoins?.((prevCoins) => {
-            const coinExists = prevCoins.some((c) => c.symbol === symbolKey);
-            if (!coinExists) return prevCoins;
-            const originalCoin = prevCoins.find((c) => c.symbol === symbolKey);
-            const originalPrice = originalCoin ? originalCoin.price : 0;
-            const newPrice = Number(data.price);
-    
-            if (originalPrice > 0 && newPrice !== originalPrice && setFlashStates) {
-              const direction = newPrice >= originalPrice ? "up" : "down";
-              const flashKey = `${symbolKey}-price`;
-              setFlashStates((prev) => ({ ...prev, [flashKey]: direction }));
-              setTimeout(() => {
-                setFlashStates((prev) => {
-                  const next = { ...prev };
-                  delete next[flashKey];
-                  return next;
-                });
-              }, 800);
+          const coinExists = prevCoins.some((c) => c.symbol === symbolKey);
+          if (!coinExists) return prevCoins;
+          const originalCoin = prevCoins.find((c) => c.symbol === symbolKey);
+          const originalPrice = originalCoin ? originalCoin.price : 0;
+          const newPrice = Number(data.price);
+
+          if (originalPrice > 0 && newPrice !== originalPrice && setFlashStates) {
+            const direction = newPrice >= originalPrice ? "up" : "down";
+            const flashKey = `${symbolKey}-price`;
+            setFlashStates((prev) => ({ ...prev, [flashKey]: direction }));
+            setTimeout(() => {
+              setFlashStates((prev) => {
+                const next = { ...prev };
+                delete next[flashKey];
+                return next;
+              });
+            }, 800);
+          }
+
+          return prevCoins.map((coin) => {
+            if (coin.symbol === symbolKey) {
+              const updatedHistory = [...coin.history.slice(1), newPrice];
+              return {
+                ...coin,
+                price: newPrice,
+                change24h: Number(data.changePct),
+                volume24h: Number(data.volume),
+                high: Number(data.high),
+                low: Number(data.low),
+                history: updatedHistory,
+              };
             }
-    
-            return prevCoins.map((coin) => {
-              if (coin.symbol === symbolKey) {
-                const updatedHistory = [...coin.history.slice(1), newPrice];
-                return {
-                  ...coin,
-                  price: newPrice,
-                  change24h: Number(data.changePct),
-                  volume24h: Number(data.volume),
-                  high: Number(data.high),
-                  low: Number(data.low),
-                  history: updatedHistory,
-                };
-              }
-              return coin;
-            });
+            return coin;
           });
+        });
 
         if (globalCache.marketCoins) {
           const coinIdx = globalCache.marketCoins.findIndex((c) => c.symbol === symbolKey);
@@ -294,36 +296,36 @@ export const useSocket = ({
       /* ───────────────── LIVE TICK ───────────────── */
       liveTickUpdate: (tick) => {
         if (handleLiveTickUpdate) handleLiveTickUpdate(tick);
-        
+
         if (!tick || !tick.symbol || !tick.ohlcv) return;
         const key = getBaseSymbol ? getBaseSymbol(tick.symbol) : tick.symbol.replace("USDT", "").toUpperCase();
 
         if (setCoinDetail && selectedSymbol && key === selectedSymbol.toUpperCase()) {
-            const { open, high, low, close, volume } = tick.ohlcv;
-            const newPrice = Number(close);
-            setCoinDetail((prevCoin) => {
-                if (!prevCoin) return null;
-                const oldPrice = prevCoin.price;
-                if (oldPrice > 0 && newPrice !== oldPrice && setFlashState) {
-                  const direction = newPrice >= oldPrice ? "up" : "down";
-                  setFlashState(direction);
-                  setTimeout(() => setFlashState(null), 800);
-                }
-                if (areaSeriesRef?.current) {
-                  const time = Math.floor(tick.timestamp / 1000);
-                  areaSeriesRef.current.update({ time, value: newPrice });
-                }
-                const updatedHistory = Array.isArray(prevCoin.history) ? [...prevCoin.history.slice(1), newPrice] : [newPrice];
-                return {
-                  ...prevCoin,
-                  price: newPrice,
-                  change24h: Number(tick.changePct ?? prevCoin.change24h),
-                  volume24h: Number(volume || prevCoin.volume24h),
-                  high: Number(high || prevCoin.high),
-                  low: Number(low || prevCoin.low),
-                  history: updatedHistory,
-                };
-            });
+          const { open, high, low, close, volume } = tick.ohlcv;
+          const newPrice = Number(close);
+          setCoinDetail((prevCoin) => {
+            if (!prevCoin) return null;
+            const oldPrice = prevCoin.price;
+            if (oldPrice > 0 && newPrice !== oldPrice && setFlashState) {
+              const direction = newPrice >= oldPrice ? "up" : "down";
+              setFlashState(direction);
+              setTimeout(() => setFlashState(null), 800);
+            }
+            if (areaSeriesRef?.current) {
+              const time = Math.floor(tick.timestamp / 1000);
+              areaSeriesRef.current.update({ time, value: newPrice });
+            }
+            const updatedHistory = Array.isArray(prevCoin.history) ? [...prevCoin.history.slice(1), newPrice] : [newPrice];
+            return {
+              ...prevCoin,
+              price: newPrice,
+              change24h: Number(tick.changePct ?? prevCoin.change24h),
+              volume24h: Number(volume || prevCoin.volume24h),
+              high: Number(high || prevCoin.high),
+              low: Number(low || prevCoin.low),
+              history: updatedHistory,
+            };
+          });
         }
 
         setPrices?.((prev) => ({
@@ -337,20 +339,22 @@ export const useSocket = ({
 
       /* ───────────────── LISTING ───────────────── */
       listingResponse: (res) => {
+        console.log("[useSocket] listingResponse received:", { symbol: res?.symbol, dataLength: res?.data?.length });
         if (!res?.data || !Array.isArray(res.data)) return;
 
         if (setKlines && res.symbol && selectedSymbol && cleanSymbol) {
-           const normRes = cleanSymbol(res.symbol);
-           if (normRes === selectedSymbol) {
-               setKlines(res.data.map(c => ({
-                 time: c.openTime || c.time,
-                 open: Number(c.open),
-                 high: Number(c.high),
-                 low: Number(c.low),
-                 close: Number(c.close),
-                 volume: Number(c.volume)
-               })));
-           }
+          const normRes = cleanSymbol(res.symbol);
+          if (normRes === selectedSymbol) {
+            console.log("[useSocket] listingResponse matches selectedSymbol, updating klines!");
+            setKlines(res.data.map(c => ({
+              time: c.openTime || c.time,
+              open: Number(c.open),
+              high: Number(c.high),
+              low: Number(c.low),
+              close: Number(c.close),
+              volume: Number(c.volume)
+            })));
+          }
         }
 
         setPrices?.((prev) => {
@@ -465,9 +469,25 @@ export const useSocket = ({
 
       /* ───────────────── FINANCIAL ───────────────── */
       financeDashboardUpdate: (data) => {
+        if (!data) return;
+
+        // Filter out stale updates from previous currency subscriptions
+        const eventSymbol = data.symbol || data.marketExtra?.symbol || data.financials?.symbol || data.tvlData?.symbol;
+
+        const getBaseAsset = (sym) => {
+          if (!sym) return '';
+          return sym.replace(/USDT|BUSD|USDC|USD|BTC|ETH$/gi, '').toUpperCase();
+        };
+
+        if (eventSymbol && selectedSymbol) {
+          if (getBaseAsset(eventSymbol) !== getBaseAsset(selectedSymbol)) {
+            return;
+          }
+        }
+
         console.log("[useSocket] Received finance-dashboard-update Payload:", data);
         if (setFinanceData) setFinanceData(data);
-        
+
         const mergeValidProps = (prev, incoming) => {
           if (!incoming || typeof incoming !== 'object') return prev;
           const updated = { ...prev };
@@ -530,13 +550,11 @@ export const useSocket = ({
       },
 
       orderbook: (data) => {
-        const currentSymbol = selectedSymbolRef?.current;
+        const currentSymbol = selectedSymbolRef?.current || selectedSymbol;
         if (!data || !currentSymbol) return;
 
         const normalizedDataSymbol = data.symbol ? data.symbol.replace(/[^a-zA-Z0-9]/g, "").toUpperCase() : "";
         const normalizedCurrentSymbol = currentSymbol ? currentSymbol.replace(/[^a-zA-Z0-9]/g, "").toUpperCase() : "";
-        
-        // console.log("ORDERBOOK MATCH:", { currentSymbol, normalizedCurrentSymbol });
 
         if (normalizedDataSymbol !== normalizedCurrentSymbol) return;
 
@@ -563,6 +581,7 @@ export const useSocket = ({
     const safeSymbol = (() => {
       if (!selectedSymbol) return null;
       const upper = selectedSymbol.toUpperCase();
+      if (upper === 'BTC' || upper === 'ETH') return `${upper}USDT`;
       if (upper.endsWith('USDT') || upper.endsWith('BTC') || upper.endsWith('ETH') || upper.endsWith('USDC') || upper.endsWith('BUSD')) {
         return upper;
       }
@@ -605,11 +624,16 @@ export const useSocket = ({
           symbol: safeSymbol,
           interval: "5m",
         });
-        
+
         console.log("EMITTING SUBSCRIBE FOR:", safeSymbol);
         manager.emit(EVENTS.FINANCIAL.SUBSCRIBE, { symbol: safeSymbol });
-        manager.emit(EVENTS.LISTING.GET, { symbol: safeSymbol, interval: "1d", limit: 90 });
-        
+
+        const validIntervals = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d', '1w', '1M'];
+        let interval = validIntervals.includes(selectedPeriod) ? selectedPeriod : "1d";
+        let limit = 200; // Consistent lookback of 200 candles to ensure enough chart data
+
+        manager.emit(EVENTS.LISTING.GET, { symbol: safeSymbol, interval, limit });
+
         // Backend listens on "binance-orderbook" to receive the requested symbol!
         manager.emit(EVENTS.ORDERBOOK.UPDATE, { symbol: safeSymbol });
       }
@@ -633,5 +657,29 @@ export const useSocket = ({
       manager.socket.off("connect", bootstrap);
       manager.unregister();
     };
-  }, [selectedSymbol]);
+  }, [selectedSymbol]); // Removed selectedPeriod to prevent full teardown on chart timeframe change
+
+  // Separate effect specifically for when the chart timeframe changes
+  useEffect(() => {
+    if (!selectedPeriod || !selectedSymbol) return;
+
+    const safeSymbol = (() => {
+      const upper = selectedSymbol.toUpperCase();
+      if (upper === 'BTC' || upper === 'ETH') return `${upper}USDT`;
+      if (upper.endsWith('USDT') || upper.endsWith('BTC') || upper.endsWith('ETH') || upper.endsWith('USDC') || upper.endsWith('BUSD')) {
+        return upper;
+      }
+      return `${upper}USDT`;
+    })();
+
+    if (socket.connected) {
+      const validIntervals = ['1m','3m','5m','15m','30m','1h','2h','4h','6h','8h','12h','1d','3d','1w','1M'];
+      let interval = validIntervals.includes(selectedPeriod) ? selectedPeriod : "1d";
+      let limit = 200;
+      console.log(`[useSocket] Chart Timeframe Changed! Emitting LISTING.GET for ${safeSymbol} at interval ${interval}`);
+      socket.emit(EVENTS.LISTING.GET, { symbol: safeSymbol, interval, limit });
+    } else {
+      console.log(`[useSocket] Chart Timeframe Changed, but socket not connected yet.`);
+    }
+  }, [selectedPeriod, selectedSymbol]);
 };

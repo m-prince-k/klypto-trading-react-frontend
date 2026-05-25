@@ -26,10 +26,10 @@ export default function FinancialTechOnChain({
           <div style={{marginTop: '12px'}}>
             <div style={{display: 'flex', justifycontent: 'space-between', fontSize: '10px'}}>
               <span className="fin-list-label">Roadmap Progress</span>
-              <span className="fin-list-val">{fundamentals?.progress || 75}%</span>
+              <span className="fin-list-val">{fundamentals?.progress}%</span>
             </div>
             <div className="fin-progress-bar">
-              <div className="fin-progress-fill" style={{width: `${fundamentals?.progress || 75}%`, backgroundColor: '#10b981'}}></div>
+              <div className="fin-progress-fill" style={{width: `${fundamentals?.progress}%`, backgroundColor: '#10b981'}}></div>
             </div>
           </div>
         </div>

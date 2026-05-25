@@ -25,19 +25,23 @@ const OnChain = ({ isSubComponent = false }) => {
   const [customStartDate, setCustomStartDate] = useState('2024-05-18');
   const [customEndDate, setCustomEndDate] = useState('2024-06-18');
 
-  useEffect(() => {
-    // 1. Fetch initial data dynamically from backend REST API
-    apiService.post('/api/onchain/data')
-      .then(json => {
-        if (json && json.success) {
-          setData(json.data);
-        }
-      })
-      .catch(err => console.error("Error fetching initial on-chain data:", err));
-  }, []);
+  // useEffect(() => {
+  //   // 1. Fetch initial data dynamically from backend REST API
+  //   apiService.get('/api/onchain/data')
+  //     .then(json => {
+  //       console.log("On-Chain API Response:", json);
+  //       if (json && json.success) {
+  //         setData(json.data);
+  //       }
+  //     })
+  //     .catch(err => console.error("Error fetching initial on-chain data:", err));
+  // }, []);
 
   useSocket({
-    setOnchainData: setData
+    setOnchainData: (data) => {
+      console.log("On-Chain Socket Response:", data);
+      setData(data);
+    }
   });
 
   // Close dropdowns on outside click
