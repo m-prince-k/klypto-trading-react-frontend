@@ -6,6 +6,7 @@ import apiService from "../../../services/apiServices";
 import { useSocket } from "../../../services/websocket/useSocket";
 import { globalCache } from "../../../services/websocket/useSocket";
 import { useTheme } from "../../../context/ThemeContext";
+import { Spinner } from "../../../components/tradingModals/Spinner";
 
 const CoinMarketDetails = () => {
   const { theme } = useTheme();
@@ -242,9 +243,8 @@ const CoinMarketDetails = () => {
 
   if (!coin) {
     return (
-      <div className="detail-loading-container">
-        <div className="detail-spinner"></div>
-        <p>Loading {symbol.toUpperCase()} live market details...</p>
+      <div className="detail-loading-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <Spinner />
       </div>
     );
   }

@@ -13,10 +13,10 @@ const SocialFinancialGrid = ({ tvlData, socialStats, financials }) => {
         <table className="custom-crypto-table">
           <thead>
             <tr>
-              <th align="left">Protocol</th>
-              <th align="left">Category</th>
-              <th align="right">TVL</th>
-              <th align="right">7D Change</th>
+              <th style={{ textAlign: 'left' }}>Protocol</th>
+              <th style={{ textAlign: 'left' }}>Category</th>
+              <th style={{ textAlign: 'right' }}>TVL</th>
+              <th style={{ textAlign: 'right' }}>7D Change</th>
             </tr>
           </thead>
           <tbody>
@@ -24,14 +24,16 @@ const SocialFinancialGrid = ({ tvlData, socialStats, financials }) => {
               const isUp = proto.change >= 0;
               return (
                 <tr key={`tvl-proto-${index}`}>
-                  <td align="left">
-                    <div className="coin-icon-small" style={{ backgroundColor: proto.color }}>{proto.icon}</div>
-                    {proto.name}
+                  <td style={{ textAlign: 'left' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <div className="coin-icon-small" style={{ backgroundColor: proto.color, flexShrink: 0, width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', color: 'white', fontSize: '10px', fontWeight: 'bold' }}>{proto.icon}</div>
+                      <span>{proto.name}</span>
+                    </div>
                   </td>
-                  <td align="left" style={{ color: 'var(--text-muted)' }}>{proto.cat}</td>
-                  <td align="right" style={{ fontWeight: 'bold' }}>${proto.val.toFixed(2)}B</td>
-                  <td align="right" style={{ color: isUp ? '#10b981' : '#ef4444', fontWeight: 'bold' }}>
-                    {isUp ? '▲ +' : '▼ '}{proto.change.toFixed(2)}%
+                  <td style={{ textAlign: 'left', color: 'var(--text-muted)' }}>{proto.cat}</td>
+                  <td style={{ textAlign: 'right', fontWeight: 'bold' }}>${proto.val.toFixed(2)}B</td>
+                  <td style={{ textAlign: 'right', color: isUp ? '#10b981' : '#ef4444', fontWeight: 'bold' }}>
+                    {isUp ? '▲ +' : '▼ '}{Number(proto.change).toFixed(2)}%
                   </td>
                 </tr>
               );
@@ -149,8 +151,8 @@ const SocialFinancialGrid = ({ tvlData, socialStats, financials }) => {
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9.5px' }}>
-          <span style={{ color: '#10b981', fontWeight: 'bold' }}>Buy: ${financials?.whaleBuy}</span>
-          <span style={{ color: '#ef4444', fontWeight: 'bold' }}>Sell: ${financials?.whaleSell}</span>
+          <span style={{ color: '#10b981', fontWeight: 'bold' }}>Buy: {financials?.whaleBuy}</span>
+          <span style={{ color: '#ef4444', fontWeight: 'bold' }}>Sell: {financials?.whaleSell}</span>
         </div>
       </div>
     </div>

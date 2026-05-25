@@ -52,6 +52,7 @@ import {
 import RightSidebar from "../components/layout/RightSidebar";
 import { Button } from "react-bootstrap";
 import socket from "../services/websocket/socket";
+import { useSocket } from "../services/websocket/useSocket";
 
 export default function Candlestick() {
   const { theme } = useTheme();
@@ -170,38 +171,8 @@ export default function Candlestick() {
   const [activeWatchlistCurrency, setActiveWatchlistCurrency] = useState(null);
   const [livePrice, setLivePrice] = useState(null);
 
-  useEffect(() => {
-    socket.emit("get-watchlist");
+  // Removed standalone watchlist socket logic, now handled via useSocket
 
-    const handleWatchlistResponse = (res) => {
-      if (res && Array.isArray(res.data)) {
-        const item = res.data.find((w) => w.symbol === selectedCurrency);
-        if (item) {
-          const price = item.price ?? item.lastPrice;
-          if (price !== undefined && price !== null) {
-            setLivePrice(Number(price));
-          }
-        }
-      }
-    };
-
-    const handleWatchlistUpdate = (tick) => {
-      if (tick && tick.symbol === selectedCurrency) {
-        const price = tick.price ?? tick.lastPrice;
-        if (price !== undefined && price !== null) {
-          setLivePrice(Number(price));
-        }
-      }
-    };
-
-    socket.on("watchlist-response", handleWatchlistResponse);
-    socket.on("watchlist-update", handleWatchlistUpdate);
-
-    return () => {
-      socket.off("watchlist-response", handleWatchlistResponse);
-      socket.off("watchlist-update", handleWatchlistUpdate);
-    };
-  }, [selectedCurrency]);
 
   // Keep activeWatchlistCurrency in sync with selectedCurrency from listing modal
   useEffect(() => {
@@ -997,72 +968,93 @@ export default function Candlestick() {
   }, [chartType, timeframeValue, selectedCurrency]);
 
   // Subscribe to live ticks for real-time candle formation
+  const handleLiveTickUpdate = useCallback((tick) => {
+    if (!tick) return;
+    const tickData = tick.ohlcv || tick;
+    const tickTime = tick.timestamp || tickData.time;
+    if (!tickTime || !seriesRef.current) return;
+    if (tick.symbol && tick.symbol !== selectedCurrency) return;
+
+    setLivePrice(Number(tickData.close));
+    setLiveOhlcv(tickData);
+
+    try {
+      let parsedTime = Number(tickTime);
+      if (parsedTime > 1e10) {
+        parsedTime = Math.floor(parsedTime / 1000);
+      }
+      switch (chartType) {
+        case "line":
+        case "area":
+        case "baseline":
+          seriesRef.current.update({
+            time: parsedTime,
+            value: Number(tickData.close),
+          });
+          break;
+        case "histogram":
+          seriesRef.current.update({
+            time: parsedTime,
+            value: Number(tickData.volume),
+            color: Number(tickData.close) >= Number(tickData.open) ? "#26a69a" : "#f23645",
+          });
+          break;
+        case "bar":
+        case "hollowcandles":
+        case "heikinashi":
+        default:
+          seriesRef.current.update({
+            time: parsedTime,
+            open: Number(tickData.open),
+            high: Number(tickData.high),
+            low: Number(tickData.low),
+            close: Number(tickData.close),
+          });
+          break;
+      }
+    } catch (err) {
+      console.error("Lightweight charts update error:", err, "tickData:", tickData);
+    }
+  }, [selectedCurrency, chartType]);
+
+  const handleWatchlistResponse = useCallback((res) => {
+    if (res && Array.isArray(res.data)) {
+      const item = res.data.find((w) => w.symbol === selectedCurrency);
+      if (item) {
+        const price = item.price ?? item.lastPrice;
+        if (price !== undefined && price !== null) {
+          setLivePrice(Number(price));
+        }
+      }
+    }
+  }, [selectedCurrency]);
+
+  const handleWatchlistUpdate = useCallback((tick) => {
+    if (tick && tick.symbol === selectedCurrency) {
+      const price = tick.price ?? tick.lastPrice;
+      if (price !== undefined && price !== null) {
+        setLivePrice(Number(price));
+      }
+    }
+  }, [selectedCurrency]);
+
+  useSocket({
+    handleLiveTickUpdate,
+    handleWatchlistResponse,
+    handleWatchlistUpdate,
+  });
+
   useEffect(() => {
     if (!selectedCurrency || !timeframeValue) return;
-
     const symbol = selectedCurrency;
     const interval = timeframeValue;
-
     socket.emit("subscribe-live-tick", { symbol, interval });
-
-    const handleLiveTick = (tick) => {
-      console.log("LIVE TICK RECEIVED:", tick);
-      if (!tick) return;
-      // Backend might wrap it in `ohlcv` or send it directly.
-      const tickData = tick.ohlcv || tick;
-      if (!tickData.time || !seriesRef.current) return;
-      if (tick.symbol && tick.symbol !== symbol) return;
-
-      setLivePrice(Number(tickData.close));
-      setLiveOhlcv(tickData);
-
-      try {
-        let parsedTime = Number(tickData.time);
-        if (parsedTime > 1e10) {
-          parsedTime = Math.floor(parsedTime / 1000);
-        }
-        switch (chartType) {
-          case "line":
-          case "area":
-          case "baseline":
-            seriesRef.current.update({
-              time: parsedTime,
-              value: Number(tickData.close),
-            });
-            break;
-          case "histogram":
-            seriesRef.current.update({
-              time: parsedTime,
-              value: Number(tickData.volume),
-              color: Number(tickData.close) >= Number(tickData.open) ? "#26a69a" : "#f23645",
-            });
-            break;
-          case "bar":
-          case "hollowcandles":
-          case "heikinashi":
-          default:
-            seriesRef.current.update({
-              time: parsedTime,
-              open: Number(tickData.open),
-              high: Number(tickData.high),
-              low: Number(tickData.low),
-              close: Number(tickData.close),
-            });
-            break;
-        }
-      } catch (err) {
-        console.error("Lightweight charts update error:", err, "tickData:", tickData);
-        // Ignore lightweight-charts error if we try to update an older time
-      }
-    };
-
-    socket.on("live-tick-update", handleLiveTick);
+    socket.emit("get-watchlist");
 
     return () => {
       socket.emit("unsubscribe-live-tick", { symbol, interval });
-      socket.off("live-tick-update", handleLiveTick);
     };
-  }, [selectedCurrency, timeframeValue, chartType]);
+  }, [selectedCurrency, timeframeValue]);
 
   const { fetchDataByCurrency, fetchIndicatorData } = useChartFunctions({
     chartRef,

@@ -15,6 +15,11 @@ const EVENTS = {
     SUBSCRIBE: "subscribe-financial",
     UPDATE: "finance-dashboard-update",
   },
+  FUTURES: {
+    REQUEST_INITIAL: "request-futures-initial-data",
+    INITIAL_DATA: "futures-initial-data",
+    TICKER_UPDATE: "futures-ticker-update",
+  },
   INDICATORS: {
     GET_DETAILS: "get-indicator-details",
     UPDATE: "update-indicator",
@@ -40,7 +45,6 @@ const EVENTS = {
     UNSUBSCRIBE: "unsubscribe-live-tick",
     UPDATE: "live-tick-update",
   },
-
   MARKET: {
     INIT: "market-coins-init",
     SENTIMENT_UPDATE: "binance-sentiment",

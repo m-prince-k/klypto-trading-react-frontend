@@ -12,6 +12,7 @@ import ArbitrageStats from '../../../../src/components/dashboard/arbitrage/Arbit
 import ArbitrageFilters from '../../../../src/components/dashboard/arbitrage/ArbitrageFilters';
 import ArbitrageTable from '../../../../src/components/dashboard/arbitrage/ArbitrageTable';
 import { useSocket } from '../../../services/websocket/useSocket';
+import { Spinner } from "../../../components/tradingModals/Spinner";
 
 export default function Arbitrage({ setActiveTab = () => { }, isSubComponent = false, selectedSymbol = "" }) {
   const [activeMenu, setActiveMenu] = useState("Arbitrage");
@@ -27,6 +28,7 @@ export default function Arbitrage({ setActiveTab = () => { }, isSubComponent = f
   const [minSpreadRs, setMinSpreadRs] = useState("");
   const [minSpreadPct, setMinSpreadPct] = useState("");
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   const autoRefreshRef = useRef(autoRefresh);
   useEffect(() => {
@@ -113,11 +115,21 @@ export default function Arbitrage({ setActiveTab = () => { }, isSubComponent = f
     setTvlData: () => { },
     setFinancials: () => { },
     setAlerts: () => { },
-    setOpportunities,
+    setOpportunities: setOpportunities,
+    setLoading,
     setPriceFlash,
     setLastUpdated,
     getBaseSymbol: (sym) => sym?.replace(/USDT|BUSD|USDC|BTC|ETH$/i, "") ?? "", // ← add this
   });
+
+  // Data fetch and fallback loading timeout are now handled globally in useSocket.js
+
+  useEffect(() => {
+    if (opportunities.length > 0) {
+      setLoading(false);
+    }
+  }, [opportunities]);
+
 
   const handleApplyFilters = () => {
     setAppliedFilters({
@@ -253,6 +265,14 @@ export default function Arbitrage({ setActiveTab = () => { }, isSubComponent = f
     }
     return pages;
   };
+
+  if (loading) {
+    return (
+      <div className={isSubComponent ? "arbitrage-main-sub" : "arbitrage-wrapper"} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', height: '100vh' }}>
+        <Spinner />
+      </div>
+    );
+  }
 
   return (
     <div className={isSubComponent ? "arbitrage-main-sub" : "arbitrage-wrapper"}>

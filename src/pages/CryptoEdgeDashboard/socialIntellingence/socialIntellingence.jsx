@@ -5,6 +5,7 @@ import SentimentRow from '../../../components/dashboard/socialIntelligence/Senti
 import SocialMetricsRow from '../../../components/dashboard/socialIntelligence/SocialMetricsRow';
 import TrendPredictionRow from '../../../components/dashboard/socialIntelligence/TrendPredictionRow';
 import SocialSidebar from '../../../components/dashboard/socialIntelligence/SocialSidebar';
+import { Spinner } from "../../../components/tradingModals/Spinner";
 
 // Helper to safely parse strings like "8.2K" or "1.2M" to raw numbers for precise calculations
 const parseRawNumber = (val) => {
@@ -21,6 +22,7 @@ export default function SocialIntelligence({ setActiveTab = () => { }, isSubComp
   const [activeTab, setActiveTabInternal] = useState('Sentiment');
   const [timeframe, setTimeframe] = useState('24H');
   const [currentTime, setCurrentTime] = useState('');
+  const [loading, setLoading] = useState(true);
 
   const [sentimentData, setSentimentData] = useState({
     sentimentScore: 50,
@@ -70,6 +72,7 @@ export default function SocialIntelligence({ setActiveTab = () => { }, isSubComp
         if (data.socialVolume !== undefined) data.socialVolume = parseRawNumber(data.socialVolume);
         if (data.engagement !== undefined) data.engagement = parseRawNumber(data.engagement);
         setSentimentData(prev => ({ ...prev, ...data }));
+        setLoading(false);
       }
     });
 
@@ -134,6 +137,20 @@ export default function SocialIntelligence({ setActiveTab = () => { }, isSubComp
       console.log("🔌 Social Intelligence Socket disconnected cleanly.");
     };
   }, [selectedSymbol]);
+
+  // Fallback to clear loading after 2s if socket doesn't fire
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className={isSubComponent ? "si-workspace-sub" : "si-workspace"} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }}>
+        <Spinner />
+      </div>
+    );
+  }
 
   const score = sentimentData.sentimentScore;
   const theta = Math.PI * (1 - score / 100);

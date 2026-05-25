@@ -23,7 +23,6 @@ const MarketData = ({ coins, setCoins, marketMetrics, setMarketMetrics, overview
   ];
   const [visibleLimit, setVisibleLimit] = useState(8);
   const [isSocketConnected, setIsSocketConnected] = useState(true);
-  const [selectedCoinSymbol, setSelectedCoinSymbol] = useState(null);
   const [gainers, setGainers] = useState([]);
   const [losers, setLosers] = useState([]);
   const [sortConfig, setSortConfig] = useState({
@@ -78,6 +77,7 @@ const MarketData = ({ coins, setCoins, marketMetrics, setMarketMetrics, overview
       );
 
       setMarketMetrics((prev) => {
+        if (!prev) return prev;
         const mcapTick = Math.random() * 0.02 - 0.01;
         const fearGreedTick =
           Math.random() > 0.85 ? (Math.random() > 0.5 ? 1 : -1) : 0;

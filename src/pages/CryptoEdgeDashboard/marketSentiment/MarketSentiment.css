@@ -10,6 +10,7 @@
     --ms-text-muted: var(--text-muted);
     --ms-input-bg: var(--bg-input, #2b3139);
     --ms-shadow: var(--shadow-lg);
+    --gauge-track-opacity: 1;
 }
 
 [data-theme="light"] {
@@ -21,6 +22,7 @@
     --ms-text-muted: var(--text-muted);
     --ms-input-bg: var(--bg-input, #eaecef);
     --ms-shadow: var(--shadow-lg);
+    --gauge-track-opacity: 0;
 }
 
 /* ─── Layout ─── */

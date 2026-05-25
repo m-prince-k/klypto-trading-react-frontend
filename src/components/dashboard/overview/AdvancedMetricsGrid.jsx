@@ -52,7 +52,17 @@ const AdvancedMetricsGrid = ({ selectedSymbol = "SOL", fearGreed, socialStats, p
             <path d="M 5,20 A 15,15 0 0,1 35,20" fill="none" stroke="#f59e0b" strokeWidth="3.5" strokeDasharray="0 14 14 14" strokeLinecap="round" />
             <path d="M 5,20 A 15,15 0 0,1 35,20" fill="none" stroke="#10b981" strokeWidth="3.5" strokeDasharray="0 28 14 0" strokeLinecap="round" />
             {/* Dial Needle */}
-            <line x1="20" y1="20" x2="30" y2="9" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" />
+            <line 
+              x1="20" 
+              y1="20" 
+              x2="8" 
+              y2="20" 
+              stroke="#ffffff" 
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              transform={`rotate(${((fearGreed?.value || 50) / 100) * 180}, 20, 20)`}
+              style={{ transition: 'transform 1s cubic-bezier(0.4, 0, 0.2, 1)' }}
+            />
             <circle cx="20" cy="20" r="2.5" fill="#ffffff" />
           </svg>
           <div>

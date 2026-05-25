@@ -227,19 +227,25 @@ const HeatmapArbitrageGrid = ({ socialStats, arbitrage, alerts }) => {
             marginTop: "6px",
           }}
         >
-          {arbitrage.map((arb, i) => (
-            <div key={`arb-${i}`} className="compass-item-row">
-              <div>
-                <span style={{ fontWeight: "bold", color: "var(--text-main)" }}>
-                  {arb.symbol}
-                </span>
-                <div style={{ fontSize: "8px", color: "var(--text-muted)" }}>
-                  Binance ${arb.binance} | Bybit ${arb.bybit}
+          {arbitrage && arbitrage.length > 0 ? (
+            arbitrage.slice(0, 3).map((arb, i) => (
+              <div key={`arb-${i}`} className="compass-item-row">
+                <div>
+                  <span style={{ fontWeight: "bold", color: "var(--text-main)" }}>
+                    {arb.symbol}
+                  </span>
+                  <div style={{ fontSize: "8px", color: "var(--text-muted)" }}>
+                    Binance ${arb.binance} | Bybit ${arb.bybit}
+                  </div>
                 </div>
+                <span className="trade-action-badge">{arb.spread} Spread</span>
               </div>
-              <span className="trade-action-badge">{arb.spread} Spread</span>
+            ))
+          ) : (
+            <div style={{ padding: '10px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
+              Scanning opportunities...
             </div>
-          ))}
+          )}
         </div>
       </div>
 

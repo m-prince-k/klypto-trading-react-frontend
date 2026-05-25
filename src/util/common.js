@@ -27,12 +27,32 @@ localization: {
     if (price < 1) return price.toFixed(7);
     return price.toFixed(2);
   },
+  timeFormatter: (timestamp) => {
+    const date = new Date(timestamp * 1000);
+    return date.toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  },
 },
   
 
   timeScale: {
     timeVisible: true,
     secondsVisible: false,
+    tickMarkFormatter: (time, tickMarkType) => {
+      const date = new Date(time * 1000);
+      const tzOptions = { timeZone: "Asia/Kolkata" };
+      if (tickMarkType === 0) return date.toLocaleString("en-IN", { ...tzOptions, year: "numeric" });
+      if (tickMarkType === 1) return date.toLocaleString("en-IN", { ...tzOptions, month: "short", year: "2-digit" });
+      if (tickMarkType === 2) return date.toLocaleString("en-IN", { ...tzOptions, day: "2-digit" });
+      return date.toLocaleString("en-IN", { ...tzOptions, hour: "2-digit", minute: "2-digit", hour12: false });
+    },
 
     borderColor: "#e2e8f0",
 

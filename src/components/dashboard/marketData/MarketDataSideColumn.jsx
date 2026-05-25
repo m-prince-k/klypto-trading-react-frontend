@@ -30,10 +30,16 @@ export default function MarketDataSideColumn({
 
         <div className="overview-meta-data">
           <span className="overview-meta-label">Total Market Cap</span>
-          <div className="overview-meta-value">${marketMetrics.totalMarketCap}T</div>
-          <div className={`overview-meta-change ${marketMetrics.totalMarketCapChange >= 0 ? 'up' : 'down'}`}>
-            {marketMetrics.totalMarketCapChange >= 0 ? '▲' : '▼'} {Math.abs(marketMetrics.totalMarketCapChange).toFixed(2)}%
-          </div>
+          {marketMetrics ? (
+            <>
+              <div className="overview-meta-value">${marketMetrics.totalMarketCap}T</div>
+              <div className={`overview-meta-change ${marketMetrics.totalMarketCapChange >= 0 ? 'up' : 'down'}`}>
+                {marketMetrics.totalMarketCapChange >= 0 ? '▲' : '▼'} {Math.abs(marketMetrics.totalMarketCapChange).toFixed(2)}%
+              </div>
+            </>
+          ) : (
+            <div className="overview-meta-value" style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Loading…</div>
+          )}
         </div>
 
         <div className="main-chart-wrapper">
@@ -52,7 +58,7 @@ export default function MarketDataSideColumn({
         </div>
 
         <div className="side-list-container">
-          {gainers.map((coin, index) => (
+          {(gainers || []).map((coin, index) => (
             <div className="side-list-row" key={coin.symbol}>
               <div className="side-list-left">
                 <span className="side-list-index">{index + 1}</span>
@@ -65,8 +71,8 @@ export default function MarketDataSideColumn({
                 </div>
               </div>
               <div className="side-list-right">
-                <span className="side-list-price">${coin.price.toLocaleString(undefined, { minimumFractionDigits: coin.price < 1 ? 4 : 2 })}</span>
-                <span className="side-list-change up">+{coin.change24h.toFixed(2)}%</span>
+                <span className="side-list-price">${Number(coin.price).toLocaleString(undefined, { minimumFractionDigits: coin.price < 1 ? 4 : 2 })}</span>
+                <span className="side-list-change up">+{Number(coin.change24h).toFixed(2)}%</span>
               </div>
             </div>
           ))}
@@ -84,7 +90,7 @@ export default function MarketDataSideColumn({
         </div>
 
         <div className="side-list-container">
-          {losers.map((coin, index) => (
+          {(losers || []).map((coin, index) => (
             <div className="side-list-row" key={coin.symbol}>
               <div className="side-list-left">
                 <span className="side-list-index">{index + 1}</span>
@@ -97,8 +103,8 @@ export default function MarketDataSideColumn({
                 </div>
               </div>
               <div className="side-list-right">
-                <span className="side-list-price">${coin.price.toLocaleString(undefined, { minimumFractionDigits: coin.price < 1 ? 4 : 2 })}</span>
-                <span className="side-list-change down">{coin.change24h.toFixed(2)}%</span>
+                <span className="side-list-price">${Number(coin.price).toLocaleString(undefined, { minimumFractionDigits: coin.price < 1 ? 4 : 2 })}</span>
+                <span className="side-list-change down">{Number(coin.change24h).toFixed(2)}%</span>
               </div>
             </div>
           ))}

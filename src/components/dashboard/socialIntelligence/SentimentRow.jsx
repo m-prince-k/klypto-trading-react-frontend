@@ -9,13 +9,13 @@ export default function SentimentRow({ sentimentData, pinX, pinY, generateAreaPa
         <h4 className="si-card-title">Sentiment</h4>
         <div className="si-gauge-container">
           <svg className="si-gauge-svg" viewBox="0 0 100 55">
-            <path d="M 10,50 A 40,40 0 0,1 90,50" fill="none" stroke="#1c253c" strokeWidth="6" strokeLinecap="round" />
+            <path d="M 10,50 A 40,40 0 0,1 90,50" fill="none" stroke="var(--border-color)" strokeWidth="6" strokeLinecap="round" />
             <path d="M 10,50 A 40,40 0 0,1 17.6,26.5" fill="none" stroke="#ef4444" strokeWidth="8" strokeLinecap="round" />
             <path d="M 17.6,26.5 A 40,40 0 0,1 43.7,10.5" fill="none" stroke="#f97316" strokeWidth="8" strokeLinecap="round" />
             <path d="M 43.7,10.5 A 40,40 0 0,1 73.5,17.6" fill="none" stroke="#eab308" strokeWidth="8" strokeLinecap="round" />
             <path d="M 73.5,17.6 A 40,40 0 0,1 90,50" fill="none" stroke="#10b981" strokeWidth="8" strokeLinecap="round" />
-            <line x1="50" y1="50" x2={pinX} y2={pinY} stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" />
-            <circle cx="50" cy="50" r="4.5" fill="#ffffff" />
+            <line x1="50" y1="50" x2={pinX} y2={pinY} stroke="var(--text-main)" strokeWidth="2.5" strokeLinecap="round" />
+            <circle cx="50" cy="50" r="4.5" fill="var(--text-main)" />
           </svg>
           <div className="si-gauge-center-text">
             <span className="si-gauge-number">{sentimentData.sentimentScore}</span>

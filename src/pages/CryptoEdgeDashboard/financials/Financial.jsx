@@ -13,6 +13,7 @@ import FinancialFooter from '../../../../src/components/dashboard/financials/Fin
 import apiService from '../../../services/apiServices';
 import socket from '../../../services/websocket/socket';
 import { useSocket } from '../../../services/websocket/useSocket';
+import { Spinner } from "../../../components/tradingModals/Spinner";
 
 
 const cleanSymbol = (sym) => {
@@ -29,13 +30,8 @@ export default function Financial({ setActiveTab = () => { }, isSubComponent = f
   const [tvlData, setTvlData] = useState(null);
   const [depthData, setDepthData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  const TVL_PROTOCOL_MAP = {
-    BTC: 'bitcoin',
-    ETH: 'ethereum',
-    SOL: 'solana',
-    BNB: 'binance-cex',
-  };
 
   // Sync selected symbol from prop
   useEffect(() => {
@@ -86,7 +82,11 @@ export default function Financial({ setActiveTab = () => { }, isSubComponent = f
   setKlines,         // ← new
   setDepthData,      // ← new
   setMarketExtra,    // ← new
-  setFinanceData: setData,
+  setFinanceData: (newData) => {
+    setData(newData);
+    setLoading(false);
+    setIsUpdating(false);
+  },
   // selectedSymbolRef,
   // getBaseSymbol,
   // no-ops for unused handlers
@@ -98,81 +98,25 @@ export default function Financial({ setActiveTab = () => { }, isSubComponent = f
 });
 
   // ── Mock fallback data so tab renders without backend ─────────────
-  const MOCK_DATA = {
-    symbol: selectedSymbol,
-    name: selectedSymbol === 'ETH' ? 'Ethereum' : selectedSymbol === 'SOL' ? 'Solana' : 'Bitcoin',
-    price: selectedSymbol === 'ETH' ? 3400 : selectedSymbol === 'SOL' ? 175 : 67000,
-    change24h: 2.4,
-    volume24h: 28_000_000_000,
-    high24h: selectedSymbol === 'ETH' ? 3450 : selectedSymbol === 'SOL' ? 180 : 68000,
-    low24h: selectedSymbol === 'ETH' ? 3350 : selectedSymbol === 'SOL' ? 170 : 66000,
-    marketCap: selectedSymbol === 'ETH' ? 408_000_000_000 : selectedSymbol === 'SOL' ? 78_000_000_000 : 1_320_000_000_000,
-    fdv: selectedSymbol === 'ETH' ? 408_000_000_000 : selectedSymbol === 'SOL' ? 85_000_000_000 : 1_400_000_000_000,
-    fundamentals: {
-      blockchain: selectedSymbol === 'ETH' ? 'Ethereum' : selectedSymbol === 'SOL' ? 'Solana' : 'Bitcoin',
-      category: selectedSymbol === 'ETH' ? 'Smart Contract' : selectedSymbol === 'SOL' ? 'Layer 1' : 'Store of Value',
-      website: selectedSymbol === 'ETH' ? 'https://ethereum.org' : selectedSymbol === 'SOL' ? 'https://solana.com' : 'https://bitcoin.org',
-      launchDate: selectedSymbol === 'ETH' ? '2015-07-30' : selectedSymbol === 'SOL' ? '2020-03-16' : '2009-01-03',
-      consensus: selectedSymbol === 'BTC' ? 'Proof of Work' : 'Proof of Stake',
-      useCase: 'Decentralized finance, smart contracts, digital value transfer',
-      circulatingSupply: selectedSymbol === 'ETH' ? 120_000_000 : selectedSymbol === 'SOL' ? 445_000_000 : 19_700_000,
-      totalSupply: selectedSymbol === 'ETH' ? 120_000_000 : selectedSymbol === 'SOL' ? 574_000_000 : 21_000_000,
-      inflation: selectedSymbol === 'BTC' ? '~0.83%' : selectedSymbol === 'ETH' ? '~0.5%' : '~5.2%',
-      burnMechanism: selectedSymbol === 'ETH' ? 'EIP-1559 base fee burn' : 'None',
-      tokenType: selectedSymbol === 'BTC' ? 'Native Coin' : 'Native Coin',
-      auditFirm: 'Trail of Bits',
-      securityScore: '9.1',
-      blockHeight: 840_000,
-      activeValidators: selectedSymbol === 'BTC' ? 15_000 : selectedSymbol === 'ETH' ? 900_000 : 2_000,
-      gasPrice: selectedSymbol === 'ETH' ? '12 Gwei' : 'N/A',
-      devCommits: 24,
-      progress: 82,
-      devActivity: 'High',
-      team: [
-        { name: 'Satoshi Nakamoto', role: 'Creator' },
-        { name: 'Gregory Maxwell', role: 'Core Dev' },
-        { name: 'Pieter Wuille', role: 'Core Dev' },
-        { name: 'Wladimir J.', role: 'Lead Maintainer' },
-      ],
-      investors: ['a16z', 'Pantera Capital', 'Sequoia', 'Coinbase Ventures', 'Grayscale'],
-    },
-    depth: { liquidityRisk: 'Low', spreadPct: 0.012 },
-    onChain: {
-      tvl: 15_000_000_000,
-      tvlChange: 3.2,
-      activeAddresses: 850_000,
-      newAddresses: 28_000,
-      transactions: 320_000,
-      txVolume: 22_000_000_000,
-      networkFees: 1_200_000,
-      stakingApy: 4.2,
-    },
-    social: { twitter: 5_800_000, telegram: 450_000, discord: 320_000, reddit: 2_100_000, sentiment: 72, dominance: 34.5 },
-    indicators: {
-      rsi: 58, rsiSignal: 'Bullish',
-      macd: '0.0042', macdSignal: 'Bullish',
-      sma50: selectedSymbol === 'ETH' ? 3250 : selectedSymbol === 'SOL' ? 160 : 62000,
-      sma200: selectedSymbol === 'ETH' ? 3000 : selectedSymbol === 'SOL' ? 140 : 55000,
-      bbUpper: selectedSymbol === 'ETH' ? 3600 : selectedSymbol === 'SOL' ? 200 : 72000,
-      bbSignal: 'Neutral',
-      adx: 28, adxSignal: 'Strong',
-    },
-    predictions: {
-      p7d: { min: 65000, avg: 70000, max: 75000 },
-      p30d: { min: 60000, avg: 75000, max: 85000 },
-      p90d: { min: 55000, avg: 80000, max: 100000 },
-    },
-  };
 
-  // ── Socket.IO for live updates (optional — falls back to mock) ────
+
+  // ── Socket.IO for live updates ────
   useEffect(() => {
-    // Set mock data immediately so tab renders instantly with the new symbol
-    setData(MOCK_DATA);
-    setLoading(false);
-  }, [selectedSymbol]); // eslint-disable-line
+    if (data) {
+      setIsUpdating(true);
+    }
+  }, [selectedSymbol]);
 
-  // Use mock data as base while waiting for socket
-  const liveData = data || MOCK_DATA;
+  // Use real data
+  const liveData = data;
+
+  if (!liveData) {
+    return (
+      <div className="finance-dashboard" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: isSubComponent ? '100%' : '100vh', flexDirection: 'column' }}>
+        <Spinner />
+      </div>
+    );
+  }
 
 
   const {

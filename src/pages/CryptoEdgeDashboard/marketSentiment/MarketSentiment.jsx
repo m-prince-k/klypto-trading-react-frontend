@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './MarketSentiment.css';
 import { useSocket } from "../../../services/websocket/useSocket";
+import { Spinner } from "../../../components/tradingModals/Spinner";
 
 import MarketSentimentHeader from '../../../components/dashboard/marketSentiment/MarketSentimentHeader';
 import OverallMarketSentiment from '../../../components/dashboard/marketSentiment/OverallMarketSentiment';
@@ -76,10 +77,19 @@ const getColorClass = (label) => {
 
 const MarketSentiment = () => {
     const [sentimentData, setSentimentData] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     useSocket({
-        setSentimentData
+        setSentimentData: (data) => {
+            setSentimentData(data);
+            setLoading(false);
+        }
     });
+
+    useEffect(() => {
+        const timer = setTimeout(() => setLoading(false), 2000);
+        return () => clearTimeout(timer);
+    }, []);
 
     useEffect(() => {
         if (sentimentData) {
@@ -97,6 +107,14 @@ const MarketSentiment = () => {
             }
         } : {})
     };
+
+    if (loading) {
+        return (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column' }}>
+                <Spinner />
+            </div>
+        );
+    }
 
     return (
         <div>  {/* removed binance-dashboard-layout class */}

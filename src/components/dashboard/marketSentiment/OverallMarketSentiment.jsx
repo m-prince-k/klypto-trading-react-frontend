@@ -9,7 +9,7 @@ const OverallMarketSentiment = ({ data, getColorClass }) => {
                 <span className="title">Overall Market Sentiment</span>
                 <i className="bi bi-info-circle ms-2 info-icon"></i>
             </div>
-           <div className="card-body d-flex pt-0 align-items-center" style={{ minHeight: '200px' }}>
+           <div className="card-body d-flex pt-0 align-items-center" style={{ minHeight: '200px', gap: '12px' }}>
     <div className="gauge-container position-relative flex-grow-1 d-flex justify-content-center align-items-end pb-3 pt-3">
         <svg viewBox="0 0 200 110" className="gauge-svg" style={{ width: '100%', maxWidth: '180px' }}>
             <defs>
@@ -21,14 +21,17 @@ const OverallMarketSentiment = ({ data, getColorClass }) => {
                 </linearGradient>
             </defs>
             {/* Background Track */}
-            <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#1f2937" strokeWidth="18" strokeLinecap="round" />
+            <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#e2e8f0" strokeWidth="18" strokeLinecap="round" />
+            <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#1f2937" strokeWidth="18" strokeLinecap="round" style={{ opacity: 'var(--gauge-track-opacity, 0)' }} />
             {/* Gradient Arc */}
             <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="url(#gaugeGradient)" strokeWidth="18" strokeDasharray={`${(data.overall.score / 100) * 251.2} 251.2`} strokeLinecap="round" />
             
-            {/* Needle */}
+            {/* Needle — dark stroke with white outline so visible on both themes */}
             <g transform={`rotate(${ (data.overall.score / 100) * 180 - 90 }, 100, 100)`}>
-                <line x1="100" y1="100" x2="100" y2="35" stroke="#ffffff" strokeWidth="4" strokeLinecap="round" />
-                <circle cx="100" cy="100" r="8" fill="#ffffff" />
+                <line x1="100" y1="100" x2="100" y2="30" stroke="white" strokeWidth="7" strokeLinecap="round" />
+                <line x1="100" y1="100" x2="100" y2="30" stroke="#374151" strokeWidth="4" strokeLinecap="round" />
+                <circle cx="100" cy="100" r="9" fill="white" />
+                <circle cx="100" cy="100" r="6" fill="#374151" />
             </g>
         </svg>
         <div className="gauge-labels position-absolute w-100 d-flex justify-content-between px-3" style={{ bottom: '0' }}>

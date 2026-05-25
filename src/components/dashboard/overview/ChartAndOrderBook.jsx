@@ -1,7 +1,7 @@
 import React from 'react';
 
 const ChartAndOrderBook = ({ selectedSymbol, baseSymbol, prices, orderBook, tvlData, tvContainerRef }) => {
-  console.log("ChartAndOrderBook orderBook:", orderBook);
+  // console.log("ChartAndOrderBook orderBook:", orderBook);
   const currentPriceObj = prices[baseSymbol] || prices[selectedSymbol] || {};
 
   const formatSymbol = (sym) => {

@@ -61,6 +61,10 @@ export const createSocketManager = (handlers = {}) => {
 
     /* ───────────────────────── ONCHAIN ───────────────────────── */
     if (handlers.onchainUpdate) on(EVENTS.ONCHAIN.UPDATE, handlers.onchainUpdate);
+
+    /* ───────────────────────── FUTURES ───────────────────────── */
+    if (handlers.futuresInitialData) on(EVENTS.FUTURES.INITIAL_DATA, handlers.futuresInitialData);
+    if (handlers.futuresTickerUpdate) on(EVENTS.FUTURES.TICKER_UPDATE, handlers.futuresTickerUpdate);
   };
 
   const unregister = () => {
@@ -107,8 +111,12 @@ export const createSocketManager = (handlers = {}) => {
     if (handlers.watchlistResponse) off(EVENTS.WATCHLIST.RESPONSE, handlers.watchlistResponse);
     if (handlers.watchlistUpdate) off(EVENTS.WATCHLIST.UPDATE, handlers.watchlistUpdate);
 
-    /* ONCHAIN */
+    /* ───────────────────────── ONCHAIN ───────────────────────── */
     if (handlers.onchainUpdate) off(EVENTS.ONCHAIN.UPDATE, handlers.onchainUpdate);
+
+    /* ───────────────────────── FUTURES ───────────────────────── */
+    if (handlers.futuresInitialData) off(EVENTS.FUTURES.INITIAL_DATA, handlers.futuresInitialData);
+    if (handlers.futuresTickerUpdate) off(EVENTS.FUTURES.TICKER_UPDATE, handlers.futuresTickerUpdate);
   };
 
   return {

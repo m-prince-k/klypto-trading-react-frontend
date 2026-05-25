@@ -11,6 +11,14 @@
   box-sizing: border-box;
 }
 
+/* Updating State overlay */
+.updating-state {
+  opacity: 0.5;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  filter: blur(1px);
+}
+
 /* Header Section */
 .fin-header {
   display: flex;

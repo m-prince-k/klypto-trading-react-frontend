@@ -715,7 +715,33 @@
   line-height: 1.4;
 }
 
-/* Custom scrollbar for high fidelity */
+/* ================= DARK THEME ================= */
+.dark .scrollable-content-area::-webkit-scrollbar-thumb,
+.dark .sidebar-panel::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.dark .scrollable-content-area::-webkit-scrollbar-thumb:hover,
+.dark .sidebar-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+
+/* ================= LIGHT THEME ================= */
+.light .scrollable-content-area::-webkit-scrollbar-thumb,
+.light .sidebar-panel::-webkit-scrollbar-thumb {
+  background: rgba(100, 100, 100, 0.5);
+  /* 👈 darker grey */
+}
+
+.light .scrollable-content-area::-webkit-scrollbar-thumb:hover,
+.light .sidebar-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(80, 80, 80, 0.8);
+  /* 👈 darker on hover */
+}
+
+
+/* ================= COMMON ================= */
 .scrollable-content-area::-webkit-scrollbar,
 .sidebar-panel::-webkit-scrollbar {
   width: 8px;
@@ -723,24 +749,15 @@
 
 .scrollable-content-area::-webkit-scrollbar-track,
 .sidebar-panel::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.01);
-  border-radius: 4px;
+  background: transparent;
 }
 
 .scrollable-content-area::-webkit-scrollbar-thumb,
 .sidebar-panel::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
   border-radius: 4px;
   border: 2px solid transparent;
   background-clip: padding-box;
   transition: background 0.2s ease;
-}
-
-.scrollable-content-area::-webkit-scrollbar-thumb:hover,
-.sidebar-panel::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
-  border: 2px solid transparent;
-  background-clip: padding-box;
 }
 
 /* ── Light Mode Sidebar Accent Fix ── */

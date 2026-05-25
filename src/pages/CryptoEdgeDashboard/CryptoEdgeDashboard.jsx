@@ -16,6 +16,8 @@ import MarketSentiment from "./marketSentiment/MarketSentiment";
 import socket from "../../services/websocket/socket";
 import Settings from "./settings/Settings";
 import { useSocket } from "../../services/websocket/useSocket";
+import Watchlist from "./watchlist/Watchlist";
+import { Spinner } from "../../components/tradingModals/Spinner";
 
 const CryptoEdgeDashboard = () => {
   const { theme } = useTheme();
@@ -24,17 +26,7 @@ const CryptoEdgeDashboard = () => {
   // -------------------------------------------------------------
   const [selectedSymbol, setSelectedSymbol] = useState("BTCUSDT"); // 'BTCUSDT', 'ETHUSDT', etc.
   const [marketCoins, setMarketCoins] = useState([]);
-  const [marketMetrics, setMarketMetrics] = useState({
-    totalMarketCap: 2.56,
-    totalMarketCapChange: 1.35,
-    volume24h: 68.24,
-    volume24hChange: 8.72,
-    btcDominance: 51.24,
-    btcDominanceChange: -0.45,
-    ethDominance: 16.17,
-    ethDominanceChange: 0.35,
-    fearGreedIndex: 64,
-  });
+  const [marketMetrics, setMarketMetrics] = useState(null);
   const [overviewChartData, setOverviewChartData] = useState({});
   const [flashStates, setFlashStates] = useState({});
   const getInitialTab = () => {
@@ -146,106 +138,13 @@ const CryptoEdgeDashboard = () => {
     spread: "",
   });
 
-  const [fearGreed, setFearGreed] = useState({
-    value: 72,
-    label: "Greed",
-    yesterday: 68,
-    lastWeek: 61,
-  });
+  const [fearGreed, setFearGreed] = useState(null);
 
-  const [socialStats, setSocialStats] = useState({
-    btcDominance: "35.4%",
-    altRank: "#25",
-    narrativeScores: {
-      DeFi: 82,
-      AI: 76,
-      Memecoons: 69,
-      Layer2: 71,
-      RWA: 64,
-      Gaming: 58,
-      NFT: 42,
-    },
-    radarValues: { vol: 88, dom: 74, eng: 81, mktDom: 65, sent: 78 },
-  });
-
-  const [tvlData, setTvlData] = useState({
-    total: "$84.62B",
-    chains: [
-      { name: "Ethereum", val: "49.82B", pct: 58.8, color: "#6366f1" },
-      { name: "Tron", val: "9.14B", pct: 10.8, color: "#3b82f6" },
-      { name: "BSC", val: "6.45B", pct: 7.6, color: "#10b981" },
-      { name: "Arbitrum", val: "3.21B", pct: 3.8, color: "#a78bfa" },
-      { name: "Solana", val: "2.84B", pct: 3.3, color: "#f59e0b" },
-      { name: "Others", val: "13.16B", pct: 15.7, color: "#f97316" },
-    ],
-    protocols: [
-      {
-        name: "Lido Finance",
-        cat: "Liquid Staking",
-        val: 27.18,
-        change: 4.12,
-        icon: "L",
-        color: "#627eea",
-      },
-      {
-        name: "AAVE",
-        cat: "Lending",
-        val: 12.42,
-        change: -1.05,
-        icon: "A",
-        color: "#4a6da7",
-      },
-      {
-        name: "EigenLayer",
-        cat: "Restaking",
-        val: 11.85,
-        change: 8.41,
-        icon: "E",
-        color: "#3b82f6",
-      },
-      {
-        name: "MakerDAO",
-        cat: "CDP / Stable",
-        val: 9.12,
-        change: 0.5,
-        icon: "M",
-        color: "#ff5a00",
-      },
-    ],
-  });
-
-  const [financials, setFinancials] = useState({
-    revenue: "$3.24M",
-    whaleBuy: "342.7M",
-    whaleSell: "157.3M",
-  });
-
-  const [arbitrage, setArbitrage] = useState([
-    { symbol: "BTC/USDT", binance: "", bybit: "", okx: "", spread: "" },
-    { symbol: "ETH/USDT", binance: "", bybit: "", okx: "", spread: "" },
-    { symbol: "SOL/USDT", binance: "", bybit: "", okx: "", spread: "" },
-  ]);
-
-  const [alerts, setAlerts] = useState([
-    {
-      id: 1,
-      type: "whale",
-      msg: "Whale alert: 1,200 BTC ($82.1M) moved from unknown wallet to Binance.",
-      time: "1m ago",
-    },
-    {
-      id: 2,
-      type: "tvl",
-      msg: "TVL surge: Lido Finance TVL increased by $1.2B (+3.2%) in the last 4 hours.",
-      time: "14m ago",
-    },
-    {
-      id: 3,
-      type: "social",
-      msg: "Social spike: LunarCrush alerts #AI narrative dominance up by 14.2%.",
-      time: "28m ago",
-    },
-  ]);
+  const [socialStats, setSocialStats] = useState(null);
+  const [tvlData, setTvlData] = useState(null);
+  const [financials, setFinancials] = useState(null);
+  const [arbitrage, setArbitrage] = useState([]);
+  const [alerts, setAlerts] = useState([]);
 
   // Synchronize Ref with State to keep socket event listeners always updated
   const selectedSymbolRef = useRef(selectedSymbol);
@@ -264,7 +163,7 @@ const CryptoEdgeDashboard = () => {
     setSocialStats,
     setTvlData,
     setFinancials,
-    setArbitrage,
+    setOpportunities: setArbitrage,
     setAlerts,
     selectedSymbol,
     selectedSymbolRef,
@@ -291,9 +190,16 @@ const CryptoEdgeDashboard = () => {
             setSidebarOpen={setSidebarOpen} />
 
           {/* Main Dashboard Panel */}
-          <main className="main-workspace">
+          <main className="main-workspace" style={{ position: 'relative' }}>
             {/* Scrollable Core Workspace */}
-            <div className="scrollable-content-area">
+            <div 
+              className="scrollable-content-area" 
+              style={{ 
+                opacity: !marketMetrics ? 0.4 : 1,
+                transition: 'opacity 0.4s ease',
+                pointerEvents: !marketMetrics ? 'none' : 'auto'
+              }}
+            >
 
               {activeTab === "Overview" && (
                 <Overview
@@ -359,7 +265,7 @@ const CryptoEdgeDashboard = () => {
               )}
 
               {activeTab === "Watchlist" && (
-                <WatchlistPanel
+                <Watchlist
                   onClose={() => setActiveTab("Overview")}
                   activeCurrency={activeCurrency}
                   setActiveCurrency={(sym) => {
@@ -375,6 +281,13 @@ const CryptoEdgeDashboard = () => {
                 />
               )}
             </div>
+
+            {/* Initial Loading Spinner Overlay */}
+            {!marketMetrics && (
+              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 50 }}>
+                <Spinner />
+              </div>
+            )}
           </main>
         </div>
       </div>

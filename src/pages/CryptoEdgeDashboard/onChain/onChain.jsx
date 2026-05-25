@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { io } from 'socket.io-client';
+import { Spinner } from "../../../components/tradingModals/Spinner"
 import * as XLSX from 'xlsx';
 import './onChain.css';
 
@@ -115,14 +115,7 @@ const OnChain = ({ isSubComponent = false }) => {
   if (!data) {
     return (
       <div className={isSubComponent ? "onchain-wrapper-sub" : "onchain-layout"} style={{ justifyContent: 'center', alignItems: 'center', height: isSubComponent ? '100%' : '100vh', flexDirection: 'column' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div className="logo-icon" style={{ margin: '0 auto 16px auto', width: '48px', height: '48px' }}>
-            <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: '24px', height: '24px' }}>
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
-          <p style={{ color: '#848e9c', fontSize: '14px' }}>Loading DeFi Analytics...</p>
-        </div>
+        <Spinner />
       </div>
     );
   }
