@@ -313,7 +313,18 @@ export const useSocket = ({
             }
             if (areaSeriesRef?.current) {
               const time = Math.floor(tick.timestamp / 1000);
-              areaSeriesRef.current.update({ time, value: newPrice });
+              if (typeof areaSeriesRef.current.updateCandle === 'function') {
+                 areaSeriesRef.current.updateCandle({ time, open: Number(open), high: Number(high), low: Number(low), close: Number(close) });
+                 if (typeof areaSeriesRef.current.updateVolume === 'function') {
+                    areaSeriesRef.current.updateVolume({ 
+                      time, 
+                      value: Number(volume), 
+                      color: Number(close) >= Number(open) ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)' 
+                    });
+                 }
+              } else if (typeof areaSeriesRef.current.update === 'function') {
+                 areaSeriesRef.current.update({ time, value: newPrice });
+              }
             }
             const updatedHistory = Array.isArray(prevCoin.history) ? [...prevCoin.history.slice(1), newPrice] : [newPrice];
             return {
@@ -451,7 +462,19 @@ export const useSocket = ({
       /* ───────────────── ONCHAIN ───────────────── */
       onchainUpdate: (data) => {
         if (!data) return;
-        setOnchainData?.(data.success ? data.data : data);
+        const payload = data.success ? data.data : data;
+        
+        // Filter out stale updates from previous currency subscriptions to prevent flicker
+        const eventSymbol = payload?.symbol || data.symbol;
+        if (eventSymbol && safeSymbol) {
+          const getBaseAsset = (sym) => sym.replace(/USDT|BUSD|USDC|USD|BTC|ETH$/gi, '').toUpperCase();
+          if (getBaseAsset(eventSymbol) !== getBaseAsset(safeSymbol)) {
+            console.log(`[useSocket] Filtering out stale onchain update for ${eventSymbol} (current is ${safeSymbol})`);
+            return;
+          }
+        }
+        
+        setOnchainData?.(payload);
       },
 
       /* ───────────────── FUTURES ───────────────── */
@@ -589,6 +612,8 @@ export const useSocket = ({
     })();
 
     const bootstrap = () => {
+      console.log(`[useSocket] Tab Mounted! Passed selectedSymbol: "${selectedSymbol}", resolved safeSymbol: "${safeSymbol}"`);
+      
       manager.emit(EVENTS.WATCHLIST.GET);
 
       if (setCoins) {
@@ -604,8 +629,9 @@ export const useSocket = ({
         manager.emit("get-market-coins");
       }
 
-      if (setOnchainData) {
-        manager.emit(EVENTS.ONCHAIN.SUBSCRIBE);
+      if (setOnchainData && safeSymbol) {
+        console.log(`[useSocket] Emitting subscribe_onchain with symbol:`, { symbol: safeSymbol });
+        manager.emit(EVENTS.ONCHAIN.SUBSCRIBE, { symbol: safeSymbol });
       }
 
       if (setCoinDetail && safeSymbol) {
@@ -620,22 +646,28 @@ export const useSocket = ({
       }
 
       if (safeSymbol) {
-        manager.emit(EVENTS.LIVE_TICK.SUBSCRIBE, {
-          symbol: safeSymbol,
-          interval: "5m",
-        });
+        if (setPrices || setCoinDetail || setFlashStates || setOverviewChartData) {
+          manager.emit(EVENTS.LIVE_TICK.SUBSCRIBE, {
+            symbol: safeSymbol,
+            interval: "5m",
+          });
+        }
 
-        console.log("EMITTING SUBSCRIBE FOR:", safeSymbol);
-        manager.emit(EVENTS.FINANCIAL.SUBSCRIBE, { symbol: safeSymbol });
+        if (setFinanceData || setFinancials || setMarketExtra || setDepthData || setTvlData) {
+          console.log("EMITTING SUBSCRIBE FOR:", safeSymbol);
+          manager.emit(EVENTS.FINANCIAL.SUBSCRIBE, { symbol: safeSymbol });
+        }
 
-        const validIntervals = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d', '1w', '1M'];
-        let interval = validIntervals.includes(selectedPeriod) ? selectedPeriod : "1d";
-        let limit = 200; // Consistent lookback of 200 candles to ensure enough chart data
+        if (setKlines || setChartData) {
+          const validIntervals = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d', '1w', '1M'];
+          let interval = validIntervals.includes(selectedPeriod) ? selectedPeriod : "1d";
+          let limit = 200; // Consistent lookback of 200 candles to ensure enough chart data
+          manager.emit(EVENTS.LISTING.GET, { symbol: safeSymbol, interval, limit });
+        }
 
-        manager.emit(EVENTS.LISTING.GET, { symbol: safeSymbol, interval, limit });
-
-        // Backend listens on "binance-orderbook" to receive the requested symbol!
-        manager.emit(EVENTS.ORDERBOOK.UPDATE, { symbol: safeSymbol });
+        if (setOrderBook) {
+          manager.emit(EVENTS.ORDERBOOK.UPDATE, { symbol: safeSymbol });
+        }
       }
 
       if (setFuturesData) {
@@ -651,8 +683,18 @@ export const useSocket = ({
     return () => {
       if (safeSymbol) {
         console.log("EMITTING UNSUBSCRIBE FOR:", safeSymbol);
-        manager.emit(EVENTS.LIVE_TICK.UNSUBSCRIBE, { symbol: safeSymbol, interval: "5m" });
-        manager.emit("unsubscribe-financial", { symbol: safeSymbol });
+        
+        if (setPrices || setCoinDetail || setFlashStates || setOverviewChartData) {
+          manager.emit(EVENTS.LIVE_TICK.UNSUBSCRIBE, { symbol: safeSymbol, interval: "5m" });
+        }
+        
+        if (setFinanceData || setFinancials || setMarketExtra || setDepthData || setTvlData) {
+          manager.emit("unsubscribe-financial", { symbol: safeSymbol });
+        }
+        
+        if (setOnchainData) {
+          manager.emit(EVENTS.ONCHAIN.UNSUBSCRIBE, { symbol: safeSymbol });
+        }
       }
       manager.socket.off("connect", bootstrap);
       manager.unregister();

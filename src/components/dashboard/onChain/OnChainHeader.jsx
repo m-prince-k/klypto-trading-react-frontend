@@ -25,27 +25,6 @@ const OnChainHeader = ({
         <p>Total Value Locked across all chains and protocols</p>
       </div>
       <div className="header-actions">
-        <div className="dropdown" onClick={(e) => { e.stopPropagation(); setChainDropdownOpen(!chainDropdownOpen); setExportDropdownOpen(false); }}>
-          <span>{selectedChain}</span>
-          <i className="icon-chevron-down"></i>
-          {chainDropdownOpen && (
-            <div className="dropdown-menu">
-              {chainsList.map((c, i) => (
-                <div
-                  key={i}
-                  className={`dropdown-item ${selectedChain === c ? 'active' : ''}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedChain(c);
-                    setChainDropdownOpen(false);
-                  }}
-                >
-                  {c}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
         <div className="date-picker" onClick={(e) => { e.stopPropagation(); setDatePickerOpen(!datePickerOpen); setChainDropdownOpen(false); setExportDropdownOpen(false); }}>
           <span>{dateRangePreset === 'Custom' ? `${customStartDate} to ${customEndDate}` : dateRangePreset}</span>
           <i className="icon-calendar"></i>
@@ -62,8 +41,14 @@ const OnChainHeader = ({
                     type="date"
                     value={customStartDate}
                     onChange={(e) => { setCustomStartDate(e.target.value); setDateRangePreset('Custom'); }}
-                    style={{ background: '#0d0f17', border: '1px solid var(--border-color)', borderRadius: '4px', color: '#fff', fontSize: '12px', padding: '4px 8px' }}
-                  />
+style={{
+  background: 'var(--bg-input)',
+  border: '1px solid var(--border-color)',
+  borderRadius: '4px',
+  color: 'var(--text-main)',
+  fontSize: '12px',
+  padding: '4px 8px'
+}}                  />
                   <input
                     type="date"
                     value={customEndDate}

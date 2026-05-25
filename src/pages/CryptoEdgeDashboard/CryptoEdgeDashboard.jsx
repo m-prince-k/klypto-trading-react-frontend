@@ -30,11 +30,14 @@ const CryptoEdgeDashboard = () => {
   const [overviewChartData, setOverviewChartData] = useState({});
   const [flashStates, setFlashStates] = useState({});
   const getInitialTab = () => {
-    const hash = window.location.hash.replace("#", "");
+    let hash = window.location.hash.replace("#", "");
+    try { hash = decodeURIComponent(hash); } catch(e) {}
     if (hash) {
       if (hash === "social-intelligence") return "Social Intelligence";
       if (hash === "market-sentiment") return "Market Sentiment";
       if (hash === "market-data") return "Market Data";
+      if (hash === "onchain" || hash === "on-chain (tvl)") return "On-Chain (TVL)";
+      if (hash === "api-status") return "API Status";
       return hash.charAt(0).toUpperCase() + hash.slice(1);
     }
     return "Overview";
@@ -57,9 +60,16 @@ const CryptoEdgeDashboard = () => {
       "Social Intelligence": "social-intelligence",
       "Market Sentiment": "market-sentiment",
       "Market Data": "market-data",
+      "On-Chain (TVL)": "onchain",
+      "API Status": "api-status",
     };
     const hashName = TAB_TO_HASH[activeTab] ?? activeTab.toLowerCase();
-    if (window.location.hash.replace("#", "") !== hashName) {
+    
+    // Decode current hash for safe comparison
+    let currentHash = window.location.hash.replace("#", "");
+    try { currentHash = decodeURIComponent(currentHash); } catch(e) {}
+    
+    if (currentHash !== hashName) {
       window.history.replaceState(null, null, `#${hashName}`);
     }
   }, [activeTab]);
@@ -256,6 +266,7 @@ const CryptoEdgeDashboard = () => {
               {activeTab === "On-Chain (TVL)" && (
                 <OnChain
                   isSubComponent={true}
+                  selectedSymbol={selectedSymbol}
                 />
               )}
               {activeTab === "Market Sentiment" && (

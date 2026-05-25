@@ -36,9 +36,16 @@ export default function Financial({ setActiveTab = () => { }, isSubComponent = f
   // Sync selected symbol from prop
   useEffect(() => {
     if (selectedSymbolProp) {
-      setSelectedSymbol(cleanSymbol(selectedSymbolProp));
+      const cleaned = cleanSymbol(selectedSymbolProp);
+      if (cleaned !== selectedSymbol) {
+        setSelectedSymbol(cleaned);
+        setData(null);
+        setKlines([]);
+        setMarketExtra(null);
+        setDepthData(null);
+      }
     }
-  }, [selectedSymbolProp]);
+  }, [selectedSymbolProp, selectedSymbol]);
 
   // ── Fetch REST APIs on symbol/period change ─────────────────────────
   // const fetchRESTData = useCallback(async (sym, period) => {

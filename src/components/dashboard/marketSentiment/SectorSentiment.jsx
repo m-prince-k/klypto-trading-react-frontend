@@ -3,14 +3,14 @@ import React from 'react';
 const SectorSentiment = ({ data, getColorClass }) => (
     <div className="col-lg-6">
         <div className="binance-card h-100 d-flex flex-column">
-            <div className="card-header pb-2">
-                <div className="d-flex align-items-center mb-3">
-                    <span className="title">Sector Sentiment</span>
+            <div className="card-header pb-2 d-flex justify-content-between align-items-center">
+                <div className="d-flex align-items-center">
+                    <span className="title text-nowrap">Sector Sentiment</span>
                     <i className="bi bi-info-circle ms-2 info-icon"></i>
                 </div>
-                <div className="d-flex bg-dark-layer rounded p-1 w-100 justify-content-start">
-                    <button className="btn btn-sm text-white bg-secondary flex-grow-0 me-1" style={{ fontSize: '12px' }}>By Market Cap</button>
-                    <button className="btn btn-sm text-muted flex-grow-0" style={{ fontSize: '12px' }}>By 24h Change</button>
+                <div className="d-flex bg-dark-layer rounded p-1 justify-content-start">
+                    <button className="btn btn-sm text-white bg-secondary flex-grow-0 me-1 text-nowrap" style={{ fontSize: '12px' }}>By Market Cap</button>
+                    <button className="btn btn-sm text-muted flex-grow-0 text-nowrap" style={{ fontSize: '12px' }}>By 24h Change</button>
                 </div>
             </div>
             <div className="card-body p-0 mt-2 flex-grow-1 d-flex flex-column">

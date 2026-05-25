@@ -111,7 +111,7 @@ export const createSocketManager = (handlers = {}) => {
     if (handlers.watchlistResponse) off(EVENTS.WATCHLIST.RESPONSE, handlers.watchlistResponse);
     if (handlers.watchlistUpdate) off(EVENTS.WATCHLIST.UPDATE, handlers.watchlistUpdate);
 
-    /* ───────────────────────── ONCHAIN ───────────────────────── */
+    /* ONCHAIN */
     if (handlers.onchainUpdate) off(EVENTS.ONCHAIN.UPDATE, handlers.onchainUpdate);
 
     /* ───────────────────────── FUTURES ───────────────────────── */

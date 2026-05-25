@@ -11,7 +11,7 @@ import OnChainTables from '../../../components/dashboard/onChain/OnChainTables';
 import OnChainModals from '../../../components/dashboard/onChain/OnChainModals';
 import { useSocket } from '../../../services/websocket/useSocket';
 
-const OnChain = ({ isSubComponent = false }) => {
+const OnChain = ({ isSubComponent = false, selectedSymbol }) => {
   const [data, setData] = useState(null);
   const [chainDropdownOpen, setChainDropdownOpen] = useState(false);
   const [selectedChain, setSelectedChain] = useState('All Chains');
@@ -38,11 +38,13 @@ const OnChain = ({ isSubComponent = false }) => {
   // }, []);
 
   useSocket({
+    selectedSymbol,
     setOnchainData: (data) => {
       console.log("On-Chain Socket Response:", data);
       setData(data);
     }
   });
+
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -61,7 +63,7 @@ const OnChain = ({ isSubComponent = false }) => {
   const handleExport = (format) => {
     if (!data) return;
 
-    const chainsData = data.chains.map(c => ({
+    const chainsData = data?.chains?.map(c => ({
       Rank: c.n,
       Chain: c.chain,
       TVL_Billion: c.tvl,
@@ -71,7 +73,7 @@ const OnChain = ({ isSubComponent = false }) => {
       Dominance: c.dom
     }));
 
-    const protocolsData = data.protocols.map(p => ({
+    const protocolsData = data?.protocols?.map(p => ({
       Rank: p.n,
       Protocol: p.name,
       TVL_Billion: p.val
@@ -89,12 +91,12 @@ const OnChain = ({ isSubComponent = false }) => {
       let csvContent = "data:text/csv;charset=utf-8,";
       csvContent += "Chains TVL Table\n";
       csvContent += "Rank,Chain,TVL(B),24h Change,7d Change,30d Change,Dominance\n";
-      chainsData.forEach(row => {
+      chainsData?.forEach(row => {
         csvContent += `${row.Rank},${row.Chain},${row.TVL_Billion},${row.Change_24h},${row.Change_7d},${row.Change_30d},${row.Dominance}\n`;
       });
       csvContent += "\nProtocols TVL Table\n";
       csvContent += "Rank,Protocol,TVL(B)\n";
-      protocolsData.forEach(row => {
+      protocolsData?.forEach(row => {
         csvContent += `${row.Rank},${row.Protocol},${row.TVL_Billion}\n`;
       });
 
@@ -125,23 +127,23 @@ const OnChain = ({ isSubComponent = false }) => {
   }
 
   // Dynamic Filtering Logic
-  const chainsList = ['All Chains', ...data.chains.slice(0, 8).map(c => c.chain)];
+  const chainsList = ['All Chains', ...data?.chains?.slice(0, 8)?.map(c => c.chain)];
   const isFiltered = selectedChain !== 'All Chains';
-  const filteredChainObj = isFiltered ? data.chains.find(c => c.chain === selectedChain) : null;
+  const filteredChainObj = isFiltered ? data?.chains?.find(c => c.chain === selectedChain) : null;
 
-  const displayTvl = isFiltered && filteredChainObj ? filteredChainObj.tvl : data.stats.tvl;
-  const displayTvlChange = isFiltered && filteredChainObj ? filteredChainObj.c24 : data.stats.tvlChange;
-  const displayChains = isFiltered && filteredChainObj ? [filteredChainObj] : data.chains.slice(0, 5);
+  const displayTvl = isFiltered && filteredChainObj ? filteredChainObj.tvl : data?.stats?.tvl;
+  const displayTvlChange = isFiltered && filteredChainObj ? filteredChainObj.c24 : data?.stats?.tvlChange;
+  const displayChains = isFiltered && filteredChainObj ? [filteredChainObj] : data?.chains.slice(0, 5);
 
   // Calculate conic gradient dynamically for the Donut Chart
-  const conicParts = displayChains.map((c, idx, arr) => {
+  const conicParts = displayChains?.map((c, idx, arr) => {
     const pct = isFiltered ? 100 : parseFloat(c.dom);
     const start = isFiltered ? 0 : (idx === 0 ? 0 : arr.slice(0, idx).reduce((sum, ch) => sum + parseFloat(ch.dom), 0));
     return `${c.color} ${start}% ${start + pct}%`;
   });
 
   if (!isFiltered) {
-    let accumulatedPercent = data.chains.reduce((sum, c) => sum + parseFloat(c.dom), 0);
+    let accumulatedPercent = data?.chains?.reduce((sum, c) => sum + parseFloat(c.dom), 0);
     conicParts.push(`var(--color-opt) ${accumulatedPercent}% ${accumulatedPercent + 2.4}%`);
     accumulatedPercent += 2.4;
     conicParts.push(`var(--color-oth) ${accumulatedPercent}% 100%`);
@@ -153,7 +155,7 @@ const OnChain = ({ isSubComponent = false }) => {
 
   // Scale historical TVL values dynamically based on selected chain dominance
   const displayHistory = isFiltered && filteredChainObj
-    ? data.tvlHistory.map((pt, idx) => {
+    ? data?.tvlHistory?.map((pt, idx) => {
       const dominanceFactor = parseFloat(filteredChainObj.dom) / 100;
       const drift = 1 + Math.sin(idx / 3) * 0.02;
       return {
@@ -161,7 +163,7 @@ const OnChain = ({ isSubComponent = false }) => {
         tvl: (parseFloat(pt.tvl) * dominanceFactor * drift).toFixed(2)
       };
     })
-    : data.tvlHistory;
+    : data?.tvlHistory;
 
   // Filter historical series by selected date picker presets/ranges
   let filteredHistory = displayHistory || [];

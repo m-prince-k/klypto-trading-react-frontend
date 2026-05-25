@@ -1,28 +1,30 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { createChart, AreaSeries } from "lightweight-charts";
 import "./CoinMarketDetails.css";
 import apiService from "../../../services/apiServices";
-import { useSocket } from "../../../services/websocket/useSocket";
-import { globalCache } from "../../../services/websocket/useSocket";
+import { useSocket, globalCache } from "../../../services/websocket/useSocket";
 import { useTheme } from "../../../context/ThemeContext";
 import { Spinner } from "../../../components/tradingModals/Spinner";
+import SharedCandlestickChart from "../../../components/chart/SharedCandlestickChart";
 
 const CoinMarketDetails = () => {
   const { theme } = useTheme();
   const { symbol } = useParams();
   const navigate = useNavigate();
-  const chartContainerRef = useRef(null);
-  const chartRef = useRef(null);
   const areaSeriesRef = useRef(null);
-  const lastChartTimeRef = useRef(null);
 
   const [coin, setCoin] = useState(null);
   const [marketStats, setMarketStats] = useState(null);
   const [isSocketConnected, setIsSocketConnected] = useState(false);
   const [flashState, setFlashState] = useState(null);
   const [activeTab, setActiveTab] = useState("Chart");
-  const [activeTimeframe, setActiveTimeframe] = useState("1D");
+  const [activeTimeframe, setActiveTimeframe] = useState("1d");
+  const [klines, setKlines] = useState([]);
+
+  const cleanSymbol = (sym) => {
+    if (!sym) return 'BTC';
+    return sym.replace(/USDT|BUSD|USD/gi, '').toUpperCase();
+  };
 
   // ── STEP 1: API polling for initial coin state + periodic refresh ──
   useEffect(() => {
@@ -48,7 +50,6 @@ const CoinMarketDetails = () => {
         const newPrice = Number(latest.close);
 
         setCoin((prevCoin) => {
-          // Only use API to build initial state — socket handles live updates after that
           if (!prevCoin) {
             return {
               symbol: symbol.toUpperCase(),
@@ -64,7 +65,6 @@ const CoinMarketDetails = () => {
             };
           }
 
-          // After initial load, only update OHLCV from API — price comes from socket
           return {
             ...prevCoin,
             high: Number(latest.high),
@@ -79,13 +79,11 @@ const CoinMarketDetails = () => {
     }
 
     function fetchMarketStats() {
-      // Derive name directly from market-coins-init response stored in globalCache
       const cachedCoin = globalCache.marketCoins?.find(
         c => c.symbol.toUpperCase() === symbol.toUpperCase() || c.symbol.toUpperCase() === symbol.toUpperCase() + 'USDT'
       );
 
       if (!cachedCoin) {
-        // If websocket hasn't initialized the coins list yet, wait and try again
         setTimeout(fetchMarketStats, 500);
         return;
       }
@@ -94,7 +92,6 @@ const CoinMarketDetails = () => {
       
       apiService.get(`api/marketStats/${fullName}`)
         .then(res => {
-          console.log(res, "dataaaa");
           if (res && res.data) {
             setMarketStats(res.data);
           } else if (res) {
@@ -111,135 +108,27 @@ const CoinMarketDetails = () => {
     return () => clearInterval(intervalId);
   }, [symbol]);
 
-  // ── STEP 2: Socket.IO for live price ticks ─────────────────────────
+  // ── STEP 2: Socket.IO for live price ticks and kline fetching ──
   useSocket({
     setCoinDetail: setCoin,
     areaSeriesRef,
     setFlashState,
     selectedSymbol: symbol,
+    selectedPeriod: activeTimeframe,
+    setKlines,
+    cleanSymbol,
   });
 
   useEffect(() => {
     setIsSocketConnected(true);
   }, []);
 
-  const isCoinLoaded = !!coin;
-
-  // ── STEP 3: Initialize chart + fetch 365d historical data ──────────
+  // Clear stale data to prevent flickering when switching symbols
   useEffect(() => {
-    if (!isCoinLoaded || !chartContainerRef.current) return;
-    if (chartRef.current) return;
+    setCoin(null);
+  }, [symbol]);
 
-    const isDark = theme === "dark";
-    const chart = createChart(chartContainerRef.current, {
-      width: chartContainerRef.current.clientWidth || 800,
-      height: 450,
-      layout: {
-        background: { type: 'solid', color: 'transparent' },
-        textColor: "#848e9c",
-      },
-      grid: {
-        vertLines: { visible: false },
-        horzLines: { visible: false },
-      },
-      leftPriceScale: {
-        visible: true,
-        borderColor: "#2b3139",
-      },
-      rightPriceScale: {
-        visible: true,
-        borderColor: "transparent",
-      },
-      timeScale: {
-        borderColor: "#2b3139",
-        timeVisible: true,
-        secondsVisible: false,
-      },
-    });
-
-    const areaSeries = chart.addSeries(AreaSeries, {
-      lineColor: "#f0b90b",
-      topColor: "rgba(240, 185, 11, 0.5)",
-      bottomColor: "rgba(240, 185, 11, 0.0)",
-      lineWidth: 3,
-      crosshairMarkerVisible: true,
-      crosshairMarkerRadius: 6,
-      crosshairMarkerBorderColor: "#181a20",
-      crosshairMarkerBackgroundColor: "#f0b90b",
-      lastValueVisible: true,
-      priceLineVisible: true,
-      priceLineColor: "rgba(240, 185, 11, 0.6)",
-      priceLineStyle: 3, // dashed
-      priceFormat: {
-        type: "price",
-        precision: symbol.toUpperCase() === "SHIB" ? 6 : 2,
-        minMove: symbol.toUpperCase() === "SHIB" ? 0.000001 : 0.01,
-      },
-    });
-
-    chartRef.current = chart;
-    areaSeriesRef.current = areaSeries;
-
-    const fetchHistoricalData = async () => {
-      try {
-        const response = await apiService.post(
-          `api/listing?symbol=${symbol.toUpperCase()}USDT&interval=1d&limit=365`,
-        );
-
-        const json = response;
-
-        if (json && json.data && Array.isArray(json.data)) {
-          const formattedData = json.data
-            .map((d) => ({
-              // Auto-detect ms vs seconds timestamp
-              time:
-                Number(d.time) > 1e10
-                  ? Math.floor(Number(d.time) / 1000)
-                  : Number(d.time),
-              value: Number(d.close),
-            }))
-            .sort((a, b) => a.time - b.time)
-            .filter((v, i, a) => i === 0 || v.time !== a[i - 1].time);
-
-          if (formattedData.length > 0) {
-            areaSeries.setData(formattedData);
-            lastChartTimeRef.current =
-              formattedData[formattedData.length - 1].time;
-            chart.timeScale().fitContent();
-          }
-        }
-      } catch (err) {
-        console.error("Failed to fetch historical data for detail chart:", err);
-        // Fallback to polling history if API fails
-        if (coin && coin.history) {
-          const fallbackData = coin.history.map((price, idx) => ({
-            time:
-              Math.floor(Date.now() / 1000) - (coin.history.length - idx) * 10,
-            value: price,
-          }));
-          areaSeries.setData(fallbackData);
-        }
-      }
-    };
-
-    fetchHistoricalData();
-
-    const handleResize = () => {
-      if (chartContainerRef.current && chartRef.current) {
-        chartRef.current.applyOptions({
-          width: chartContainerRef.current.clientWidth,
-        });
-      }
-    };
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      chart.remove();
-      chartRef.current = null;
-      areaSeriesRef.current = null;
-    };
-  }, [isCoinLoaded, symbol, theme]);
+  const isCoinLoaded = !!coin;
 
   if (!coin) {
     return (
@@ -252,7 +141,7 @@ const CoinMarketDetails = () => {
   const isUp = coin.change24h >= 0;
 
   const tabs = ["Chart", "Analysis", "News", "FAQ", "Trending Crypto", "Trading Pairs"];
-  const timeframes = ["1D", "1W", "1M", "1Y", "ALL", "YTD"];
+  const timeframes = ["15m", "1h", "4h", "1d", "1w", "1M"];
 
   return (
     <div className="coin-detail-page">
@@ -326,10 +215,15 @@ const CoinMarketDetails = () => {
             ))}
             <div className="chart-right-header">USD</div>
           </div>
-          <div
-            className="lightweight-chart-container"
-            ref={chartContainerRef}
-          ></div>
+          <div className="lightweight-chart-container">
+            <SharedCandlestickChart
+              ref={areaSeriesRef}
+              klines={klines}
+              height="450px"
+              upColor="#10b981"
+              downColor="#ef4444"
+            />
+          </div>
         </section>
 
         {/* Market Stats Section */}
