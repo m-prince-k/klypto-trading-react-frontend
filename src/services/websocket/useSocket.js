@@ -75,7 +75,7 @@ export const useSocket = ({
 
       /* ───────────────── MARKET INIT ───────────────── */
       marketCoinsInit: (res) => {
-        console.log("[useSocket] market-coins-init Payload:", res);
+        if (setCoins || setSentimentData || setMarketMetrics || setOverviewChartData || setCoinDetail) console.log("[useSocket] market-coins-init Payload:", res);
         if (setSentimentData) setSentimentData(res);
         if (res.coins) globalCache.marketCoins = res.coins;
         if (res.metrics) globalCache.marketMetrics = res.metrics;
@@ -119,7 +119,7 @@ export const useSocket = ({
 
       marketSentiment: (data) => {
         // binance-sentiment
-        console.log("[useSocket] binance-sentiment Payload:", data);
+        if (setSentimentData || setFearGreed || setSocialStats || setTvlData || setFinancials || setMarketMetrics) console.log("[useSocket] binance-sentiment Payload:", data);
         if (setSentimentData) setSentimentData(data);
 
         const mergeValidProps = (prev, incoming) => {
@@ -285,12 +285,20 @@ export const useSocket = ({
 
       /* ───────────────── SOCIAL ───────────────── */
       socialIntelResponse: (res) => {
+        if (setSocialStats) console.log("[useSocket] social-intel-response Payload:", res);
         if (!res?.data) return;
-        setSocialStats?.(res.data);
+        setSocialStats?.((prev) => {
+          if (!prev || typeof prev !== 'object') return res.data;
+          return { ...prev, ...res.data };
+        });
       },
 
       socialIntelUpdate: (data) => {
-        setSocialStats?.(data);
+        if (setSocialStats) console.log("[useSocket] social-intel-update Payload:", data);
+        setSocialStats?.((prev) => {
+          if (!prev || typeof prev !== 'object') return data;
+          return { ...prev, ...data };
+        });
       },
 
       /* ───────────────── LIVE TICK ───────────────── */
@@ -350,7 +358,7 @@ export const useSocket = ({
 
       /* ───────────────── LISTING ───────────────── */
       listingResponse: (res) => {
-        console.log("[useSocket] listingResponse received:", { symbol: res?.symbol, dataLength: res?.data?.length });
+        if (setKlines || setPrices) console.log("[useSocket] listingResponse received:", { symbol: res?.symbol, dataLength: res?.data?.length });
         if (!res?.data || !Array.isArray(res.data)) return;
 
         if (setKlines && res.symbol && selectedSymbol && cleanSymbol) {
@@ -385,40 +393,40 @@ export const useSocket = ({
       },
 
       listingError: (err) => {
-        console.error("Listing error:", err);
+        if (setKlines || setPrices) console.error("Listing error:", err);
       },
 
       // Duplicate orderbook handler removed
 
       /* ───────────────── INDICATORS ───────────────── */
       indicatorDetailsData: (res) => {
-        console.log("Indicator details:", res);
+        // console.log("Indicator details:", res);
       },
 
       indicatorUpdateData: (res) => {
-        console.log("Indicator updated:", res);
+        // console.log("Indicator updated:", res);
       },
 
       indicatorTickUpdate: (tick) => {
-        console.log("Indicator tick:", tick);
+        // console.log("Indicator tick:", tick);
       },
 
       indicatorError: (err) => {
-        console.error("Indicator error:", err);
+        // console.error("Indicator error:", err);
       },
 
 
 
       /* ───────────────── ARBITRAGE ───────────────── */
       arbitrageResponse: (res) => {
-        console.log("[useSocket] Received arbitrage-response Payload:", res);
+        if (setOpportunities) console.log("[useSocket] Received arbitrage-response Payload:", res);
         if (!res?.data) return;
         setOpportunities?.(res.data);
         setLastUpdated?.(new Date().toLocaleTimeString());
       },
 
       arbitrageUpdate: (res) => {
-        console.log("[useSocket] Received arbitrage-update Payload:", res);
+        if (setOpportunities) console.log("[useSocket] Received arbitrage-update Payload:", res);
         if (!res?.success || !res.data || !Array.isArray(res.data)) return;
 
         setOpportunities?.((prev) => {
@@ -479,14 +487,14 @@ export const useSocket = ({
 
       /* ───────────────── FUTURES ───────────────── */
       futuresInitialData: (res) => {
-        console.log("[WebSocket Event] futures-initial-data:", res);
+        if (setFuturesData) console.log("[WebSocket Event] futures-initial-data:", res);
         if (res.success) setFuturesData?.(res.data);
         else setFuturesError?.(res.message || "Failed to load futures data");
         setFuturesLoading?.(false);
       },
 
       futuresTickerUpdate: (updates) => {
-        console.log("[WebSocket Event] futures-ticker-update:", updates);
+        if (handleFuturesTickerUpdate) console.log("[WebSocket Event] futures-ticker-update:", updates);
         if (handleFuturesTickerUpdate) handleFuturesTickerUpdate(updates);
       },
 
@@ -508,7 +516,7 @@ export const useSocket = ({
           }
         }
 
-        console.log("[useSocket] Received finance-dashboard-update Payload:", data);
+        if (setFinanceData || setFearGreed || setSocialStats || setTvlData || setFinancials || setMarketExtra) console.log("[useSocket] Received finance-dashboard-update Payload:", data);
         if (setFinanceData) setFinanceData(data);
 
         const mergeValidProps = (prev, incoming) => {
@@ -656,6 +664,10 @@ export const useSocket = ({
         if (setFinanceData || setFinancials || setMarketExtra || setDepthData || setTvlData) {
           console.log("EMITTING SUBSCRIBE FOR:", safeSymbol);
           manager.emit(EVENTS.FINANCIAL.SUBSCRIBE, { symbol: safeSymbol });
+        }
+
+        if (setSocialStats) {
+          manager.emit(EVENTS.SOCIAL.GET, { symbol: selectedSymbol || safeSymbol });
         }
 
         if (setKlines || setChartData) {

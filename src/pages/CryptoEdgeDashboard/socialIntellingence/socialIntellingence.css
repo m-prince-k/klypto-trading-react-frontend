@@ -7,6 +7,7 @@
 
 .si-workspace {
   display: flex;
+  gap: 12px;
   background-color: var(--bg-main);
   color: var(--text-main);
   font-family: 'Inter', -apple-system, sans-serif;
@@ -14,6 +15,8 @@
   width: 100vw;
   overflow: hidden;
   position: relative;
+  padding: 8px;
+  box-sizing: border-box;
 }
 
 /* 1. LEFT TOOLBAR STYLE */
@@ -693,12 +696,16 @@
 /* 7. RIGHT SUMMARY SIDEBAR STYLE */
 .si-right-sidebar {
   width: 300px;
+  min-width: 280px;
   background-color: #0b0e17;
-  border-left: 1px solid #161e31;
+  border: 1px solid #161e31;
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
   z-index: 5;
+  margin: 4px 0;
+  flex-shrink: 0;
 }
 
 .si-widget {
@@ -946,8 +953,9 @@
    ------------------------------------------------------------- */
 .si-workspace-sub {
   display: flex;
+  gap: 12px;
   background-color: transparent;
-  color: #e2e8f0;
+  color: var(--text-main);
   font-family: 'Inter', -apple-system, sans-serif;
   width: 100%;
   position: relative;
@@ -1004,4 +1012,76 @@
 
 [data-theme="light"] .si-leg-item {
   color: var(--text-muted) !important;
+}
+
+/* ── Light Theme: Sidebar & Widget Borders ── */
+[data-theme="light"] .si-right-sidebar {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="light"] .si-widget {
+  border-bottom-color: var(--border-color) !important;
+}
+
+[data-theme="light"] .si-events-timeline {
+  border-left-color: var(--border-color) !important;
+}
+
+[data-theme="light"] .si-gauge-legend {
+  border-top-color: var(--border-color) !important;
+}
+
+[data-theme="light"] .si-chart-xaxis {
+  border-top-color: var(--border-color) !important;
+}
+
+[data-theme="light"] .si-confidence-text {
+  border-top-color: var(--border-color) !important;
+}
+
+[data-theme="light"] .si-card-dropdown,
+[data-theme="light"] .si-widget-dropdown {
+  background-color: var(--bg-card-hover, #f1f5f9) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-main) !important;
+}
+
+/* ── Light Theme: Muted text ── */
+[data-theme="light"] .si-card-title,
+[data-theme="light"] .si-leg-item,
+[data-theme="light"] .si-source-name,
+[data-theme="light"] .si-donut-lbl,
+[data-theme="light"] .si-tf-btn,
+[data-theme="light"] .si-topic-num,
+[data-theme="light"] .si-topic-mentions,
+[data-theme="light"] .si-inf-handle,
+[data-theme="light"] .si-inf-followers,
+[data-theme="light"] .si-timeline-time,
+[data-theme="light"] .si-stat-comparison,
+[data-theme="light"] .si-prediction-sub,
+[data-theme="light"] .si-widget-section-label,
+[data-theme="light"] .si-score-total,
+[data-theme="light"] .si-save-txt,
+[data-theme="light"] .si-clock,
+[data-theme="light"] .si-bottom-tab {
+  color: var(--text-muted) !important;
+}
+
+/* ── Light Theme: White-on-dark text that needs to flip ── */
+[data-theme="light"] .si-source-pct,
+[data-theme="light"] .si-leg-val {
+  color: var(--text-main) !important;
+}
+
+/* ── Light Theme: SVG chart grid lines ── */
+[data-theme="light"] .si-linechart-svg line,
+[data-theme="light"] .si-barchart-svg line {
+  stroke: rgba(0,0,0,0.06) !important;
+}
+
+/* ── Light Theme: si-bottombar ── */
+[data-theme="light"] .si-bottombar {
+  background-color: var(--bg-card) !important;
+  border-top-color: var(--border-color) !important;
 }

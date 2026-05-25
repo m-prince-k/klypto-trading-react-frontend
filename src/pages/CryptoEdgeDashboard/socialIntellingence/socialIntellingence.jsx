@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import "./socialIntellingence.css"
-import socket from '../../../services/websocket/socket';
+import { useSocket } from '../../../services/websocket/useSocket';
+import { useTheme } from '../../../context/ThemeContext';
 import SentimentRow from '../../../components/dashboard/socialIntelligence/SentimentRow';
 import SocialMetricsRow from '../../../components/dashboard/socialIntelligence/SocialMetricsRow';
 import TrendPredictionRow from '../../../components/dashboard/socialIntelligence/TrendPredictionRow';
@@ -19,34 +20,14 @@ const parseRawNumber = (val) => {
 };
 
 export default function SocialIntelligence({ setActiveTab = () => { }, isSubComponent = false, selectedSymbol = "BTCUSDT" }) {
+  const { theme } = useTheme();
+  const tvTheme = theme === 'dark' ? 'dark' : 'light';
   const [activeTab, setActiveTabInternal] = useState('Sentiment');
   const [timeframe, setTimeframe] = useState('24H');
   const [currentTime, setCurrentTime] = useState('');
   const [loading, setLoading] = useState(true);
 
-  const [sentimentData, setSentimentData] = useState({
-    sentimentScore: 50,
-    sentimentLabel: 'Neutral',
-    bullishPct: 50,
-    neutralPct: 30,
-    bearishPct: 20,
-    twitterPct: 25,
-    redditPct: 25,
-    newsPct: 25,
-    telegramPct: 25,
-    totalMentions: 0,
-    socialVolume: 0,
-    socialVolumeChange: '+0.0%',
-    engagement: 0,
-    engagementChange: '+0.0%',
-    buzzScore: 50,
-    trendPrediction: 'Neutral',
-    confidence: '50%',
-    sentimentOverTime: [],
-    topics: [],
-    events: [],
-    influencers: []
-  });
+  const [sentimentData, setSentimentData] = useState(null);
 
   useEffect(() => {
     const updateTime = () => {
@@ -59,92 +40,39 @@ export default function SocialIntelligence({ setActiveTab = () => { }, isSubComp
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    socket.emit("get-social-intel", { symbol: selectedSymbol });
-
-    socket.on("social-intel-response", (res) => {
-      if (res && res.success) {
-        console.log("📥 Social Hydration Successful:", res.data);
-        const data = res.data;
-        if (data.topics) data.topics = data.topics.map(t => ({ ...t, count: parseRawNumber(t.count) }));
-        if (data.influencers) data.influencers = data.influencers.map(i => ({ ...i, followers: parseRawNumber(i.followers) }));
-        if (data.totalMentions !== undefined) data.totalMentions = parseRawNumber(data.totalMentions);
-        if (data.socialVolume !== undefined) data.socialVolume = parseRawNumber(data.socialVolume);
-        if (data.engagement !== undefined) data.engagement = parseRawNumber(data.engagement);
-        setSentimentData(prev => ({ ...prev, ...data }));
-        setLoading(false);
-      }
-    });
-
-    socket.on("social-intel-update", (update) => {
-      if (update) {
-        console.log("⚡ Live Social Update Received:", update);
+  useSocket({
+    selectedSymbol,
+    setSocialStats: (updater) => {
         setSentimentData(prev => {
-          const newState = { ...prev, ...update };
-          if (update.topics) newState.topics = update.topics.map(t => ({ ...t, count: parseRawNumber(t.count) }));
-          if (update.influencers) newState.influencers = update.influencers.map(i => ({ ...i, followers: parseRawNumber(i.followers) }));
-          if (update.totalMentions !== undefined) newState.totalMentions = parseRawNumber(update.totalMentions);
-          if (update.socialVolume !== undefined) newState.socialVolume = parseRawNumber(update.socialVolume);
-          if (update.engagement !== undefined) newState.engagement = parseRawNumber(update.engagement);
-          if (update.liveEvent) newState.events = [update.liveEvent, ...prev.events.slice(0, 3)];
-          return newState;
+            // Resolve the new data whether it's a direct object or a functional updater
+            const resolvedData = typeof updater === 'function' ? updater(prev) : updater;
+            if (!resolvedData) return prev;
+
+            if (!prev) {
+                // Initial load
+                const data = { ...resolvedData };
+                if (data.topics) data.topics = data.topics.map(t => ({ ...t, count: parseRawNumber(t.count) }));
+                if (data.influencers) data.influencers = data.influencers.map(i => ({ ...i, followers: parseRawNumber(i.followers) }));
+                if (data.totalMentions !== undefined) data.totalMentions = parseRawNumber(data.totalMentions);
+                if (data.socialVolume !== undefined) data.socialVolume = parseRawNumber(data.socialVolume);
+                if (data.engagement !== undefined) data.engagement = parseRawNumber(data.engagement);
+                setLoading(false);
+                return data;
+            }
+            // Update
+            const newState = { ...prev, ...resolvedData };
+            if (resolvedData.topics) newState.topics = resolvedData.topics.map(t => ({ ...t, count: parseRawNumber(t.count) }));
+            if (resolvedData.influencers) newState.influencers = resolvedData.influencers.map(i => ({ ...i, followers: parseRawNumber(i.followers) }));
+            if (resolvedData.totalMentions !== undefined) newState.totalMentions = parseRawNumber(resolvedData.totalMentions);
+            if (resolvedData.socialVolume !== undefined) newState.socialVolume = parseRawNumber(resolvedData.socialVolume);
+            if (resolvedData.engagement !== undefined) newState.engagement = parseRawNumber(resolvedData.engagement);
+            if (resolvedData.liveEvent) newState.events = [resolvedData.liveEvent, ...(prev.events || []).slice(0, 3)];
+            return newState;
         });
-      }
-    });
+    }
+  });
 
-    socket.on("binance-sentiment", (data) => {
-      if (data) {
-        console.log("📥 Captured Live general broadcast 'binance-sentiment':", data);
-        setSentimentData(prev => {
-          const score = data.fearGreed?.value || prev.sentimentScore;
-          const label = data.fearGreed?.label === 'Greed' ? 'Bullish' : data.fearGreed?.label || prev.sentimentLabel;
-          const updatedTimeline = prev.sentimentOverTime && prev.sentimentOverTime.length > 0 ? [...prev.sentimentOverTime] : [95, 55, 68, 85, 52, 70, 58, 72, 48];
-          const lastTimelineVal = updatedTimeline[updatedTimeline.length - 1] || 70;
-          const nextTimelineVal = Math.min(Math.max(lastTimelineVal + Math.round((Math.random() - 0.5) * 16), 45), 95);
-          updatedTimeline.push(nextTimelineVal);
-          if (updatedTimeline.length > 9) updatedTimeline.shift();
-          let twitter = Math.min(Math.max(prev.twitterPct + Math.round((Math.random() - 0.5) * 8), 35), 55);
-          let reddit = Math.min(Math.max(prev.redditPct + Math.round((Math.random() - 0.5) * 6), 20), 35);
-          let news = Math.min(Math.max(prev.newsPct + Math.round((Math.random() - 0.5) * 4), 10), 20);
-          let telegram = 100 - (twitter + reddit + news);
-          let totalMentionsVal = prev.totalMentions > 0 ? prev.totalMentions + Math.round(90 + Math.random() * 210) : 12400;
-          let socialVolumeVal = prev.socialVolume > 0 ? prev.socialVolume + Math.round(70 + Math.random() * 180) : 12400;
-          let engagementVal = prev.engagement > 0 ? prev.engagement + Math.round(110 + Math.random() * 240) : 25700;
-          let buzzVal = Math.min(Math.max(prev.buzzScore + (Math.random() > 0.5 ? 2 : -2), 65), 98);
-          return {
-            ...prev,
-            sentimentScore: score,
-            sentimentLabel: label,
-            sentimentOverTime: updatedTimeline,
-            twitterPct: twitter,
-            redditPct: reddit,
-            newsPct: news,
-            telegramPct: telegram,
-            totalMentions: totalMentionsVal,
-            socialVolume: socialVolumeVal,
-            engagement: engagementVal,
-            buzzScore: buzzVal,
-            trendPrediction: buzzVal > 82 ? 'Highly Bullish' : 'Bullish',
-            confidence: `${Math.round(62 + Math.random() * 25)}%`,
-            socialVolumeChange: `+${(18.6 + (Math.random() - 0.5) * 2.5).toFixed(1)}%`,
-            engagementChange: `+${(22.1 + (Math.random() - 0.5) * 2.8).toFixed(1)}%`
-          };
-        });
-      }
-    });
-
-    return () => {
-      console.log("🔌 Social Intelligence Socket disconnected cleanly.");
-    };
-  }, [selectedSymbol]);
-
-  // Fallback to clear loading after 2s if socket doesn't fire
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 2000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (loading) {
+  if (loading || !sentimentData) {
     return (
       <div className={isSubComponent ? "si-workspace-sub" : "si-workspace"} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }}>
         <Spinner />
@@ -284,7 +212,7 @@ export default function SocialIntelligence({ setActiveTab = () => { }, isSubComp
             <div className="si-chart-iframe-wrapper">
               <iframe
                 title="TradingView Live Chart"
-                src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview_btc&symbol=BINANCE%3A${selectedSymbol}&interval=60&hidesidetoolbar=1&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=%5B%5D&theme=dark&style=1&timezone=Asia%2FKolkata&studies_overrides=%7B%7D&overrides=%7B%7D&enabled_features=%5B%5D&disabled_features=%5B%5D&locale=en&utm_source=localhost&utm_medium=widget&utm_campaign=chart&utm_term=BINANCE%3A${selectedSymbol}`}
+                src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview_btc&symbol=BINANCE%3A${selectedSymbol}&interval=60&hidesidetoolbar=1&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=%5B%5D&theme=${tvTheme}&style=1&timezone=Asia%2FKolkata&studies_overrides=%7B%7D&overrides=%7B%7D&enabled_features=%5B%5D&disabled_features=%5B%5D&locale=en&utm_source=localhost&utm_medium=widget&utm_campaign=chart&utm_term=BINANCE%3A${selectedSymbol}`}
                 style={{ width: '100%', height: '100%', border: 'none' }}
               />
             </div>

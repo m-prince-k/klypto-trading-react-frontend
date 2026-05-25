@@ -3,6 +3,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import './Settings.css';
 import apiService from '../../../services/apiServices';
+import { useTheme } from '../../../context/ThemeContext';
 
 import ProfileSettings from '../../../components/dashboard/settings/ProfileSettings';
 import PreferencesSettings from '../../../components/dashboard/settings/PreferencesSettings';
@@ -14,6 +15,7 @@ import PrivacySettings from '../../../components/dashboard/settings/PrivacySetti
 import { toast } from 'react-toastify';
 
 const Settings = () => {
+  const { theme, setTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('profile');
 
   // Modal State
@@ -27,10 +29,10 @@ const Settings = () => {
     lastName: '',
     email: '',
     phone: '',
-    // Preferences
+    // Preferences — seed from actual app theme
     currency: 'USD',
     language: 'English',
-    theme: 'Dark',
+    theme: theme === 'dark' ? 'Dark' : 'Light',
     // Notifications
     systemMessages: true,
     marketingEmails: false,
@@ -143,6 +145,12 @@ const Settings = () => {
 
       const updatedData = { ...userData, [modalConfig.field]: finalValue };
       setUserData(updatedData);
+
+      // If the user changed the theme, apply it immediately via ThemeContext
+      if (modalConfig.field === 'theme') {
+        const themeMap = { Dark: 'dark', Light: 'light', System: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light' };
+        setTheme(themeMap[finalValue] || 'dark');
+      }
 
       // Save user-related fields to session storage if applicable
       const userFields = ['firstName', 'lastName', 'phone'];
