@@ -23,7 +23,7 @@ const NewsSentiment = ({ data, getColorClass }) => (
             </div>
             <div className="small text-muted mb-3">Latest Positive News</div>
             <div className="news-list mb-4 mt-2">
-                {data?.news?.latest.map((n, i) => (
+                {data?.news?.latest?.map((n, i) => (
                     <div className={`d-flex justify-content-between align-items-center ${i < data?.news?.latest.length - 1 ? 'mb-3' : ''}`} key={i}>
                         <div className="news-title text-truncate me-3 fw-medium">
                             <span className="text-success me-2 fs-6">•</span>{n.title}

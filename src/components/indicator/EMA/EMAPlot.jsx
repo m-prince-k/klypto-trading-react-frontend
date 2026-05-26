@@ -74,7 +74,7 @@ export default function EMAPlot({
 
   useEffect(() => {
 
-    if (!containerRef || canvasRef.current) return;
+    if (!containerRef?.current || canvasRef.current) return;
 
     const canvas = document.createElement("canvas");
 
@@ -84,11 +84,11 @@ export default function EMAPlot({
     canvas.style.pointerEvents = "none";
     canvas.style.zIndex = 1;
 
-    containerRef.appendChild(canvas);
+    containerRef?.current.appendChild(canvas);
 
     canvasRef.current = canvas;
 
-  }, [containerRef]);
+  }, [containerRef?.current]);
 
 
 
@@ -108,7 +108,7 @@ export default function EMAPlot({
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
 
-    const rect = containerRef.getBoundingClientRect();
+    const rect = containerRef?.current.getBoundingClientRect();
 
     canvas.width = rect.width;
     canvas.height = rect.height;

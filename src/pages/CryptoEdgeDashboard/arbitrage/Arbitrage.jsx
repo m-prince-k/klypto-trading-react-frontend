@@ -14,7 +14,7 @@ import ArbitrageTable from '../../../../src/components/dashboard/arbitrage/Arbit
 import { useSocket } from '../../../services/websocket/useSocket';
 import { Spinner } from "../../../components/tradingModals/Spinner";
 
-export default function Arbitrage({ setActiveTab = () => { }, isSubComponent = false, selectedSymbol = "" }) {
+export default function Arbitrage({ setActiveTab = () => { }, isSubComponent = false }) {
   const [activeMenu, setActiveMenu] = useState("Arbitrage");
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
@@ -48,14 +48,6 @@ export default function Arbitrage({ setActiveTab = () => { }, isSubComponent = f
   const [sortConfig, setSortConfig] = useState({ key: 'spreadPct', direction: 'desc' });
   const itemsPerPage = 10;
 
-  useEffect(() => {
-    if (selectedSymbol) {
-      // Automatically extract the base asset (e.g., BTC from BTCUSDT) to filter the arbitrage table
-      const baseAsset = selectedSymbol.replace(/USDT|BUSD|USD/gi, '');
-      setInstrumentFilter(baseAsset);
-      setAppliedFilters(prev => ({ ...prev, instrument: baseAsset }));
-    }
-  }, [selectedSymbol]);
 
   useSocket({
     setPrices: () => { },

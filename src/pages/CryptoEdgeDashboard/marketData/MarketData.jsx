@@ -22,7 +22,10 @@ const MarketData = ({ coins, setCoins, marketMetrics, setMarketMetrics, overview
     "Launchpad",
     "Infrastructure",
   ];
-  const [visibleLimit, setVisibleLimit] = useState(8);
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  
   const [isSocketConnected, setIsSocketConnected] = useState(true);
   const [gainers, setGainers] = useState([]);
   const [losers, setLosers] = useState([]);
@@ -275,13 +278,17 @@ const MarketData = ({ coins, setCoins, marketMetrics, setMarketMetrics, overview
     }
     return list;
   }, [coins, activeTab, activeCategory, searchQuery, sortConfig]);
-  const visibleCoins = displayedCoins.slice(0, visibleLimit);
 
-  const handleViewMoreToggle = () => {
-    setVisibleLimit(
-      visibleLimit >= displayedCoins.length ? 8 : displayedCoins.length,
-    );
-  };
+  // Reset to first page when filters or page limit change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, activeCategory, searchQuery, sortConfig, itemsPerPage]);
+
+  const totalPages = Math.ceil(displayedCoins.length / itemsPerPage);
+  const visibleCoins = displayedCoins.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   // if (!coins || coins.length === 0) {
   //     return (
@@ -317,9 +324,12 @@ const MarketData = ({ coins, setCoins, marketMetrics, setMarketMetrics, overview
           handleSort={handleSort}
           formatCompact={formatCompact}
           renderSparkline={renderSparkline}
-          handleViewMoreToggle={handleViewMoreToggle}
           displayedCoins={displayedCoins}
-          visibleLimit={visibleLimit}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+          itemsPerPage={itemsPerPage}
+          setItemsPerPage={setItemsPerPage}
+          totalPages={totalPages}
           navigate={navigate}
         />
 

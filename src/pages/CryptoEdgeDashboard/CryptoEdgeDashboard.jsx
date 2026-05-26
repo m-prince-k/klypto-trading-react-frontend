@@ -213,6 +213,7 @@ const CryptoEdgeDashboard = () => {
 
               {activeTab === "Overview" && (
                 <Overview
+                  marketMetrics={marketMetrics}
                   fearGreed={fearGreed}
                   socialStats={socialStats}
                   prices={prices}
@@ -272,6 +273,7 @@ const CryptoEdgeDashboard = () => {
               {activeTab === "Market Sentiment" && (
                 <MarketSentiment
                   isSubComponent={true}
+                  selectedSymbol={selectedSymbol}
                 />
               )}
 

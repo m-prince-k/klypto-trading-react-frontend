@@ -6,6 +6,7 @@ export default function FinancialAdvancedAnalytics({
   fundamentals,
   indicators,
   predictions,
+  outlook,
   starsStr,
   ratingVal,
   ratingText,
@@ -234,7 +235,7 @@ export default function FinancialAdvancedAnalytics({
                     fontWeight: "bold",
                   }}
                 >
-                  78%
+                  N/A
                 </span>
               </div>
               <div
@@ -243,7 +244,7 @@ export default function FinancialAdvancedAnalytics({
               >
                 <div
                   className="fin-progress-fill"
-                  style={{ width: "78%", backgroundColor: "#f59e0b" }}
+                  style={{ width: "0%", backgroundColor: "#f59e0b" }}
                 ></div>
               </div>
             </div>
@@ -309,8 +310,8 @@ export default function FinancialAdvancedAnalytics({
                       fontSize: "11px",
                     }}
                   >
-                    Dev Activity: {fundamentals?.devActivity || "High"} (
-                    {fundamentals?.progress || 75}% Progress)
+                    Dev Activity: {fundamentals?.devActivity} (
+                    {fundamentals?.devCommits} Commits)
                   </span>
                 </div>
                 <div className="d-flex-center">
@@ -348,41 +349,29 @@ export default function FinancialAdvancedAnalytics({
               </div>
               <div className="fin-list" style={{ gap: "12px" }}>
                 <div className="fin-list-item">
-                  <span
-                    style={{
-                      color: "var(--text-muted, #cbd5e1)",
-                      fontSize: "10px",
-                    }}
-                  >
-                    Short Term
-                  </span>
-                  <span
-                    className={change24h > 0 ? "text-green" : "text-red"}
-                    style={{ fontWeight: "bold", fontSize: "11px" }}
-                  >
-                    {change24h > 0 ? "Bullish" : "Bearish"}
-                  </span>
-                </div>
-                <div className="fin-list-item">
-                  <span
-                    style={{
-                      color: "var(--text-muted, #cbd5e1)",
-                      fontSize: "10px",
-                    }}
-                  >
-                    Mid Term
-                  </span>
+                  <span style={{ color: "var(--text-muted, #cbd5e1)", fontSize: "10px" }}>Short Term</span>
                   <span
                     className={
-                      indicators?.macdSignal === "Bullish" || change24h > 2
-                        ? "text-green"
-                        : "text-yellow"
+                      outlook?.shortTerm?.toLowerCase().includes('bull') ? 'text-green'
+                      : outlook?.shortTerm?.toLowerCase().includes('bear') ? 'text-red'
+                      : 'text-yellow'
                     }
                     style={{ fontWeight: "bold", fontSize: "11px" }}
                   >
-                    {indicators?.macdSignal === "Bullish" || change24h > 2
-                      ? "Bullish"
-                      : "Neutral"}
+                    {outlook?.shortTerm || 'N/A'}
+                  </span>
+                </div>
+                <div className="fin-list-item">
+                  <span style={{ color: "var(--text-muted, #cbd5e1)", fontSize: "10px" }}>Mid Term</span>
+                  <span
+                    className={
+                      outlook?.midTerm?.toLowerCase().includes('bull') ? 'text-green'
+                      : outlook?.midTerm?.toLowerCase().includes('bear') ? 'text-red'
+                      : 'text-yellow'
+                    }
+                    style={{ fontWeight: "bold", fontSize: "11px" }}
+                  >
+                    {outlook?.midTerm || 'N/A'}
                   </span>
                 </div>
               </div>
@@ -406,23 +395,18 @@ export default function FinancialAdvancedAnalytics({
                   }}
                 >
                   <div style={{ color: "#f59e0b", fontSize: "14px" }}>
-                    {starsStr}
+                    {outlook?.overallRating != null
+                      ? '★'.repeat(Math.floor(Number(outlook.overallRating))) + (Number(outlook.overallRating) % 1 >= 0.4 ? '½' : '') + '☆'.repeat(5 - Math.floor(Number(outlook.overallRating)) - (Number(outlook.overallRating) % 1 >= 0.4 ? 1 : 0))
+                      : starsStr}
                   </div>
                   <div style={{ textAlign: "right" }}>
-                    <div
-                      style={{
-                        color: "var(--text-main, #fff)",
-                        fontWeight: "bold",
-                        fontSize: "14px",
-                      }}
-                    >
-                      {ratingVal.toFixed(1)} / 5
+                    <div style={{ color: "var(--text-main, #fff)", fontWeight: "bold", fontSize: "14px" }}>
+                      {outlook?.overallRating != null ? `${Number(outlook.overallRating).toFixed(1)} / 5` : (ratingVal != null ? `${ratingVal.toFixed(1)} / 5` : 'N/A')}
                     </div>
                     <div
-                      className="text-green"
-                      style={{ fontSize: "10px", fontWeight: "bold" }}
+                      style={{ fontSize: "10px", fontWeight: "bold", color: outlook?.action ? '#10b981' : 'var(--text-muted, #94a3b8)' }}
                     >
-                      {ratingText}
+                      {outlook?.action || ratingText}
                     </div>
                   </div>
                 </div>

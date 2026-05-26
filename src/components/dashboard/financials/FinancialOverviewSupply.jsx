@@ -25,12 +25,12 @@ export default function FinancialOverviewSupply({
             <div className="fin-list-item"><span className="fin-list-label">Project Name</span><span className="fin-list-val">{marketExtra?.name || name}</span></div>
             <div className="fin-list-item"><span className="fin-list-label">Ticker</span><span className="fin-list-val">{symbol}</span></div>
             <div className="fin-list-item"><span className="fin-list-label">Blockchain</span><span className="fin-list-val">{fundamentals?.blockchain}</span></div>
-            <div className="fin-list-item"><span className="fin-list-label">Category</span><span className="fin-list-val">{(marketExtra?.categories || [fundamentals?.category]).slice(0,2).join(', ') || fundamentals?.category}</span></div>
-            <div className="fin-list-item"><span className="fin-list-label">Website</span><span className="fin-list-val text-blue" style={{cursor:'pointer'}} onClick={() => window.open(marketExtra?.website || fundamentals?.website, '_blank')}>{(marketExtra?.website || fundamentals?.website || '').replace('https://','')}</span></div>
-            <div className="fin-list-item"><span className="fin-list-label">Whitepaper</span><span className="fin-list-val text-blue" style={{cursor:'pointer'}}>View Whitepaper</span></div>
+            <div className="fin-list-item"><span className="fin-list-label">Category</span><span className="fin-list-val">{(marketExtra?.categories || [fundamentals?.category]).slice(0, 2).join(', ') || fundamentals?.category}</span></div>
+            <div className="fin-list-item"><span className="fin-list-label">Website</span><span className="fin-list-val text-blue" style={{ cursor: 'pointer' }} onClick={() => window.open(marketExtra?.website || fundamentals?.website, '_blank')}>{(marketExtra?.website || fundamentals?.website || '').replace('https://', '')}</span></div>
+            <div className="fin-list-item"><span className="fin-list-label">Whitepaper</span><span className="fin-list-val text-blue" style={{ cursor: 'pointer' }}>View Whitepaper</span></div>
             <div className="fin-list-item"><span className="fin-list-label">Launch Date</span><span className="fin-list-val">{marketExtra?.genesisDate || fundamentals?.launchDate}</span></div>
             <div className="fin-list-item"><span className="fin-list-label">Consensus</span><span className="fin-list-val">{fundamentals?.consensus}</span></div>
-            <div className="fin-list-item" style={{alignItems:'flex-start'}}><span className="fin-list-label">Use Case</span><span className="fin-list-val" style={{textAlign:'right', wordBreak: 'break-word', maxWidth: '140px'}}>{fundamentals?.useCase}</span></div>
+            <div className="fin-list-item" style={{ alignItems: 'flex-start' }}><span className="fin-list-label">Use Case</span><span className="fin-list-val" style={{ textAlign: 'right', wordBreak: 'break-word', maxWidth: '140px' }}>{fundamentals?.useCase}</span></div>
           </div>
         </div>
       </div>
@@ -39,34 +39,66 @@ export default function FinancialOverviewSupply({
       <div className="fin-col-5">
         <div className="fin-card">
           <div className="fin-card-title"><span className="icon">📊</span> 2. SUPPLY & TOKENOMICS</div>
-          <div style={{display: 'flex', gap: '16px'}}>
-            <div className="fin-list" style={{flex: 1}}>
-              <div className="fin-list-item"><span className="fin-list-label">Total Supply</span><span className="fin-list-val">{formatNum(marketExtra?.totalSupply || fundamentals?.totalSupply,0,0)} {symbol}</span></div>
-              <div className="fin-list-item"><span className="fin-list-label">Circulating Supply</span><span className="fin-list-val">{formatNum(marketExtra?.circulatingSupply || fundamentals?.circulatingSupply,0,0)} {symbol}</span></div>
+          <div style={{ display: 'flex', gap: '16px' }}>
+            <div className="fin-list" style={{ flex: 1 }}>
+              <div className="fin-list-item"><span className="fin-list-label">Total Supply</span><span className="fin-list-val">{formatNum(marketExtra?.totalSupply || fundamentals?.totalSupply, 0, 0)} {symbol}</span></div>
+              <div className="fin-list-item"><span className="fin-list-label">Circulating Supply</span><span className="fin-list-val">{formatNum(marketExtra?.circulatingSupply || fundamentals?.circulatingSupply, 0, 0)} {symbol}</span></div>
               <div className="fin-list-item"><span className="fin-list-label">Inflation / Emission</span><span className="fin-list-val">{fundamentals?.inflation}</span></div>
               <div className="fin-list-item"><span className="fin-list-label">Burn Mechanism</span><span className="fin-list-val">{fundamentals?.burnMechanism}</span></div>
               <div className="fin-list-item"><span className="fin-list-label">Token Type</span><span className="fin-list-val">{fundamentals?.tokenType}</span></div>
             </div>
-            <div style={{flex: '0 0 100px', display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
-              <div style={{fontSize: '9px', color: 'var(--text-muted, #94a3b8)', marginBottom: '8px'}}>TOKEN ALLOCATION</div>
-              <div className="fin-donut-wrapper" style={{marginTop: 0, gap: '8px'}}>
-                <div className="fin-donut" style={{width: '60px', height: '60px'}}></div>
-                <div className="fin-legend" style={{fontSize: '8px'}}>
-                  <div className="fin-legend-item"><div className="fin-legend-dot" style={{backgroundColor: '#3b82f6'}}></div> Community 40%</div>
-                  <div className="fin-legend-item"><div className="fin-legend-dot" style={{backgroundColor: '#10b981'}}></div> Ecosystem 20%</div>
-                  <div className="fin-legend-item"><div className="fin-legend-dot" style={{backgroundColor: '#f59e0b'}}></div> Team 15%</div>
-                  <div className="fin-legend-item"><div className="fin-legend-dot" style={{backgroundColor: '#8b5cf6'}}></div> Investors 15%</div>
-                  <div className="fin-legend-item"><div className="fin-legend-dot" style={{backgroundColor: '#ef4444'}}></div> Advisors 5%</div>
+            <div style={{ flex: '0 0 100px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ fontSize: '9px', color: 'var(--text-muted, #94a3b8)', marginBottom: '8px' }}>TOKEN ALLOCATION</div>
+              <div className="fin-donut-wrapper" style={{ marginTop: 0, gap: '8px' }}>
+                <div 
+                  className="fin-donut" 
+                  style={{ 
+                    width: '60px', 
+                    height: '60px',
+                    background: fundamentals?.allocations?.length > 0
+                      ? (() => {
+                          let gradient = 'conic-gradient(';
+                          let acc = 0;
+                          const total = fundamentals.allocations.reduce((sum, item) => sum + item.value, 0) || 100;
+                          fundamentals.allocations.forEach((item, index) => {
+                            const pct = (item.value / total) * 100;
+                            gradient += `${item.color} ${acc}% ${acc + pct}%${index < fundamentals.allocations.length - 1 ? ', ' : ')'}`;
+                            acc += pct;
+                          });
+                          return gradient;
+                        })()
+                      : 'var(--border-color, #1e293b)'
+                  }}
+                ></div>
+                <div className="fin-legend" style={{ fontSize: '8px' }}>
+                  {fundamentals?.allocations?.map((item, index) => (
+                    <div key={index} className="fin-legend-item">
+                      <div className="fin-legend-dot" style={{ backgroundColor: item.color }}></div> 
+                      {item.label}
+                    </div>
+                  ))}
+                  {(!fundamentals?.allocations || fundamentals.allocations.length === 0) && (
+                    <div className="fin-legend-item" style={{ color: 'var(--text-muted)' }}>No data</div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
-          <div style={{marginTop: '12px'}}>
-            <div style={{fontSize: '10px', color: 'var(--text-muted, #94a3b8)', borderBottom: '1px solid var(--border-color, #1e293b)', paddingBottom: '4px', marginBottom: '6px'}}>VESTING SCHEDULE</div>
-            <div className="fin-list-item" style={{fontSize: '10px'}}><span className="fin-list-label">Team</span><span className="fin-list-val">12 months cliff, 36 months vesting</span></div>
-            <div className="fin-list-item" style={{fontSize: '10px'}}><span className="fin-list-label">Investors</span><span className="fin-list-val">6 months cliff, 24 months vesting</span></div>
-            <div className="fin-list-item" style={{fontSize: '10px'}}><span className="fin-list-label">Advisors</span><span className="fin-list-val">6 months cliff, 24 months vesting</span></div>
-          </div>
+          {fundamentals?.vesting?.length > 0 && (
+            <div style={{ marginTop: '14px' }}>
+              <div style={{ fontSize: '9px', color: 'var(--text-muted, #94a3b8)', letterSpacing: '0.06em', marginBottom: '8px', textTransform: 'uppercase' ,textAlign:'left'}}>
+               Vesting Schedule
+              </div>
+              <div className="fin-list">
+                {fundamentals.vesting.map((item, i) => (
+                  <div key={i} className="fin-list-item" style={{ flexDirection: 'row', alignItems: 'flex-start', gap: '2px', paddingBottom: '6px', borderBottom: i < fundamentals.vesting.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+                    <span className="fin-list-label" style={{ fontWeight: 600 }}>{item.label}</span>
+                    <span className="fin-list-val" style={{ fontSize: '9px', color: 'var(--text-muted, #94a3b8)', whiteSpace: 'normal', textAlign: 'left' }}>{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

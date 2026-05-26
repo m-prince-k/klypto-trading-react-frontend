@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import io from 'socket.io-client';
 import './Financial.css';
 
@@ -31,6 +31,7 @@ export default function Financial({ setActiveTab = () => { }, isSubComponent = f
   const [depthData, setDepthData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
+  const hasLoadedOnce = useRef(false);
 
 
   // Sync selected symbol from prop
@@ -39,7 +40,8 @@ export default function Financial({ setActiveTab = () => { }, isSubComponent = f
       const cleaned = cleanSymbol(selectedSymbolProp);
       if (cleaned !== selectedSymbol) {
         setSelectedSymbol(cleaned);
-        setData(null);
+        // Don't clear data — keep stale data visible while new data loads
+        setIsUpdating(true);
         setKlines([]);
         setMarketExtra(null);
         setDepthData(null);
@@ -92,6 +94,7 @@ export default function Financial({ setActiveTab = () => { }, isSubComponent = f
   setMarketExtra,
   setFinanceData: (newData) => {
     setData(newData);
+    hasLoadedOnce.current = true;
     setLoading(false);
     setIsUpdating(false);
   },
@@ -118,7 +121,8 @@ export default function Financial({ setActiveTab = () => { }, isSubComponent = f
   // Use real data
   const liveData = data;
 
-  if (!liveData) {
+  // Only show full-page loader on the very first load (never received data yet)
+  if (!liveData && !hasLoadedOnce.current) {
     return (
       <div className="finance-dashboard" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: isSubComponent ? '100%' : '100vh', flexDirection: 'column' }}>
         <Spinner />
@@ -129,7 +133,7 @@ export default function Financial({ setActiveTab = () => { }, isSubComponent = f
 
   const {
     symbol, name, price, change24h, volume24h, high24h, low24h, marketCap, fdv,
-    fundamentals, depth, onChain, social, indicators, predictions
+    fundamentals, depth, onChain, social, indicators, predictions, outlook
   } = liveData;
 
   const isUp = change24h >= 0;
@@ -147,46 +151,47 @@ export default function Financial({ setActiveTab = () => { }, isSubComponent = f
   const activeDepth = depth || depthData || {};
 
   // ── Dynamic Computations for Gauge, Radar & Ratings ─────────────────
-  const sentimentAngle = (Number(social?.sentiment || 50) / 100) * 180 - 90;
+  const sentimentAngle = social?.sentiment != null ? (Number(social.sentiment) / 100) * 180 - 90 : 0;
 
-  const contractRisk = 2.0;
-  const marketRisk = change24h < -5 ? 8.0 : change24h < 0 ? 5.0 : 3.0;
-  const liqRisk = activeDepth?.liquidityRisk === 'High' ? 7.0 : activeDepth?.liquidityRisk === 'Medium' ? 4.5 : 2.0;
-  const regRisk = selectedSymbol === 'BTC' ? 3.0 : 5.0;
-  const overallRisk = ((contractRisk + marketRisk + liqRisk + regRisk) / 4).toFixed(1);
+  // All risk values come from backend only — no frontend calculations
+  const overallRisk = null; // not provided by backend
 
-  // 6-axis Radar chart points (Security, Technology, Liquidity, Adoption, Tokenomics, Team)
+  // 6-axis Radar chart — only use real backend data, zero for missing
   const axes = [
-    parseFloat(fundamentals?.securityScore) || 8.5, // Security
-    (fundamentals?.progress || 75) / 10,           // Technology
-    10 - liqRisk,                                   // Liquidity
-    (social?.sentiment || 50) / 10,                 // Adoption
-    7.8,                                            // Tokenomics
-    7.5                                             // Team
+    parseFloat(fundamentals?.securityScore) || 0,  // Security (e.g. "9.8 / 10" → 9.8)
+    fundamentals?.progress != null ? fundamentals.progress / 10 : 0, // Technology
+    activeDepth?.liquidityRisk === 'Low' ? 8 : activeDepth?.liquidityRisk === 'Medium' ? 5 : activeDepth?.liquidityRisk === 'High' ? 2 : 0, // Liquidity from depth
+    social?.sentiment != null ? social.sentiment / 10 : 0, // Adoption
+    fundamentals?.tokenomicsScore != null ? fundamentals.tokenomicsScore / 10 : 0, // Tokenomics
+    fundamentals?.teamScore != null ? fundamentals.teamScore / 10 : 0             // Team
   ];
   const radarPoints = axes.map((val, i) => {
     const angle = (i * 2 * Math.PI) / 6;
-    const dist = (val / 10) * 35; // max radius 35
+    const dist = (val / 10) * 35;
     const x = 50 + dist * Math.sin(angle);
     const y = 50 - dist * Math.cos(angle);
     return `${x.toFixed(1)},${y.toFixed(1)}`;
   }).join(' ');
 
-
-  // Rating and star calculations
-  let ratingBase = 3.5;
-  if (change24h > 0) ratingBase += 0.4;
-  else ratingBase -= 0.3;
-  if (indicators?.rsi > 50 && indicators?.rsi < 70) ratingBase += 0.3;
-  if (indicators?.macdSignal === 'Bullish') ratingBase += 0.3;
-  if (Number(price) > Number(indicators?.sma50)) ratingBase += 0.3;
-  if (Number(price) > Number(indicators?.sma200)) ratingBase += 0.2;
-  const ratingVal = Math.min(5, Math.max(1, ratingBase));
-  const fullStars = Math.floor(ratingVal);
-  const halfStar = ratingVal - fullStars >= 0.4 ? 1 : 0;
-  const emptyStars = 5 - fullStars - halfStar;
-  const starsStr = '★'.repeat(fullStars) + (halfStar ? '½' : '') + '☆'.repeat(emptyStars);
-  const ratingText = ratingVal >= 4.5 ? 'Strong Buy' : ratingVal >= 3.8 ? 'Buy' : ratingVal >= 2.8 ? 'Hold' : 'Underperform';
+  // Rating — only compute when we have enough real signals
+  const hasRatingData = indicators?.rsi != null || indicators?.macdSignal != null;
+  let ratingVal = null;
+  let starsStr = 'N/A';
+  let ratingText = 'N/A';
+  if (hasRatingData) {
+    let ratingBase = 2.5; // neutral starting point
+    if (change24h > 0) ratingBase += 0.4; else ratingBase -= 0.3;
+    if (indicators?.rsi > 50 && indicators?.rsi < 70) ratingBase += 0.3;
+    if (indicators?.macdSignal === 'Bullish') ratingBase += 0.3;
+    if (Number(price) > Number(indicators?.sma50)) ratingBase += 0.3;
+    if (Number(price) > Number(indicators?.sma200)) ratingBase += 0.2;
+    ratingVal = Math.min(5, Math.max(1, ratingBase));
+    const fullStars = Math.floor(ratingVal);
+    const halfStar = ratingVal - fullStars >= 0.4 ? 1 : 0;
+    const emptyStars = 5 - fullStars - halfStar;
+    starsStr = '★'.repeat(fullStars) + (halfStar ? '½' : '') + '☆'.repeat(emptyStars);
+    ratingText = ratingVal >= 4.5 ? 'Strong Buy' : ratingVal >= 3.8 ? 'Buy' : ratingVal >= 2.8 ? 'Hold' : 'Underperform';
+  }
 
   return (
     <div className="finance-dashboard">
@@ -272,6 +277,7 @@ export default function Financial({ setActiveTab = () => { }, isSubComponent = f
           fundamentals={fundamentals}
           indicators={indicators}
           predictions={predictions}
+          outlook={outlook}
           starsStr={starsStr}
           ratingVal={ratingVal}
           ratingText={ratingText}

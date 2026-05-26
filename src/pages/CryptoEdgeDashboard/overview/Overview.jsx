@@ -6,6 +6,7 @@ import HeatmapArbitrageGrid from "../../../components/dashboard/overview/Heatmap
 import { Spinner } from "../../../components/tradingModals/Spinner";
 
 export default function Overview({
+  marketMetrics,
   fearGreed,
   socialStats,
   prices,
@@ -40,6 +41,7 @@ export default function Overview({
     <>
       {/* Row 1: 5 Advanced Metric Cards */}
       <AdvancedMetricsGrid
+        marketMetrics={marketMetrics}
         fearGreed={fearGreed}
         socialStats={socialStats}
         prices={prices}

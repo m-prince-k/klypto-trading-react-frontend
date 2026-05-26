@@ -1071,7 +1071,7 @@ export default function WatchlistPanel({
     socket.emit("get-watchlist");
 
     const handleWatchlistResponse = (res) => {
-      console.log("[WatchlistPanel] WATCHLIST_RESPONSE:", res);
+      // console.log("[WatchlistPanel] WATCHLIST_RESPONSE:", res);
       if (res && Array.isArray(res.data)) {
         const normalizedData = res.data.map(item => ({
           ...item,

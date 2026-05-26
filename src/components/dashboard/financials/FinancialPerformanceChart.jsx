@@ -13,7 +13,7 @@ export default function FinancialPerformanceChart({
   changeColor
 }) {
   return (
-    <div className="fin-col-4">
+    <div className="fin-col-7">
       <div className="fin-card" style={{ display: 'flex', flexDirection: 'column' }}>
         <div className="fin-card-title"><span className="icon">📊</span> 4. PRICE PERFORMANCE & CHARTS</div>
         <div className="fin-chart-filters" style={{ marginBottom: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>

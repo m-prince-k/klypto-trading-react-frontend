@@ -24,7 +24,7 @@ const SocialMediaSentiment = ({ data, getColorClass }) => (
             </div>
             <div className="small text-muted mb-3">Top Trending Coins on Social Media</div>
             <div className="d-flex flex-wrap gap-2 mb-4 mt-2">
-                {data?.socialMedia?.trending.map((t, i) => (
+                {data?.socialMedia?.trending?.map((t, i) => (
                     <span className="trending-tag" key={i}>#{i + 1} {t}</span>
                 ))}
             </div>

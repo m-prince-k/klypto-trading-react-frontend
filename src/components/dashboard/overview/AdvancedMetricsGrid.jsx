@@ -1,6 +1,6 @@
 import React from 'react';
 
-const AdvancedMetricsGrid = ({ selectedSymbol = "SOL", fearGreed, socialStats, prices }) => {
+const AdvancedMetricsGrid = ({ selectedSymbol = "SOL", marketMetrics, fearGreed, socialStats, prices }) => {
   const baseAsset = selectedSymbol.replace(/USDT|BUSD|USD/gi, '') || "SOL";
   return (
     <div className="top-five-grid">
@@ -113,16 +113,16 @@ const AdvancedMetricsGrid = ({ selectedSymbol = "SOL", fearGreed, socialStats, p
           <svg width="34" height="34" viewBox="0 0 36 36">
             <circle cx="18" cy="18" r="15" fill="none" stroke="#141c2c" strokeWidth="3" />
             <circle cx="18" cy="18" r="15" fill="none" stroke="#6366f1" strokeWidth="3.5" strokeDasharray="75 100" strokeDashoffset="10" strokeLinecap="round" />
-            <text x="18" y="21.5" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="bold">#1</text>
+            <text x="18" y="21.5" textAnchor="middle" fill="#ffffff" fontSize="12" fontWeight="bold">#</text>
           </svg>
           <div>
-            <div style={{ fontSize: '17px', fontWeight: 'bold', color: 'var(--text-main)' }}>{socialStats?.altRank}</div>
+            <div style={{ fontSize: '17px', fontWeight: 'bold', color: 'var(--text-main)', textAlign: 'left' }}>{socialStats?.altRank}</div>
             <div style={{ fontSize: '9px', color: '#6366f1', fontWeight: 'bold' }}>{baseAsset} RANK</div>
           </div>
         </div>
-        <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginTop: '6px', textAlign: 'center' }}>
+        {/* <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginTop: '6px', textAlign: 'center' }}>
           Out of <span style={{ fontWeight: 'bold', color: 'var(--text-muted)' }}>4,821 active tokens</span>
-        </div>
+        </div> */}
       </div>
 
       {/* Card 5: Market Cap */}
@@ -140,9 +140,13 @@ const AdvancedMetricsGrid = ({ selectedSymbol = "SOL", fearGreed, socialStats, p
             <rect x="27" y="4" width="5" height="28" rx="1.5" fill="#10b981" fillOpacity="0.4" />
           </svg>
           <div>
-            <div style={{ fontSize: '17px', fontWeight: 'bold', color: 'var(--text-main)' }}>{prices.TOTAL_MCAP?.val ? `$${prices.TOTAL_MCAP.val}` : ''}</div>
-            <div style={{ fontSize: '9px', color: prices.TOTAL_MCAP?.isUp ? '#10b981' : '#ef4444', fontWeight: 'bold' }}>
-              {prices.TOTAL_MCAP?.change ? `${prices.TOTAL_MCAP.isUp ? '▲' : '▼'} ${prices.TOTAL_MCAP.change} (24H)` : ''}
+            <div style={{ fontSize: '17px', fontWeight: 'bold', color: 'var(--text-main)' }}>
+              {marketMetrics?.totalMarketCap ? `$${marketMetrics.totalMarketCap}T` : (prices.TOTAL_MCAP?.val ? `$${prices.TOTAL_MCAP.val}` : '')}
+            </div>
+            <div style={{ fontSize: '9px', color: (marketMetrics?.totalMarketCapChange >= 0 || prices.TOTAL_MCAP?.isUp) ? '#10b981' : '#ef4444', fontWeight: 'bold' }}>
+              {marketMetrics?.totalMarketCapChange != null 
+                ? `${marketMetrics.totalMarketCapChange >= 0 ? '▲' : '▼'} ${Math.abs(marketMetrics.totalMarketCapChange).toFixed(2)}% (24H)` 
+                : (prices.TOTAL_MCAP?.change ? `${prices.TOTAL_MCAP.isUp ? '▲' : '▼'} ${prices.TOTAL_MCAP.change} (24H)` : '')}
             </div>
           </div>
         </div>

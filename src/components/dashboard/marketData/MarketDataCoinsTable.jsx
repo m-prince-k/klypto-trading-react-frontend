@@ -16,9 +16,12 @@ export default function MarketDataCoinsTable({
   handleSort,
   formatCompact,
   renderSparkline,
-  handleViewMoreToggle,
   displayedCoins,
-  visibleLimit,
+  currentPage,
+  setCurrentPage,
+  itemsPerPage,
+  setItemsPerPage,
+  totalPages,
   navigate
 }) {
   console.log("MarketDataCoinsTable visibleCoins:", visibleCoins);
@@ -184,7 +187,7 @@ export default function MarketDataCoinsTable({
                     <td className="col-center">
                       <button 
                         className="btn-detail-icon" 
-                        onClick={() => navigate(`/market/${coin.symbol.toUpperCase()}`)} 
+                        onClick={() => window.open(`/market/${coin.symbol.toUpperCase()}`, "_blank")} 
                         title={`${coin.name} Details`}
                       >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -208,12 +211,65 @@ export default function MarketDataCoinsTable({
         </table>
       </div>
 
-      <div className="table-footer">
-        {displayedCoins.length > 8 && (
-          <button className="btn-view-more" onClick={handleViewMoreToggle}>
-            {visibleLimit >= displayedCoins.length ? 'View Less' : 'View More'}
-          </button>
-        )}
+      <div className="table-footer d-flex justify-content-between align-items-center mt-3 pt-3" style={{ borderTop: '1px solid var(--border-color, #2b313f)' }}>
+        
+        {/* Left Side: Rows per page selector */}
+        <div className="d-flex align-items-center" style={{ gap: '8px', color: 'var(--text-muted, #9ca3af)', fontSize: '13px' }}>
+          <span>Rows per page:</span>
+          <select 
+            className="form-select form-select-sm" 
+            style={{ 
+              width: '65px', 
+              backgroundColor: 'var(--bg-secondary, #1e222d)', 
+              color: 'var(--text-main, #d1d4dc)',
+              borderColor: 'var(--border-color, #2b313f)'
+            }}
+            value={itemsPerPage}
+            onChange={(e) => setItemsPerPage(Number(e.target.value))}
+          >
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="15">15</option>
+            <option value="20">20</option>
+          </select>
+        </div>
+
+        {/* Right Side: Pagination Controls */}
+        {totalPages > 1 ? (
+          <div className="d-flex align-items-center" style={{ gap: '12px' }}>
+            <span style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '13px' }}>
+              Page {currentPage} of {totalPages}
+            </span>
+            <div className="btn-group">
+              <button 
+                className="btn btn-sm" 
+                style={{
+                  backgroundColor: currentPage === 1 ? 'var(--bg-secondary, #1e222d)' : 'var(--bg-card, #2b313f)',
+                  color: currentPage === 1 ? 'var(--text-muted, #6b7280)' : 'var(--text-main, #d1d4dc)',
+                  borderColor: 'var(--border-color, #2b313f)',
+                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
+                }}
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              >
+                Prev
+              </button>
+              <button 
+                className="btn btn-sm" 
+                style={{
+                  backgroundColor: currentPage === totalPages ? 'var(--bg-secondary, #1e222d)' : 'var(--bg-card, #2b313f)',
+                  color: currentPage === totalPages ? 'var(--text-muted, #6b7280)' : 'var(--text-main, #d1d4dc)',
+                  borderColor: 'var(--border-color, #2b313f)',
+                  cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
+                }}
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        ) : <div />}
       </div>
     </div>
   );

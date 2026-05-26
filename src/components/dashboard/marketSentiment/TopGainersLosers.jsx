@@ -89,7 +89,7 @@ const TopGainersLosers = ({ data, getColorClass }) => (
                 <ViewAllLink />
             </div>
             <div className="card-body p-0 pt-1 flex-grow-1">
-                // Shared thead — use this for BOTH gainers and losers tables
+                 {/* Shared thead — use this for BOTH gainers and losers tables */}
                 <table className="table binance-table mb-0 w-100" style={{ tableLayout: 'fixed' }}>
                     <thead>
                         <tr>

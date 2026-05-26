@@ -51,6 +51,8 @@ const EVENTS = {
     SENTIMENT_UPDATE: "binance-sentiment",
   },
   MARKET_SENTIMENT: {
+    // GET: "get-dashboard-data",
+    // RESPONSE: "dashboard-data-response",
     UPDATE: "market-sentiment-data",
   },
   ONCHAIN: {
