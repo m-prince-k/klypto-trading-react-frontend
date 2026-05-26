@@ -76,17 +76,21 @@ export const useSocket = ({
       /* ───────────────── MARKET INIT ───────────────── */
       marketCoinsInit: (res) => {
         if (setCoins || setSentimentData || setMarketMetrics || setOverviewChartData || setCoinDetail) console.log("[useSocket] Event: market-coins-init Payload:", res);
+        
+        // Handle varying backend payloads e.g. { coins: [...] } vs { data: [...] } vs [...]
+        const extractedCoins = res.coins || res.data || (Array.isArray(res) ? res : []);
+        
         if (setSentimentData) setSentimentData(res);
-        if (res.coins) globalCache.marketCoins = res.coins;
+        if (extractedCoins.length > 0) globalCache.marketCoins = extractedCoins;
         if (res.metrics) globalCache.marketMetrics = res.metrics;
         if (res.overviewChart) globalCache.overviewChartData = res.overviewChart;
 
-        if (setCoins) setCoins(res.coins || []);
+        if (setCoins) setCoins(extractedCoins);
         if (setMarketMetrics && res.metrics) setMarketMetrics((prev) => ({ ...prev, ...res.metrics }));
         if (setOverviewChartData && res.overviewChart) setOverviewChartData(res.overviewChart);
 
-        if (setCoinDetail && res.coins) {
-          const found = res.coins.find(c => c.symbol.toUpperCase() === selectedSymbol?.toUpperCase());
+        if (setCoinDetail && extractedCoins.length > 0) {
+          const found = extractedCoins.find(c => c.symbol.toUpperCase() === selectedSymbol?.toUpperCase());
           if (found) {
             setCoinDetail((prevCoin) => prevCoin ? prevCoin : found);
             if (areaSeriesRef?.current && found.history) {
@@ -485,6 +489,22 @@ export const useSocket = ({
         setOnchainData?.(payload);
       },
 
+      /* ───────────────── ARBITRAGE ───────────────── */
+      arbitrageResponse: (res) => {
+        console.log("[useSocket] Event: arbitrage-response Payload:", res);
+        if (!res) return;
+        // Handle both raw arrays or { data: [...] } wrapped responses
+        const payload = Array.isArray(res) ? res : res.data;
+        if (payload) setOpportunities?.(payload);
+      },
+
+      arbitrageUpdate: (res) => {
+        console.log("[useSocket] Event: arbitrage-update Payload:", res);
+        if (!res) return;
+        const payload = Array.isArray(res) ? res : res.data;
+        if (payload) setOpportunities?.(payload);
+      },
+
       /* ───────────────── FUTURES ───────────────── */
       futuresInitialData: (res) => {
         if (setFuturesData) console.log("[useSocket] Event: futures-initial-data Payload:", res);
@@ -647,7 +667,7 @@ export const useSocket = ({
       }
 
       if (setOpportunities) {
-        manager.emit(EVENTS.ARBITRAGE.GET);
+        manager.emit(EVENTS.ARBITRAGE.GET, { symbol: safeSymbol || "BTCUSDT" });
         if (setLoading) {
           setTimeout(() => setLoading(false), 3000);
         }

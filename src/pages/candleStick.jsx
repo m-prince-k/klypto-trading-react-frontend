@@ -1452,7 +1452,7 @@ export default function Candlestick() {
                             <div className="flex items-center gap-2">
                               <button
                                 title={
-                                  indicatorVisibility[normalizedType]
+                                  indicatorVisibility[normalizedType] !== false
                                     ? "Hide Indicator"
                                     : "Show Indicator"
                                 }
@@ -1461,13 +1461,12 @@ export default function Candlestick() {
                                 }
                                 className="text-slate-600"
                               >
-                                {indicatorVisibility[normalizedType] ? (
+                                {indicatorVisibility[normalizedType] !== false ? (
                                   <IoEyeOutline size={18} />
                                 ) : (
                                   <IoEyeOffOutline size={18} />
                                 )}
                               </button>
-
                               <button
                                 title="Indicator Settings"
                                 onClick={() => {

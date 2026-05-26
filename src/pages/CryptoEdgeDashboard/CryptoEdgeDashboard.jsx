@@ -205,9 +205,9 @@ const CryptoEdgeDashboard = () => {
             <div 
               className="scrollable-content-area" 
               style={{ 
-                opacity: !marketMetrics ? 0.4 : 1,
-                transition: 'opacity 0.4s ease',
-                pointerEvents: !marketMetrics ? 'none' : 'auto'
+                // opacity: !marketMetrics ? 0.4 : 1,
+                // transition: 'opacity 0.4s ease',
+                // pointerEvents: !marketMetrics ? 'none' : 'auto'
               }}
             >
 

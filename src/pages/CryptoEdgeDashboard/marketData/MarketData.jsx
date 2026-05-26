@@ -283,13 +283,13 @@ const MarketData = ({ coins, setCoins, marketMetrics, setMarketMetrics, overview
     );
   };
 
-  if (!coins || coins.length === 0) {
-      return (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column' }}>
-              <Spinner />
-          </div>
-      );
-  }
+  // if (!coins || coins.length === 0) {
+  //     return (
+  //         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column' }}>
+  //             <Spinner />
+  //         </div>
+  //     );
+  // }
 
   return (
     <div className="market-data-container container-fluid p-0">

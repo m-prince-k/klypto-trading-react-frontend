@@ -28,13 +28,13 @@ export default function Overview({
     return sym;
   };
 
-  if (!prices || Object.keys(prices).length === 0) {
-      return (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column' }}>
-              <Spinner />
-          </div>
-      );
-  }
+  // if (!prices || Object.keys(prices).length === 0) {
+  //     return (
+  //         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column' }}>
+  //             <Spinner />
+  //         </div>
+  //     );
+  // }
 
   return (
     <>

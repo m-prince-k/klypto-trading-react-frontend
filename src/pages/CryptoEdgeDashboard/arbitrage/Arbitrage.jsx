@@ -57,56 +57,6 @@ export default function Arbitrage({ setActiveTab = () => { }, isSubComponent = f
     }
   }, [selectedSymbol]);
 
-  // useEffect(() => {
-  //   console.log("🔌 Connecting to Klypto Arbitrage Real-Time WebSocket stream...");
-
-  //   socket.emit("get-arbitrage");
-
-  //   socket.on("arbitrage-response", (res) => {
-  //     if (res && res.success && res?.data) {
-  //       setOpportunities(res?.data);
-  //       setLastUpdated(new Date().toLocaleTimeString());
-  //     }
-  //   });
-
-  //   socket.on("arbitrage-update", (res) => {
-  //     if (!autoRefreshRef.current) return;
-  //     if (res && res.success && res?.data) {
-  //       setOpportunities(prev => {
-  //         const flashes = {};
-  //         res?.data.forEach(newOpp => {
-  //           const oldOpp = prev.find(o => o.id === newOpp.id);
-  //           if (oldOpp) {
-  //             if (newOpp.buyPrice !== oldOpp.buyPrice) {
-  //               flashes[`${newOpp.id}-buy`] = newOpp.buyPrice > oldOpp.buyPrice ? 'up' : 'down';
-  //             }
-  //             if (newOpp.sellPrice !== oldOpp.sellPrice) {
-  //               flashes[`${newOpp.id}-sell`] = newOpp.sellPrice > oldOpp.sellPrice ? 'up' : 'down';
-  //             }
-  //           }
-  //         });
-  //         if (Object.keys(flashes).length > 0) {
-  //           setPriceFlash(prevFlashes => ({ ...prevFlashes, ...flashes }));
-  //           setTimeout(() => {
-  //             setPriceFlash(prevFlashes => {
-  //               const copy = { ...prevFlashes };
-  //               Object.keys(flashes).forEach(k => delete copy[k]);
-  //               return copy;
-  //             });
-  //           }, 1000);
-  //         }
-  //         return res?.data;
-  //       });
-  //       setLastUpdated(new Date().toLocaleTimeString());
-  //     }
-  //   });
-
-  //   return () => {
-  //     socket.off("arbitrage-response");
-  //     socket.off("arbitrage-update");
-  //     console.log("❌ Disconnected from Klypto Arbitrage stream.");
-  //   };
-  // }, []);
   useSocket({
     setPrices: () => { },
     setOrderBook: () => { },
