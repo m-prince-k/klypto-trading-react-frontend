@@ -287,6 +287,7 @@ input:checked + .slider:before {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 8px;
+  text-align: left;
 }
 
 .stats-value {
@@ -298,6 +299,7 @@ input:checked + .slider:before {
   /* Prevent layout shift when value text changes length */
   min-width: 120px;
   white-space: nowrap;
+  text-align: left;
 }
 
 .stats-trend {
@@ -313,6 +315,7 @@ input:checked + .slider:before {
   font-size: 11px;
   color: #6e7681;
   font-weight: 400;
+  text-align: left;
 }
 
 .stats-badge {
@@ -447,6 +450,10 @@ input:checked + .slider:before {
   padding: 13px 18px;
   border-bottom: 1px solid #21262d;
   white-space: nowrap;
+  position: sticky;
+  top: 0;
+  background-color: #0d1117;
+  z-index: 10;
 }
 
 .arbitrage-table td {
@@ -774,6 +781,10 @@ input:checked + .slider:before {
 }
 
 [data-theme="light"] .arbitrage-table th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: #f6f8fa !important;
   border-bottom-color: var(--border-color) !important;
 }
 

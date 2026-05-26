@@ -3,9 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { getUser } from "../../../util/common";
 import apiService from "../../../services/apiServices";
 import { logout } from "../../../pages/auth/protected";
+import { useTheme } from "../../../context/ThemeContext";
 
 const HeaderControls = ({ selectedSymbol, setSelectedSymbol, sidebarOpen, setSidebarOpen }) => {
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
 
   const user = getUser();
   const userEmail = user?.email || "user@example.com";
@@ -216,6 +218,7 @@ const HeaderControls = ({ selectedSymbol, setSelectedSymbol, sidebarOpen, setSid
           </svg>
           <div className="bell-badge">3</div>
         </div>
+
         <div style={{ position: "relative" }}>
           <div
             onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -260,12 +263,13 @@ const HeaderControls = ({ selectedSymbol, setSelectedSymbol, sidebarOpen, setSid
                   borderRadius: "8px",
                   boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                   zIndex: 1000,
-                  minWidth: "120px",
+                  minWidth: "170px",
                   display: "flex",
                   flexDirection: "column",
                   padding: "4px 0",
                 }}
               >
+
                 <button
                   onClick={() => {
                     setDropdownOpen(false);
@@ -282,11 +286,72 @@ const HeaderControls = ({ selectedSymbol, setSelectedSymbol, sidebarOpen, setSid
                     width: "100%",
                     fontFamily: "inherit",
                   }}
-                  onMouseEnter={(e) => (e.target.style.backgroundColor = "var(--bg-card-hover, #21262d)")}
-                  onMouseLeave={(e) => (e.target.style.backgroundColor = "transparent")}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-card-hover, #21262d)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                 >
                   Profile Page
                 </button>
+
+                {/* Divider */}
+                <div style={{ height: "1px", backgroundColor: "var(--border-color, #21262d)", margin: "4px 0" }} />
+
+                {/* Theme Toggle */}
+                <button
+                  onClick={() => {
+                    toggleTheme();
+                  }}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "var(--text-main, #ffffff)",
+                    padding: "8px 12px",
+                    textAlign: "left",
+                    fontSize: "12px",
+                    cursor: "pointer",
+                    width: "100%",
+                    fontFamily: "inherit",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: "8px",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-card-hover, #21262d)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                >
+                  <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    {theme === "dark" ? "🌙" : "☀️"}
+                    {theme === "dark" ? "Dark" : "Light"}
+                  </span>
+                  {/* Pill toggle */}
+                  <div
+                    style={{
+                      width: "32px",
+                      height: "16px",
+                      borderRadius: "8px",
+                      backgroundColor: theme === "dark" ? "#6366f1" : "#d1d5db",
+                      position: "relative",
+                      transition: "background-color 0.2s",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "2px",
+                        left: theme === "dark" ? "18px" : "2px",
+                        width: "12px",
+                        height: "12px",
+                        borderRadius: "50%",
+                        backgroundColor: "white",
+                        transition: "left 0.2s",
+                      }}
+                    />
+                  </div>
+                </button>
+
+                {/* Divider */}
+                <div style={{ height: "1px", backgroundColor: "var(--border-color, #21262d)", margin: "4px 0" }} />
+
                 <button
                   onClick={() => {
                     setDropdownOpen(false);
@@ -304,8 +369,8 @@ const HeaderControls = ({ selectedSymbol, setSelectedSymbol, sidebarOpen, setSid
                     width: "100%",
                     fontFamily: "inherit",
                   }}
-                  onMouseEnter={(e) => (e.target.style.backgroundColor = "var(--bg-card-hover, #21262d)")}
-                  onMouseLeave={(e) => (e.target.style.backgroundColor = "transparent")}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-card-hover, #21262d)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                 >
                   Logout
                 </button>

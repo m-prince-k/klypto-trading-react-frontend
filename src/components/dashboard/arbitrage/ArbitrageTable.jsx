@@ -35,19 +35,35 @@ export default function ArbitrageTable({
       </div>
 
       <div className="card-body p-0">
-        <div className="table-responsive" style={{ maxHeight: '600px', overflowY: 'auto' }}>
+        <div style={{ maxHeight: "520px", overflowY: "auto", overflowX: "auto" }}>
           <table className="arbitrage-table table table-hover mb-0">
             <thead>
               <tr>
                 <th className="th-number">#</th>
-                <th className="cursor-pointer" onClick={() => handleSort('instrument')}>Coin Pair {renderSortIcon('instrument')}</th>
-                <th className="cursor-pointer" onClick={() => handleSort('buyEx')}>Buy Exchange {renderSortIcon('buyEx')}</th>
-                <th className="text-end cursor-pointer" onClick={() => handleSort('buyPrice')}>Buy Price ($) {renderSortIcon('buyPrice')}</th>
-                <th className="cursor-pointer" onClick={() => handleSort('sellEx')}>Sell Exchange {renderSortIcon('sellEx')}</th>
-                <th className="text-end cursor-pointer" onClick={() => handleSort('sellPrice')}>Sell Price ($) {renderSortIcon('sellPrice')}</th>
-                <th className="text-end cursor-pointer" onClick={() => handleSort('spreadRs')}>Spread ($) {renderSortIcon('spreadRs')}</th>
-                <th className="text-end cursor-pointer" onClick={() => handleSort('spreadPct')}>Spread (%) {renderSortIcon('spreadPct')}</th>
-                <th className="text-end cursor-pointer" onClick={() => handleSort('quantity')}>Est. Size {renderSortIcon('quantity')}</th>
+                <th className="cursor-pointer" onClick={() => handleSort('instrument')}>
+                  <div className="d-flex align-items-center gap-1">Coin Pair {renderSortIcon('instrument')}</div>
+                </th>
+                <th className="cursor-pointer" onClick={() => handleSort('buyEx')}>
+                  <div className="d-flex align-items-center gap-1">Buy Exchange {renderSortIcon('buyEx')}</div>
+                </th>
+                <th className="cursor-pointer" onClick={() => handleSort('buyPrice')}>
+                  <div className="d-flex align-items-center justify-content-end gap-1">Buy Price ($) {renderSortIcon('buyPrice')}</div>
+                </th>
+                <th className="cursor-pointer" onClick={() => handleSort('sellEx')}>
+                  <div className="d-flex align-items-center gap-1">Sell Exchange {renderSortIcon('sellEx')}</div>
+                </th>
+                <th className="cursor-pointer" onClick={() => handleSort('sellPrice')}>
+                  <div className="d-flex align-items-center justify-content-end gap-1">Sell Price ($) {renderSortIcon('sellPrice')}</div>
+                </th>
+                <th className="cursor-pointer" onClick={() => handleSort('spreadRs')}>
+                  <div className="d-flex align-items-center justify-content-end gap-1">Spread ($) {renderSortIcon('spreadRs')}</div>
+                </th>
+                <th className="cursor-pointer" onClick={() => handleSort('spreadPct')}>
+                  <div className="d-flex align-items-center justify-content-end gap-1">Spread (%) {renderSortIcon('spreadPct')}</div>
+                </th>
+                <th className="cursor-pointer" onClick={() => handleSort('quantity')}>
+                  <div className="d-flex align-items-center justify-content-end gap-1">Est. Size {renderSortIcon('quantity')}</div>
+                </th>
                 <th className="text-center">Action</th>
               </tr>
             </thead>

@@ -474,6 +474,7 @@ export const useSocket = ({
       /* ───────────────── ONCHAIN ───────────────── */
       onchainUpdate: (data) => {
         if (!data) return;
+        console.log("[useSocket] Event: onchainUpdate response:", data);
         const payload = data.success ? data.data : data;
         
         // Filter out stale updates from previous currency subscriptions to prevent flicker
@@ -481,7 +482,7 @@ export const useSocket = ({
         if (eventSymbol && safeSymbol) {
           const getBaseAsset = (sym) => sym.replace(/USDT|BUSD|USDC|USD|BTC|ETH$/gi, '').toUpperCase();
           if (getBaseAsset(eventSymbol) !== getBaseAsset(safeSymbol)) {
-            console.log(`[useSocket] Filtering out stale onchain update for ${eventSymbol} (current is ${safeSymbol})`);
+            // console.log(`[useSocket] Filtering out stale onchain update for ${eventSymbol} (current is ${safeSymbol})`);
             return;
           }
         }
@@ -652,13 +653,13 @@ export const useSocket = ({
         manager.emit(EVENTS.MARKET.GET, { symbol: safeSymbol });
       }
 
-      if (setOpportunities) {
+      // if (setOpportunities) {
         
-        manager.emit(EVENTS.ARBITRAGE.GET, { symbol: safeSymbol || "BTCUSDT" });
-        if (setLoading) {
-          setTimeout(() => setLoading(false), 3000);
-        }
-      }
+      //   manager.emit(EVENTS.ARBITRAGE.GET, { symbol: safeSymbol || "BTCUSDT" });
+      //   if (setLoading) {
+      //     setTimeout(() => setLoading(false), 3000);
+      //   }
+      // }
 
       if (safeSymbol) {
         if (setPrices || setCoinDetail || setFlashStates || setOverviewChartData) {
@@ -682,6 +683,10 @@ export const useSocket = ({
           let interval = validIntervals.includes(selectedPeriod) ? selectedPeriod : "1d";
           let limit = 200; // Consistent lookback of 200 candles to ensure enough chart data
           manager.emit(EVENTS.LISTING.GET, { symbol: safeSymbol, interval, limit });
+        }
+
+        if (setSentimentData) {
+          manager.emit(EVENTS.MARKET.SENTIMENT_UPDATE, { symbol: safeSymbol });
         }
 
         if (setOrderBook) {
