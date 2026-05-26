@@ -46,6 +46,7 @@ const EVENTS = {
     UPDATE: "live-tick-update",
   },
   MARKET: {
+    GET: "request-market-coins",
     INIT: "market-coins-init",
     SENTIMENT_UPDATE: "binance-sentiment",
   },
@@ -67,7 +68,7 @@ const EVENTS = {
     RESPONSE: "watchlist-response",
     UPDATE: "watchlist-update",
   },
-  ORDERBOOK:{
+  ORDERBOOK: {
     UPDATE: "binance-orderbook",
   }
 };

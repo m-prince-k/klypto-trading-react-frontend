@@ -51,11 +51,11 @@ export default function SocialIntelligence({ setActiveTab = () => { }, isSubComp
             if (!prev) {
                 // Initial load
                 const data = { ...resolvedData };
-                if (data.topics) data.topics = data.topics.map(t => ({ ...t, count: parseRawNumber(t.count) }));
-                if (data.influencers) data.influencers = data.influencers.map(i => ({ ...i, followers: parseRawNumber(i.followers) }));
-                if (data.totalMentions !== undefined) data.totalMentions = parseRawNumber(data.totalMentions);
-                if (data.socialVolume !== undefined) data.socialVolume = parseRawNumber(data.socialVolume);
-                if (data.engagement !== undefined) data.engagement = parseRawNumber(data.engagement);
+                if (data?.topics) data.topics = data?.topics.map(t => ({ ...t, count: parseRawNumber(t.count) }));
+                if (data?.influencers) data.influencers = data?.influencers.map(i => ({ ...i, followers: parseRawNumber(i.followers) }));
+                if (data?.totalMentions !== undefined) data.totalMentions = parseRawNumber(data?.totalMentions);
+                if (data?.socialVolume !== undefined) data.socialVolume = parseRawNumber(data?.socialVolume);
+                if (data?.engagement !== undefined) data.engagement = parseRawNumber(data?.engagement);
                 setLoading(false);
                 return data;
             }
@@ -80,16 +80,16 @@ export default function SocialIntelligence({ setActiveTab = () => { }, isSubComp
     );
   }
 
-  const score = sentimentData.sentimentScore;
+  const score = sentimentData?.sentimentScore;
   const theta = Math.PI * (1 - score / 100);
   const pinX = 50 + 32 * Math.cos(theta);
   const pinY = 50 - 32 * Math.sin(theta);
 
   const totalCircle = 238;
-  const twitterDash = (sentimentData.twitterPct / 100) * totalCircle;
-  const redditDash = (sentimentData.redditPct / 100) * totalCircle;
-  const newsDash = (sentimentData.newsPct / 100) * totalCircle;
-  const telegramDash = (sentimentData.telegramPct / 100) * totalCircle;
+  const twitterDash = (sentimentData?.twitterPct / 100) * totalCircle;
+  const redditDash = (sentimentData?.redditPct / 100) * totalCircle;
+  const newsDash = (sentimentData?.newsPct / 100) * totalCircle;
+  const telegramDash = (sentimentData?.telegramPct / 100) * totalCircle;
 
   const generateLinePath = (points) => {
     if (!points || points.length === 0) return "";

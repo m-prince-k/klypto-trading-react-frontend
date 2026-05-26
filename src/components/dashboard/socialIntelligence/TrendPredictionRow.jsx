@@ -7,7 +7,7 @@ export default function TrendPredictionRow({ sentimentData }) {
       <div className="si-card" style={{ flex: '1' }}>
         <h4 className="si-card-title">Buzz Score</h4>
         <div className="si-card-stat-row">
-          <span className="si-stat-number">{sentimentData.buzzScore}<span className="si-score-total">/100</span></span>
+          <span className="si-stat-number">{sentimentData?.buzzScore}<span className="si-score-total">/100</span></span>
         </div>
         <span className="si-buzz-tag">Very High</span>
         <div className="si-buzz-chart-container">
@@ -32,10 +32,10 @@ export default function TrendPredictionRow({ sentimentData }) {
           <div className="si-arrow-badge">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="7" y1="17" x2="17" y2="7" /><polyline points="7 7 17 7 17 17" /></svg>
           </div>
-          <span className="si-prediction-result">{sentimentData.trendPrediction}</span>
+          <span className="si-prediction-result">{sentimentData?.trendPrediction}</span>
         </div>
         <div className="si-confidence-text">
-          Confidence: <span className="si-confidence-val">{sentimentData.confidence}</span>
+          Confidence: <span className="si-confidence-val">{sentimentData?.confidence}</span>
         </div>
       </div>
     </div>

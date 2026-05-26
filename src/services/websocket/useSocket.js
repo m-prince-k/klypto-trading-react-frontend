@@ -75,7 +75,7 @@ export const useSocket = ({
 
       /* ───────────────── MARKET INIT ───────────────── */
       marketCoinsInit: (res) => {
-        if (setCoins || setSentimentData || setMarketMetrics || setOverviewChartData || setCoinDetail) console.log("[useSocket] market-coins-init Payload:", res);
+        if (setCoins || setSentimentData || setMarketMetrics || setOverviewChartData || setCoinDetail) console.log("[useSocket] Event: market-coins-init Payload:", res);
         if (setSentimentData) setSentimentData(res);
         if (res.coins) globalCache.marketCoins = res.coins;
         if (res.metrics) globalCache.marketMetrics = res.metrics;
@@ -119,7 +119,7 @@ export const useSocket = ({
 
       marketSentiment: (data) => {
         // binance-sentiment
-        if (setSentimentData || setFearGreed || setSocialStats || setTvlData || setFinancials || setMarketMetrics) console.log("[useSocket] binance-sentiment Payload:", data);
+        if (setSentimentData || setFearGreed || setSocialStats || setTvlData || setFinancials || setMarketMetrics) console.log("[useSocket] Event: binance-sentiment Payload:", data);
         if (setSentimentData) setSentimentData(data);
 
         const mergeValidProps = (prev, incoming) => {
@@ -140,9 +140,9 @@ export const useSocket = ({
 
         setMarketMetrics?.((prev) => ({
           ...prev,
-          btcDominance: parseFloat(data.socialStats?.btcDominance) || prev.btcDominance,
-          fearGreedIndex: parseInt(data.fearGreed?.value) || prev.fearGreedIndex,
-          volume24h: parseFloat(data.tvlData?.total?.replace("$", "").replace("B", "")) || prev.volume24h,
+          btcDominance: parseFloat(data?.socialStats?.btcDominance) || prev?.btcDominance,
+          fearGreedIndex: parseInt(data?.fearGreed?.value) || prev?.fearGreedIndex,
+          volume24h: parseFloat(data?.tvlData?.total?.replace("$", "").replace("B", "")) || prev.volume24h,
         }));
       },
 
@@ -159,7 +159,7 @@ export const useSocket = ({
           return updated;
         };
         // Safely extract fearGreed whether it's nested or the root object
-        const incomingFearGreed = data.fearGreed ? data.fearGreed : data;
+        const incomingFearGreed = data?.fearGreed ? data?.fearGreed : data;
         setFearGreed?.((prev) => mergeValidProps(prev, incomingFearGreed));
         setSentimentData?.(data);
       },
@@ -285,7 +285,7 @@ export const useSocket = ({
 
       /* ───────────────── SOCIAL ───────────────── */
       socialIntelResponse: (res) => {
-        if (setSocialStats) console.log("[useSocket] social-intel-response Payload:", res);
+        if (setSocialStats) console.log("[useSocket] Event: social-intel-response Payload:", res);
         if (!res?.data) return;
         setSocialStats?.((prev) => {
           if (!prev || typeof prev !== 'object') return res.data;
@@ -294,7 +294,7 @@ export const useSocket = ({
       },
 
       socialIntelUpdate: (data) => {
-        if (setSocialStats) console.log("[useSocket] social-intel-update Payload:", data);
+        if (setSocialStats) console.log("[useSocket] Event: social-intel-update Payload:", data);
         setSocialStats?.((prev) => {
           if (!prev || typeof prev !== 'object') return data;
           return { ...prev, ...data };
@@ -358,7 +358,7 @@ export const useSocket = ({
 
       /* ───────────────── LISTING ───────────────── */
       listingResponse: (res) => {
-        if (setKlines || setPrices) console.log("[useSocket] listingResponse received:", { symbol: res?.symbol, dataLength: res?.data?.length });
+        if (setKlines || setPrices) console.log("[useSocket] Event: listing-response received:", { symbol: res?.symbol, dataLength: res?.data?.length });
         if (!res?.data || !Array.isArray(res.data)) return;
 
         if (setKlines && res.symbol && selectedSymbol && cleanSymbol) {
@@ -419,14 +419,14 @@ export const useSocket = ({
 
       /* ───────────────── ARBITRAGE ───────────────── */
       arbitrageResponse: (res) => {
-        if (setOpportunities) console.log("[useSocket] Received arbitrage-response Payload:", res);
+        if (setOpportunities) console.log("[useSocket] Event: arbitrage-response Payload:", res);
         if (!res?.data) return;
         setOpportunities?.(res.data);
         setLastUpdated?.(new Date().toLocaleTimeString());
       },
 
       arbitrageUpdate: (res) => {
-        if (setOpportunities) console.log("[useSocket] Received arbitrage-update Payload:", res);
+        if (setOpportunities) console.log("[useSocket] Event: arbitrage-update Payload:", res);
         if (!res?.success || !res.data || !Array.isArray(res.data)) return;
 
         setOpportunities?.((prev) => {
@@ -487,14 +487,14 @@ export const useSocket = ({
 
       /* ───────────────── FUTURES ───────────────── */
       futuresInitialData: (res) => {
-        if (setFuturesData) console.log("[WebSocket Event] futures-initial-data:", res);
+        if (setFuturesData) console.log("[useSocket] Event: futures-initial-data Payload:", res);
         if (res.success) setFuturesData?.(res.data);
         else setFuturesError?.(res.message || "Failed to load futures data");
         setFuturesLoading?.(false);
       },
 
       futuresTickerUpdate: (updates) => {
-        if (handleFuturesTickerUpdate) console.log("[WebSocket Event] futures-ticker-update:", updates);
+        if (handleFuturesTickerUpdate) console.log("[useSocket] Event: futures-ticker-update Payload:", updates);
         if (handleFuturesTickerUpdate) handleFuturesTickerUpdate(updates);
       },
 
@@ -516,7 +516,7 @@ export const useSocket = ({
           }
         }
 
-        if (setFinanceData || setFearGreed || setSocialStats || setTvlData || setFinancials || setMarketExtra) console.log("[useSocket] Received finance-dashboard-update Payload:", data);
+        if (setFinanceData || setFearGreed || setSocialStats || setTvlData || setFinancials || setMarketExtra) console.log("[useSocket] Event: finance-dashboard-update Payload:", data);
         if (setFinanceData) setFinanceData(data);
 
         const mergeValidProps = (prev, incoming) => {
@@ -634,7 +634,7 @@ export const useSocket = ({
         if (setOverviewChartData && globalCache.overviewChartData) {
           setOverviewChartData(globalCache.overviewChartData);
         }
-        manager.emit("get-market-coins");
+        manager.emit(EVENTS.MARKET.GET, { symbol: safeSymbol || "BTCUSDT" });
       }
 
       if (setOnchainData && safeSymbol) {
@@ -643,7 +643,7 @@ export const useSocket = ({
       }
 
       if (setCoinDetail && safeSymbol) {
-        manager.emit("get-market-coins");
+        manager.emit(EVENTS.MARKET.GET, { symbol: safeSymbol });
       }
 
       if (setOpportunities) {

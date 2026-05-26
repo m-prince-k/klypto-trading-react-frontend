@@ -3,6 +3,7 @@ import AdvancedMetricsGrid from "../../../components/dashboard/overview/Advanced
 import ChartAndOrderBook from "../../../components/dashboard/overview/ChartAndOrderBook";
 import SocialFinancialGrid from "../../../components/dashboard/overview/SocialFinancialGrid";
 import HeatmapArbitrageGrid from "../../../components/dashboard/overview/HeatmapArbitrageGrid";
+import { Spinner } from "../../../components/tradingModals/Spinner";
 
 export default function Overview({
   fearGreed,
@@ -26,6 +27,14 @@ export default function Overview({
     if (sym.endsWith("ETH")) return sym.slice(0, -3);
     return sym;
   };
+
+  if (!prices || Object.keys(prices).length === 0) {
+      return (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column' }}>
+              <Spinner />
+          </div>
+      );
+  }
 
   return (
     <>

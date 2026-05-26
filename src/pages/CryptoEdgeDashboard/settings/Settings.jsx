@@ -61,14 +61,14 @@ const Settings = () => {
       try {
         const res = await apiService.get("api/viewProfile");
         console.log(res, "dataaaaaaaaaaa")
-        const data = res?.data?.firstName ? res.data : (res?.firstName ? res : res?.data);
+        const data = res?.data?.firstName ? res?.data : (res?.firstName ? res : res?.data);
         if (data) {
           setUserData(prev => ({
             ...prev,
-            firstName: data.firstName || prev.firstName,
-            lastName: data.lastName || prev.lastName,
-            email: data.email || prev.email,
-            phone: data.mobile || data.phone || prev.phone,
+            firstName: data?.firstName || prev.firstName,
+            lastName: data?.lastName || prev.lastName,
+            email: data?.email || prev.email,
+            phone: data?.mobile || data?.phone || prev.phone,
           }));
         }
       } catch (error) {

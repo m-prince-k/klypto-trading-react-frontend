@@ -21,7 +21,7 @@ const OnChainTables = ({ data, setActiveModal, setModalSearch }) => {
             </tr>
           </thead>
           <tbody>
-            {data.chains.slice(0, 5).map(r => (
+            {data?.chains?.slice(0, 5).map(r => (
               <tr key={r.n}>
                 <td>{r.n}</td>
                 <td>
@@ -59,7 +59,7 @@ const OnChainTables = ({ data, setActiveModal, setModalSearch }) => {
             </tr>
           </thead>
           <tbody>
-            {data.tvlChanges.map((r, i) => (
+            {data?.tvlChanges.map((r, i) => (
               <tr key={i}>
                 <td>{r.p}</td>
                 <td className="right">${r.tvl}B</td>

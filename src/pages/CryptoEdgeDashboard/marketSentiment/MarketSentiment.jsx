@@ -38,8 +38,8 @@ const MarketSentiment = () => {
 
     const data = {
         overall: sentimentData?.overall || (sentimentData?.value ? {
-            score: sentimentData.value,
-            label: sentimentData.label,
+            score: sentimentData?.value,
+            label: sentimentData?.label,
             history: []
         } : null),
         trend: sentimentData?.trend,
@@ -68,27 +68,27 @@ const MarketSentiment = () => {
 
                 {/* Top Row */}
                 <div className="row g-3 mb-3">
-                    {data.overall && <OverallMarketSentiment data={data} getColorClass={getColorClass} />}
-                    {data.trend && <MarketSentimentTrend data={data} />}
-                    {data.breakdown && <SentimentBreakdown data={data} />}
+                    {data?.overall && <OverallMarketSentiment data={data} getColorClass={getColorClass} />}
+                    {data?.trend && <MarketSentimentTrend data={data} />}
+                    {data?.breakdown && <SentimentBreakdown data={data} />}
                 </div>
 
-                {data.indicators && <KeySentimentIndicators data={data} getColorClass={getColorClass} />}
+                {data?.indicators && <KeySentimentIndicators data={data} getColorClass={getColorClass} />}
 
                 {/* Bottom Row */}
                 <div className="row g-3">
-                    {data.sectors && <SectorSentiment data={data} getColorClass={getColorClass} />}
-                    {(data.topGainers || data.topLosers) && <TopGainersLosers data={data} getColorClass={getColorClass} />}
+                    {data?.sectors && <SectorSentiment data={data} getColorClass={getColorClass} />}
+                    {(data?.topGainers || data?.topLosers) && <TopGainersLosers data={data} getColorClass={getColorClass} />}
                 </div>
 
                 {/* Social and News Row */}
                 <div className="row g-3 mt-1">
-                    {data.socialMedia && (
+                    {data?.socialMedia && (
                         <div className="col-lg-6">
                             <SocialMediaSentiment data={data} getColorClass={getColorClass} />
                         </div>
                     )}
-                    {data.news && (
+                    {data?.news && (
                         <div className="col-lg-6">
                             <NewsSentiment data={data} getColorClass={getColorClass} />
                         </div>

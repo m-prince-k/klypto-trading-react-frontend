@@ -38,7 +38,7 @@ const OnChainModals = ({ activeModal, setActiveModal, modalSearch, setModalSearc
                 </tr>
               </thead>
               <tbody>
-                {data.chains
+                {data?.chains
                   .filter(c => c.chain.toLowerCase().includes(modalSearch.toLowerCase()))
                   .map((r, i) => (
                     <tr key={i}>
@@ -70,7 +70,7 @@ const OnChainModals = ({ activeModal, setActiveModal, modalSearch, setModalSearc
                 </tr>
               </thead>
               <tbody>
-                {data.protocols
+                {data?.protocols
                   .filter(p => p.name.toLowerCase().includes(modalSearch.toLowerCase()))
                   .map((p, i) => (
                     <tr key={i}>
@@ -98,7 +98,7 @@ const OnChainModals = ({ activeModal, setActiveModal, modalSearch, setModalSearc
                 </tr>
               </thead>
               <tbody>
-                {data.tvlHistory.map((h, i) => (
+                {data?.tvlHistory.map((h, i) => (
                   <tr key={i}>
                     <td>{h.date}</td>
                     <td className="right">${h.tvl}B</td>

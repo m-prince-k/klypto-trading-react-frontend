@@ -14,7 +14,7 @@ export default function SocialSidebar({ sentimentData }) {
         </div>
         <div className="si-widget-section-label">Top Topics</div>
         <div className="si-topics-list">
-          {(sentimentData.topics || []).map((item) => (
+          {(sentimentData?.topics || []).map((item) => (
             <div key={item?.id || Math.random()} className="si-topic-item">
               <div className="si-topic-left">
                 <span className="si-topic-num">{item?.id || ''}</span>
@@ -38,7 +38,7 @@ export default function SocialSidebar({ sentimentData }) {
           <h3 className="si-widget-title">Top Influencers</h3>
         </div>
         <div className="si-influencers-list text-left">
-          {(sentimentData.influencers || []).map((inf, idx) => (
+          {(sentimentData?.influencers || []).map((inf, idx) => (
             <div key={idx} className="si-influencer-item">
               <div className="si-inf-left">
                 <div className="si-inf-avatar" style={{ backgroundColor: inf?.color || '#3b82f6' }}>{inf?.avatar || 'I'}</div>
@@ -63,7 +63,7 @@ export default function SocialSidebar({ sentimentData }) {
           <h3 className="si-widget-title">Latest Key Events</h3>
         </div>
         <div className="si-events-timeline text-left">
-          {(sentimentData.events || []).map((ev, idx) => (
+          {(sentimentData?.events || []).map((ev, idx) => (
             <div key={idx} className="si-timeline-item">
               <div className={`si-timeline-dot ${ev?.dotClass || 'green'}`}></div>
               <div className="si-timeline-content">

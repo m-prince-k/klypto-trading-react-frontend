@@ -20,8 +20,8 @@ const KeySentimentIndicators = ({ data, getColorClass }) => (
                         <div className="flex-grow-1">
                             <div className="text-muted extremely-small mb-1 text-end">Bitcoin Dominance</div>
                             <div className="d-flex justify-content-between align-items-baseline">
-                                <span className={`${getColorClass(data.indicators.btcDominance.label)} fw-bold fs-6`}>{data.indicators.btcDominance.value}</span>
-                                <span className={`${getColorClass(data.indicators.btcDominance.label)} extremely-small fw-medium`}>{data.indicators.btcDominance.label}</span>
+                                <span className={`${getColorClass(data?.indicators?.btcDominance?.label)} fw-bold fs-6`}>{data?.indicators?.btcDominance?.value}</span>
+                                <span className={`${getColorClass(data?.indicators?.btcDominance?.label)} extremely-small fw-medium`}>{data?.indicators?.btcDominance?.label}</span>
                             </div>
                         </div>
                     </div>
@@ -38,8 +38,8 @@ const KeySentimentIndicators = ({ data, getColorClass }) => (
                         <div className="flex-grow-1">
                             <div className="text-muted extremely-small mb-1 text-end">Funding Rate (Avg.)</div>
                             <div className="d-flex justify-content-between align-items-baseline">
-                                <span className={`${getColorClass(data.indicators.fundingRate.label)} fw-bold fs-6`}>{data.indicators.fundingRate.value}</span>
-                                <span className={`${getColorClass(data.indicators.fundingRate.label)} extremely-small fw-medium`}>{data.indicators.fundingRate.label}</span>
+                                <span className={`${getColorClass(data?.indicators?.fundingRate?.label)} fw-bold fs-6`}>{data?.indicators?.fundingRate?.value}</span>
+                                <span className={`${getColorClass(data?.indicators?.fundingRate?.label)} extremely-small fw-medium`}>{data?.indicators?.fundingRate?.label}</span>
                             </div>
                         </div>
                     </div>
@@ -56,8 +56,8 @@ const KeySentimentIndicators = ({ data, getColorClass }) => (
                         <div className="flex-grow-1">
                             <div className="text-muted extremely-small mb-1 text-end">Trading Volume (24h)</div>
                             <div className="d-flex justify-content-between align-items-baseline">
-                                <span className={`${getColorClass(data.indicators.tradingVolume.label)} fw-bold fs-6`}>{data.indicators.tradingVolume.value}</span>
-                                <span className={`${getColorClass(data.indicators.tradingVolume.label)} extremely-small fw-medium`}>{data.indicators.tradingVolume.label}</span>
+                                <span className={`${getColorClass(data?.indicators?.tradingVolume?.label)} fw-bold fs-6`}>{data?.indicators?.tradingVolume?.value}</span>
+                                <span className={`${getColorClass(data?.indicators?.tradingVolume?.label)} extremely-small fw-medium`}>{data?.indicators?.tradingVolume?.label}</span>
                             </div>
                         </div>
                     </div>
@@ -74,8 +74,8 @@ const KeySentimentIndicators = ({ data, getColorClass }) => (
                         <div className="flex-grow-1">
                             <div className="text-muted extremely-small mb-1 text-end">Volatility (24h)</div>
                             <div className="d-flex justify-content-between align-items-baseline">
-                                <span className={`${getColorClass(data.indicators.volatility.label)} fw-bold fs-6`}>{data.indicators.volatility.value}</span>
-                                <span className={`${getColorClass(data.indicators.volatility.label)} extremely-small fw-medium`}>{data.indicators.volatility.label}</span>
+                                <span className={`${getColorClass(data?.indicators?.volatility?.label)} fw-bold fs-6`}>{data?.indicators?.volatility?.value}</span>
+                                <span className={`${getColorClass(data?.indicators?.volatility?.label)} extremely-small fw-medium`}>{data?.indicators?.volatility?.label}</span>
                             </div>
                         </div>
                     </div>
@@ -92,8 +92,8 @@ const KeySentimentIndicators = ({ data, getColorClass }) => (
                         <div className="flex-grow-1">
                             <div className="text-muted extremely-small mb-1 text-end">Derivatives Volume (24h)</div>
                             <div className="d-flex justify-content-between align-items-baseline">
-                                <span className={`${getColorClass(data.indicators.derivativesVolume.label)} fw-bold fs-6`}>{data.indicators.derivativesVolume.value}</span>
-                                <span className={`${getColorClass(data.indicators.derivativesVolume.label)} extremely-small fw-medium`}>{data.indicators.derivativesVolume.label}</span>
+                                <span className={`${getColorClass(data?.indicators?.derivativesVolume?.label)} fw-bold fs-6`}>{data?.indicators?.derivativesVolume?.value}</span>
+                                <span className={`${getColorClass(data?.indicators?.derivativesVolume?.label)} extremely-small fw-medium`}>{data?.indicators?.derivativesVolume?.label}</span>
                             </div>
                         </div>
                     </div>

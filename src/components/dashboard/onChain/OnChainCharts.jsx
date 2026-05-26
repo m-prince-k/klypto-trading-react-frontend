@@ -96,7 +96,7 @@ const OnChainCharts = ({
               {/* CSS Donut Chart */}
             </div>
             <div className="donut-center">
-              <div className="donut-value">${data.stats.tvl}B</div>
+              <div className="donut-value">${data?.stats?.tvl}B</div>
               <div className="donut-label">Total</div>
             </div>
           </div>
@@ -134,7 +134,7 @@ const OnChainCharts = ({
             <span>TVL</span>
           </div>
 
-          {data.protocols.slice(0, 8).map(p => (
+          {data?.protocols?.slice(0, 8).map(p => (
             <div className="p-list-item" key={p.n}>
               <div className="p-num">{p.n}</div>
               <div className="p-icon" style={{ backgroundColor: p.color }}></div>

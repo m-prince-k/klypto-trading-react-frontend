@@ -6,6 +6,7 @@ import MarketDataHeader from "../../../components/dashboard/marketData/MarketDat
 import MarketDataTickerGrid from "../../../components/dashboard/marketData/MarketDataTickerGrid";
 import MarketDataCoinsTable from "../../../components/dashboard/marketData/MarketDataCoinsTable";
 import MarketDataSideColumn from "../../../components/dashboard/marketData/MarketDataSideColumn";
+import { Spinner } from "../../../components/tradingModals/Spinner";
 
 const MarketData = ({ coins, setCoins, marketMetrics, setMarketMetrics, overviewChartData, setOverviewChartData, flashStates, setFlashStates }) => {
   const navigate = useNavigate();
@@ -100,10 +101,20 @@ const MarketData = ({ coins, setCoins, marketMetrics, setMarketMetrics, overview
 
   // Derived Gainers and Losers
   useEffect(() => {
-    if (coins.length === 0) return;
-    const sorted = [...coins].sort((a, b) => b.change24h - a.change24h);
-    setGainers(sorted.slice(0, 5));
-    setLosers([...sorted].reverse().slice(0, 5));
+    if (!coins?.length) return;
+
+    const validCoins = coins.filter(c => typeof c.change24h === "number");
+
+    const gainers = [...validCoins]
+      .sort((a, b) => b.change24h - a.change24h)
+      .slice(0, 7);
+
+    const losers = [...validCoins]
+      .sort((a, b) => a.change24h - b.change24h)
+      .slice(0, 7);
+
+    setGainers(gainers);
+    setLosers(losers);
   }, [coins]);
 
   const handleSort = (key) => {
@@ -151,7 +162,9 @@ const MarketData = ({ coins, setCoins, marketMetrics, setMarketMetrics, overview
 
 
   const renderOverviewChart = (timeframe) => {
-    const data = overviewChartData[timeframe] || [
+    // Normalize timeframe key (e.g., 'All' to 'ALL') to match backend payload
+    const tfKey = timeframe.toUpperCase();
+    const data = overviewChartData?.[tfKey] || [
       2.48, 2.5, 2.47, 2.52, 2.51, 2.54, 2.53, 2.56, 2.55, 2.57, 2.56,
     ];
     const min = Math.min(...data);
@@ -204,21 +217,26 @@ const MarketData = ({ coins, setCoins, marketMetrics, setMarketMetrics, overview
           fill="url(#chart-glow-gradient)"
         />
         <path d={linePath} className="chart-line" />
-        <text x="10" y={height + 15} className="chart-axis-text">
-          00:00
-        </text>
-        <text x="75" y={height + 15} className="chart-axis-text">
-          06:00
-        </text>
-        <text x="140" y={height + 15} className="chart-axis-text">
-          12:00
-        </text>
-        <text x="205" y={height + 15} className="chart-axis-text">
-          18:00
-        </text>
-        <text x="270" y={height + 15} className="chart-axis-text">
-          24:00
-        </text>
+        
+        {(() => {
+          const labelsMap = {
+            "1D": ["00:00", "06:00", "12:00", "18:00", "24:00"],
+            "7D": ["Mon", "Tue", "Thu", "Sat", "Sun"],
+            "1M": ["1st", "8th", "15th", "22nd", "30th"],
+            "1Y": ["Jan", "Apr", "Jul", "Oct", "Dec"],
+            "ALL": ["2020", "2021", "2022", "2023", "2024"]
+          };
+          const labels = labelsMap[tfKey] || labelsMap["1D"];
+          
+          // Original X positions were: 10, 75, 140, 205, 270
+          const xPositions = [10, 75, 140, 205, 270];
+          
+          return labels.map((label, i) => (
+            <text key={i} x={xPositions[i]} y={height + 15} className="chart-axis-text">
+              {label}
+            </text>
+          ));
+        })()}
       </svg>
     );
   };
@@ -238,11 +256,11 @@ const MarketData = ({ coins, setCoins, marketMetrics, setMarketMetrics, overview
       list = list.filter((coin) => coin.category?.includes(activeCategory));
 
     if (searchQuery) {
-      const query = searchQuery.toLowerCase();
+      const q = searchQuery.toLowerCase();
       list = list.filter(
         (coin) =>
-          coin.name.toLowerCase().includes(query) ||
-          coin.symbol.toLowerCase().includes(query),
+          coin.symbol.toLowerCase().includes(q) ||
+          coin.name.toLowerCase().includes(q),
       );
     }
 
@@ -264,6 +282,14 @@ const MarketData = ({ coins, setCoins, marketMetrics, setMarketMetrics, overview
       visibleLimit >= displayedCoins.length ? 8 : displayedCoins.length,
     );
   };
+
+  if (!coins || coins.length === 0) {
+      return (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column' }}>
+              <Spinner />
+          </div>
+      );
+  }
 
   return (
     <div className="market-data-container container-fluid p-0">

@@ -9,22 +9,22 @@ const SocialMediaSentiment = ({ data, getColorClass }) => (
         <div className="card-body p-4 pt-2 pb-4 position-relative">
             <i className="bi bi-chat-left-dots position-absolute end-0 top-0 me-4 mt-2 text-secondary fs-2 opacity-25"></i>
             <div className="d-flex align-items-baseline mb-3">
-                <span className={`fs-2 fw-bold ${getColorClass(data.socialMedia.label)} me-2`}>{data.socialMedia.score}</span>
-                <span className={`${getColorClass(data.socialMedia.label)} fw-medium`}>{data.socialMedia.label}</span>
+                <span className={`fs-2 fw-bold ${getColorClass(data?.socialMedia?.label)} me-2`}>{data?.socialMedia?.score}</span>
+                <span className={`${getColorClass(data?.socialMedia?.label)} fw-medium`}>{data?.socialMedia?.label}</span>
             </div>
             <div className="progress sentiment-progress mb-2">
-                <div className="progress-bar bg-warning" role="progressbar" style={{ width: `${data.socialMedia.distribution.neutral}%` }}></div>
-                <div className="progress-bar bg-success" role="progressbar" style={{ width: `${data.socialMedia.distribution.greed}%` }}></div>
-                <div className="progress-bar bg-danger" role="progressbar" style={{ width: `${data.socialMedia.distribution.fear}%` }}></div>
+                <div className="progress-bar bg-warning" role="progressbar" style={{ width: `${data?.socialMedia?.distribution?.neutral}%` }}></div>
+                <div className="progress-bar bg-success" role="progressbar" style={{ width: `${data?.socialMedia?.distribution?.greed}%` }}></div>
+                <div className="progress-bar bg-danger" role="progressbar" style={{ width: `${data?.socialMedia?.distribution?.fear}%` }}></div>
             </div>
             <div className="d-flex justify-content-between small text-muted mb-4 mt-2 pb-2 border-bottom border-secondary border-opacity-25">
-                <span>{data.socialMedia.distribution.neutral}% Neutral</span>
-                <span>{data.socialMedia.distribution.greed}% Greed</span>
-                <span>{data.socialMedia.distribution.fear}% Fear</span>
+                <span>{data?.socialMedia?.distribution?.neutral}% Neutral</span>
+                <span>{data?.socialMedia?.distribution?.greed}% Greed</span>
+                <span>{data?.socialMedia?.distribution?.fear}% Fear</span>
             </div>
             <div className="small text-muted mb-3">Top Trending Coins on Social Media</div>
             <div className="d-flex flex-wrap gap-2 mb-4 mt-2">
-                {data.socialMedia.trending.map((t, i) => (
+                {data?.socialMedia?.trending.map((t, i) => (
                     <span className="trending-tag" key={i}>#{i + 1} {t}</span>
                 ))}
             </div>

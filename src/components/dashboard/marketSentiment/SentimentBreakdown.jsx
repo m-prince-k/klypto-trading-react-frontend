@@ -30,10 +30,10 @@ const SentimentBreakdown = ({ data }) => (
                 </div>
                 {/* Legend below donut */}
                 <div className="w-100">
-                    <div className="d-flex justify-content-between mb-2 small"><span className="text-muted"><span className="legend-dot bg-success"></span>Greed</span><span className="fw-medium" style={{ color: 'var(--ms-text-main)' }}>{data.breakdown.greed}%</span></div>
-                    <div className="d-flex justify-content-between mb-2 small"><span className="text-muted"><span className="legend-dot bg-warning"></span>Neutral</span><span className="fw-medium" style={{ color: 'var(--ms-text-main)' }}>{data.breakdown.neutral}%</span></div>
-                    <div className="d-flex justify-content-between mb-2 small"><span className="text-muted"><span className="legend-dot" style={{ backgroundColor: '#ff8c00' }}></span>Fear</span><span className="fw-medium" style={{ color: 'var(--ms-text-main)' }}>{data.breakdown.fear}%</span></div>
-                    <div className="d-flex justify-content-between small"><span className="text-muted"><span className="legend-dot bg-danger"></span>Extreme Fear</span><span className="fw-medium" style={{ color: 'var(--ms-text-main)' }}>{data.breakdown.extremeFear}%</span></div>
+                    <div className="d-flex justify-content-between mb-2 small"><span className="text-muted"><span className="legend-dot bg-success"></span>Greed</span><span className="fw-medium" style={{ color: 'var(--ms-text-main)' }}>{data?.breakdown?.greed}%</span></div>
+                    <div className="d-flex justify-content-between mb-2 small"><span className="text-muted"><span className="legend-dot bg-warning"></span>Neutral</span><span className="fw-medium" style={{ color: 'var(--ms-text-main)' }}>{data?.breakdown?.neutral}%</span></div>
+                    <div className="d-flex justify-content-between mb-2 small"><span className="text-muted"><span className="legend-dot" style={{ backgroundColor: '#ff8c00' }}></span>Fear</span><span className="fw-medium" style={{ color: 'var(--ms-text-main)' }}>{data?.breakdown?.fear}%</span></div>
+                    <div className="d-flex justify-content-between small"><span className="text-muted"><span className="legend-dot bg-danger"></span>Extreme Fear</span><span className="fw-medium" style={{ color: 'var(--ms-text-main)' }}>{data?.breakdown?.extremeFear}%</span></div>
                 </div>
             </div>
         </div>

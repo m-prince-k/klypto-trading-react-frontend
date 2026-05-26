@@ -92,8 +92,8 @@ const CoinMarketDetails = () => {
       
       apiService.get(`api/marketStats/${fullName}`)
         .then(res => {
-          if (res && res.data) {
-            setMarketStats(res.data);
+          if (res && res?.data) {
+            setMarketStats(res?.data);
           } else if (res) {
             setMarketStats(res);
           }

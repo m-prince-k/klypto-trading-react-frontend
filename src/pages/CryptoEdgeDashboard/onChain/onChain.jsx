@@ -133,7 +133,7 @@ const OnChain = ({ isSubComponent = false, selectedSymbol }) => {
 
   const displayTvl = isFiltered && filteredChainObj ? filteredChainObj.tvl : data?.stats?.tvl;
   const displayTvlChange = isFiltered && filteredChainObj ? filteredChainObj.c24 : data?.stats?.tvlChange;
-  const displayChains = isFiltered && filteredChainObj ? [filteredChainObj] : data?.chains.slice(0, 5);
+  const displayChains = isFiltered && filteredChainObj ? [filteredChainObj] : data?.chains?.slice(0, 5);
 
   // Calculate conic gradient dynamically for the Donut Chart
   const conicParts = displayChains?.map((c, idx, arr) => {

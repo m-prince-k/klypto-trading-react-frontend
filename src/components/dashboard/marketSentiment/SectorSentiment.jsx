@@ -24,7 +24,7 @@ const SectorSentiment = ({ data, getColorClass }) => (
                         </tr>
                     </thead>
                     <tbody>
-                        {data.sectors.map((s, i) => (
+                        {data?.sectors.map((s, i) => (
                             <tr key={i}>
                                 <td className="ps-3"><div className="d-flex align-items-center"><i className={`bi ${s.icon} text-muted me-2`}></i>{s.name}</div></td>
                                 <td className={getColorClass(s.sentimentLabel)} style={{ whiteSpace: 'nowrap' }}>

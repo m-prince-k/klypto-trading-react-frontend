@@ -37,7 +37,7 @@ const MarketSentimentTrend = ({ data }) => (
                         <path d="M0,100 L40,80 L80,75 L120,65 L160,55 L200,60 L240,40 L280,50 L320,60 L360,55 L400,65 L440,55 L480,45 L500,50 L500,120 L0,120 Z" fill="url(#areaGradient)" />
                         <path d="M0,100 L40,80 L80,75 L120,65 L160,55 L200,60 L240,40 L280,50 L320,60 L360,55 L400,65 L440,55 L480,45 L500,50" fill="none" stroke="#0ecb81" strokeWidth="2.5" />
                         <rect x="480" y="40" width="20" height="14" rx="2" fill="#0ecb81" />
-                        <text x="490" y="50" fill="#181a20" fontSize="10" fontWeight="bold" textAnchor="middle">{data.trend.currentValue}</text>
+                        <text x="490" y="50" fill="#181a20" fontSize="10" fontWeight="bold" textAnchor="middle">{data?.trend?.currentValue}</text>
                     </svg>
                 </div>
                 <div className="trend-legend d-flex justify-content-between mt-auto text-muted extremely-small pt-2 border-top border-secondary border-opacity-25">

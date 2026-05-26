@@ -2,10 +2,10 @@ import React from 'react';
 
 export default function SocialMetricsRow({ sentimentData }) {
   const totalCircle = 238;
-  const twitterDash = (sentimentData.twitterPct / 100) * totalCircle;
-  const redditDash = (sentimentData.redditPct / 100) * totalCircle;
-  const newsDash = (sentimentData.newsPct / 100) * totalCircle;
-  const telegramDash = (sentimentData.telegramPct / 100) * totalCircle;
+  const twitterDash = (sentimentData?.twitterPct / 100) * totalCircle;
+  const redditDash = (sentimentData?.redditPct / 100) * totalCircle;
+  const newsDash = (sentimentData?.newsPct / 100) * totalCircle;
+  const telegramDash = (sentimentData?.telegramPct / 100) * totalCircle;
 
   return (
     <div className="si-grid-row" style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
@@ -22,16 +22,16 @@ export default function SocialMetricsRow({ sentimentData }) {
             </svg>
             <div className="si-donut-center-text">
               <span className="si-donut-val">
-                {typeof sentimentData.totalMentions === 'number' ? (sentimentData.totalMentions / 1000).toFixed(1) + 'K' : sentimentData.totalMentions}
+                {typeof sentimentData?.totalMentions === 'number' ? (sentimentData?.totalMentions / 1000).toFixed(1) + 'K' : sentimentData?.totalMentions}
               </span>
               <span className="si-donut-lbl">Total Mentions</span>
             </div>
           </div>
           <div className="si-sources-legend">
-            <div className="si-source-row"><span className="si-leg-dot" style={{ backgroundColor: '#2563eb' }}></span><span className="si-source-name">Twitter</span><span className="si-source-pct">{sentimentData.twitterPct}%</span></div>
-            <div className="si-source-row"><span className="si-leg-dot" style={{ backgroundColor: '#ef4444' }}></span><span className="si-source-name">Reddit</span><span className="si-source-pct">{sentimentData.redditPct}%</span></div>
-            <div className="si-source-row"><span className="si-leg-dot" style={{ backgroundColor: '#ec4899' }}></span><span className="si-source-name">News</span><span className="si-source-pct">{sentimentData.newsPct}%</span></div>
-            <div className="si-source-row"><span className="si-leg-dot" style={{ backgroundColor: '#f59e0b' }}></span><span className="si-source-name">Telegram</span><span className="si-source-pct">{sentimentData.telegramPct}%</span></div>
+            <div className="si-source-row"><span className="si-leg-dot" style={{ backgroundColor: '#2563eb' }}></span><span className="si-source-name">Twitter</span><span className="si-source-pct">{sentimentData?.twitterPct}%</span></div>
+            <div className="si-source-row"><span className="si-leg-dot" style={{ backgroundColor: '#ef4444' }}></span><span className="si-source-name">Reddit</span><span className="si-source-pct">{sentimentData?.redditPct}%</span></div>
+            <div className="si-source-row"><span className="si-leg-dot" style={{ backgroundColor: '#ec4899' }}></span><span className="si-source-name">News</span><span className="si-source-pct">{sentimentData?.newsPct}%</span></div>
+            <div className="si-source-row"><span className="si-leg-dot" style={{ backgroundColor: '#f59e0b' }}></span><span className="si-source-name">Telegram</span><span className="si-source-pct">{sentimentData?.telegramPct}%</span></div>
           </div>
         </div>
       </div>
@@ -41,9 +41,9 @@ export default function SocialMetricsRow({ sentimentData }) {
         <h4 className="si-card-title">Social Volume</h4>
         <div className="si-card-stat-row">
           <span className="si-stat-number">
-            {typeof sentimentData.socialVolume === 'number' ? (sentimentData.socialVolume / 1000).toFixed(1) + 'K' : sentimentData.socialVolume}
+            {typeof sentimentData?.socialVolume === 'number' ? (sentimentData?.socialVolume / 1000).toFixed(1) + 'K' : sentimentData?.socialVolume}
           </span>
-          <span className="si-stat-change positive">{sentimentData.socialVolumeChange}</span>
+          <span className="si-stat-change positive">{sentimentData?.socialVolumeChange}</span>
         </div>
         <span className="si-stat-comparison">vs last 24h</span>
         <div className="si-barchart-container">
@@ -60,9 +60,9 @@ export default function SocialMetricsRow({ sentimentData }) {
         <h4 className="si-card-title">Engagement</h4>
         <div className="si-card-stat-row">
           <span className="si-stat-number">
-            {typeof sentimentData.engagement === 'number' ? (sentimentData.engagement / 1000).toFixed(1) + 'K' : sentimentData.engagement}
+            {typeof sentimentData?.engagement === 'number' ? (sentimentData?.engagement / 1000).toFixed(1) + 'K' : sentimentData?.engagement}
           </span>
-          <span className="si-stat-change positive">{sentimentData.engagementChange}</span>
+          <span className="si-stat-change positive">{sentimentData?.engagementChange}</span>
         </div>
         <span className="si-stat-comparison">vs last 24h</span>
         <div className="si-barchart-container">

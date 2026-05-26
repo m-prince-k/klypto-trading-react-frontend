@@ -63,18 +63,18 @@ export default function Arbitrage({ setActiveTab = () => { }, isSubComponent = f
   //   socket.emit("get-arbitrage");
 
   //   socket.on("arbitrage-response", (res) => {
-  //     if (res && res.success && res.data) {
-  //       setOpportunities(res.data);
+  //     if (res && res.success && res?.data) {
+  //       setOpportunities(res?.data);
   //       setLastUpdated(new Date().toLocaleTimeString());
   //     }
   //   });
 
   //   socket.on("arbitrage-update", (res) => {
   //     if (!autoRefreshRef.current) return;
-  //     if (res && res.success && res.data) {
+  //     if (res && res.success && res?.data) {
   //       setOpportunities(prev => {
   //         const flashes = {};
-  //         res.data.forEach(newOpp => {
+  //         res?.data.forEach(newOpp => {
   //           const oldOpp = prev.find(o => o.id === newOpp.id);
   //           if (oldOpp) {
   //             if (newOpp.buyPrice !== oldOpp.buyPrice) {
@@ -95,7 +95,7 @@ export default function Arbitrage({ setActiveTab = () => { }, isSubComponent = f
   //             });
   //           }, 1000);
   //         }
-  //         return res.data;
+  //         return res?.data;
   //       });
   //       setLastUpdated(new Date().toLocaleTimeString());
   //     }

@@ -18,16 +18,16 @@ export default function SentimentRow({ sentimentData, pinX, pinY, generateAreaPa
             <circle cx="50" cy="50" r="4.5" fill="var(--text-main)" />
           </svg>
           <div className="si-gauge-center-text">
-            <span className="si-gauge-number">{sentimentData.sentimentScore}</span>
-            <span className="si-gauge-label" style={{ color: sentimentData.sentimentScore > 60 ? '#10b981' : sentimentData.sentimentScore > 40 ? '#f59e0b' : '#ef4444' }}>
-              {sentimentData.sentimentLabel}
+            <span className="si-gauge-number">{sentimentData?.sentimentScore}</span>
+            <span className="si-gauge-label" style={{ color: sentimentData?.sentimentScore > 60 ? '#10b981' : sentimentData?.sentimentScore > 40 ? '#f59e0b' : '#ef4444' }}>
+              {sentimentData?.sentimentLabel}
             </span>
           </div>
         </div>
         <div className="si-gauge-legend">
-          <span className="si-leg-item"><span className="si-dot green"></span>Bullish <strong className="si-leg-val">{sentimentData.bullishPct}%</strong></span>
-          <span className="si-leg-item"><span className="si-dot yellow"></span>Neutral <strong className="si-leg-val">{sentimentData.neutralPct}%</strong></span>
-          <span className="si-leg-item"><span className="si-dot red"></span>Bearish <strong className="si-leg-val">{sentimentData.bearishPct}%</strong></span>
+          <span className="si-leg-item"><span className="si-dot green"></span>Bullish <strong className="si-leg-val">{sentimentData?.bullishPct}%</strong></span>
+          <span className="si-leg-item"><span className="si-dot yellow"></span>Neutral <strong className="si-leg-val">{sentimentData?.neutralPct}%</strong></span>
+          <span className="si-leg-item"><span className="si-dot red"></span>Bearish <strong className="si-leg-val">{sentimentData?.bearishPct}%</strong></span>
         </div>
       </div>
 
@@ -51,8 +51,8 @@ export default function SentimentRow({ sentimentData, pinX, pinY, generateAreaPa
             <line x1="0" y1="30" x2="450" y2="30" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
             <line x1="0" y1="60" x2="450" y2="60" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
             <line x1="0" y1="90" x2="450" y2="90" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
-            <path d={generateAreaPath(sentimentData.sentimentOverTime)} fill="url(#sentimentAreaGrad)" />
-            <path d={generateLinePath(sentimentData.sentimentOverTime)} fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" />
+            <path d={generateAreaPath(sentimentData?.sentimentOverTime)} fill="url(#sentimentAreaGrad)" />
+            <path d={generateLinePath(sentimentData?.sentimentOverTime)} fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" />
             <path
               d="M 10,105 Q 40,85 70,92 T 130,100 T 190,75 T 250,88 T 310,72 T 370,95 T 440,68"
               fill="none" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="2 3" strokeOpacity="0.75"

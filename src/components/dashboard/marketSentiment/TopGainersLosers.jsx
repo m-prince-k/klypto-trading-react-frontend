@@ -65,7 +65,7 @@ const TopGainersLosers = ({ data, getColorClass }) => (
                         </tr>
                     </thead>
                     <tbody>
-                        {data.topGainers.map((g, i) => (
+                        {data?.topGainers?.map((g, i) => (
                             <tr key={i}>
                                 <td className="text-muted ps-4">{g.rank}</td>
                                 <td><div className="d-flex align-items-center"><img src={g.iconUrl} width="18" className="me-2" alt={g.coin} /><span className="fw-medium">{g.coin}</span></div></td>
@@ -101,7 +101,7 @@ const TopGainersLosers = ({ data, getColorClass }) => (
                         </tr>
                     </thead>
                     <tbody>
-                        {data.topGainers.map((g, i) => (   /* or topLosers */
+                        {data?.topLosers?.map((g, i) => (
                             <tr key={i}>
                                 <td className="text-muted ps-3">{g.rank}</td>
                                 <td>

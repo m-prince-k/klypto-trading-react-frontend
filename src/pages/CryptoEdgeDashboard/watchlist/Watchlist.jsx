@@ -36,10 +36,10 @@ const CoinIdentity = ({ symbolItem, isFutures = false }) => {
         const fullName = cachedCoin.name.toLowerCase().replace(/\s+/g, '-');
         apiService.get(`api/marketStats/${fullName}`).then(res => {
            if (isMounted && res?.data?.image) {
-             setImgUrl(res.data.image);
+             setImgUrl(res?.data?.image);
            }
            if (isMounted && res?.data?.coin) {
-             setCoinName(res.data.coin);
+             setCoinName(res?.data?.coin);
            }
         }).catch(err => console.error("MarketStats fetch error:", err));
       }
@@ -247,7 +247,7 @@ export default function Watchlist({ activeCurrency, setActiveCurrency }) {
       try {
         const url = debouncedSearchAll ? `api/getCurrencies?symbol=${debouncedSearchAll}` : `api/getCurrencies`;
         const res = await apiService.post(url);
-        setCurrencies(res.data || []);
+        setCurrencies(res?.data || []);
       } catch (err) {
         console.error("Failed to query currencies:", err);
       } finally {
