@@ -53,11 +53,11 @@ const OnChainHeader = ({
                     type="date"
                     value={customEndDate}
                     onChange={(e) => { setCustomEndDate(e.target.value); setDateRangePreset('Custom'); }}
-                    style={{ background: '#0d0f17', border: '1px solid var(--border-color)', borderRadius: '4px', color: '#fff', fontSize: '12px', padding: '4px 8px' }}
+                    style={{ background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '4px', color: 'var(--text-main)', fontSize: '12px', padding: '4px 8px' }}
                   />
                   <button
                     onClick={() => setDatePickerOpen(false)}
-                    style={{ background: 'var(--color-primary)', border: 'none', color: '#fff', fontSize: '12px', padding: '6px', borderRadius: '4px', cursor: 'pointer', fontWeight: '500' }}
+                    style={{ background: 'var(--accent-color)', border: 'none', color: '#fff', fontSize: '12px', padding: '6px', borderRadius: '4px', cursor: 'pointer', fontWeight: '500' }}
                   >
                     Apply Range
                   </button>
@@ -66,7 +66,7 @@ const OnChainHeader = ({
             </div>
           )}
         </div>
-        <div className="dropdown" onClick={(e) => { e.stopPropagation(); setExportDropdownOpen(!exportDropdownOpen); setChainDropdownOpen(false); }}>
+        <div className="dropdown" onClick={(e) => { e.stopPropagation(); setExportDropdownOpen(!exportDropdownOpen); setChainDropdownOpen(false); setDatePickerOpen(false); }}>
           <button className="onchain-btn-export">
             <i className="icon-export"></i> Export
             <i className="icon-chevron-down" style={{ marginLeft: '4px' }}></i>

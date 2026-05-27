@@ -265,7 +265,7 @@
 .card-footer-link {
   margin-top: 16px;
   font-size: 13px;
-  color: var(--color-primary);
+  color: var(--accent-color);
   cursor: pointer;
 }
 
@@ -688,11 +688,11 @@ i[class^="icon-"] {
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
-  background-color: #171a26;
+  background-color: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   min-width: 170px;
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.6);
+  box-shadow: var(--shadow-lg);
   z-index: 9999;
   display: flex;
   flex-direction: column;
@@ -728,8 +728,8 @@ i[class^="icon-"] {
 }
 
 .dropdown-item.active {
-  background-color: rgba(99, 102, 241, 0.15);
-  color: #6366f1;
+  background-color: var(--accent-color);
+  color: #ffffff;
   font-weight: 500;
 }
 
@@ -760,7 +760,7 @@ i[class^="icon-"] {
 }
 
 .modal-content {
-  background-color: #121622;
+  background-color: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 12px;
   width: 90%;
@@ -769,7 +769,7 @@ i[class^="icon-"] {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.7);
+  box-shadow: var(--shadow-lg);
   animation: modalContentSlide 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -824,7 +824,7 @@ i[class^="icon-"] {
 .modal-search {
   width: 100%;
   padding: 12px 16px;
-  background-color: #0d0f17;
+  background-color: var(--bg-input);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   color: var(--text-main);
@@ -835,7 +835,7 @@ i[class^="icon-"] {
 }
 
 .modal-search:focus {
-  border-color: #6366f1;
+  border-color: var(--accent-color);
   box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
 }
 
@@ -855,7 +855,7 @@ i[class^="icon-"] {
 .modal-body table.onchain-table td {
   padding: 16px 8px;
   font-size: 14px;
-  border-bottom: 1px solid rgba(42, 46, 57, 0.5);
+  border-bottom: 1px solid var(--border-color);
 }
 
 /* Scrollbars for Modal Body */

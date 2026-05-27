@@ -30,16 +30,25 @@ export default function Overview({
     return sym;
   };
 
-  // if (!prices || Object.keys(prices).length === 0) {
-  //     return (
-  //         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column' }}>
-  //             <Spinner />
-  //         </div>
-  //     );
-  // }
+  const isLoading = !prices || Object.keys(prices).length === 0;
 
   return (
-    <>
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      {isLoading && (
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+          display: 'flex', justifyContent: 'center', alignItems: 'center',
+          zIndex: 9999
+        }}>
+          <Spinner />
+        </div>
+      )}
+      <div style={{
+        filter: isLoading ? 'blur(4px)' : 'none',
+        opacity: isLoading ? 0.6 : 1,
+        pointerEvents: isLoading ? 'none' : 'auto',
+        display: 'contents'
+      }}>
       {/* Row 1: 5 Advanced Metric Cards */}
       <AdvancedMetricsGrid
         marketMetrics={marketMetrics}
@@ -75,6 +84,7 @@ export default function Overview({
         socialStats={socialStats}
         financials={financials}
       />
-    </>
+      </div>
+    </div>
   );
 }

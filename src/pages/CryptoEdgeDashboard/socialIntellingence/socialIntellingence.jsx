@@ -72,13 +72,7 @@ export default function SocialIntelligence({ setActiveTab = () => { }, isSubComp
     }
   });
 
-  // if (loading || !sentimentData) {
-  //   return (
-  //     <div className={isSubComponent ? "si-workspace-sub" : "si-workspace"} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }}>
-  //       <Spinner />
-  //     </div>
-  //   );
-  // }
+  const isLoading = loading || !sentimentData;
 
   const score = sentimentData?.sentimentScore;
   const theta = Math.PI * (1 - score / 100);
@@ -115,7 +109,24 @@ export default function SocialIntelligence({ setActiveTab = () => { }, isSubComp
   };
 
   return (
-    <div className={isSubComponent ? "si-workspace-sub" : "si-workspace"}>
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      {isLoading && (
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+          display: 'flex', justifyContent: 'center', alignItems: 'center',
+          zIndex: 9999
+        }}>
+          <Spinner />
+        </div>
+      )}
+      <div 
+        className={isSubComponent ? "si-workspace-sub" : "si-workspace"}
+        style={{
+          filter: isLoading ? 'blur(4px)' : 'none',
+          opacity: isLoading ? 0.6 : 1,
+          pointerEvents: isLoading ? 'none' : 'auto'
+        }}
+      >
 
       {/* LEFT TOOLBAR */}
       {!isSubComponent && (
@@ -277,6 +288,7 @@ export default function SocialIntelligence({ setActiveTab = () => { }, isSubComp
       {/* RIGHT SUMMARY WIDGET SIDEBAR */}
       <SocialSidebar sentimentData={sentimentData} />
 
+      </div>
     </div>
   );
 }

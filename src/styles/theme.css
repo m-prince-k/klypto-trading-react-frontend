@@ -10,7 +10,7 @@
   --border-color: #e2e8f0;  /* Light border */
   --border-light: #f1f3f6;  /* Extremely subtle border */
   
-  --accent-color: #3b82f6;  /* Blue */
+  --accent-color: #4f46e5;  /* Purple */
   --header-bg: #ffffff;     /* White header */
   --sidebar-bg: #ffffff;    /* White sidebar */
   
@@ -37,7 +37,7 @@
   --border-color: rgba(255, 255, 255, 0.05);
   --border-light: rgba(255, 255, 255, 0.02);
   
-  --accent-color: #3b82f6;
+  --accent-color: #6366f1;
   --header-bg: #0e121b;
   --sidebar-bg: #0e121b;
   
@@ -57,4 +57,12 @@ body {
   background-color: var(--bg-main);
   color: var(--text-main);
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Base utility for accent color */
+.text-accent {
+  color: var(--accent-color) !important;
+}
+.text-accent:hover {
+  opacity: 0.8;
 }

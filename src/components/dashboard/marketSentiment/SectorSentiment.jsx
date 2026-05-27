@@ -25,7 +25,7 @@ const SectorSentiment = ({ data, getColorClass }) => {
         return sorted;
     }, [sectors, activeTab]);
 
-    const displayedSectors = sortedSectors.slice(0, 10);
+    const displayedSectors = sortedSectors.slice(0, 12);
 
     const filteredModalSectors = useMemo(() => {
         if (!searchQuery) return sortedSectors;
@@ -43,8 +43,8 @@ const SectorSentiment = ({ data, getColorClass }) => {
             </td>
             <td className="text-end pe-3">
                 {s.trendUp !== false
-                    ? <svg width="40" height="16" viewBox="0 0 45 18"><path d="M0,12 L10,6 L20,9 L30,2 L45,5" fill="none" stroke="#0ecb81" strokeWidth="1.5" /></svg>
-                    : <svg width="40" height="16" viewBox="0 0 45 18"><path d="M0,10 L10,12 L20,7 L30,11 L45,8" fill="none" stroke="#f0b90b" strokeWidth="1.5" /></svg>
+                    ? <svg width="40" height="16" viewBox="0 0 45 18" style={{ display: 'block', marginLeft: 'auto' }}><path d="M0,12 L10,6 L20,9 L30,2 L45,5" fill="none" stroke="#0ecb81" strokeWidth="1.5" /></svg>
+                    : <svg width="40" height="16" viewBox="0 0 45 18" style={{ display: 'block', marginLeft: 'auto' }}><path d="M0,10 L10,12 L20,7 L30,11 L45,8" fill="none" stroke="#f0b90b" strokeWidth="1.5" /></svg>
                 }
             </td>
         </tr>
@@ -60,14 +60,14 @@ const SectorSentiment = ({ data, getColorClass }) => {
                     </div>
                     <div className="d-flex bg-dark-layer rounded p-1 justify-content-start">
                         <button 
-                            className={`btn btn-sm flex-grow-0 me-1 text-nowrap ${activeTab === 'MarketCap' ? 'text-white bg-secondary' : 'text-muted'}`} 
+                            className={`btn btn-sm flex-grow-0 me-1 text-nowrap ${activeTab === 'MarketCap' ? 'active-purple-toggle' : 'text-muted'}`} 
                             style={{ fontSize: '12px' }}
                             onClick={() => setActiveTab('MarketCap')}
                         >
                             By Market Cap
                         </button>
                         <button 
-                            className={`btn btn-sm flex-grow-0 text-nowrap ${activeTab === 'Change' ? 'text-white bg-secondary' : 'text-muted'}`} 
+                            className={`btn btn-sm flex-grow-0 text-nowrap ${activeTab === 'Change' ? 'active-purple-toggle' : 'text-muted'}`} 
                             style={{ fontSize: '12px' }}
                             onClick={() => setActiveTab('Change')}
                         >
@@ -76,7 +76,7 @@ const SectorSentiment = ({ data, getColorClass }) => {
                     </div>
                 </div>
                 <div className="card-body p-0 mt-2 flex-grow-1 d-flex flex-column">
-                    <table className="table binance-table mb-0 w-100 flex-grow-1" style={{ tableLayout: 'fixed' }}>
+                    <table className="table binance-table mb-0 w-100" style={{ tableLayout: 'fixed' }}>
                         <thead>
                             <tr>
                                 <th className="ps-3 border-bottom-secondary text-start" style={{ width: '40%' }}>Sector</th>
@@ -90,7 +90,7 @@ const SectorSentiment = ({ data, getColorClass }) => {
                         </tbody>
                     </table>
                     <div className="p-3 ps-4 mt-auto">
-                        <button onClick={() => setShowAllModal(true)} className="btn btn-link p-0 text-warning text-decoration-none small fw-medium hover-underline d-inline-flex align-items-center">
+                        <button onClick={() => setShowAllModal(true)} className="btn btn-link p-0 text-accent text-decoration-none small fw-medium hover-underline d-inline-flex align-items-center">
                             View all sectors <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" className="bi bi-chevron-right ms-1" viewBox="0 0 16 16"><path fillRule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z" /></svg>
                         </button>
                     </div>
@@ -116,30 +116,30 @@ const SectorSentiment = ({ data, getColorClass }) => {
                             <table className="onchain-table">
                                 <thead>
                                     <tr>
-                                        <th className="left">Sector</th>
-                                        <th className="left">Sentiment</th>
-                                        <th className="right">{activeTab === 'MarketCap' ? 'Value' : 'Value (24h)'}</th>
-                                        <th className="right">Trend</th>
+                                        <th className="text-start">Sector</th>
+                                        <th className="text-start">Sentiment</th>
+                                        <th className="text-end">{activeTab === 'MarketCap' ? 'Value' : 'Value (24h)'}</th>
+                                        <th className="text-end pe-2">Trend</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {filteredModalSectors.map((s, i) => (
                                         <tr key={i}>
-                                            <td className="left">
+                                            <td className="text-start">
                                                 <div className="table-chain-name">
                                                     <i className={`bi ${s.icon || 'bi-layers'} text-muted me-2`}></i>{s.name}
                                                 </div>
                                             </td>
-                                            <td className={`left ${getColorClass(s.sentimentLabel)}`}>
+                                            <td className={`text-start ${getColorClass(s.sentimentLabel)}`}>
                                                 {s.sentimentScore} <span className="small">{s.sentimentLabel}</span>
                                             </td>
-                                            <td className="right">
+                                            <td className="text-end">
                                                 {activeTab === 'MarketCap' ? s.value : s.change24h || s.value24h || s.change}
                                             </td>
-                                            <td className="right">
+                                            <td className="text-end pe-2">
                                                 {s.trendUp !== false
-                                                    ? <svg width="40" height="16" viewBox="0 0 45 18"><path d="M0,12 L10,6 L20,9 L30,2 L45,5" fill="none" stroke="#0ecb81" strokeWidth="1.5" /></svg>
-                                                    : <svg width="40" height="16" viewBox="0 0 45 18"><path d="M0,10 L10,12 L20,7 L30,11 L45,8" fill="none" stroke="#f0b90b" strokeWidth="1.5" /></svg>
+                                                    ? <svg width="40" height="16" viewBox="0 0 45 18" style={{ display: 'block', marginLeft: 'auto' }}><path d="M0,12 L10,6 L20,9 L30,2 L45,5" fill="none" stroke="#0ecb81" strokeWidth="1.5" /></svg>
+                                                    : <svg width="40" height="16" viewBox="0 0 45 18" style={{ display: 'block', marginLeft: 'auto' }}><path d="M0,10 L10,12 L20,7 L30,11 L45,8" fill="none" stroke="#f0b90b" strokeWidth="1.5" /></svg>
                                                 }
                                             </td>
                                         </tr>

@@ -155,32 +155,31 @@ export default function FinancialSocialRisk({
         <div className="fin-card">
           <div className="fin-card-title"><span className="icon">👥</span> 9. TEAM & INVESTORS</div>
 
-          <div style={{ display: 'flex', gap: '16px' }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '9px', color: 'var(--text-muted, #94a3b8)', marginBottom: '8px', textTransform: 'uppercase' }}>CORE TEAM</div>
-              <div className="fin-list" style={{ gap: '12px' }}>
+          <div style={{ display: 'flex', gap: '24px', marginTop: '16px' }}>
+            <div style={{ flex: 1.2 }}>
+              <div style={{ fontSize: '10px', color: 'var(--text-muted, #94a3b8)', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>CORE TEAM</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {fundamentals?.team?.slice(0, 4).map((member, i) => (
                   <div key={i} className="d-flex-center justify-content-between">
-                    <div className="d-flex-center">
-                      <div className="fin-team-avatar d-flex-center justify-content-center" style={{ fontSize: '12px' }}>👨‍💻</div>
+                    <div className="d-flex-center" style={{ gap: '12px' }}>
+                      <div className="fin-team-avatar d-flex-center justify-content-center" style={{ width: '32px', height: '32px', fontSize: '16px', backgroundColor: 'var(--bg-primary, #0b0f19)', borderRadius: '50%', border: '1px solid var(--border-color)' }}>👨‍💻</div>
                       <div className='text-left'>
-                        <div style={{ color: 'var(--text-main, #fff)', fontSize: '11px', fontWeight: 'bold' }}>{member.name}</div>
-                        <div style={{ color: 'var(--text-muted, #94a3b8)', fontSize: '9px' }}>{member.role}</div>
+                        <div style={{ color: 'var(--text-main, #fff)', fontSize: '12px', fontWeight: 'bold', lineHeight: '1.2' }}>{member.name}</div>
+                        <div style={{ color: 'var(--text-muted, #94a3b8)', fontSize: '10px', marginTop: '4px' }}>{member.role}</div>
                       </div>
                     </div>
-                    <div style={{ color: 'var(--accent-color, #3b82f6)', background: 'var(--bg-card-hover, rgba(59, 130, 246, 0.1))', padding: '2px 4px', borderRadius: '4px', fontSize: '9px' }}>in</div>
                   </div>
                 ))}
               </div>
             </div>
 
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '9px', color: 'var(--text-muted, #94a3b8)', marginBottom: '8px', textTransform: 'uppercase' }}>INVESTORS</div>
-              <div className="fin-list" style={{ gap: '12px' }}>
+              <div style={{ fontSize: '10px', color: 'var(--text-muted, #94a3b8)', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>INVESTORS</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {fundamentals?.investors?.slice(0, 5).map((inv, i) => (
-                  <div key={i} className="d-flex-center">
-                    <span style={{ color: ['#f59e0b', '#3b82f6', '#8b5cf6', '#10b981', '#f43f5e'][i % 5], marginRight: '6px' }}>{inv.charAt(0)}</span>
-                    <span style={{ color: 'var(--text-main, #fff)', fontSize: '10px' }}>{inv}</span>
+                  <div key={i} className="d-flex-center" style={{ background: 'var(--bg-primary, #0b0f19)', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                    <span style={{ color: ['#f59e0b', '#3b82f6', '#8b5cf6', '#10b981', '#f43f5e'][i % 5], marginRight: '10px', fontWeight: 'bold', fontSize: '12px' }}>{inv.charAt(0)}</span>
+                    <span style={{ color: 'var(--text-main, #fff)', fontSize: '11px', fontWeight: '500' }}>{inv}</span>
                   </div>
                 ))}
               </div>

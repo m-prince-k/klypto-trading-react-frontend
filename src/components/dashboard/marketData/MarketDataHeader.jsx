@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function MarketDataHeader({ isSocketConnected }) {
   return (
-    <header className="hero-header d-flex justify-content-between align-items-center">
+    <header className="hero-header d-flex justify-content-between align-items-center pb-4">
       <div>
         <h1 className="hero-title text-left">Market Data</h1>
         <p className="hero-subtitle">Real-time market overview and cryptocurrency data</p>

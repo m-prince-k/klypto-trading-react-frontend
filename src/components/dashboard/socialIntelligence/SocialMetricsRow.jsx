@@ -1,5 +1,28 @@
 import React from 'react';
 
+const renderDynamicBars = (dataArray, fillCol) => {
+  const data = dataArray && dataArray.length > 0 ? dataArray : [];
+  if (data.length === 0) return null;
+
+  const max = Math.max(...data, 1);
+  const wStep = 150 / data.length;
+  
+  return data.map((val, idx) => {
+    const h = (val / max) * 40; // reserve 5px for visual padding top
+    return (
+      <rect
+        key={idx}
+        x={idx * wStep + (wStep * 0.15)}
+        y={45 - h}
+        width={wStep * 0.7}
+        height={Math.max(h, 2)} // at least 2px height
+        fill={fillCol}
+        rx="1"
+      />
+    );
+  });
+};
+
 export default function SocialMetricsRow({ sentimentData }) {
   const totalCircle = 238;
   const twitterDash = (sentimentData?.twitterPct / 100) * totalCircle;
@@ -48,9 +71,10 @@ export default function SocialMetricsRow({ sentimentData }) {
         <span className="si-stat-comparison">vs last 24h</span>
         <div className="si-barchart-container">
           <svg className="si-barchart-svg" viewBox="0 0 150 45" preserveAspectRatio="none">
-            {[12, 18, 15, 22, 28, 25, 34, 30, 42, 38, 45, 40, 52, 48, 55, 62].map((val, idx) => (
-              <rect key={idx} x={idx * 9.5} y={45 - val / 1.5} width="6.5" height={val / 1.5} fill="#38bdf8" rx="1" />
-            ))}
+            {renderDynamicBars(
+              sentimentData?.socialVolumeHistory, 
+              "#4f46e5"
+            )}
           </svg>
         </div>
       </div>
@@ -67,9 +91,10 @@ export default function SocialMetricsRow({ sentimentData }) {
         <span className="si-stat-comparison">vs last 24h</span>
         <div className="si-barchart-container">
           <svg className="si-barchart-svg" viewBox="0 0 150 45" preserveAspectRatio="none">
-            {[8, 14, 20, 18, 24, 32, 28, 36, 42, 35, 48, 44, 52, 58, 65, 72].map((val, idx) => (
-              <rect key={idx} x={idx * 9.5} y={45 - val / 1.7} width="6.5" height={val / 1.7} fill="#38bdf8" rx="1" />
-            ))}
+            {renderDynamicBars(
+              sentimentData?.engagementHistory, 
+              "#4f46e5"
+            )}
           </svg>
         </div>
       </div>

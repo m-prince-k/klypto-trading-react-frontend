@@ -59,16 +59,24 @@ const MarketSentiment = ({ selectedSymbol }) => {
         news: actualData?.news,
     };
 
-    // if (!sentimentData) {
-    //     return (
-    //         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column' }}>
-    //             <Spinner />
-    //         </div>
-    //     );
-    // }
+    const isLoading = !sentimentData;
 
     return (
-        <div>  {/* removed binance-dashboard-layout class */}
+        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+            {isLoading && (
+                <div style={{
+                    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                    display: 'flex', justifyContent: 'center', alignItems: 'center',
+                    zIndex: 9999
+                }}>
+                    <Spinner />
+                </div>
+            )}
+            <div style={{
+                filter: isLoading ? 'blur(4px)' : 'none',
+                opacity: isLoading ? 0.6 : 1,
+                pointerEvents: isLoading ? 'none' : 'auto'
+            }}>  {/* removed binance-dashboard-layout class */}
             <div className="ms-content">  {/* replaced dashboard-content */}
 
                 <MarketSentimentHeader />
@@ -101,6 +109,7 @@ const MarketSentiment = ({ selectedSymbol }) => {
                         </div>
                     {/* )} */}
                 </div>
+            </div>
             </div>
         </div>
     );

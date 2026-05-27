@@ -17,7 +17,7 @@ export default function FinancialAdvancedAnalytics({
   return (
     <>
       {/* 10. ADVANCED ANALYTICS & INDICATORS */}
-      <div className="fin-col-7">
+      <div className="fin-col-8">
         <div className="fin-card">
           <div className="fin-card-title">
             <span className="icon">📈</span> 10. ADVANCED ANALYTICS & INDICATORS
@@ -165,7 +165,7 @@ export default function FinancialAdvancedAnalytics({
                 <table className="fin-table">
                   <thead>
                     <tr>
-                      <th>TIME FRAME</th>
+                      <th style={{ whiteSpace: 'nowrap' }}>TIME FRAME</th>
                       <th style={{ textAlign: "left" }}>MIN PRICE</th>
                       <th style={{ textAlign: "left" }}>AVG PRICE</th>
                       <th style={{ textAlign: "left" }}>MAX PRICE</th>
@@ -235,7 +235,7 @@ export default function FinancialAdvancedAnalytics({
                     fontWeight: "bold",
                   }}
                 >
-                  N/A
+                 {predictions?.confidenceLevel}
                 </span>
               </div>
               <div
@@ -244,7 +244,7 @@ export default function FinancialAdvancedAnalytics({
               >
                 <div
                   className="fin-progress-fill"
-                  style={{ width: "0%", backgroundColor: "#f59e0b" }}
+                  style={{ width: `${predictions?.confidenceLevel}%`, backgroundColor: "#f59e0b" }}
                 ></div>
               </div>
             </div>
@@ -253,7 +253,7 @@ export default function FinancialAdvancedAnalytics({
       </div>
 
       {/* 11. SUMMARY & OUTLOOK */}
-      <div className="fin-col-5">
+      <div className="fin-col-4">
         <div className="fin-card">
           <div className="fin-card-title">
             <span className="icon">📋</span> 11. SUMMARY & OUTLOOK

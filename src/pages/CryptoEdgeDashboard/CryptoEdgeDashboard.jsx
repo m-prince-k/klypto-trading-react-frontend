@@ -195,6 +195,7 @@ const CryptoEdgeDashboard = () => {
           setSelectedSymbol={setSelectedSymbol}
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
+          activeTab={activeTab}
         />
 
         <div className="dashboard-wrapper" style={{ flexGrow: 1, minHeight: 0 }}>

@@ -120,15 +120,7 @@ export default function Financial({ setActiveTab = () => { }, isSubComponent = f
 
   // Use real data
   const liveData = data;
-
-  // Only show full-page loader on the very first load (never received data yet)
-  // if (!liveData && !hasLoadedOnce.current) {
-  //   return (
-  //     <div className="finance-dashboard" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: isSubComponent ? '100%' : '100vh', flexDirection: 'column' }}>
-  //       <Spinner />
-  //     </div>
-  //   );
-  // }
+  const isLoading = loading || !liveData;
 
 
   const {
@@ -194,7 +186,24 @@ export default function Financial({ setActiveTab = () => { }, isSubComponent = f
   }
 
   return (
-    <div className="finance-dashboard">
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      {isLoading && (
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+          display: 'flex', justifyContent: 'center', alignItems: 'center',
+          zIndex: 9999
+        }}>
+          <Spinner />
+        </div>
+      )}
+      <div 
+        className="finance-dashboard"
+        style={{
+          filter: isLoading ? 'blur(4px)' : 'none',
+          opacity: isLoading ? 0.6 : 1,
+          pointerEvents: isLoading ? 'none' : 'auto'
+        }}
+      >
       {/* HEADER */}
       {/* <FinancialHeader
         selectedSymbol={selectedSymbol}
@@ -285,6 +294,7 @@ export default function Financial({ setActiveTab = () => { }, isSubComponent = f
           formatNum={formatNum}
           formatLarge={formatLarge}
         />
+      </div>
       </div>
     </div>
   );

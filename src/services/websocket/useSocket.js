@@ -8,6 +8,10 @@ export const globalCache = {
   marketCoins: null,
   marketMetrics: null,
   overviewChartData: null,
+  sentimentData: null,
+  onchainData: null,
+  financeData: null,
+  opportunities: null,
 };
 
 export const useSocket = ({
@@ -136,7 +140,13 @@ export const useSocket = ({
           return updated;
         };
 
-        if (setSentimentData) setSentimentData(prev => prev ? mergeValidProps(prev, data) : data);
+        if (setSentimentData) {
+          setSentimentData(prev => {
+            const next = prev ? mergeValidProps(prev, data) : data;
+            globalCache.sentimentData = next;
+            return next;
+          });
+        }
 
         if (data.fearGreed) setFearGreed?.((prev) => mergeValidProps(prev, data.fearGreed));
         if (data.socialStats) setSocialStats?.((prev) => mergeValidProps(prev, data.socialStats));
@@ -166,7 +176,11 @@ export const useSocket = ({
         // Safely extract fearGreed whether it's nested or the root object
         const incomingFearGreed = data?.fearGreed ? data?.fearGreed : data;
         setFearGreed?.((prev) => mergeValidProps(prev, incomingFearGreed));
-        setSentimentData?.((prev) => prev ? mergeValidProps(prev, data) : data);
+        setSentimentData?.((prev) => {
+          const next = prev ? mergeValidProps(prev, data) : data;
+          globalCache.sentimentData = next;
+          return next;
+        });
       },
 
       /* ───────────────── BINANCE TICKER ───────────────── */
@@ -426,6 +440,7 @@ export const useSocket = ({
       arbitrageResponse: (res) => {
         if (setOpportunities) console.log("[useSocket] Event: arbitrage-response Response:", res);
         if (!res?.data) return;
+        globalCache.opportunities = res.data;
         setOpportunities?.(res.data);
         setLastUpdated?.(new Date().toLocaleTimeString());
       },
@@ -453,7 +468,7 @@ export const useSocket = ({
           });
 
           setPriceFlash?.((prev) => ({ ...prev, ...flashes }));
-
+          globalCache.opportunities = res.data;
           return res.data;
         });
 
@@ -488,6 +503,7 @@ export const useSocket = ({
           }
         }
         
+        globalCache.onchainData = payload;
         setOnchainData?.(payload);
       },
 
@@ -525,6 +541,7 @@ export const useSocket = ({
         }
 
         if (setFinanceData || setFearGreed || setSocialStats || setTvlData || setFinancials || setMarketExtra) console.log("[useSocket] Event: finance-dashboard-update Payload:", data);
+        globalCache.financeData = data;
         if (setFinanceData) setFinanceData(data);
 
         const mergeValidProps = (prev, incoming) => {
@@ -643,6 +660,19 @@ export const useSocket = ({
           setOverviewChartData(globalCache.overviewChartData);
         }
         manager.emit(EVENTS.MARKET.GET, { symbol: safeSymbol || "BTCUSDT" });
+      }
+
+      if (setSentimentData && globalCache.sentimentData) {
+        setSentimentData(globalCache.sentimentData);
+      }
+      if (setOnchainData && globalCache.onchainData) {
+        setOnchainData(globalCache.onchainData);
+      }
+      if (setFinanceData && globalCache.financeData) {
+        setFinanceData(globalCache.financeData);
+      }
+      if (setOpportunities && globalCache.opportunities) {
+        setOpportunities(globalCache.opportunities);
       }
 
       if (setOnchainData && safeSymbol) {

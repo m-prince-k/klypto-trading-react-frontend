@@ -30,10 +30,10 @@ const SentimentBreakdown = ({ data }) => {
         </div>
         <div className="breakdown-tabs d-flex align-items-center extremely-small text-muted bg-dark-layer rounded p-1"
              style={{ flexWrap: 'wrap', gap: '3px' }}>
-            <span className={`tab px-2 py-1 rounded ${activeTab === 'All' ? 'active text-white bg-secondary' : ''}`} onClick={() => setActiveTab('All')} style={{ cursor: 'pointer' }}>All</span>
-            <span className={`tab px-2 py-1 rounded ${activeTab === 'Spot' ? 'active text-white bg-secondary' : ''}`} onClick={() => setActiveTab('Spot')} style={{ cursor: 'pointer' }}>Spot</span>
-            <span className={`tab px-2 py-1 rounded ${activeTab === 'Futures' ? 'active text-white bg-secondary' : ''}`} onClick={() => setActiveTab('Futures')} style={{ cursor: 'pointer' }}>Futures</span>
-            <span className={`tab px-2 py-1 rounded ${activeTab === 'Social' ? 'active text-white bg-secondary' : ''}`} onClick={() => setActiveTab('Social')} style={{ cursor: 'pointer' }}>Social</span>
+            <span className={`tab px-2 py-1 rounded ${activeTab === 'All' ? 'active active-purple-toggle' : ''}`} onClick={() => setActiveTab('All')} style={{ cursor: 'pointer' }}>All</span>
+            <span className={`tab px-2 py-1 rounded ${activeTab === 'Spot' ? 'active active-purple-toggle' : ''}`} onClick={() => setActiveTab('Spot')} style={{ cursor: 'pointer' }}>Spot</span>
+            <span className={`tab px-2 py-1 rounded ${activeTab === 'Futures' ? 'active active-purple-toggle' : ''}`} onClick={() => setActiveTab('Futures')} style={{ cursor: 'pointer' }}>Futures</span>
+            <span className={`tab px-2 py-1 rounded ${activeTab === 'Social' ? 'active active-purple-toggle' : ''}`} onClick={() => setActiveTab('Social')} style={{ cursor: 'pointer' }}>Social</span>
         </div>
     </div>
 </div>

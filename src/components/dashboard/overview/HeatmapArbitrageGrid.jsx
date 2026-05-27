@@ -19,7 +19,7 @@ const HeatmapArbitrageGrid = ({ socialStats, arbitrage, tvlData, priceCompass })
 
         {/* Card 2: Top Arbitrage Opportunities */}
         <div
-          className="premium-card"
+          className="premium-card clickable"
           onClick={() =>
             (window.location.href = "/dashboard#arbitrage")
           }
@@ -60,11 +60,8 @@ const HeatmapArbitrageGrid = ({ socialStats, arbitrage, tvlData, priceCompass })
 
         {/* Card 3: Multi Exchange pricing compass */}
         <div
-          className="premium-card"
-          style={{ cursor: "pointer", transition: "transform 0.2s" }}
+          className="premium-card clickable"
           onClick={() => setIsCompassModalOpen(true)}
-          onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-2px)"}
-          onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
         >
           <div className="card-header-row">
             <h4 className="card-title-main">Price Compass</h4>
@@ -82,16 +79,16 @@ const HeatmapArbitrageGrid = ({ socialStats, arbitrage, tvlData, priceCompass })
           >
             {/* Real 3D Mini Compass SVG */}
             <svg
-              width="100"
-              height="100"
-              viewBox="0 0 64 64"
+              width="160"
+              height="160"
+              viewBox="-20 -20 104 104"
               style={{ flexShrink: 0 }}
             >
               <defs>
                 <linearGradient id="miniMetalBezel" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#94a3b8" />
-                  <stop offset="50%" stopColor="#334155" />
-                  <stop offset="100%" stopColor="#0f172a" />
+                  <stop offset="0%" stopColor="var(--border-color, #94a3b8)" />
+                  <stop offset="50%" stopColor="var(--text-muted, #334155)" />
+                  <stop offset="100%" stopColor="var(--bg-card, #0f172a)" />
                 </linearGradient>
                 <linearGradient id="miniGlass" x1="0%" y1="0%" x2="0%" y2="100%">
                   <stop offset="0%" stopColor="rgba(255,255,255,0.15)" />
@@ -102,16 +99,16 @@ const HeatmapArbitrageGrid = ({ socialStats, arbitrage, tvlData, priceCompass })
                   <stop offset="100%" stopColor="#1e3a8a" />
                 </radialGradient>
                 <filter id="miniShadow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#000" floodOpacity="0.8" />
+                  <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#000" floodOpacity="0.5" />
                 </filter>
               </defs>
 
               {/* Outer Bezel */}
-              <circle cx="32" cy="32" r="30" fill="#0b0f19" stroke="url(#miniMetalBezel)" strokeWidth="2.5" filter="url(#miniShadow)" />
+              <circle cx="32" cy="32" r="30" fill="var(--bg-card, #0b0f19)" stroke="url(#miniMetalBezel)" strokeWidth="2.5" filter="url(#miniShadow)" />
 
               {/* Inner Ring */}
-              <circle cx="32" cy="32" r="24" fill="none" stroke="#1e293b" strokeWidth="1" strokeDasharray="1 3" />
-              <circle cx="32" cy="32" r="18" fill="none" stroke="#334155" strokeWidth="0.5" />
+              <circle cx="32" cy="32" r="24" fill="none" stroke="var(--border-color, #1e293b)" strokeWidth="1" strokeDasharray="1 3" />
+              <circle cx="32" cy="32" r="18" fill="none" stroke="var(--border-color, #334155)" strokeWidth="0.5" />
 
               {/* Dynamic Exchange Nodes (Calculate Green/Red inline based on avg price) */}
               {(() => {
@@ -129,22 +126,22 @@ const HeatmapArbitrageGrid = ({ socialStats, arbitrage, tvlData, priceCompass })
                     {/* Top */}
                     <circle cx="32" cy="10" r="2.5" fill={topC} filter="url(#miniShadow)" />
                     <line x1="32" y1="13" x2="32" y2="18" stroke={topC} strokeWidth="1" strokeOpacity="0.5" />
-                    {prices[0] && <text x="32" y="5" fontSize="4.5" fill={topC} textAnchor="middle" fontWeight="bold">${Number(prices[0].price).toLocaleString(undefined, { maximumFractionDigits: 2 })}</text>}
+                    {prices[0] && <text x="32" y="-4" fontSize="7" fill={topC} textAnchor="middle" fontWeight="bold">${Number(prices[0].price).toLocaleString(undefined, { maximumFractionDigits: 2 })}</text>}
 
                     {/* Bottom */}
                     <circle cx="32" cy="54" r="2.5" fill={bottomC} filter="url(#miniShadow)" />
                     <line x1="32" y1="46" x2="32" y2="51" stroke={bottomC} strokeWidth="1" strokeOpacity="0.5" />
-                    {prices[2] && <text x="32" y="61.5" fontSize="4.5" fill={bottomC} textAnchor="middle" fontWeight="bold">${Number(prices[2].price).toLocaleString(undefined, { maximumFractionDigits: 2 })}</text>}
+                    {prices[2] && <text x="32" y="72" fontSize="7" fill={bottomC} textAnchor="middle" fontWeight="bold">${Number(prices[2].price).toLocaleString(undefined, { maximumFractionDigits: 2 })}</text>}
 
                     {/* Left */}
                     <circle cx="10" cy="32" r="2.5" fill={leftC} filter="url(#miniShadow)" />
                     <line x1="13" y1="32" x2="18" y2="32" stroke={leftC} strokeWidth="1" strokeOpacity="0.5" />
-                    {prices[3] && <text x="4" y="27" fontSize="4.5" fill={leftC} textAnchor="middle" fontWeight="bold">${Number(prices[3].price).toLocaleString(undefined, { maximumFractionDigits: 2 })}</text>}
+                    {prices[3] && <text x="-2" y="34.5" fontSize="7" fill={leftC} textAnchor="end" fontWeight="bold">${Number(prices[3].price).toLocaleString(undefined, { maximumFractionDigits: 2 })}</text>}
 
                     {/* Right */}
                     <circle cx="54" cy="32" r="2.5" fill={rightC} filter="url(#miniShadow)" />
                     <line x1="46" y1="32" x2="51" y2="32" stroke={rightC} strokeWidth="1" strokeOpacity="0.5" />
-                    {prices[1] && <text x="60" y="27" fontSize="4.5" fill={rightC} textAnchor="middle" fontWeight="bold">${Number(prices[1].price).toLocaleString(undefined, { maximumFractionDigits: 2 })}</text>}
+                    {prices[1] && <text x="66" y="34.5" fontSize="7" fill={rightC} textAnchor="start" fontWeight="bold">${Number(prices[1].price).toLocaleString(undefined, { maximumFractionDigits: 2 })}</text>}
                   </g>
                 );
               })()}

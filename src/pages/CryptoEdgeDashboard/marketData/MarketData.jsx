@@ -291,16 +291,27 @@ const MarketData = ({ coins, setCoins, marketMetrics, setMarketMetrics, overview
     currentPage * itemsPerPage
   );
 
-  // if (!coins || coins.length === 0) {
-  //     return (
-  //         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column' }}>
-  //             <Spinner />
-  //         </div>
-  //     );
-  // }
+  const isLoading = !coins || coins.length === 0;
 
   return (
-    <div className="market-data-container container-fluid p-0">
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      {isLoading && (
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+          display: 'flex', justifyContent: 'center', alignItems: 'center',
+          zIndex: 9999
+        }}>
+          <Spinner />
+        </div>
+      )}
+      <div 
+        className="market-data-container container-fluid p-0"
+        style={{
+          filter: isLoading ? 'blur(4px)' : 'none',
+          opacity: isLoading ? 0.6 : 1,
+          pointerEvents: isLoading ? 'none' : 'auto'
+        }}
+      >
       <MarketDataHeader isSocketConnected={isSocketConnected} />
 
       <MarketDataTickerGrid
@@ -338,12 +349,14 @@ const MarketData = ({ coins, setCoins, marketMetrics, setMarketMetrics, overview
           chartTimeframe={chartTimeframe}
           setChartTimeframe={setChartTimeframe}
           marketMetrics={marketMetrics}
-          renderOverviewChart={renderOverviewChart}
           gainers={gainers}
           losers={losers}
+          coins={coins}
           setActiveTab={setActiveTab}
+          renderOverviewChart={renderOverviewChart}
         />
       </section>
+      </div>
     </div>
   );
 };

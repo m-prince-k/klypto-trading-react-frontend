@@ -249,18 +249,21 @@
   color: var(--text-muted);
   font-size: 15px;
   font-weight: 600;
-  padding: 12px 0;
+  padding: 10px 16px;
+  border-radius: 6px;
   cursor: pointer;
   position: relative;
-  transition: color 0.15s ease;
+  transition: all 0.15s ease;
 }
 
 .tab-btn:hover {
   color: var(--text-main);
+  background-color: var(--bg-secondary);
 }
 
 .tab-btn.active {
   color: var(--accent-color);
+  background-color: var(--bg-tertiary);
 }
 
 .tab-btn.active::after {
@@ -675,7 +678,7 @@
 }
 
 .side-card-more-link:hover {
-  color: var(--binance-yellow);
+  color: var(--accent-color, #7c3aed);
 }
 
 .side-list-container {
@@ -1088,4 +1091,13 @@
     transform: translateY(0);
     opacity: 1;
   }
+}
+
+/* ================= LIGHT THEME OVERRIDES ================= */
+[data-theme="light"] .tab-btn:hover {
+  background-color: #f1f5f9 !important;
+}
+
+[data-theme="light"] .tab-btn.active {
+  background-color: #e2e8f0 !important;
 }

@@ -5,7 +5,7 @@ import apiService from "../../../services/apiServices";
 import { logout } from "../../../pages/auth/protected";
 import { useTheme } from "../../../context/ThemeContext";
 
-const HeaderControls = ({ selectedSymbol, setSelectedSymbol, sidebarOpen, setSidebarOpen }) => {
+const HeaderControls = ({ selectedSymbol, setSelectedSymbol, sidebarOpen, setSidebarOpen, activeTab }) => {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
 
@@ -74,7 +74,8 @@ const HeaderControls = ({ selectedSymbol, setSelectedSymbol, sidebarOpen, setSid
 
 
         {/* Premium Asset Selector Dropdown */}
-        <div
+        {!(activeTab && ['settings', 'watchlist', 'arbitrage', 'market sentiment'].includes(activeTab.toLowerCase())) && (
+          <div
           className="premium-dropdown-wrapper"
           style={{
             display: "flex",
@@ -124,6 +125,7 @@ const HeaderControls = ({ selectedSymbol, setSelectedSymbol, sidebarOpen, setSid
             ))}
           </select>
         </div>
+        )}
 
         <div className="search-container">
           <input

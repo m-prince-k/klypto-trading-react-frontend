@@ -397,6 +397,16 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.premium-card:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+.premium-card.clickable {
+  cursor: pointer;
 }
 
 .card-header-row {
@@ -635,8 +645,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 4px 8px;
-  background-color: rgba(25, 32, 51, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.02);
+  background-color: rgba(99, 102, 241, 0.12); /* Light purple with opacity */
+  border: 1px solid rgba(99, 102, 241, 0.15);
   border-radius: 6px;
   font-size: 10px;
   margin-bottom: 4px;

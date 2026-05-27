@@ -57,10 +57,18 @@ export default function Arbitrage({ setActiveTab = () => { }, isSubComponent = f
     setTvlData: () => { },
     setFinancials: () => { },
     setAlerts: () => { },
-    setOpportunities: setOpportunities,
+    setOpportunities: (data) => {
+      if (autoRefreshRef.current) {
+        setOpportunities(data);
+      }
+    },
     setLoading,
-    setPriceFlash,
-    setLastUpdated,
+    setPriceFlash: (data) => {
+      if (autoRefreshRef.current) setPriceFlash(data);
+    },
+    setLastUpdated: (data) => {
+      if (autoRefreshRef.current) setLastUpdated(data);
+    },
     getBaseSymbol: (sym) => sym?.replace(/USDT|BUSD|USDC|BTC|ETH$/i, "") ?? "", // ← add this
   });
 
@@ -208,71 +216,80 @@ export default function Arbitrage({ setActiveTab = () => { }, isSubComponent = f
     return pages;
   };
 
-  // if (loading) {
-  //   return (
-  //     <div className={isSubComponent ? "arbitrage-main-sub" : "arbitrage-wrapper"} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', height: '100vh' }}>
-  //       <Spinner />
-  //     </div>
-  //   );
-  // }
+  const isLoading = loading;
 
   return (
-    <div className={isSubComponent ? "arbitrage-main-sub" : "arbitrage-wrapper"}>
-      <div className={isSubComponent ? "arbitrage-main-sub-content" : "arbitrage-main"}>
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      {isLoading && (
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+          display: 'flex', justifyContent: 'center', alignItems: 'center',
+          zIndex: 9999
+        }}>
+          <Spinner />
+        </div>
+      )}
+      <div
+        className={isSubComponent ? "arbitrage-main-sub" : "arbitrage-wrapper"}
+        style={{
+          filter: isLoading ? 'blur(4px)' : 'none',
+          opacity: isLoading ? 0.6 : 1,
+          pointerEvents: isLoading ? 'none' : 'auto'
+        }}
+      >
+        <div className={isSubComponent ? "arbitrage-main-sub-content" : "arbitrage-main"}>
 
-        {/* TOP BAR */}
-        {!isSubComponent && (
+          {/* TOP BAR */}
+
           <header className="main-header">
             <div className="header-left">
-              <button className="sidebar-toggle-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
-                <FiMenu />
-              </button>
-              <h1 className="header-title">Crypto Arbitrage</h1>
+              <div>
+                <h1 className="header-title text-left">Arbitrage</h1>
+                <p className="header-subtitle">Real-time cross-exchange arbitrage opportunities</p>
+              </div>
             </div>
             <div className="header-right">
-              <div className="notification-bell-container">
-                <FiBell className="bell-icon" />
-                <span className="bell-badge"></span>
-              </div>
+
               <button className="header-refresh-btn" onClick={handleResetFilters}>
                 <FiRefreshCw className="refresh-icon" />
                 <span>Refresh</span>
               </button>
             </div>
           </header>
-        )}
 
-        <div className="content-container container-fluid p-0">
 
-          {/* FILTERS PANEL */}
-          <ArbitrageFilters
-            exchangeFilter={exchangeFilter} setExchangeFilter={setExchangeFilter}
-            segmentFilter={segmentFilter} setSegmentFilter={setSegmentFilter}
-            instrumentFilter={instrumentFilter} setInstrumentFilter={setInstrumentFilter}
-            minSpreadRs={minSpreadRs} setMinSpreadRs={setMinSpreadRs}
-            minSpreadPct={minSpreadPct} setMinSpreadPct={setMinSpreadPct}
-            autoRefresh={autoRefresh} setAutoRefresh={setAutoRefresh}
-            handleResetFilters={handleResetFilters}
-            handleApplyFilters={handleApplyFilters}
-          />
+          <div className="content-container container-fluid p-0">
 
-          {/* STATS CARDS */}
-          <ArbitrageStats stats={stats} lastUpdated={lastUpdated} />
+            {/* FILTERS PANEL */}
+            <ArbitrageFilters
+              exchangeFilter={exchangeFilter} setExchangeFilter={setExchangeFilter}
+              segmentFilter={segmentFilter} setSegmentFilter={setSegmentFilter}
+              instrumentFilter={instrumentFilter} setInstrumentFilter={setInstrumentFilter}
+              minSpreadRs={minSpreadRs} setMinSpreadRs={setMinSpreadRs}
+              minSpreadPct={minSpreadPct} setMinSpreadPct={setMinSpreadPct}
+              autoRefresh={autoRefresh} setAutoRefresh={setAutoRefresh}
+              handleResetFilters={handleResetFilters}
+              handleApplyFilters={handleApplyFilters}
+            />
 
-          {/* TABLE CONTAINER */}
-          <ArbitrageTable
-            searchTerm={searchTerm} setSearchTerm={setSearchTerm}
-            currentPage={currentPage} setCurrentPage={setCurrentPage}
-            handleExportCSV={handleExportCSV}
-            handleSort={handleSort} renderSortIcon={renderSortIcon}
-            paginatedData={paginatedData}
-            filteredOpportunities={filteredOpportunities}
-            totalPages={totalPages}
-            itemsPerPage={itemsPerPage}
-            getPaginationNumbers={getPaginationNumbers}
-            priceFlash={priceFlash}
-          />
+            {/* STATS CARDS */}
+            <ArbitrageStats stats={stats} lastUpdated={lastUpdated} />
 
+            {/* TABLE CONTAINER */}
+            <ArbitrageTable
+              searchTerm={searchTerm} setSearchTerm={setSearchTerm}
+              currentPage={currentPage} setCurrentPage={setCurrentPage}
+              handleExportCSV={handleExportCSV}
+              handleSort={handleSort} renderSortIcon={renderSortIcon}
+              paginatedData={paginatedData}
+              filteredOpportunities={filteredOpportunities}
+              totalPages={totalPages}
+              itemsPerPage={itemsPerPage}
+              getPaginationNumbers={getPaginationNumbers}
+              priceFlash={priceFlash}
+            />
+
+          </div>
         </div>
       </div>
     </div>

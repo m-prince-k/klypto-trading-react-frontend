@@ -118,13 +118,7 @@ const OnChain = ({ isSubComponent = false, selectedSymbol }) => {
   };
 
   // Show a loading screen until the backend data is retrieved
-  // if (!data) {
-  //   return (
-  //     <div className={isSubComponent ? "onchain-wrapper-sub" : "onchain-layout"} style={{ justifyContent: 'center', alignItems: 'center', height: isSubComponent ? '100%' : '100vh', flexDirection: 'column' }}>
-  //       <Spinner />
-  //     </div>
-  //   );
-  // }
+  const isLoading = !data;
 
   // Dynamic Filtering Logic
   const chainsList = ['All Chains', ...(data?.chains?.slice(0, 8)?.map(c => c.chain) || [])];
@@ -237,7 +231,24 @@ const OnChain = ({ isSubComponent = false, selectedSymbol }) => {
   }
 
   return (
-    <div className={isSubComponent ? "onchain-wrapper-sub" : "onchain-layout"}>
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      {isLoading && (
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+          display: 'flex', justifyContent: 'center', alignItems: 'center',
+          zIndex: 9999
+        }}>
+          <Spinner />
+        </div>
+      )}
+      <div 
+        className={isSubComponent ? "onchain-wrapper-sub" : "onchain-layout"}
+        style={{
+          filter: isLoading ? 'blur(4px)' : 'none',
+          opacity: isLoading ? 0.6 : 1,
+          pointerEvents: isLoading ? 'none' : 'auto'
+        }}
+      >
       <main className="onchain-main">
         {/* Header */}
         <OnChainHeader
@@ -302,6 +313,7 @@ const OnChain = ({ isSubComponent = false, selectedSymbol }) => {
         setModalSearch={setModalSearch}
         data={data}
       />
+      </div>
     </div>
   );
 };

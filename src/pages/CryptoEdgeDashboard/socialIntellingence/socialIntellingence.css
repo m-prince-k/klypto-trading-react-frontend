@@ -245,37 +245,31 @@
   background-color: var(--header-bg);
   border-bottom: 1px solid var(--border-color);
   padding: 0 16px;
-  gap: 24px;
+  border-radius: 6px;
+  gap: 20px;
   margin-top: 16px;
 }
 
 .si-tab-item {
   font-size: 13px;
-  color: #78869b;
-  padding: 12px 0;
+  color: var(--text-muted);
+  padding: 10px 12px;
+  border-radius: 6px;
   cursor: pointer;
   position: relative;
   font-weight: 500;
-  transition: color 0.15s ease-in-out;
+  transition: all 0.15s ease-in-out;
 }
 
 .si-tab-item:hover {
-  color: #ffffff;
+  color: var(--text-main);
+  background-color: var(--bg-secondary);
 }
 
 .si-tab-item.active {
-  color: #38bdf8;
+  color: var(--accent-color);
+  background-color: var(--bg-tertiary);
   font-weight: 600;
-}
-
-.si-tab-item.active::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background-color: #38bdf8;
 }
 
 /* 5. SOCIAL INTELLIGENCE SECTION STYLE */
@@ -802,6 +796,7 @@
   font-size: 13px;
   color: #ffffff;
   font-weight: 500;
+  text-align: left;
 }
 
 .si-badge {
