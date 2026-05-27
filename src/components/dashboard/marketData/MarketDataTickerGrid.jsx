@@ -25,7 +25,7 @@ export default function MarketDataTickerGrid({ marketMetrics, renderSparkline })
           <span className="stat-title">24h Trading Volume</span>
         </div>
         <div>
-          <div className="stat-value">${marketMetrics?.volume24h}B</div>
+          <div className="stat-value">${marketMetrics?.volume24h}T</div>
           <div className={`stat-change ${(marketMetrics?.volume24hChange || 0) >= 0 ? 'up' : 'down'}`}>
             {(marketMetrics?.volume24hChange || 0) >= 0 ? '▲' : '▼'}{Math.abs(marketMetrics?.volume24hChange || 0)}%
           </div>

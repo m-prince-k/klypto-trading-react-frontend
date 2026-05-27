@@ -28,7 +28,7 @@ const NewsSentiment = ({ data, getColorClass }) => (
                         <div className="news-title text-truncate me-3 fw-medium">
                             <span className="text-success me-2 fs-6">•</span>{n.title}
                         </div>
-                        <div className="text-muted small d-flex justify-content-between" style={{ minWidth: '100px' }}>
+                        <div className="text-muted small d-flex gap-2 justify-content-between" style={{ minWidth: '100px' }}>
                             <span>{n.source}</span><span>{n.time}</span>
                         </div>
                     </div>

@@ -167,9 +167,10 @@ const MarketData = ({ coins, setCoins, marketMetrics, setMarketMetrics, overview
   const renderOverviewChart = (timeframe) => {
     // Normalize timeframe key (e.g., 'All' to 'ALL') to match backend payload
     const tfKey = timeframe.toUpperCase();
-    const data = overviewChartData?.[tfKey] || [
-      2.48, 2.5, 2.47, 2.52, 2.51, 2.54, 2.53, 2.56, 2.55, 2.57, 2.56,
-    ];
+    const data = overviewChartData?.[tfKey] || [];
+    
+    if (data.length === 0) return null;
+
     const min = Math.min(...data);
     const max = Math.max(...data);
     const range = max - min || 1;

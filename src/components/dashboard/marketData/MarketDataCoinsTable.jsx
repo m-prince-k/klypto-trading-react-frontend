@@ -235,41 +235,43 @@ export default function MarketDataCoinsTable({
         </div>
 
         {/* Right Side: Pagination Controls */}
-        {totalPages > 1 ? (
-          <div className="d-flex align-items-center" style={{ gap: '12px' }}>
-            <span style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '13px' }}>
-              Page {currentPage} of {totalPages}
-            </span>
-            <div className="btn-group">
-              <button 
-                className="btn btn-sm" 
-                style={{
-                  backgroundColor: currentPage === 1 ? 'var(--bg-secondary, #1e222d)' : 'var(--bg-card, #2b313f)',
-                  color: currentPage === 1 ? 'var(--text-muted, #6b7280)' : 'var(--text-main, #d1d4dc)',
-                  borderColor: 'var(--border-color, #2b313f)',
-                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
-                }}
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              >
-                Prev
-              </button>
-              <button 
-                className="btn btn-sm" 
-                style={{
-                  backgroundColor: currentPage === totalPages ? 'var(--bg-secondary, #1e222d)' : 'var(--bg-card, #2b313f)',
-                  color: currentPage === totalPages ? 'var(--text-muted, #6b7280)' : 'var(--text-main, #d1d4dc)',
-                  borderColor: 'var(--border-color, #2b313f)',
-                  cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
-                }}
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              >
-                Next
-              </button>
-            </div>
+        {totalPages > 1 && (
+          <div className="custom-pagination d-flex align-items-center gap-1">
+            <button className="pagination-arrow" disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/></svg>
+            </button>
+            {(() => {
+              const pageNumbers = [];
+              const maxVisiblePages = 5;
+              if (totalPages <= maxVisiblePages) {
+                for (let i = 1; i <= totalPages; i++) pageNumbers.push(i);
+              } else {
+                pageNumbers.push(1);
+                if (currentPage > 3) pageNumbers.push('...');
+                let startPage = Math.max(2, currentPage - 1);
+                let endPage = Math.min(totalPages - 1, currentPage + 1);
+                if (currentPage === 1) endPage = 3;
+                if (currentPage === totalPages) startPage = totalPages - 2;
+                for (let i = startPage; i <= endPage; i++) pageNumbers.push(i);
+                if (currentPage < totalPages - 2) pageNumbers.push('...');
+                pageNumbers.push(totalPages);
+              }
+              return pageNumbers.map((pageNum, idx) => (
+                <button
+                  key={idx}
+                  className={`pagination-number ${currentPage === pageNum ? 'active' : ''} ${pageNum === '...' ? 'pagination-ellipsis' : ''}`}
+                  disabled={pageNum === '...'}
+                  onClick={() => { if (pageNum !== '...') setCurrentPage(pageNum); }}
+                >
+                  {pageNum}
+                </button>
+              ));
+            })()}
+            <button className="pagination-arrow" disabled={currentPage === totalPages || totalPages === 0} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
+            </button>
           </div>
-        ) : <div />}
+        )}
       </div>
     </div>
   );

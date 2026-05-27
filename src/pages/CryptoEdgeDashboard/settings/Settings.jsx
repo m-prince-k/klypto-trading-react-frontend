@@ -197,7 +197,7 @@ const Settings = () => {
     { id: 'profile', label: 'Profile', icon: 'bi-person' },
     { id: 'preferences', label: 'Preferences', icon: 'bi-sliders' },
     { id: 'notifications', label: 'Notifications', icon: 'bi-bell' },
-    { id: 'withdrawal', label: 'Withdrawal', icon: 'bi-wallet2' },
+    // { id: 'withdrawal', label: 'Withdrawal', icon: 'bi-wallet2' },
     { id: 'trade', label: 'Trade', icon: 'bi-graph-up' },
     { id: 'link_account', label: 'Link Account', icon: 'bi-link-45deg' },
     { id: 'privacy', label: 'Privacy', icon: 'bi-shield-lock' }
@@ -231,7 +231,7 @@ const Settings = () => {
             {activeTab === 'profile' && <ProfileSettings userData={userData} handleEdit={handleEdit} />}
             {activeTab === 'preferences' && <PreferencesSettings userData={userData} handleEdit={handleEdit} />}
             {activeTab === 'notifications' && <NotificationsSettings userData={userData} handleToggle={handleToggle} />}
-            {activeTab === 'withdrawal' && <WithdrawalSettings userData={userData} handleToggle={handleToggle} />}
+            {/* {activeTab === 'withdrawal' && <WithdrawalSettings userData={userData} handleToggle={handleToggle} />} */}
             {activeTab === 'trade' && <TradeSettings userData={userData} handleToggle={handleToggle} handleEdit={handleEdit} />}
             {activeTab === 'link_account' && <LinkAccountSettings userData={userData} handleLinkAction={handleLinkAction} />}
             {activeTab === 'privacy' && <PrivacySettings userData={userData} handleToggle={handleToggle} />}

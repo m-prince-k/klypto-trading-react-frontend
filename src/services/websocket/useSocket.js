@@ -82,11 +82,12 @@ export const useSocket = ({
         
         if (extractedCoins.length > 0) globalCache.marketCoins = extractedCoins;
         if (res.metrics) globalCache.marketMetrics = res.metrics;
-        if (res.overviewChart) globalCache.overviewChartData = res.overviewChart;
+        const chartData = res.overviewChartData || res.overviewChart;
+        if (chartData) globalCache.overviewChartData = chartData;
 
         if (setCoins) setCoins(extractedCoins);
         if (setMarketMetrics && res.metrics) setMarketMetrics((prev) => ({ ...prev, ...res.metrics }));
-        if (setOverviewChartData && res.overviewChart) setOverviewChartData(res.overviewChart);
+        if (setOverviewChartData && chartData) setOverviewChartData(chartData);
 
         if (setCoinDetail && extractedCoins.length > 0) {
           const found = extractedCoins.find(c => c.symbol.toUpperCase() === selectedSymbol?.toUpperCase());
@@ -123,7 +124,6 @@ export const useSocket = ({
       marketSentiment: (data) => {
         // binance-sentiment
         if (setSentimentData || setFearGreed || setSocialStats || setTvlData || setFinancials || setMarketMetrics) console.log("[useSocket] Event: binance-sentiment Payload:", data);
-        if (setSentimentData) setSentimentData(data);
 
         const mergeValidProps = (prev, incoming) => {
           if (!incoming || typeof incoming !== 'object') return prev;
@@ -136,6 +136,8 @@ export const useSocket = ({
           return updated;
         };
 
+        if (setSentimentData) setSentimentData(prev => prev ? mergeValidProps(prev, data) : data);
+
         if (data.fearGreed) setFearGreed?.((prev) => mergeValidProps(prev, data.fearGreed));
         if (data.socialStats) setSocialStats?.((prev) => mergeValidProps(prev, data.socialStats));
         if (data.tvlData) setTvlData?.((prev) => mergeValidProps(prev, data.tvlData));
@@ -145,7 +147,6 @@ export const useSocket = ({
           ...prev,
           btcDominance: parseFloat(data?.socialStats?.btcDominance) || prev?.btcDominance,
           fearGreedIndex: parseInt(data?.fearGreed?.value) || prev?.fearGreedIndex,
-          volume24h: parseFloat(data?.tvlData?.total?.replace("$", "").replace("B", "")) || prev.volume24h,
         }));
       },
 
@@ -165,7 +166,7 @@ export const useSocket = ({
         // Safely extract fearGreed whether it's nested or the root object
         const incomingFearGreed = data?.fearGreed ? data?.fearGreed : data;
         setFearGreed?.((prev) => mergeValidProps(prev, incomingFearGreed));
-        setSentimentData?.(data);
+        setSentimentData?.((prev) => prev ? mergeValidProps(prev, data) : data);
       },
 
       /* ───────────────── BINANCE TICKER ───────────────── */

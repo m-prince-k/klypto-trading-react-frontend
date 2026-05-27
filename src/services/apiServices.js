@@ -8,7 +8,7 @@ const token =
 // 🔹 Create axios instance
 const api = axios.create({
   // baseURL: "https://studios-publishers-promising-rosa.trycloudflare.com",
-  baseURL: "http://192.168.1.8:7000", // change to your API
+  baseURL: "http://192.168.1.14:7000", // change to your API
   // baseURL: "http://localhost:7000", // change to your API
 
   timeout: 500000,
@@ -55,7 +55,14 @@ const getAuthHeaders = () => {
     session = null;
   }
 
-  const token = session?.token;
+  // Try multiple possible token field locations
+  const token =
+    session?.token ||
+    session?.accessToken ||
+    session?.jwtToken ||
+    session?.user?.token ||
+    session?.user?.accessToken ||
+    null;
 
   return {
     "Content-Type": "application/json",

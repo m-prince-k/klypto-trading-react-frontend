@@ -41,14 +41,14 @@ const OnChainHeader = ({
                     type="date"
                     value={customStartDate}
                     onChange={(e) => { setCustomStartDate(e.target.value); setDateRangePreset('Custom'); }}
-style={{
-  background: 'var(--bg-input)',
-  border: '1px solid var(--border-color)',
-  borderRadius: '4px',
-  color: 'var(--text-main)',
-  fontSize: '12px',
-  padding: '4px 8px'
-}}                  />
+                    style={{
+                      background: 'var(--bg-input)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '4px',
+                      color: 'var(--text-main)',
+                      fontSize: '12px',
+                      padding: '4px 8px'
+                    }} />
                   <input
                     type="date"
                     value={customEndDate}

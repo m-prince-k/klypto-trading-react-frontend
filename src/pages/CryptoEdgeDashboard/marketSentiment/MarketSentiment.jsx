@@ -59,13 +59,13 @@ const MarketSentiment = ({ selectedSymbol }) => {
         news: actualData?.news,
     };
 
-    if (!sentimentData) {
-        return (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column' }}>
-                <Spinner />
-            </div>
-        );
-    }
+    // if (!sentimentData) {
+    //     return (
+    //         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column' }}>
+    //             <Spinner />
+    //         </div>
+    //     );
+    // }
 
     return (
         <div>  {/* removed binance-dashboard-layout class */}

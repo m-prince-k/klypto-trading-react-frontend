@@ -84,49 +84,12 @@ const OnChainCharts = ({
         </div>
       </div>
 
-      {/* Chart 2: TVL by Chain */}
-      <div className="chart-card tvl-by-chain">
-        <div className="card-header">
-          <div className="card-title">TVL by Chain 
-          </div>
-        </div>
-        <div className="donut-body">
-          <div className="donut-chart-wrapper">
-            <div className="donut-chart" style={donutStyle}>
-              {/* CSS Donut Chart */}
-            </div>
-            <div className="donut-center">
-              <div className="donut-value">${data?.stats?.tvl}B</div>
-              <div className="donut-label">Total</div>
-            </div>
-          </div>
-          <div className="donut-legend">
-            {displayChains.map((c, i) => (
-              <div className="legend-item" key={i}>
-                <span className="dot" style={{ backgroundColor: c.color }}></span>
-                <span className="l-name">{c.chain}</span>
-                <span className="l-pct">{c.dom}</span>
-                <span className="l-val">(${c.tvl}B)</span>
-              </div>
-            ))}
-            {!isFiltered && (
-              <>
-                <div className="legend-item"><span className="dot c-opt"></span> <span className="l-name">Optimism</span> <span className="l-pct">2.4%</span> <span className="l-val">($2.05B)</span></div>
-                <div className="legend-item"><span className="dot c-oth"></span> <span className="l-name">Others</span> <span className="l-pct">9.9%</span> <span className="l-val">($8.45B)</span></div>
-              </>
-            )}
-          </div>
-        </div>
-        <div className="card-footer-link" onClick={() => { setActiveModal('chains'); setModalSearch(''); }}>
-          View all chains &rarr;
-        </div>
-      </div>
+
 
       {/* Chart 3: Top Protocols */}
       <div className="chart-card top-protocols">
         <div className="card-header">
-          <div className="card-title">Top Protocols <i className="icon-info"></i></div>
-          <a href="#" className="header-link" onClick={(e) => { e.preventDefault(); setActiveModal('protocols'); setModalSearch(''); }}>View all</a>
+          <div className="card-title">Top Protocols </div>
         </div>
         <div className="protocols-list">
           <div className="p-list-header">
@@ -134,7 +97,8 @@ const OnChainCharts = ({
             <span>TVL</span>
           </div>
 
-          {data?.protocols?.slice(0, 8).map(p => (
+          {/* Protocols List */}
+          {(data?.protocols?.slice(0, 8) || []).map(p => (
             <div className="p-list-item" key={p.n}>
               <div className="p-num">{p.n}</div>
               <div className="p-icon" style={{ backgroundColor: p.color }}></div>

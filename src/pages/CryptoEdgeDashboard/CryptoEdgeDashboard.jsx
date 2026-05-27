@@ -27,6 +27,7 @@ const CryptoEdgeDashboard = () => {
   const [selectedSymbol, setSelectedSymbol] = useState("BTCUSDT"); // 'BTCUSDT', 'ETHUSDT', etc.
   const [marketCoins, setMarketCoins] = useState([]);
   const [marketMetrics, setMarketMetrics] = useState(null);
+  
   const [overviewChartData, setOverviewChartData] = useState({});
   const [flashStates, setFlashStates] = useState({});
   const getInitialTab = () => {
@@ -155,6 +156,7 @@ const CryptoEdgeDashboard = () => {
   const [financials, setFinancials] = useState(null);
   const [arbitrage, setArbitrage] = useState([]);
   const [alerts, setAlerts] = useState([]);
+  const [sentimentData, setSentimentData] = useState(null);
 
   // Synchronize Ref with State to keep socket event listeners always updated
   const selectedSymbolRef = useRef(selectedSymbol);
@@ -175,6 +177,7 @@ const CryptoEdgeDashboard = () => {
     setFinancials,
     setOpportunities: setArbitrage,
     setAlerts,
+    setSentimentData,
     selectedSymbol,
     selectedSymbolRef,
     getBaseSymbol,
@@ -225,6 +228,7 @@ const CryptoEdgeDashboard = () => {
                   arbitrage={arbitrage}
                   alerts={alerts}
                   activeTab={activeTab}
+                  sentimentData={sentimentData}
                 />
               )}
 

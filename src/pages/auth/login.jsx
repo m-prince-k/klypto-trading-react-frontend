@@ -68,11 +68,16 @@ export default function Login() {
       console.log(response);
 
       const data = response?.user;
+      // Merge user object with root-level token so getAuthHeaders() can read session.token
+      const sessionData = {
+        ...(data || {}),
+        token: response?.token || response?.accessToken || data?.token || data?.accessToken || '',
+      };
 
       if (form.remember) {
-        localStorage.setItem("session", JSON.stringify(data));
+        localStorage.setItem("session", JSON.stringify(sessionData));
       } else {
-        sessionStorage.setItem("session", JSON.stringify(data));
+        sessionStorage.setItem("session", JSON.stringify(sessionData));
       }
 
       toast.success("Login successful!");

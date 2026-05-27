@@ -122,19 +122,19 @@ export default function Financial({ setActiveTab = () => { }, isSubComponent = f
   const liveData = data;
 
   // Only show full-page loader on the very first load (never received data yet)
-  if (!liveData && !hasLoadedOnce.current) {
-    return (
-      <div className="finance-dashboard" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: isSubComponent ? '100%' : '100vh', flexDirection: 'column' }}>
-        <Spinner />
-      </div>
-    );
-  }
+  // if (!liveData && !hasLoadedOnce.current) {
+  //   return (
+  //     <div className="finance-dashboard" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: isSubComponent ? '100%' : '100vh', flexDirection: 'column' }}>
+  //       <Spinner />
+  //     </div>
+  //   );
+  // }
 
 
   const {
     symbol, name, price, change24h, volume24h, high24h, low24h, marketCap, fdv,
     fundamentals, depth, onChain, social, indicators, predictions, outlook
-  } = liveData;
+  } = liveData || {};
 
   const isUp = change24h >= 0;
   const changeColor = isUp ? 'text-green' : 'text-red';

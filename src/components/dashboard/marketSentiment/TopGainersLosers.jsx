@@ -23,7 +23,19 @@ const CoinTable = ({ rows, trendStroke, getColorClass }) => (
                     <td className="text-muted ps-4">{item.rank}</td>
                     <td>
                         <div className="d-flex align-items-center">
-                            <img src={item.iconUrl} width="18" className="me-2" alt={item.coin} />
+                            {item?.iconUrl?.trim() ? (
+                                <img src={item.iconUrl} width="18" height="18" className="me-2" alt={item.coin} style={{ borderRadius: '50%' }} />
+                            ) : (
+                                <div className="me-2" style={{
+                                    width: '18px', height: '18px', borderRadius: '50%',
+                                    background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    fontSize: '9px', fontWeight: '700', color: '#fff',
+                                    flexShrink: 0,
+                                }}>
+                                    {item.coin?.charAt(0)?.toUpperCase() || '?'}
+                                </div>
+                            )}
                             <span className="fw-medium">{item.coin}</span>
                         </div>
                     </td>
@@ -31,7 +43,7 @@ const CoinTable = ({ rows, trendStroke, getColorClass }) => (
                         {item.sentimentScore} <span className={`small ${getColorClass(item.sentimentLabel)}`}>{item.sentimentLabel}</span>
                     </td>
                     <td className={`text-end ${getColorClass(item.sentimentLabel)}`}>{item.change24h}</td>
-                    <td className="text-end pe-4">
+                    <td className="text-right pe-4">
                         <svg width="55" height="18" viewBox="0 0 55 18">
                             <path d={trendStroke} fill="none" stroke={trendStroke.endsWith('2') ? '#0ecb81' : '#f6465d'} strokeWidth="1.5" />
                         </svg>
@@ -106,8 +118,18 @@ const TopGainersLosers = ({ data, getColorClass }) => (
                                 <td className="text-muted ps-3">{g.rank}</td>
                                 <td>
                                     <div className="d-flex align-items-center">
-                                        <img src={g.iconUrl} width="16" className="me-1 flex-shrink-0" alt={g.coin}
-                                            onError={e => { e.target.style.display = 'none'; }} />
+                                        {g?.iconUrl?.trim() ? (
+                                            <img src={g.iconUrl} width="16" height="16" className="me-1 flex-shrink-0" alt={g.coin} style={{ borderRadius: '50%' }} />
+                                        ) : (
+                                            <div className="me-1 flex-shrink-0" style={{
+                                                width: '16px', height: '16px', borderRadius: '50%',
+                                                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                fontSize: '8px', fontWeight: '700', color: '#fff',
+                                            }}>
+                                                {g.coin?.charAt(0)?.toUpperCase() || '?'}
+                                            </div>
+                                        )}
                                         <span className="fw-medium" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.coin}</span>
                                     </div>
                                 </td>

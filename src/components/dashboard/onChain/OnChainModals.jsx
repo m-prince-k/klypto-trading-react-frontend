@@ -38,8 +38,9 @@ const OnChainModals = ({ activeModal, setActiveModal, modalSearch, setModalSearc
                 </tr>
               </thead>
               <tbody>
-                {data?.chains
+                {(data?.chains || [])
                   .filter(c => c.chain.toLowerCase().includes(modalSearch.toLowerCase()))
+                  .sort((a, b) => a.n - b.n)
                   .map((r, i) => (
                     <tr key={i}>
                       <td>{r.n}</td>
@@ -50,7 +51,9 @@ const OnChainModals = ({ activeModal, setActiveModal, modalSearch, setModalSearc
                         </div>
                       </td>
                       <td className="right">${r.tvl}B</td>
-                      <td className={`right ${String(r.c24).includes('-') ? 'down' : 'up'}`}>{Number(r.c24) > 0 ? '+' : ''}{r.c24}%</td>
+                      <td className={`right ${String(r.c24).includes('-') ? 'down' : 'up'}`}>
+                        {parseFloat(r.c24) > 0 && !String(r.c24).startsWith('+') ? '+' : ''}{r.c24}
+                      </td>
                       <td className={`right ${String(r.c7).includes('-') ? 'down' : 'up'}`}>{r.c7}</td>
                       <td className="right">{r.dom}</td>
                     </tr>
@@ -93,17 +96,38 @@ const OnChainModals = ({ activeModal, setActiveModal, modalSearch, setModalSearc
             <table className="onchain-table">
               <thead>
                 <tr>
+                  {/* <th>Period</th> */}
                   <th>Date</th>
-                  <th className="right">Global TVL</th>
+                  <th className="right">TVL</th>
+                  {/* <th className="right">Change</th>
+                  <th className="right">Change %</th> */}
                 </tr>
               </thead>
               <tbody>
-                {data?.tvlHistory.map((h, i) => (
-                  <tr key={i}>
-                    <td>{h.date}</td>
-                    <td className="right">${h.tvl}B</td>
-                  </tr>
-                ))}
+                {[...(data?.tvlHistory || [])].reverse().map((h, reversedIdx, reversedArr) => {
+                  const originalArr = data?.tvlHistory || [];
+                  const originalIdx = (originalArr.length - 1) - reversedIdx;
+                  const currentTvl = parseFloat(h.tvl) || 0;
+                  const prevTvl = originalIdx > 0 ? (parseFloat(originalArr[originalIdx - 1].tvl) || 0) : currentTvl;
+                  
+                  const change = currentTvl - prevTvl;
+                  const changePct = prevTvl !== 0 ? (change / prevTvl) * 100 : 0;
+                  const isUp = change >= 0;
+                  
+                  return (
+                    <tr key={reversedIdx}>
+                      <td className="text-center">{h.date}</td>
+                      {/* <td className="right">${currentTvl.toFixed(2)}B</td>
+                      <td className={`right ${isUp ? 'up' : 'down'}`}>
+                        {isUp ? '+' : ''}{change.toFixed(2)}B
+                      </td>
+                      <td className={`right ${isUp ? 'up' : 'down'}`}>
+                        {isUp ? '+' : ''}{changePct.toFixed(2)}%
+                      </td> */}
+                      <td className="text-right">{h.tvl}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}

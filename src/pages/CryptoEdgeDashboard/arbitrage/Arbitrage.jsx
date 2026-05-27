@@ -208,13 +208,13 @@ export default function Arbitrage({ setActiveTab = () => { }, isSubComponent = f
     return pages;
   };
 
-  if (loading) {
-    return (
-      <div className={isSubComponent ? "arbitrage-main-sub" : "arbitrage-wrapper"} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', height: '100vh' }}>
-        <Spinner />
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className={isSubComponent ? "arbitrage-main-sub" : "arbitrage-wrapper"} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', height: '100vh' }}>
+  //       <Spinner />
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className={isSubComponent ? "arbitrage-main-sub" : "arbitrage-wrapper"}>

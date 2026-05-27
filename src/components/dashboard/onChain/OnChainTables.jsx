@@ -21,7 +21,7 @@ const OnChainTables = ({ data, setActiveModal, setModalSearch }) => {
             </tr>
           </thead>
           <tbody>
-            {data?.chains?.slice(0, 5).map(r => (
+            {([...(data?.chains || [])].sort((a, b) => a.n - b.n).slice(0, 5)).map(r => (
               <tr key={r.n}>
                 <td>{r.n}</td>
                 <td>
@@ -31,7 +31,9 @@ const OnChainTables = ({ data, setActiveModal, setModalSearch }) => {
                   </div>
                 </td>
                 <td className="right">${r.tvl}B</td>
-                <td className={`right ${String(r.c24).includes('-') ? 'down' : 'up'}`}>{Number(r.c24) > 0 ? '+' : ''}{r.c24}%</td>
+                <td className={`right ${String(r.c24).includes('-') ? 'down' : 'up'}`}>
+                  {parseFloat(r.c24) > 0 && !String(r.c24).startsWith('+') ? '+' : ''}{r.c24}
+                </td>
                 <td className={`right ${String(r.c7).includes('-') ? 'down' : 'up'}`}>{r.c7}</td>
                 <td className={`right ${String(r.c30).includes('-') ? 'down' : 'up'}`}>{r.c30}</td>
                 <td className="right">{r.dom}</td>
@@ -59,9 +61,9 @@ const OnChainTables = ({ data, setActiveModal, setModalSearch }) => {
             </tr>
           </thead>
           <tbody>
-            {data?.tvlChanges.map((r, i) => (
+            {(data?.tvlChanges || []).map((r, i) => (
               <tr key={i}>
-                <td>{r.p}</td>
+                <td className='text-left'>{r.p}</td>
                 <td className="right">${r.tvl}B</td>
                 <td className={`right ${r.isUp ? 'up' : 'down'}`}>{r.chg}</td>
                 <td className={`right ${r.isUp ? 'up' : 'down'}`}>{r.pct}</td>

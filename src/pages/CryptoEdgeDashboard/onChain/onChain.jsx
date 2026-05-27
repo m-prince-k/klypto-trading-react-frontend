@@ -118,16 +118,16 @@ const OnChain = ({ isSubComponent = false, selectedSymbol }) => {
   };
 
   // Show a loading screen until the backend data is retrieved
-  if (!data) {
-    return (
-      <div className={isSubComponent ? "onchain-wrapper-sub" : "onchain-layout"} style={{ justifyContent: 'center', alignItems: 'center', height: isSubComponent ? '100%' : '100vh', flexDirection: 'column' }}>
-        <Spinner />
-      </div>
-    );
-  }
+  // if (!data) {
+  //   return (
+  //     <div className={isSubComponent ? "onchain-wrapper-sub" : "onchain-layout"} style={{ justifyContent: 'center', alignItems: 'center', height: isSubComponent ? '100%' : '100vh', flexDirection: 'column' }}>
+  //       <Spinner />
+  //     </div>
+  //   );
+  // }
 
   // Dynamic Filtering Logic
-  const chainsList = ['All Chains', ...data?.chains?.slice(0, 8)?.map(c => c.chain)];
+  const chainsList = ['All Chains', ...(data?.chains?.slice(0, 8)?.map(c => c.chain) || [])];
   const isFiltered = selectedChain !== 'All Chains';
   const filteredChainObj = isFiltered ? data?.chains?.find(c => c.chain === selectedChain) : null;
 
@@ -136,14 +136,14 @@ const OnChain = ({ isSubComponent = false, selectedSymbol }) => {
   const displayChains = isFiltered && filteredChainObj ? [filteredChainObj] : data?.chains?.slice(0, 5);
 
   // Calculate conic gradient dynamically for the Donut Chart
-  const conicParts = displayChains?.map((c, idx, arr) => {
+  const conicParts = (displayChains || []).map((c, idx, arr) => {
     const pct = isFiltered ? 100 : parseFloat(c.dom);
     const start = isFiltered ? 0 : (idx === 0 ? 0 : arr.slice(0, idx).reduce((sum, ch) => sum + parseFloat(ch.dom), 0));
     return `${c.color} ${start}% ${start + pct}%`;
   });
 
   if (!isFiltered) {
-    let accumulatedPercent = data?.chains?.reduce((sum, c) => sum + parseFloat(c.dom), 0);
+    let accumulatedPercent = data?.chains ? data.chains.reduce((sum, c) => sum + parseFloat(c.dom), 0) : 0;
     conicParts.push(`var(--color-opt) ${accumulatedPercent}% ${accumulatedPercent + 2.4}%`);
     accumulatedPercent += 2.4;
     conicParts.push(`var(--color-oth) ${accumulatedPercent}% 100%`);
@@ -165,25 +165,24 @@ const OnChain = ({ isSubComponent = false, selectedSymbol }) => {
     })
     : data?.tvlHistory;
 
-  // Filter historical series by selected date picker presets/ranges
   let filteredHistory = displayHistory || [];
 
   if (dateRangePreset === 'Last 7 Days') {
-    filteredHistory = displayHistory.slice(-7);
+    filteredHistory = filteredHistory.slice(-7);
   } else if (dateRangePreset === 'Last 30 Days') {
-    filteredHistory = displayHistory.slice(-30);
+    filteredHistory = filteredHistory.slice(-30);
   } else if (dateRangePreset === 'Last 90 Days') {
-    filteredHistory = displayHistory;
+    filteredHistory = filteredHistory;
   } else if (dateRangePreset === 'Custom') {
     const startMs = new Date(customStartDate).getTime();
     const endMs = new Date(customEndDate).getTime();
-    filteredHistory = displayHistory.filter(h => {
+    filteredHistory = filteredHistory.filter(h => {
       const currentYear = new Date().getFullYear();
       const pointMs = new Date(`${h.date}, ${currentYear}`).getTime();
       return (!startMs || pointMs >= startMs) && (!endMs || pointMs <= endMs);
     });
     if (filteredHistory.length === 0) {
-      filteredHistory = displayHistory;
+      filteredHistory = displayHistory || [];
     }
   }
 

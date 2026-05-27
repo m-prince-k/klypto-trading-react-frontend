@@ -72,13 +72,13 @@ export default function SocialIntelligence({ setActiveTab = () => { }, isSubComp
     }
   });
 
-  if (loading || !sentimentData) {
-    return (
-      <div className={isSubComponent ? "si-workspace-sub" : "si-workspace"} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }}>
-        <Spinner />
-      </div>
-    );
-  }
+  // if (loading || !sentimentData) {
+  //   return (
+  //     <div className={isSubComponent ? "si-workspace-sub" : "si-workspace"} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }}>
+  //       <Spinner />
+  //     </div>
+  //   );
+  // }
 
   const score = sentimentData?.sentimentScore;
   const theta = Math.PI * (1 - score / 100);

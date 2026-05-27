@@ -17,7 +17,8 @@ export default function Overview({
   financials,
   arbitrage,
   alerts,
-  activeTab
+  activeTab,
+  sentimentData
 }) {
   const getBaseSymbol = (sym) => {
     if (!sym) return "";
@@ -56,17 +57,23 @@ export default function Overview({
         tvContainerRef={tvContainerRef}
         activeTab={activeTab} 
       />
-      {/* Row 3: Social & Financial Metrics Grid */}
-      <SocialFinancialGrid
-        tvlData={tvlData}
-        socialStats={socialStats}
-        financials={financials}
-      />
-      {/* Row 4: Narrative Heatmap bubbles & Alerts feed */}
+      {/* Row 3: Narrative Heatmap bubbles & TVL Protocols & Arbitrage & Compass */}
       <HeatmapArbitrageGrid
         socialStats={socialStats}
         arbitrage={arbitrage}
+        tvlData={tvlData}
+        priceCompass={
+          sentimentData?.priceCompass || 
+          sentimentData?.data?.priceCompass || 
+          (sentimentData?.deviation && sentimentData?.prices ? sentimentData : null) ||
+          socialStats?.priceCompass
+        }
+      />
+      {/* Row 4: Social & Financial Metrics Grid & Alerts feed */}
+      <SocialFinancialGrid
         alerts={alerts}
+        socialStats={socialStats}
+        financials={financials}
       />
     </>
   );

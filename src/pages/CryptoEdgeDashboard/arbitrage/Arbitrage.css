@@ -599,20 +599,20 @@ input:checked + .slider:before {
   width: 32px;
   height: 32px;
   border-radius: 6px;
-  border: 1px solid #30363d;
-  background-color: #21262d;
+  border: 1px solid var(--border-color, #30363d);
+  background-color: var(--bg-secondary, #21262d);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #8b949e;
+  color: var(--text-muted, #8b949e);
   cursor: pointer;
   transition: all 0.2s;
   padding: 0;
 }
 
 .pagination-arrow:hover:not(:disabled) {
-  background-color: #30363d;
-  color: #e2e8f0;
+  background-color: var(--bg-hover, #30363d);
+  color: var(--text-main, #e2e8f0);
 }
 
 .pagination-arrow:disabled {
@@ -624,14 +624,14 @@ input:checked + .slider:before {
   width: 32px;
   height: 32px;
   border-radius: 6px;
-  border: 1px solid #30363d;
-  background-color: #21262d;
+  border: 1px solid var(--border-color, #30363d);
+  background-color: var(--bg-secondary, #21262d);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 12.5px;
   font-weight: 500;
-  color: #8b949e;
+  color: var(--text-muted, #8b949e);
   cursor: pointer;
   transition: all 0.2s;
   margin: 0 2px;
@@ -639,14 +639,14 @@ input:checked + .slider:before {
 }
 
 .pagination-number:hover {
-  background-color: #30363d;
-  color: #e2e8f0;
+  background-color: var(--bg-hover, #30363d);
+  color: var(--text-main, #e2e8f0);
 }
 
 .pagination-number.active {
-  background-color: #238636;
+  background-color: #10b981;
   color: #ffffff;
-  border-color: #2ea043;
+  border-color: #059669;
 }
 
 .pagination-ellipsis {

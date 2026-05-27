@@ -32,7 +32,8 @@
   z-index: 10;
 }
 
-.si-toolbar-top, .si-toolbar-bottom {
+.si-toolbar-top,
+.si-toolbar-bottom {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -86,7 +87,8 @@
   user-select: none;
 }
 
-.si-topbar-left, .si-topbar-right {
+.si-topbar-left,
+.si-topbar-right {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -244,6 +246,7 @@
   border-bottom: 1px solid var(--border-color);
   padding: 0 16px;
   gap: 24px;
+  margin-top: 16px;
 }
 
 .si-tab-item {
@@ -330,7 +333,11 @@
   width: 100%;
 }
 
-.si-gauge-number, .si-stat-number, .si-donut-val, .si-stat-change, .si-score-total {
+.si-gauge-number,
+.si-stat-number,
+.si-donut-val,
+.si-stat-change,
+.si-score-total {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -356,6 +363,7 @@
   font-weight: 500;
   color: #78869b;
   margin: 0 0 16px 0;
+  text-align: left;
 }
 
 /* Card 1 Specifics (Gauge Arc) */
@@ -416,9 +424,17 @@
   border-radius: 50%;
 }
 
-.si-dot.green { background-color: #10b981; }
-.si-dot.yellow { background-color: #f59e0b; }
-.si-dot.red { background-color: #ef4444; }
+.si-dot.green {
+  background-color: #10b981;
+}
+
+.si-dot.yellow {
+  background-color: #f59e0b;
+}
+
+.si-dot.red {
+  background-color: #ef4444;
+}
 
 .si-leg-val {
   color: #ffffff;
@@ -704,8 +720,9 @@
   flex-direction: column;
   overflow-y: auto;
   z-index: 5;
-  margin: 4px 0;
   flex-shrink: 0;
+  /* height: fit-content;
+  max-height: 100%; */
 }
 
 .si-widget {
@@ -911,7 +928,24 @@
 
 .si-timeline-dot.green {
   background-color: #10b981;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
+  animation: glowPulse 1.5s infinite;
+}
+
+@keyframes glowPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 4px #10b981;
+  }
+
+  50% {
+    transform: scale(1.4);
+    box-shadow: 0 0 12px #10b981;
+  }
+
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 4px #10b981;
+  }
 }
 
 .si-timeline-dot.blue {
@@ -943,6 +977,7 @@
   .si-grid-row-1 {
     grid-template-columns: 1fr;
   }
+
   .si-grid-row-2 {
     grid-template-columns: 1fr 1fr;
   }
@@ -1077,7 +1112,7 @@
 /* ── Light Theme: SVG chart grid lines ── */
 [data-theme="light"] .si-linechart-svg line,
 [data-theme="light"] .si-barchart-svg line {
-  stroke: rgba(0,0,0,0.06) !important;
+  stroke: rgba(0, 0, 0, 0.06) !important;
 }
 
 /* ── Light Theme: si-bottombar ── */

@@ -99,11 +99,11 @@ const SectorSentiment = ({ data, getColorClass }) => {
 
             {/* Modal for View All Sectors */}
             {showAllModal && (
-                <div className="modal-overlay" onClick={() => setShowAllModal(false)} style={{ zIndex: 1050 }}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                        <div className="modal-header">
-                            <h2 className="modal-title">All Sectors ({filteredModalSectors.length})</h2>
-                            <button className="modal-close" onClick={() => setShowAllModal(false)}>&times;</button>
+                <div className="modal-overlay" onClick={() => setShowAllModal(false)} style={{ zIndex: 1050, backgroundColor: "rgba(0,0,0,0.6)" }}>
+                    <div className="modal-content premium-card" onClick={(e) => e.stopPropagation()} style={{ backgroundColor: "var(--bg-main, #1e293b)", color: "var(--text-main, #fff)" }}>
+                        <div className="modal-header" style={{ borderBottom: "1px solid var(--border-color, #334155)" }}>
+                            <h2 className="modal-title" style={{ color: "var(--text-main, #fff)" }}>All Sectors ({filteredModalSectors.length})</h2>
+                            <button className="modal-close" onClick={() => setShowAllModal(false)} style={{ color: "var(--text-muted, #9ca3af)" }}>&times;</button>
                         </div>
                         <div className="modal-body">
                             <input 

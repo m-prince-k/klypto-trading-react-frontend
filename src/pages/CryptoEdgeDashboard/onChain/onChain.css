@@ -176,7 +176,7 @@
 /* Charts Row */
 .charts-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 16px;
 }
 
@@ -445,6 +445,7 @@
 
 .legend-item .l-name {
   flex: 1;
+  text-align: left;
 }
 
 .legend-item .l-pct {
@@ -496,7 +497,8 @@
 }
 
 .p-name {
-  width: 80px;
+  width: 180px;
+  text-align: left;
 }
 
 .p-val-container {
