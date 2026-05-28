@@ -132,12 +132,12 @@ export default function IndicatorStyle({
             key={row.key + (row.parent ? `-${row.parent}` : "")}
             className="align-items-center mx-0"
             style={{
-              borderBottom: "1px solid #ebebeb",
+              borderBottom: "1px solid var(--border-color)",
               minHeight: 48,
               transition: "background 0.15s ease",
               flexWrap: "nowrap",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "#f5f7fa")}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-card-hover, #f5f7fa)")}
             onMouseLeave={(e) =>
               (e.currentTarget.style.background = "transparent")
             }
@@ -162,7 +162,7 @@ export default function IndicatorStyle({
                       style={{
                         fontSize: "14.5px",
                         fontWeight: 600,
-                        color: "#111827",
+                        color: "var(--text-main)",
                         whiteSpace: "nowrap",
                         overflow: "hidden",
                         textOverflow: "ellipsis",
@@ -179,7 +179,7 @@ export default function IndicatorStyle({
                   style={{
                     fontSize: "14.5px",
                     fontWeight: 600,
-                    color: "#111827",
+                    color: "var(--text-main)",
                   }}
                 >
                   {row.label}
@@ -205,7 +205,7 @@ export default function IndicatorStyle({
                     style={{
                       width: 34,
                       height: 34,
-                      border: "1.5px solid #d1d5db",
+                      border: "1px solid var(--border-color)",
                       borderRadius: 7,
                       cursor: "pointer",
                       background:
@@ -298,23 +298,23 @@ export default function IndicatorStyle({
                     fontWeight: 500,
                     padding: "2px 10px",
                     borderRadius: 7,
-                    border: "1.5px solid #d1d5db",
+                    border: "1px solid var(--border-color)",
                     textAlign: "left",
-                    color: "#111827",
-                    background: "#fff",
-                    boxShadow: "0 1px 2px rgba(0,0,0,0.06)",
+                    color: "var(--text-main)",
+                    background: "var(--bg-main)",
+                    boxShadow: "0 1px 2px var(--shadow-color)",
                     transition: "border-color 0.15s, box-shadow 0.15s",
                     outline: "none",
                   }}
                   onFocus={(e) => {
-                    e.currentTarget.style.borderColor = "#2962ff";
+                    e.currentTarget.style.borderColor = "var(--accent-color, #2962ff)";
                     e.currentTarget.style.boxShadow =
-                      "0 0 0 3px rgba(41,98,255,0.12)";
+                      "0 0 0 1px var(--accent-color, #2962ff)";
                   }}
                   onBlur={(e) => {
-                    e.currentTarget.style.borderColor = "#d1d5db";
+                    e.currentTarget.style.borderColor = "var(--border-color)";
                     e.currentTarget.style.boxShadow =
-                      "0 1px 2px rgba(0,0,0,0.06)";
+                      "0 1px 2px var(--shadow-color)";
                   }}
                 />
               ) : (

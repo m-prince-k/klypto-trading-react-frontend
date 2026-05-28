@@ -72,8 +72,9 @@ export default function Candlestick() {
   const [openForm, setOpenForm] = useState(false);
   const params = new URLSearchParams(window.location.search);
 
+  const rawSymbol = params.get("symbol");
   const [selectedCurrency, setSelectedCurrency] = useState(
-    params.get("symbol") || "BTCUSDT",
+    !rawSymbol || rawSymbol === "undefined" || rawSymbol === "null" ? "BTCUSDT" : rawSymbol
   );
 
   const [timeframeValue, setTimeframeValue] = useState(
@@ -260,7 +261,10 @@ export default function Candlestick() {
       });
     }
 
-    fetchIndicatorData(indicatorsToFetch, selectedCurrency, timeframeValue);
+    setIndicatorLoading(true);
+    fetchIndicatorData(indicatorsToFetch, selectedCurrency, timeframeValue).finally(() => {
+      setIndicatorLoading(false);
+    });
 
     indicatorsToFetch.forEach((ind) => fetchedIndicatorsRef.current.add(ind));
 
@@ -969,11 +973,17 @@ export default function Candlestick() {
 
   // Subscribe to live ticks for real-time candle formation
   const handleLiveTickUpdate = useCallback((tick) => {
+    console.log("handleLiveTickUpdate received tick:", tick);
     if (!tick) return;
     const tickData = tick.ohlcv || tick;
     const tickTime = tick.timestamp || tickData.time;
+    console.log("Parsed tickTime:", tickTime, "seriesRef.current:", !!seriesRef.current);
     if (!tickTime || !seriesRef.current) return;
-    if (tick.symbol && tick.symbol.toUpperCase() !== selectedCurrency?.toUpperCase()) return;
+    if (tick.symbol && tick.symbol.toUpperCase() !== selectedCurrency?.toUpperCase()) {
+      console.log("Symbol mismatch. tick.symbol:", tick.symbol, "selectedCurrency:", selectedCurrency);
+      return;
+    }
+    console.log("Updating chart with tickData:", tickData);
 
     setLivePrice(Number(tickData.close));
     setLiveOhlcv(tickData);
@@ -1044,6 +1054,8 @@ export default function Candlestick() {
     handleLiveTickUpdate,
     handleWatchlistResponse,
     handleWatchlistUpdate,
+    selectedSymbol: selectedCurrency,
+    selectedPeriod: timeframeValue,
   });
 
   useEffect(() => {
@@ -1168,6 +1180,19 @@ export default function Candlestick() {
                 }}
               >
                 {mainChartLoading && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "50%",
+                      left: "50%",
+                      transform: "translate(-50%, -50%)",
+                      zIndex: 1000,
+                    }}
+                  >
+                    <Spinner />
+                  </div>
+                )}
+                {indicatorLoading && !mainChartLoading && (
                   <div
                     style={{
                       position: "absolute",

@@ -184,6 +184,7 @@ export default function SMAPlot({
 
     drawBBCloud();
   }, [indicatorStyle, result]);
+  
   useEffect(() => {
     return () => {
       const canvas = canvasRef.current;

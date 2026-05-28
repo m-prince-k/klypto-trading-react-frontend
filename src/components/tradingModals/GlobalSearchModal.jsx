@@ -344,7 +344,7 @@ export const GlobalSearchModal = ({ isOpen, onClose }) => {
         }
 
         .gsm-symbol-name {
-          font-size: 12.5px;
+          font-size: 11.5px;
           font-weight: 600;
           color: var(--text-main, #131722);
           letter-spacing: 0.03em;
@@ -352,7 +352,7 @@ export const GlobalSearchModal = ({ isOpen, onClose }) => {
         }
 
         .gsm-full-name {
-          font-size: 11px;
+          font-size: 10px;
           color: var(--text-muted, #9ba1ab);
           font-weight: 400;
           margin-top: 2px;
@@ -552,6 +552,10 @@ export const GlobalSearchModal = ({ isOpen, onClose }) => {
                   className="gsm-row"
                   onMouseEnter={() => setHoveredIndex(idx)}
                   onMouseLeave={() => setHoveredIndex(null)}
+                  onClick={() => {
+                    navigate(`/candleStick?symbol=${curr?.symbol}`);
+                    onClose();
+                  }}
                 >
                   <div className="gsm-row-left">
                     <div className="gsm-avatar">

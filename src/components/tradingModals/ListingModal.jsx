@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { IoCloseSharp } from "react-icons/io5";
 import { FiSearch } from "react-icons/fi";
 import { GrBitcoin } from "react-icons/gr";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Spinner } from "./Spinner";
 import apiService from "../../services/apiServices";
 import { useDebounce } from "../../util/common";
@@ -18,6 +18,8 @@ export const ListingModal = ({
   setSelectedIndicator,
   toggleIndicator,
 }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState("Indicators");
   const [indicators, setIndicators] = useState([]);
   const [currencies, setCurrencies] = useState([]);
@@ -84,11 +86,11 @@ export const ListingModal = ({
     if (!searchIndicator) return true;
 
     const getInitials = (text) =>
-    text
-      .split(" ")
-      .map((w) => w[0])
-      .join("")
-      .toLowerCase();
+      text
+        .split(" ")
+        .map((w) => w[0])
+        .join("")
+        .toLowerCase();
     const search = searchIndicator.toLowerCase().trim();
 
     const label = item.label.toLowerCase();
@@ -111,7 +113,7 @@ export const ListingModal = ({
     );
   });
 
-  
+
 
   if (activeTab !== "Indicators") return null;
 
@@ -119,7 +121,7 @@ export const ListingModal = ({
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/60" style={{ zIndex: 9999 }}>
-      <div 
+      <div
         className="w-full px-5 py-4 max-w-3xl h-[90vh] rounded-md shadow-lg border"
         style={{
           backgroundColor: "var(--bg-card, #ffffff)",
@@ -172,6 +174,9 @@ export const ListingModal = ({
                     key={index}
                     onClick={() => {
                       setSelectedCurrency(curr?.symbol);
+                      const params = new URLSearchParams(location.search);
+                      params.set("symbol", curr?.symbol);
+                      navigate({ search: params.toString() }, { replace: true });
                       onClose();
                     }}
                     className="w-full flex justify-between items-center px-4 py-3 text-left transition-colors cursor-pointer rounded-md mb-1"
@@ -187,11 +192,11 @@ export const ListingModal = ({
                         {curr?.symbol ? curr.symbol.charAt(0).toUpperCase() : "?"}
                       </div>
                       <div className="flex flex-col">
-                        <h2 className="uppercase text-sm font-bold m-0 tracking-wide" style={{ color: "var(--text-main, #131722)" }}>
+                        <h2 className="uppercase font-bold m-0 tracking-wide" style={{ color: "var(--text-main, #131722)" , fontSize: "16px" }}>
                           {curr?.base}/{curr?.quote}
                         </h2>
-                        <span className="text-xs" style={{ color: "var(--text-muted, #787b86)" }}>
-                          {curr?.name || "Crypto Asset"}
+                        <span className="text-[10px]" style={{ color: "var(--text-muted, #787b86)" }}>
+                          {curr?.name}
                         </span>
                       </div>
                     </div>
@@ -253,7 +258,7 @@ export const ListingModal = ({
                   <ul className="list-unstyled p-0 m-0">
                     {filteredIndicators?.map((item, index) => (
                       <li key={index}>
-                        <div 
+                        <div
                           className="flex items-center justify-between px-4 py-3 rounded-md cursor-pointer transition-colors mb-1"
                           style={{
                             color: "var(--text-main, #131722)",
@@ -291,7 +296,7 @@ export const ListingModal = ({
 
         {title === "Alerts" && (
           <div>
-            <IndicatorAlert/>
+            <IndicatorAlert />
           </div>
         )}
       </div>

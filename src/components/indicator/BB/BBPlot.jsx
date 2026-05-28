@@ -23,8 +23,8 @@ export default function BBPlot({
         if (s?.setData) {
           try {
             s.setData([]);
-            try { chart.removeSeries(s); } catch {}
-          } catch {}
+            try { chart.removeSeries(s); } catch { }
+          } catch { }
         }
       });
 
@@ -181,7 +181,25 @@ export default function BBPlot({
     drawBBCloud();
   }, [indicatorStyle, result]);
 
-  
+  useEffect(() => {
+    return () => {
+      const canvas = canvasRef.current;
+
+      if (canvas) {
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        canvas.remove();
+      }
+
+      canvasRef.current = null;
+
+      if (indicatorSeriesRef.current?.[indicator]) {
+        indicatorSeriesRef.current[indicator] = null;
+      }
+    };
+  }, []);
+
+
 
   return null;
 }

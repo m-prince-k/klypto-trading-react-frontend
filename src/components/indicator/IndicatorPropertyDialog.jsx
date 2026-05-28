@@ -1780,12 +1780,12 @@ export default function IndicatorPropertyDialog({
       contentClassName="border-0 shadow-lg"
       style={{ borderRadius: 16 }}
     >
-      <Modal.Header closeButton closeVariant="white" className="border-0 pb-0 px-4 pt-4" style={{ backgroundColor: 'var(--bg-secondary, #1e222d)' }}>
+      <Modal.Header closeButton className="border-0 pb-0 px-4 pt-4" style={{ backgroundColor: 'var(--bg-card)' }}>
         <Modal.Title
           style={{
             fontSize: 17,
             fontWeight: 700,
-            color: "var(--text-main, #d1d4dc)",
+            color: "var(--text-main)",
             letterSpacing: "-0.2px",
           }}
         >
@@ -1793,12 +1793,12 @@ export default function IndicatorPropertyDialog({
         </Modal.Title>
       </Modal.Header>
 
-      <Modal.Body className="px-0 pt-0 pb-0" style={{ backgroundColor: 'var(--bg-secondary, #1e222d)' }}>
+      <Modal.Body className="px-0 pt-0 pb-0" style={{ backgroundColor: 'var(--bg-card)' }}>
         <Tabs
           defaultActiveKey="inputs"
           className="px-4 mb-0"
           style={{
-            borderBottom: "1.5px solid var(--border-color, #2b313f)",
+            borderBottom: "1.5px solid var(--border-color)",
             gap: 4,
           }}
         >
@@ -1841,12 +1841,12 @@ export default function IndicatorPropertyDialog({
         {/* Inline style overrides for Bootstrap nav-tabs */}
         <style>{`
       .nav-tabs {
-        border-bottom: 1.5px solid var(--border-color, #2b313f) !important;
+        border-bottom: 1.5px solid var(--border-color) !important;
       }
       .nav-tabs .nav-link {
         border: none !important;
         border-bottom: 2.5px solid transparent !important;
-        color: var(--text-muted, #9ca3af) !important;
+        color: var(--text-muted) !important;
         font-weight: 600 !important;
         font-size: 14px !important;
         padding: 10px 14px !important;
@@ -1856,48 +1856,48 @@ export default function IndicatorPropertyDialog({
         transition: color 0.15s ease, border-color 0.15s ease !important;
       }
       .nav-tabs .nav-link:hover {
-        color: var(--text-main, #d1d4dc) !important;
-        border-bottom-color: var(--border-color, #2b313f) !important;
+        color: var(--text-main) !important;
+        border-bottom-color: var(--border-color) !important;
       }
       .nav-tabs .nav-link.active {
-        color: #2962ff !important;
-        border-bottom: 2.5px solid #2962ff !important;
+        color: var(--accent-color, #2962ff) !important;
+        border-bottom: 2.5px solid var(--accent-color, #2962ff) !important;
         background: transparent !important;
       }
       .tab-content {
         border: none !important;
       }
       
-      /* Input & Label styling for dark theme */
+      /* Input & Label styling */
       .form-label {
-        color: var(--text-main, #d1d4dc) !important;
+        color: var(--text-main) !important;
         font-size: 14px;
         margin-bottom: 6px;
       }
       .form-control, .form-select {
-        background-color: var(--bg-main, #131722) !important;
-        color: var(--text-main, #d1d4dc) !important;
-        border: 1px solid var(--border-color, #2b313f) !important;
+        background-color: var(--bg-main) !important;
+        color: var(--text-main) !important;
+        border: 1px solid var(--border-color) !important;
       }
       .form-control:focus, .form-select:focus {
-        background-color: var(--bg-main, #131722) !important;
-        color: var(--text-main, #d1d4dc) !important;
-        border-color: #2962ff !important;
-        box-shadow: 0 0 0 1px rgba(41, 98, 255, 0.5) !important;
+        background-color: var(--bg-main) !important;
+        color: var(--text-main) !important;
+        border-color: var(--accent-color, #2962ff) !important;
+        box-shadow: 0 0 0 1px rgba(79, 70, 229, 0.5) !important;
       }
       .form-control:disabled, .form-select:disabled {
-        background-color: var(--bg-secondary, #1e222d) !important;
-        color: var(--text-muted, #9ca3af) !important;
+        background-color: var(--bg-card) !important;
+        color: var(--text-muted) !important;
         opacity: 0.7;
       }
       .modal-content {
-        background-color: var(--bg-secondary, #1e222d) !important;
-        border: 1px solid var(--border-color, #2b313f) !important;
+        background-color: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
       }
     `}</style>
       </Modal.Body>
 
-      <Modal.Footer className="border-0 px-4 pb-4 pt-2" style={{ gap: 8, backgroundColor: 'var(--bg-secondary, #1e222d)' }}>
+      <Modal.Footer className="border-0 px-4 pb-4 pt-2" style={{ gap: 8, backgroundColor: 'var(--bg-card)' }}>
         <Button
           variant="secondary"
           onClick={handleCancel}
