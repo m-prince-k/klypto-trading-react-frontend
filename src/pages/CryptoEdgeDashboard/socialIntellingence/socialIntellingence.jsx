@@ -128,92 +128,9 @@ export default function SocialIntelligence({ setActiveTab = () => { }, isSubComp
         }}
       >
 
-      {/* LEFT TOOLBAR */}
-      {!isSubComponent && (
-        <div className="si-left-toolbar">
-          <div className="si-toolbar-top">
-            <div className="si-tool-btn active">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></svg>
-            </div>
-            <div className="si-tool-btn">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="19" x2="19" y2="5" /></svg>
-            </div>
-            <div className="si-tool-btn">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3h18v18H3z" /><path d="M9 3v18M15 3v18" /></svg>
-            </div>
-            <div className="si-tool-btn">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 12h16M12 4v16" /></svg>
-            </div>
-            <div className="si-tool-btn">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 19l7-7 3 3-7 7-3-3zm0 0L5 12l-3 3 7 7 3-3zm0-14l7 7-7 7-7-7 7-7z" /></svg>
-            </div>
-            <div className="si-tool-btn">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12H3M21 6H3M21 18H3" /></svg>
-            </div>
-            <div className="si-tool-btn">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
-            </div>
-          </div>
-          <div className="si-toolbar-bottom">
-            <div className="si-tool-btn">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14" /></svg>
-            </div>
-            <div className="si-tool-btn">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* MAIN CONTAINER */}
       <div className={isSubComponent ? "si-main-area-sub" : "si-main-area"}>
-
-        {/* TOPBAR */}
-        {!isSubComponent && (
-          <div className="si-topbar">
-            <div className="si-topbar-left">
-              <div className="si-brand-logo" onClick={() => setActiveTab('Overview')} style={{ cursor: 'pointer' }}>T</div>
-              <div className="si-pair-selector">
-                <span className="si-pair-name">{selectedSymbol}</span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" /></svg>
-              </div>
-              <div className="si-topbar-divider"></div>
-              <div className="si-timeframe-selector">
-                <span className="si-tf-btn">15m</span>
-                <span className="si-tf-btn active">1h</span>
-                <span className="si-tf-btn">4h</span>
-                <span className="si-tf-btn">D</span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginLeft: '4px' }}><path d="M6 9l6 6 6-6" /></svg>
-              </div>
-              <div className="si-topbar-divider"></div>
-              <div className="si-action-btn">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 3v18h18" /><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3" /></svg>
-                <span>Indicators</span>
-              </div>
-              <div className="si-action-btn">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" /></svg>
-                <span>Alert</span>
-              </div>
-              <div className="si-action-btn">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M2.5 12a9.5 9.5 0 1 1 19 0 9.5 9.5 0 0 1-19 0z" /><path d="M10 8.5L16 12l-6 3.5v-7z" /></svg>
-                <span>Replay</span>
-              </div>
-            </div>
-            <div className="si-topbar-right">
-              <span className="si-save-txt">Save <span className="si-save-sub">Select</span></span>
-              <div className="si-topbar-icon-btn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
-              </div>
-              <div className="si-topbar-icon-btn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></svg>
-              </div>
-              <div className="si-topbar-icon-btn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
-              </div>
-              <button className="si-publish-btn">Publish</button>
-            </div>
-          </div>
-        )}
 
         {/* WORKSPACE SCROLL CONTENT */}
         <div className="si-scrollable-content">
@@ -247,7 +164,6 @@ export default function SocialIntelligence({ setActiveTab = () => { }, isSubComp
 
             <div className="si-section-header">
               <h2 className="si-section-title">Social Intelligence</h2>
-              <span className="si-beta-badge">BETA</span>
             </div>
 
             {/* ── ROW 1: Sentiment Gauge + Sentiment Over Time ── */}

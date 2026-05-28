@@ -94,6 +94,7 @@
   font-size: 14px;
   color: var(--text-muted);
   margin-bottom: 0;
+  text-align: left;
 }
 
 .btn-edit {

@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
-import { FiPlus, FiSearch, FiChevronLeft, FiTrash2, FiStar } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
+import { FiPlus, FiSearch, FiChevronLeft, FiTrash2, FiStar, FiBarChart2 } from "react-icons/fi";
 import { IoMdClose } from "react-icons/io";
 import { VscTriangleDown } from "react-icons/vsc";
 import apiService from "../../../services/apiServices";
 import { useDebounce } from "../../../util/common";
 import { Spinner } from "../../../components/tradingModals/Spinner";
-import { useSocket } from "../../../services/websocket/useSocket";
+import { useSocket, globalCache } from "../../../services/websocket/useSocket";
 import "./Watchlist.css";
 
 const CoinIdentity = ({ symbolItem, isFutures = false }) => {
@@ -130,6 +131,7 @@ const fmt = (v) => {
 };
 
 export default function Watchlist({ activeCurrency, setActiveCurrency }) {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("watchlist");
 
   // ── Watchlist state ───────────────────────────────────────────────
@@ -346,26 +348,98 @@ export default function Watchlist({ activeCurrency, setActiveCurrency }) {
               {loadingAll ? (
                 <div className="wl-center-loader"><Spinner /></div>
               ) : (
-                <div className="wl-add-grid">
+                <div className="wl-add-list" style={{ display: "flex", flexDirection: "column", padding: "0 10px 10px 10px", gap: "10px" }}>
+                  {currencies.length > 0 && (
+                    <div className="wl-col-header" style={{ borderRadius: "8px", background: "var(--bg-main, #f7f8fb)" }}>
+                      <div style={{ flex: "2", textAlign: "left" }}>Symbol</div>
+                      <div style={{ flex: "1.5", textAlign: "right" }}>Last</div>
+                      <div style={{ flex: "1.5", textAlign: "right" }}>Chg</div>
+                      <div style={{ flex: "1.5", textAlign: "right" }}>Chg%</div>
+                      <div style={{ flex: "1.5", textAlign: "right" }}>Vol</div>
+                      <div style={{ flex: "1.5", textAlign: "center" }}>Actions</div>
+                    </div>
+                  )}
                   {currencies.map(curr => {
                     const isAdded = watchlist?.some(w => w.symbol === curr.symbol);
+                    const liveData = 
+                      watchlist?.find(w => w.symbol === curr.symbol) || 
+                      futuresData?.find(f => f.symbol === curr.symbol) ||
+                      globalCache.marketCoins?.find(c => c.symbol === curr.symbol || c.symbol === curr.symbol.replace('USDT', '')) ||
+                      curr;
+                      
+                    const isUp = (liveData.change || liveData.change24h || 0) >= 0;
+                    const color = isUp ? "#089981" : "#f23645";
+
                     return (
-                      <div key={curr.symbol} className={`wl-add-card ${isAdded ? "added" : ""}`}>
-                        <div className="wl-add-card-icon">{curr.symbol[0]}</div>
-                        <span className="wl-add-card-sym">{curr.symbol}</span>
-                        <button
-                          className={`wl-add-card-btn ${isAdded ? "remove" : "add"}`}
-                          onClick={() => toggleCurrency(curr)}
-                        >
-                          {isAdded ? <FiTrash2 size={13} /> : <FiPlus size={13} />}
-                        </button>
+                      <div 
+                        key={curr.symbol} 
+                        style={{
+                          display: 'flex', alignItems: 'center', padding: '12px 16px',
+                          background: 'var(--bg-card, #ffffff)',
+                          border: '1px solid var(--border-color, #e2e8f0)',
+                          borderRadius: '12px', cursor: 'pointer',
+                          boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
+                          transition: 'transform 0.15s, box-shadow 0.15s'
+                        }}
+                        onMouseOver={e => {
+                           e.currentTarget.style.transform = 'translateY(-2px)';
+                           e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
+                        }}
+                        onMouseOut={e => {
+                           e.currentTarget.style.transform = 'translateY(0)';
+                           e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.03)';
+                        }}
+                        onClick={() => { window.open(`/candleStick?symbol=${curr.symbol}`, "_blank"); }}
+                      >
+                        <div className="wl-symbol" style={{ flex: "2", display: "flex", alignItems: "center", justifyContent: "flex-start" }}>
+                          <CoinIdentity symbolItem={curr.symbol} />
+                        </div>
+                        
+                        <div className="wl-price" style={{ flex: "1.5", color }}>
+                          {liveData.lastPrice != null || liveData.price != null ? fmt(liveData.lastPrice ?? liveData.price) : "—"}
+                        </div>
+                        
+                        <div className="wl-change" style={{ flex: "1.5", color }}>
+                          {(liveData.change != null || liveData.change24h != null) ? `${(liveData.change ?? liveData.change24h) >= 0 ? "+" : ""}${fmt(liveData.change ?? liveData.change24h)}` : "—"}
+                        </div>
+                        
+                        <div className="wl-changepct" style={{ flex: "1.5" }}>
+                          <span className={`wl-badge ${isUp ? "up" : "down"}`}>
+                            {(liveData.changePercent != null || liveData.changePct != null || liveData.change24h != null) ? `${(liveData.changePercent ?? liveData.changePct ?? liveData.change24h) >= 0 ? "+" : ""}${fmt(liveData.changePercent ?? liveData.changePct ?? liveData.change24h)}%` : "—"}
+                          </span>
+                        </div>
+                        
+                        <div style={{ flex: "1.5", textAlign: "right", fontFamily: "'IBM Plex Mono', monospace", fontSize: "11px", fontWeight: "500", color: "#8c97ae" }}>
+                          {(liveData.volume != null || liveData.vol != null || liveData.quoteVolume24h != null) ? fmt(liveData.volume ?? liveData.vol ?? liveData.quoteVolume24h) : "—"}
+                        </div>
+                        
+                        <div style={{ flex: "1.5", display: "flex", justifyContent: "center", gap: "10px", alignItems: 'center' }}>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); window.open(`/candleStick?symbol=${curr.symbol}`, "_blank"); }}
+                            title="Go to Chart"
+                            style={{ width: '32px', height: '32px', borderRadius: '8px', border: '1px solid #7F77DD', color: '#7F77DD', background: 'rgba(127,119,221,0.08)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' }}
+                            onMouseOver={e => e.currentTarget.style.background = 'rgba(127,119,221,0.15)'}
+                            onMouseOut={e => e.currentTarget.style.background = 'rgba(127,119,221,0.08)'}
+                          >
+                            <FiBarChart2 size={15} />
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); toggleCurrency(curr); }}
+                            title={isAdded ? "Remove from Watchlist" : "Add to Watchlist"}
+                            style={{ width: '32px', height: '32px', borderRadius: '8px', border: 'none', color: isAdded ? '#f23645' : '#089981', background: isAdded ? 'rgba(242,54,69,0.1)' : 'rgba(8,153,129,0.1)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' }}
+                            onMouseOver={e => e.currentTarget.style.background = isAdded ? 'rgba(242,54,69,0.15)' : 'rgba(8,153,129,0.15)'}
+                            onMouseOut={e => e.currentTarget.style.background = isAdded ? 'rgba(242,54,69,0.1)' : 'rgba(8,153,129,0.1)'}
+                          >
+                            {isAdded ? <FiTrash2 size={14} /> : <FiPlus size={15} />}
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
                   {currencies.length === 0 && (
-                    <div className="wl-add-empty">
-                      <FiSearch size={28} opacity={0.3} />
-                      <p>{searchAll ? `No results for "${searchAll}"` : "Type to search symbols…"}</p>
+                    <div className="wl-add-empty" style={{ padding: "40px 0", textAlign: "center", color: "#8c97ae" }}>
+                      <FiSearch size={32} opacity={0.4} style={{ marginBottom: "12px" }} />
+                      <p style={{ fontSize: "14px", margin: 0 }}>{searchAll ? `No results for "${searchAll}"` : "Type to search symbols…"}</p>
                     </div>
                   )}
                 </div>
@@ -393,17 +467,18 @@ export default function Watchlist({ activeCurrency, setActiveCurrency }) {
 
               {/* Column Headers */}
               {!isLoading && (
-                <div className="wl-col-header">
+                <div className="wl-col-header" style={{ borderRadius: "8px", background: "var(--bg-main, #f7f8fb)", margin: "0 10px" }}>
                   <div style={{ flex: "2", textAlign: "left" }}>Symbol</div>
                   <div style={{ flex: "1.5", textAlign: "right" }}>Last</div>
                   <div style={{ flex: "1.5", textAlign: "right" }}>Chg</div>
                   <div style={{ flex: "1.5", textAlign: "right" }}>Chg%</div>
                   <div style={{ flex: "1.5", textAlign: "right" }}>Vol</div>
+                  <div style={{ flex: "1.5", textAlign: "center" }}>Actions</div>
                 </div>
               )}
 
               {/* List */}
-              <div className="wl-list">
+              <div className="wl-list" style={{ display: "flex", flexDirection: "column", padding: "10px", gap: "10px" }}>
                 {isLoading && (
                   <div className="wl-center-loader">
                     <Spinner />
@@ -436,7 +511,23 @@ export default function Watchlist({ activeCurrency, setActiveCurrency }) {
                   return (
                     <div
                       key={item.symbol}
-                      className={`wl-row ${isActive ? "active" : ""} ${flashCls}`}
+                      className={`wl-row-modern ${isActive ? "active" : ""} ${flashCls}`}
+                      style={{
+                        display: 'flex', alignItems: 'center', padding: '12px 16px',
+                        background: 'var(--bg-card, #ffffff)',
+                        border: '1px solid var(--border-color, #e2e8f0)',
+                        borderRadius: '12px', cursor: 'pointer',
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
+                        transition: 'transform 0.15s, box-shadow 0.15s'
+                      }}
+                      onMouseOver={e => {
+                         e.currentTarget.style.transform = 'translateY(-2px)';
+                         e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
+                      }}
+                      onMouseOut={e => {
+                         e.currentTarget.style.transform = 'translateY(0)';
+                         e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.03)';
+                      }}
                       onClick={() => setActiveCurrency(item.symbol)}
                     >
                       <div className="wl-symbol" style={{ flex: "2", display: "flex", alignItems: "center", justifyContent: "flex-start" }}>
@@ -455,6 +546,26 @@ export default function Watchlist({ activeCurrency, setActiveCurrency }) {
                       </div>
                       <div style={{ flex: "1.5", textAlign: "right", fontFamily: "'IBM Plex Mono', monospace", fontSize: "11px", fontWeight: "500", color: "#8c97ae" }}>
                         {item.volume != null ? fmt(item.volume) : ""}
+                      </div>
+                      <div style={{ flex: "1.5", display: "flex", justifyContent: "center", gap: "10px", alignItems: 'center' }}>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); window.open(`/candleStick?symbol=${item.symbol}`, "_blank"); }}
+                          title="Go to Chart"
+                          style={{ width: '32px', height: '32px', borderRadius: '8px', border: '1px solid #7F77DD', color: '#7F77DD', background: 'rgba(127,119,221,0.08)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' }}
+                          onMouseOver={e => e.currentTarget.style.background = 'rgba(127,119,221,0.15)'}
+                          onMouseOut={e => e.currentTarget.style.background = 'rgba(127,119,221,0.08)'}
+                        >
+                          <FiBarChart2 size={15} />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); toggleCurrency(item); }}
+                          title="Remove from Watchlist"
+                          style={{ width: '32px', height: '32px', borderRadius: '8px', border: 'none', color: '#f23645', background: 'rgba(242,54,69,0.1)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' }}
+                          onMouseOver={e => e.currentTarget.style.background = 'rgba(242,54,69,0.15)'}
+                          onMouseOut={e => e.currentTarget.style.background = 'rgba(242,54,69,0.1)'}
+                        >
+                          <FiTrash2 size={14} />
+                        </button>
                       </div>
                     </div>
                   );

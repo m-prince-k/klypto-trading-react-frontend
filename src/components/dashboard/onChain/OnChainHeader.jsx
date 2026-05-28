@@ -18,6 +18,7 @@ const OnChainHeader = ({
   setExportDropdownOpen,
   handleExport
 }) => {
+  const todayStr = new Date().toISOString().split('T')[0];
   return (
     <header className="onchain-header">
       <div className="header-titles">
@@ -40,6 +41,7 @@ const OnChainHeader = ({
                   <input
                     type="date"
                     value={customStartDate}
+                    max={todayStr}
                     onChange={(e) => { setCustomStartDate(e.target.value); setDateRangePreset('Custom'); }}
                     style={{
                       background: 'var(--bg-input)',
@@ -52,6 +54,7 @@ const OnChainHeader = ({
                   <input
                     type="date"
                     value={customEndDate}
+                    max={todayStr}
                     onChange={(e) => { setCustomEndDate(e.target.value); setDateRangePreset('Custom'); }}
                     style={{ background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '4px', color: 'var(--text-main)', fontSize: '12px', padding: '4px 8px' }}
                   />

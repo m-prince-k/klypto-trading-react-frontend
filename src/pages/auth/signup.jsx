@@ -14,7 +14,7 @@ export default function Signup() {
 
   useEffect(() => {
     if (isAuthenticated()) {
-      navigate("/candleStick", { replace: true });
+      navigate("/dashboard", { replace: true });
     }
   }, [navigate]);
 
@@ -82,9 +82,9 @@ export default function Signup() {
     try {
       const response = await apiService.post("/api/register", { ...form });
       const token = response.data?.token;
-      if (token) localStorage.setItem("token", token);
+      if (token) localStorage.setItem("session", token);
       toast.success("Signup successful!");
-      navigate("/candleStick");
+      navigate("/dashboard");
     } catch (error) {
       const message =
         error.response?.data?.message || error.message || "Signup failed";

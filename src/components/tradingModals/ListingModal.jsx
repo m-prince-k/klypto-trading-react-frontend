@@ -118,7 +118,7 @@ export const ListingModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-99 flex items-center justify-center bg-black/60">
+    <div className="fixed inset-0 flex items-center justify-center bg-black/60" style={{ zIndex: 9999 }}>
       <div 
         className="w-full px-5 py-4 max-w-3xl h-[90vh] rounded-md shadow-lg border"
         style={{
@@ -138,9 +138,9 @@ export const ListingModal = ({
           />
         </div>
         {title === "Symbol Search" && (
-          <div className=" py-3 ">
+          <div className="py-3">
             <div className="relative">
-              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--text-muted, #94a3b8)" }} />
+              <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: "var(--text-muted, #787b86)" }} size={18} />
               <input
                 type="text"
                 autoFocus
@@ -149,12 +149,15 @@ export const ListingModal = ({
                 onChange={(e) => {
                   setSearchCurrency(e.target.value);
                 }}
-                className="w-full pl-9 pr-3 py-2 text-sm rounded-md border"
+                className="w-full pl-11 pr-4 py-3 text-sm rounded-lg outline-none"
                 style={{
-                  backgroundColor: "var(--bg-main, #ffffff)",
+                  backgroundColor: "var(--bg-main, #f7f8fb)",
                   color: "var(--text-main, #131722)",
-                  borderColor: "var(--border-color, #cbd5e1)"
+                  border: "1px solid var(--border-color, #e2e8f0)",
+                  boxShadow: "inset 0 1px 2px rgba(0,0,0,0.05)"
                 }}
+                onFocus={(e) => e.target.style.borderColor = "#2962ff"}
+                onBlur={(e) => e.target.style.borderColor = "var(--border-color, #e2e8f0)"}
               />
             </div>
 
@@ -171,25 +174,29 @@ export const ListingModal = ({
                       setSelectedCurrency(curr?.symbol);
                       onClose();
                     }}
-                    className="w-full flex border-b justify-between px-1 py-3 text-left transition-colors"
+                    className="w-full flex justify-between items-center px-4 py-3 text-left transition-colors cursor-pointer rounded-md mb-1"
                     style={{
-                      borderColor: "var(--border-color, #e2e8f0)",
-                      color: "var(--text-main, #131722)",
+                      borderBottom: "1px solid var(--border-color, #e2e8f0)",
                       textDecoration: "none"
                     }}
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "var(--bg-card-hover, #f1f5f9)"}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
                   >
-                    <div className="flex gap-2 fs-6 items-center">
-                      <span className=" text-yellow-500">
-                        <GrBitcoin />
-                      </span>
-                      <h2 className="uppercase fs-6 mb-0" style={{ color: "var(--text-main, #131722)" }}>
-                        {curr?.base}/{curr?.quote}
-                      </h2>
+                    <div className="flex gap-3 items-center">
+                      <div className="w-8 h-8 flex items-center justify-center rounded-full bg-[#2962ff] text-white font-bold text-xs">
+                        {curr?.symbol ? curr.symbol.charAt(0).toUpperCase() : "?"}
+                      </div>
+                      <div className="flex flex-col">
+                        <h2 className="uppercase text-sm font-bold m-0 tracking-wide" style={{ color: "var(--text-main, #131722)" }}>
+                          {curr?.base}/{curr?.quote}
+                        </h2>
+                        <span className="text-xs" style={{ color: "var(--text-muted, #787b86)" }}>
+                          {curr?.name || "Crypto Asset"}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className=" fs-6 mb-0" style={{ color: "var(--text-muted, #64748b)" }}>{curr?.symbol}</h3>
+                    <div className="text-xs font-medium" style={{ color: "var(--text-muted, #787b86)" }}>
+                      {curr?.symbol}
                     </div>
                   </Link>
                 ))
@@ -203,22 +210,25 @@ export const ListingModal = ({
         )}
 
         {title === "Indicators" && (
-          <div className="mt-3 space-y-4 z-999 max-h-[45vh]">
+          <div className="mt-3 space-y-4 z-999 max-h-[60vh]">
             {/* Search */}
             <div className="relative">
-              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--text-muted, #94a3b8)" }} />
+              <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: "var(--text-muted, #787b86)" }} size={18} />
               <input
                 type="text"
                 autoFocus
-                placeholder="Search indicators"
+                placeholder="Search indicators..."
                 value={searchIndicator}
                 onChange={(e) => setSearchIndicator(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-sm rounded-md border"
+                className="w-full pl-11 pr-4 py-3 text-sm rounded-lg outline-none"
                 style={{
-                  backgroundColor: "var(--bg-main, #ffffff)",
+                  backgroundColor: "var(--bg-main, #f7f8fb)",
                   color: "var(--text-main, #131722)",
-                  borderColor: "var(--border-color, #cbd5e1)"
+                  border: "1px solid var(--border-color, #e2e8f0)",
+                  boxShadow: "inset 0 1px 2px rgba(0,0,0,0.05)"
                 }}
+                onFocus={(e) => e.target.style.borderColor = "#2962ff"}
+                onBlur={(e) => e.target.style.borderColor = "var(--border-color, #e2e8f0)"}
               />
             </div>
             {/* Indicators tab */}
@@ -240,13 +250,14 @@ export const ListingModal = ({
                     </div>
                   </div>
                 ) : filteredIndicators.length > 0 ? (
-                  <ul className="list-unstyled ps-7 fs-6">
+                  <ul className="list-unstyled p-0 m-0">
                     {filteredIndicators?.map((item, index) => (
                       <li key={index}>
                         <div 
-                          className="d-flex align-items-center gap-2 px-2 py-2 rounded cursor-pointer transition-colors"
+                          className="flex items-center justify-between px-4 py-3 rounded-md cursor-pointer transition-colors mb-1"
                           style={{
-                            color: "var(--text-main, #334155)"
+                            color: "var(--text-main, #131722)",
+                            borderBottom: "1px solid var(--border-color, #e2e8f0)"
                           }}
                           onClick={() => {
                             toggleIndicator(item.slug);
@@ -255,7 +266,10 @@ export const ListingModal = ({
                           onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "var(--bg-card-hover, #f1f5f9)"}
                           onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
                         >
-                          <span>{item.label} -- {item.slug} </span>
+                          <span className="font-medium text-sm">{item.label}</span>
+                          <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: "var(--bg-main, #f7f8fb)", color: "var(--text-muted, #787b86)" }}>
+                            {item.slug}
+                          </span>
                         </div>
                       </li>
                     ))}

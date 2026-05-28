@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Spinner } from "../../../components/tradingModals/Spinner"
-import * as XLSX from 'xlsx';
+// xlsx is loaded dynamically on demand — not bundled upfront
 import './onChain.css';
 
 import apiService from '../../../services/apiServices';
@@ -22,29 +22,44 @@ const OnChain = ({ isSubComponent = false, selectedSymbol }) => {
   // Date Picker States
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [dateRangePreset, setDateRangePreset] = useState('Last 30 Days'); // 'Last 7 Days' | 'Last 30 Days' | 'Last 90 Days' | 'Custom'
-  const [customStartDate, setCustomStartDate] = useState('2024-05-18');
-  const [customEndDate, setCustomEndDate] = useState('2024-06-18');
 
-  // useEffect(() => {
-  //   // 1. Fetch initial data dynamically from backend REST API
-  //   apiService.get('/api/onchain/data')
-  //     .then(json => {
-  //       console.log("On-Chain API Response:", json);
-  //       if (json && json.success) {
-  //         setData(json.data);
-  //       }
-  //     })
-  //     .catch(err => console.error("Error fetching initial on-chain data:", err));
-  // }, []);
+  // Default: 30 days back → today
+  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const defaultStartStr = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return d.toISOString().split('T')[0];
+  }, []);
+  const [customStartDate, setCustomStartDate] = useState(defaultStartStr);
+  const [customEndDate, setCustomEndDate] = useState(todayStr);
+
+  // Derive fromDate / toDate from the active preset or custom dates
+  const computedFromDate = useMemo(() => {
+    const today = new Date();
+    if (dateRangePreset === 'Last 7 Days') {
+      const d = new Date(today); d.setDate(d.getDate() - 7); return d.toISOString().split('T')[0];
+    } else if (dateRangePreset === 'Last 30 Days') {
+      const d = new Date(today); d.setDate(d.getDate() - 30); return d.toISOString().split('T')[0];
+    } else if (dateRangePreset === 'Last 90 Days') {
+      const d = new Date(today); d.setDate(d.getDate() - 90); return d.toISOString().split('T')[0];
+    }
+    return customStartDate;
+  }, [dateRangePreset, customStartDate]);
+
+  const computedToDate = useMemo(
+    () => dateRangePreset === 'Custom' ? customEndDate : todayStr,
+    [dateRangePreset, customEndDate, todayStr]
+  );
 
   useSocket({
     selectedSymbol,
+    onchainFromDate: computedFromDate,
+    onchainToDate: computedToDate,
     setOnchainData: (data) => {
       console.log("On-Chain Socket Response:", data);
       setData(data);
     }
   });
-
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -60,7 +75,8 @@ const OnChain = ({ isSubComponent = false, selectedSymbol }) => {
     return () => document.removeEventListener('click', handleOutsideClick);
   }, []);
 
-  const handleExport = (format) => {
+  // ── Dynamic xlsx import — only loads the library when user clicks Export xlsx
+  const handleExport = useCallback(async (format) => {
     if (!data) return;
 
     const chainsData = data?.chains?.map(c => ({
@@ -108,6 +124,8 @@ const OnChain = ({ isSubComponent = false, selectedSymbol }) => {
       downloadAnchor.click();
       downloadAnchor.remove();
     } else if (format === 'xlsx') {
+      // Dynamically import xlsx — saves ~500KB from the initial bundle
+      const XLSX = await import('xlsx');
       const wsChains = XLSX.utils.json_to_sheet(chainsData);
       const wsProtocols = XLSX.utils.json_to_sheet(protocolsData);
       const wb = XLSX.utils.book_new();
@@ -115,120 +133,127 @@ const OnChain = ({ isSubComponent = false, selectedSymbol }) => {
       XLSX.utils.book_append_sheet(wb, wsProtocols, "Protocols TVL");
       XLSX.writeFile(wb, `defi_onchain_metrics_${Date.now()}.xlsx`);
     }
-  };
+  }, [data]);
 
   // Show a loading screen until the backend data is retrieved
   const isLoading = !data;
 
-  // Dynamic Filtering Logic
-  const chainsList = ['All Chains', ...(data?.chains?.slice(0, 8)?.map(c => c.chain) || [])];
+  // ── Memoized derived values — only recompute when data/chain selection changes
+  const chainsList = useMemo(
+    () => ['All Chains', ...(data?.chains?.slice(0, 8)?.map(c => c.chain) || [])],
+    [data]
+  );
   const isFiltered = selectedChain !== 'All Chains';
-  const filteredChainObj = isFiltered ? data?.chains?.find(c => c.chain === selectedChain) : null;
+  const filteredChainObj = useMemo(
+    () => isFiltered ? data?.chains?.find(c => c.chain === selectedChain) : null,
+    [isFiltered, data, selectedChain]
+  );
 
   const displayTvl = isFiltered && filteredChainObj ? filteredChainObj.tvl : data?.stats?.tvl;
   const displayTvlChange = isFiltered && filteredChainObj ? filteredChainObj.c24 : data?.stats?.tvlChange;
-  const displayChains = isFiltered && filteredChainObj ? [filteredChainObj] : data?.chains?.slice(0, 5);
+  const displayChains = useMemo(
+    () => isFiltered && filteredChainObj ? [filteredChainObj] : data?.chains?.slice(0, 5),
+    [isFiltered, filteredChainObj, data]
+  );
 
-  // Calculate conic gradient dynamically for the Donut Chart
-  const conicParts = (displayChains || []).map((c, idx, arr) => {
-    const pct = isFiltered ? 100 : parseFloat(c.dom);
-    const start = isFiltered ? 0 : (idx === 0 ? 0 : arr.slice(0, idx).reduce((sum, ch) => sum + parseFloat(ch.dom), 0));
-    return `${c.color} ${start}% ${start + pct}%`;
-  });
-
-  if (!isFiltered) {
-    let accumulatedPercent = data?.chains ? data.chains.reduce((sum, c) => sum + parseFloat(c.dom), 0) : 0;
-    conicParts.push(`var(--color-opt) ${accumulatedPercent}% ${accumulatedPercent + 2.4}%`);
-    accumulatedPercent += 2.4;
-    conicParts.push(`var(--color-oth) ${accumulatedPercent}% 100%`);
-  }
-
-  const donutStyle = {
-    background: `conic-gradient(${conicParts.join(', ')})`
-  };
-
-  // Scale historical TVL values dynamically based on selected chain dominance
-  const displayHistory = isFiltered && filteredChainObj
-    ? data?.tvlHistory?.map((pt, idx) => {
-      const dominanceFactor = parseFloat(filteredChainObj.dom) / 100;
-      const drift = 1 + Math.sin(idx / 3) * 0.02;
-      return {
-        ...pt,
-        tvl: (parseFloat(pt.tvl) * dominanceFactor * drift).toFixed(2)
-      };
-    })
-    : data?.tvlHistory;
-
-  let filteredHistory = displayHistory || [];
-
-  if (dateRangePreset === 'Last 7 Days') {
-    filteredHistory = filteredHistory.slice(-7);
-  } else if (dateRangePreset === 'Last 30 Days') {
-    filteredHistory = filteredHistory.slice(-30);
-  } else if (dateRangePreset === 'Last 90 Days') {
-    filteredHistory = filteredHistory;
-  } else if (dateRangePreset === 'Custom') {
-    const startMs = new Date(customStartDate).getTime();
-    const endMs = new Date(customEndDate).getTime();
-    filteredHistory = filteredHistory.filter(h => {
-      const currentYear = new Date().getFullYear();
-      const pointMs = new Date(`${h.date}, ${currentYear}`).getTime();
-      return (!startMs || pointMs >= startMs) && (!endMs || pointMs <= endMs);
+  // ── Memoized conic gradient for the Donut Chart
+  const { conicParts, donutStyle } = useMemo(() => {
+    const parts = (displayChains || []).map((c, idx, arr) => {
+      const pct = isFiltered ? 100 : parseFloat(c.dom);
+      const start = isFiltered ? 0 : (idx === 0 ? 0 : arr.slice(0, idx).reduce((sum, ch) => sum + parseFloat(ch.dom), 0));
+      return `${c.color} ${start}% ${start + pct}%`;
     });
-    if (filteredHistory.length === 0) {
-      filteredHistory = displayHistory || [];
+
+    if (!isFiltered) {
+      let accumulatedPercent = data?.chains ? data.chains.reduce((sum, c) => sum + parseFloat(c.dom), 0) : 0;
+      parts.push(`var(--color-opt) ${accumulatedPercent}% ${accumulatedPercent + 2.4}%`);
+      accumulatedPercent += 2.4;
+      parts.push(`var(--color-oth) ${accumulatedPercent}% 100%`);
     }
-  }
 
-  const history = filteredHistory;
-  let linePath = "M0,150 L500,150";
-  let areaPath = "M0,150 L500,150 L500,200 L0,200 Z";
-  let lastCircleX = 500;
-  let lastCircleY = 150;
-  let xAxisLabels = [];
-  let yAxisLabels = [];
+    return {
+      conicParts: parts,
+      donutStyle: { background: `conic-gradient(${parts.join(', ')})` }
+    };
+  }, [displayChains, isFiltered, data]);
 
-  if (history.length > 0) {
-    const tvlValues = history
-      .map(h => parseFloat(h.tvl))
-      .filter(v => !isNaN(v) && isFinite(v));
+  // ── Memoized history filtering — only recompute when data/dates/chain changes
+  const { history, linePath, areaPath, lastCircleX, lastCircleY, xAxisLabels, yAxisLabels } = useMemo(() => {
+    const displayHistory = isFiltered && filteredChainObj
+      ? data?.tvlHistory?.map((pt, idx) => {
+        const dominanceFactor = parseFloat(filteredChainObj.dom) / 100;
+        const drift = 1 + Math.sin(idx / 3) * 0.02;
+        return { ...pt, tvl: (parseFloat(pt.tvl) * dominanceFactor * drift).toFixed(2) };
+      })
+      : data?.tvlHistory;
 
-    if (tvlValues.length > 0) {
-      const maxTvl = Math.max(...tvlValues) * 1.05;
-      const minTvl = Math.max(0, Math.min(...tvlValues) * 0.95);
-      const range = maxTvl - minTvl || 1;
+    let filteredHistory = displayHistory || [];
 
-      const points = history.map((h, idx) => {
-        const val = parseFloat(h.tvl);
-        const cleanVal = isNaN(val) ? minTvl : val;
-        const x = (idx / (history.length - 1)) * 500;
-        const y = 190 - ((cleanVal - minTvl) / range) * 170;
-        return { x, y };
+    if (dateRangePreset === 'Last 7 Days') {
+      filteredHistory = filteredHistory.slice(-7);
+    } else if (dateRangePreset === 'Last 30 Days') {
+      filteredHistory = filteredHistory.slice(-30);
+    } else if (dateRangePreset === 'Last 90 Days') {
+      // keep all
+    } else if (dateRangePreset === 'Custom') {
+      const startMs = new Date(customStartDate).getTime();
+      const endMs = new Date(customEndDate).getTime();
+      const filtered = filteredHistory.filter(h => {
+        const currentYear = new Date().getFullYear();
+        const pointMs = new Date(`${h.date}, ${currentYear}`).getTime();
+        return (!startMs || pointMs >= startMs) && (!endMs || pointMs <= endMs);
       });
+      if (filtered.length > 0) filteredHistory = filtered;
+    }
 
-      linePath = points.map((p, idx) => `${idx === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
-      areaPath = `${linePath} L500,200 L0,200 Z`;
+    const history = filteredHistory;
+    let linePath = "M0,150 L500,150";
+    let areaPath = "M0,150 L500,150 L500,200 L0,200 Z";
+    let lastCircleX = 500;
+    let lastCircleY = 150;
+    let xAxisLabels = [];
+    let yAxisLabels = [];
 
-      const lastPt = points[points.length - 1];
-      lastCircleX = lastPt.x;
-      lastCircleY = lastPt.y;
+    if (history.length > 0) {
+      const tvlValues = history.map(h => parseFloat(h.tvl)).filter(v => !isNaN(v) && isFinite(v));
 
-      yAxisLabels = Array.from({ length: 6 }, (_, i) => {
-        const val = maxTvl - (i * (maxTvl - minTvl) / 5);
-        return `$${val.toFixed(1)}B`;
-      });
+      if (tvlValues.length > 0) {
+        const maxTvl = Math.max(...tvlValues) * 1.05;
+        const minTvl = Math.max(0, Math.min(...tvlValues) * 0.95);
+        const range = maxTvl - minTvl || 1;
 
-      const step = Math.floor(history.length / 6) || 1;
-      for (let i = 0; i < history.length; i += step) {
-        if (xAxisLabels.length < 6 && history[i]) {
-          xAxisLabels.push(history[i].date);
+        const points = history.map((h, idx) => {
+          const val = parseFloat(h.tvl);
+          const cleanVal = isNaN(val) ? minTvl : val;
+          const x = (idx / (history.length - 1)) * 500;
+          const y = 190 - ((cleanVal - minTvl) / range) * 170;
+          return { x, y };
+        });
+
+        linePath = points.map((p, idx) => `${idx === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+        areaPath = `${linePath} L500,200 L0,200 Z`;
+
+        const lastPt = points[points.length - 1];
+        lastCircleX = lastPt.x;
+        lastCircleY = lastPt.y;
+
+        yAxisLabels = Array.from({ length: 6 }, (_, i) => {
+          const val = maxTvl - (i * (maxTvl - minTvl) / 5);
+          return `$${val.toFixed(1)}B`;
+        });
+
+        const step = Math.floor(history.length / 6) || 1;
+        for (let i = 0; i < history.length; i += step) {
+          if (xAxisLabels.length < 6 && history[i]) xAxisLabels.push(history[i].date);
+        }
+        if (xAxisLabels.length < 7 && history[history.length - 1]) {
+          xAxisLabels.push(history[history.length - 1].date);
         }
       }
-      if (xAxisLabels.length < 7 && history[history.length - 1]) {
-        xAxisLabels.push(history[history.length - 1].date);
-      }
     }
-  }
+
+    return { history, linePath, areaPath, lastCircleX, lastCircleY, xAxisLabels, yAxisLabels };
+  }, [data, isFiltered, filteredChainObj, dateRangePreset, customStartDate, customEndDate]);
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>

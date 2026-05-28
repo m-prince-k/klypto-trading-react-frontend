@@ -8,6 +8,7 @@ import {
 } from "react-icons/fi";
 import socket from "../../services/websocket/socket";
 import SocketEvents from "../../services/websocket/socketEvents";
+import { useSocket } from "../../services/websocket/useSocket";
 
 export default function DetailsPanel({ onClose, symbol }) {
   const [priceData, setPriceData] = useState({
@@ -24,8 +25,45 @@ export default function DetailsPanel({ onClose, symbol }) {
   const prevPriceRef = useRef(0);
 
   // Parse coin name from symbol (e.g. BTCUSDT -> BTC / USDT)
-  const baseAsset = symbol ? symbol.replace("USDT", "").replace("USD", "") : "";
-  const quoteAsset = symbol ? symbol.slice(baseAsset.length) : "";
+  const safeSymbol = symbol ? symbol.toUpperCase() : "";
+  const baseAsset = safeSymbol ? safeSymbol.replace("USDT", "").replace("USD", "") : "";
+  const quoteAsset = safeSymbol ? safeSymbol.slice(baseAsset.length) : "";
+
+  // Common handler for price updates (from either watchlist or live-tick)
+  const handlePriceUpdate = (tick) => {
+    if (!tick || !tick.symbol) return;
+    if (tick.symbol.toUpperCase() !== safeSymbol) return;
+
+    // Normalize API fields
+    const normalized = {
+      lastPrice: tick.price ?? tick.lastPrice ?? tick.close,
+      change: tick.change,
+      changePercent: tick.changePct ?? tick.changePercent,
+    };
+
+    setPriceData((prev) => {
+      const nextPrice = normalized.lastPrice ?? prev.lastPrice;
+
+      if (prevPriceRef.current && nextPrice !== prevPriceRef.current) {
+        const isUp = nextPrice > prevPriceRef.current;
+        setFlashClass(isUp ? "flash-up-text" : "flash-down-text");
+        setTimeout(() => setFlashClass(""), 600);
+      }
+      prevPriceRef.current = nextPrice;
+
+      return {
+        ...prev,
+        lastPrice: nextPrice,
+        change: normalized.change ?? prev.change,
+        changePercent: normalized.changePercent ?? prev.changePercent,
+      };
+    });
+  };
+
+  useSocket({
+    handleWatchlistUpdate: handlePriceUpdate,
+    handleLiveTickUpdate: handlePriceUpdate,
+  });
 
   useEffect(() => {
     if (!symbol) return;
@@ -41,43 +79,7 @@ export default function DetailsPanel({ onClose, symbol }) {
       open: 0,
     });
     prevPriceRef.current = 0;
-
-    const handleWatchlistUpdate = (tick) => {
-      if (tick.symbol !== symbol) return;
-
-      // Normalize API fields: price -> lastPrice, changePct -> changePercent
-      const normalized = {
-        lastPrice: tick.price ?? tick.lastPrice,
-        change: tick.change,
-        changePercent: tick.changePct ?? tick.changePercent,
-      };
-
-      setPriceData((prev) => {
-        const nextPrice = normalized.lastPrice ?? prev.lastPrice;
-
-        // Flash effect on price change
-        if (prevPriceRef.current && nextPrice !== prevPriceRef.current) {
-          const isUp = nextPrice > prevPriceRef.current;
-          setFlashClass(isUp ? "flash-up-text" : "flash-down-text");
-          setTimeout(() => setFlashClass(""), 600);
-        }
-        prevPriceRef.current = nextPrice;
-
-        return {
-          ...prev,
-          lastPrice: nextPrice,
-          change: normalized.change ?? prev.change,
-          changePercent: normalized.changePercent ?? prev.changePercent,
-        };
-      });
-    };
-
-    socket.on("watchlist-update", handleWatchlistUpdate);
-
-    return () => {
-      socket.off("watchlist-update", handleWatchlistUpdate);
-    };
-  }, [symbol]);
+  }, [safeSymbol]);
 
   if (!symbol) {
     return (

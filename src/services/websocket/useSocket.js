@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { createSocketManager } from "./socketManager";
 import EVENTS from "./socketEvents";
 import socket from "./socket";
@@ -33,6 +33,8 @@ export const useSocket = ({
 
   // On-chain
   setOnchainData,
+  onchainFromDate,
+  onchainToDate,
 
   // Arbitrage
   setOpportunities,
@@ -75,6 +77,10 @@ export const useSocket = ({
   handleWatchlistUpdate,
 }) => {
   useEffect(() => {
+    // Debounce bucket for binanceTicker updates — prevents re-render storm at 20fps
+    const pendingTickers = {};
+    let tickerFlushTimer = null;
+
     const handlers = {
 
       /* ───────────────── MARKET INIT ───────────────── */
@@ -97,7 +103,7 @@ export const useSocket = ({
           const found = extractedCoins.find(c => c.symbol.toUpperCase() === selectedSymbol?.toUpperCase());
           if (found) {
             setCoinDetail((prevCoin) => prevCoin ? prevCoin : found);
-            if (areaSeriesRef?.current && found.history) {
+            if (areaSeriesRef?.current && typeof areaSeriesRef.current.setData === 'function' && found.history) {
               const chartData = found.history.map((price, idx) => ({
                 time: Math.floor(Date.now() / 1000) - (found.history.length - idx) * 10,
                 value: price,
@@ -188,67 +194,83 @@ export const useSocket = ({
         // data: { symbol, price, change24h, ... }
         if (!data?.symbol) return;
         const symbolKey = data.symbol.replace("USDT", "").toUpperCase();
-        const base = getBaseSymbol ? getBaseSymbol(data.symbol) : symbolKey;
 
-        setCoins?.((prevCoins) => {
-          const coinExists = prevCoins.some((c) => c.symbol === symbolKey);
-          if (!coinExists) return prevCoins;
-          const originalCoin = prevCoins.find((c) => c.symbol === symbolKey);
-          const originalPrice = originalCoin ? originalCoin.price : 0;
-          const newPrice = Number(data.price);
+        // Accumulate latest ticker data, debounce flush to 100ms
+        pendingTickers[symbolKey] = data;
+        if (tickerFlushTimer) return; // already scheduled — will flush with latest data
+        tickerFlushTimer = setTimeout(() => {
+          tickerFlushTimer = null;
+          const batch = { ...pendingTickers };
+          Object.keys(batch).forEach(key => delete pendingTickers[key]);
 
-          if (originalPrice > 0 && newPrice !== originalPrice && setFlashStates) {
-            const direction = newPrice >= originalPrice ? "up" : "down";
-            const flashKey = `${symbolKey}-price`;
-            setFlashStates((prev) => ({ ...prev, [flashKey]: direction }));
-            setTimeout(() => {
-              setFlashStates((prev) => {
-                const next = { ...prev };
-                delete next[flashKey];
-                return next;
+          // Flush all accumulated tickers in one pass
+          setCoins?.((prevCoins) => {
+            let updated = prevCoins;
+            Object.values(batch).forEach((tickData) => {
+              const sym = tickData.symbol.replace("USDT", "").toUpperCase();
+              const newPrice = Number(tickData.price);
+              const coinExists = updated.some((c) => c.symbol === sym);
+              if (!coinExists) return;
+
+              if (setFlashStates) {
+                const originalCoin = updated.find((c) => c.symbol === sym);
+                const originalPrice = originalCoin ? originalCoin.price : 0;
+                if (originalPrice > 0 && newPrice !== originalPrice) {
+                  const direction = newPrice >= originalPrice ? "up" : "down";
+                  const flashKey = `${sym}-price`;
+                  setFlashStates((prev) => ({ ...prev, [flashKey]: direction }));
+                  setTimeout(() => {
+                    setFlashStates((prev) => { const next = { ...prev }; delete next[flashKey]; return next; });
+                  }, 800);
+                }
+              }
+
+              updated = updated.map((coin) => {
+                if (coin.symbol !== sym) return coin;
+                const updatedHistory = [...coin.history.slice(1), newPrice];
+                return {
+                  ...coin,
+                  price: newPrice,
+                  change24h: Number(tickData.changePct),
+                  volume24h: Number(tickData.volume),
+                  high: Number(tickData.high),
+                  low: Number(tickData.low),
+                  history: updatedHistory,
+                };
               });
-            }, 800);
-          }
 
-          return prevCoins.map((coin) => {
-            if (coin.symbol === symbolKey) {
-              const updatedHistory = [...coin.history.slice(1), newPrice];
-              return {
-                ...coin,
-                price: newPrice,
-                change24h: Number(data.changePct),
-                volume24h: Number(data.volume),
-                high: Number(data.high),
-                low: Number(data.low),
-                history: updatedHistory,
-              };
-            }
-            return coin;
+              if (globalCache.marketCoins) {
+                const coinIdx = globalCache.marketCoins.findIndex((c) => c.symbol === sym);
+                if (coinIdx !== -1) {
+                  globalCache.marketCoins[coinIdx] = {
+                    ...globalCache.marketCoins[coinIdx],
+                    price: newPrice,
+                    change24h: Number(tickData.changePct),
+                    volume24h: Number(tickData.volume),
+                    high: Number(tickData.high),
+                    low: Number(tickData.low),
+                  };
+                }
+              }
+            });
+            return updated;
           });
-        });
 
-        if (globalCache.marketCoins) {
-          const coinIdx = globalCache.marketCoins.findIndex((c) => c.symbol === symbolKey);
-          if (coinIdx !== -1) {
-            globalCache.marketCoins[coinIdx] = {
-              ...globalCache.marketCoins[coinIdx],
-              price: Number(data.price),
-              change24h: Number(data.changePct),
-              volume24h: Number(data.volume),
-              high: Number(data.high),
-              low: Number(data.low),
-            };
-          }
-        }
-
-        setPrices?.((prev) => ({
-          ...prev,
-          [base]: {
-            price: Number(data.price).toFixed(2),
-            change: data.change24h ?? prev[base]?.change ?? 0,
-          },
-        }));
+          // Batch price state update
+          setPrices?.((prev) => {
+            const next = { ...prev };
+            Object.values(batch).forEach((tickData) => {
+              const base = getBaseSymbol ? getBaseSymbol(tickData.symbol) : tickData.symbol.replace("USDT", "").toUpperCase();
+              next[base] = {
+                price: Number(tickData.price).toFixed(2),
+                change: tickData.change24h ?? prev[base]?.change ?? 0,
+              };
+            });
+            return next;
+          });
+        }, 100);
       },
+
 
       /* ───────────────── KLINE / CHART ───────────────── */
       klineUpdate: (data) => {
@@ -676,8 +698,10 @@ export const useSocket = ({
       }
 
       if (setOnchainData && safeSymbol) {
-        console.log(`[useSocket] Emitting subscribe_onchain with symbol:`, { symbol: safeSymbol });
-        manager.emit(EVENTS.ONCHAIN.SUBSCRIBE, { symbol: safeSymbol });
+        const startDate = onchainFromDate || (() => { const d = new Date(); d.setDate(d.getDate() - 30); return d.toISOString().split('T')[0]; })();
+        const endDate = onchainToDate || new Date().toISOString().split('T')[0];
+        console.log(`[useSocket] Emitting subscribe_onchain with symbol:`, { symbol: safeSymbol, startDate, endDate });
+        manager.emit(EVENTS.ONCHAIN.SUBSCRIBE, { symbol: safeSymbol, startDate, endDate });
       }
 
       if (setCoinDetail && safeSymbol) {
@@ -779,4 +803,25 @@ export const useSocket = ({
       console.log(`[useSocket] Chart Timeframe Changed, but socket not connected yet.`);
     }
   }, [selectedPeriod, selectedSymbol]);
+
+  // Separate effect: re-subscribe onchain whenever the date range changes
+  useEffect(() => {
+    if (!setOnchainData || !selectedSymbol) return;
+
+    const safeSymbol = (() => {
+      const upper = selectedSymbol.toUpperCase();
+      if (upper === 'BTC' || upper === 'ETH') return `${upper}USDT`;
+      if (upper.endsWith('USDT') || upper.endsWith('BTC') || upper.endsWith('ETH') || upper.endsWith('USDC') || upper.endsWith('BUSD')) {
+        return upper;
+      }
+      return `${upper}USDT`;
+    })();
+
+    if (socket.connected) {
+      const startDate = onchainFromDate || (() => { const d = new Date(); d.setDate(d.getDate() - 30); return d.toISOString().split('T')[0]; })();
+      const endDate = onchainToDate || new Date().toISOString().split('T')[0];
+      console.log(`[useSocket] Date range changed. Re-emitting subscribe_onchain:`, { symbol: safeSymbol, startDate, endDate });
+      socket.emit(EVENTS.ONCHAIN.SUBSCRIBE, { symbol: safeSymbol, startDate, endDate });
+    }
+  }, [onchainFromDate, onchainToDate, selectedSymbol]);
 };

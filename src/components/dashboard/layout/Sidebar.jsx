@@ -310,4 +310,4 @@ const Sidebar = ({ sidebarOpen, activeTab = "Overview", setActiveTab = () => { }
   );
 };
 
-export default Sidebar;
+export default React.memo(Sidebar);

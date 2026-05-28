@@ -4,6 +4,7 @@ import { getUser } from "../../../util/common";
 import apiService from "../../../services/apiServices";
 import { logout } from "../../../pages/auth/protected";
 import { useTheme } from "../../../context/ThemeContext";
+import { GlobalSearchModal } from "../../tradingModals/GlobalSearchModal";
 
 const HeaderControls = ({ selectedSymbol, setSelectedSymbol, sidebarOpen, setSidebarOpen, activeTab }) => {
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ const HeaderControls = ({ selectedSymbol, setSelectedSymbol, sidebarOpen, setSid
 
   const [currencies, setCurrencies] = useState([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
 
   useEffect(() => {
     async function fetchCurrencies() {
@@ -76,62 +78,64 @@ const HeaderControls = ({ selectedSymbol, setSelectedSymbol, sidebarOpen, setSid
         {/* Premium Asset Selector Dropdown */}
         {!(activeTab && ['settings', 'watchlist', 'arbitrage', 'market sentiment'].includes(activeTab.toLowerCase())) && (
           <div
-          className="premium-dropdown-wrapper"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            background: "var(--header-bg)",
-            border: "1px solid var(--border-color)",
-            borderRadius: "20px",
-            padding: "2px 14px",
-            boxShadow: "var(--shadow-lg)",
-          }}
-        >
-          <span
+            className="premium-dropdown-wrapper"
             style={{
-              fontSize: "9.5px",
-              fontWeight: "bold",
-              color: "var(--text-muted)",
-              letterSpacing: "0.5px",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              background: "var(--header-bg)",
+              border: "1px solid var(--border-color)",
+              borderRadius: "20px",
+              padding: "2px 14px",
+              boxShadow: "var(--shadow-lg)",
             }}
           >
-            ACTIVE PAIR:
-          </span>
+            <span
+              style={{
+                fontSize: "9.5px",
+                fontWeight: "bold",
+                color: "var(--text-muted)",
+                letterSpacing: "0.5px",
+              }}
+            >
+              ACTIVE PAIR:
+            </span>
 
-          <select
-            value={selectedSymbol}
-            onChange={(e) => setSelectedSymbol(e.target.value)}
-            style={{
-              background: "transparent",
-              border: "none",
-              color: "var(--text-main)",
-              fontSize: "11.5px",
-              fontWeight: "bold",
-              cursor: "pointer",
-              outline: "none",
-              padding: "4px 0px",
-              fontFamily: "inherit",
-            }}
-          >
-            {currencies.map((item) => (
-              <option
-                key={item.symbol}
-                value={item.symbol}
-                style={{ background: "var(--bg-card)", color: "var(--text-main)" }}
-              >
-                {item.label || item.symbol}
-              </option>
-            ))}
-          </select>
-        </div>
+            <select
+              value={selectedSymbol}
+              onChange={(e) => setSelectedSymbol(e.target.value)}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "var(--text-main)",
+                fontSize: "11.5px",
+                fontWeight: "bold",
+                cursor: "pointer",
+                outline: "none",
+                padding: "4px 0px",
+                fontFamily: "inherit",
+              }}
+            >
+              {currencies.map((item) => (
+                <option
+                  key={item.symbol}
+                  value={item.symbol}
+                  style={{ background: "var(--bg-card)", color: "var(--text-main)" }}
+                >
+                  {item.label || item.symbol}
+                </option>
+              ))}
+            </select>
+          </div>
         )}
 
-        <div className="search-container">
+        <div className="search-container" onClick={() => setIsSearchModalOpen(true)} style={{ cursor: "pointer" }}>
           <input
             type="text"
             className="search-input"
             placeholder="Search tokens, protocols, metrics..."
+            readOnly
+            style={{ cursor: "pointer" }}
           />
           <svg
             className="search-icon-svg"
@@ -149,39 +153,49 @@ const HeaderControls = ({ selectedSymbol, setSelectedSymbol, sidebarOpen, setSid
 
         {/* Navigation buttons */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+
+          <button
+            onClick={() => navigate("/candleStick")}
+            style={{
+              background: "none", border: "1px solid #7F77DD", color: "#7F77DD",
+              fontSize: "12px", fontWeight: "500", borderRadius: "20px",
+              padding: "5px 16px", cursor: "pointer", fontFamily: "inherit",
+              transition: "background 0.15s",
+            }}
+            onMouseOver={e => e.currentTarget.style.background = "rgba(127,119,221,0.08)"}
+            onMouseOut={e => e.currentTarget.style.background = "none"}
+          >
+            Chart
+          </button>
+
           <button
             onClick={() => navigate("/scan_dashboard")}
             style={{
-              background: "none",
-              border: "1px solid #2563eb",
-              color: "#2563eb",
-              fontSize: "11px",
-              fontWeight: "600",
-              borderRadius: "16px",
-              padding: "5px 14px",
-              cursor: "pointer",
-              fontFamily: "inherit",
+              background: "none", border: "1px solid #EF9F27", color: "#EF9F27",
+              fontSize: "12px", fontWeight: "500", borderRadius: "20px",
+              padding: "5px 16px", cursor: "pointer", fontFamily: "inherit",
+              transition: "background 0.15s",
             }}
+            onMouseOver={e => e.currentTarget.style.background = "rgba(239,159,39,0.08)"}
+            onMouseOut={e => e.currentTarget.style.background = "none"}
           >
-            Scan Dashboard
+            Scan dashboard
           </button>
 
           <button
             onClick={() => navigate("/alert_dashboard")}
             style={{
-              background: "none",
-              border: "1px solid #d97706",
-              color: "#d97706",
-              fontSize: "11px",
-              fontWeight: "600",
-              borderRadius: "16px",
-              padding: "5px 14px",
-              cursor: "pointer",
-              fontFamily: "inherit",
+              background: "none", border: "1px solid #7F77DD", color: "#7F77DD",
+              fontSize: "12px", fontWeight: "500", borderRadius: "20px",
+              padding: "5px 16px", cursor: "pointer", fontFamily: "inherit",
+              transition: "background 0.15s",
             }}
+            onMouseOver={e => e.currentTarget.style.background = "rgba(127,119,221,0.08)"}
+            onMouseOut={e => e.currentTarget.style.background = "none"}
           >
-            Alert Dashboard
+            Alert dashboard
           </button>
+
         </div>
       </div>
       <div className="header-actions">
@@ -381,6 +395,7 @@ const HeaderControls = ({ selectedSymbol, setSelectedSymbol, sidebarOpen, setSid
           )}
         </div>
       </div>
+      <GlobalSearchModal isOpen={isSearchModalOpen} onClose={() => setIsSearchModalOpen(false)} />
     </div>
   );
 };

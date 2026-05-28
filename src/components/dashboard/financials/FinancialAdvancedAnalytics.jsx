@@ -390,24 +390,26 @@ export default function FinancialAdvancedAnalytics({
                 <div
                   style={{
                     display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
+                    flexDirection: "column",
+                    alignItems: "flex-end",
+                    gap: "4px"
                   }}
                 >
-                  <div style={{ color: "#f59e0b", fontSize: "14px" }}>
-                    {outlook?.overallRating != null
-                      ? '★'.repeat(Math.floor(Number(outlook.overallRating))) + (Number(outlook.overallRating) % 1 >= 0.4 ? '½' : '') + '☆'.repeat(5 - Math.floor(Number(outlook.overallRating)) - (Number(outlook.overallRating) % 1 >= 0.4 ? 1 : 0))
-                      : starsStr}
-                  </div>
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ color: "var(--text-main, #fff)", fontWeight: "bold", fontSize: "14px" }}>
+                  <div style={{ display: "flex", flexDirection:"column", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+                    
+                    <div style={{ color: "var(--text-main, #fff)", fontWeight: "bold", fontSize: "16px", textAlign:'left' }}>
                       {outlook?.overallRating != null ? `${Number(outlook.overallRating).toFixed(1)} / 5` : (ratingVal != null ? `${ratingVal.toFixed(1)} / 5` : 'N/A')}
                     </div>
-                    <div
-                      style={{ fontSize: "10px", fontWeight: "bold", color: outlook?.action ? '#10b981' : 'var(--text-muted, #94a3b8)' }}
-                    >
-                      {outlook?.action || ratingText}
+                    <div style={{ color: "#f59e0b", fontSize: "16px", letterSpacing: "2px" }}>
+                      {outlook?.overallRating != null
+                        ? '★'.repeat(Math.floor(Number(outlook.overallRating))) + (Number(outlook.overallRating) % 1 >= 0.4 ? '½' : '') + '☆'.repeat(5 - Math.floor(Number(outlook.overallRating)) - (Number(outlook.overallRating) % 1 >= 0.4 ? 1 : 0))
+                        : starsStr}
                     </div>
+                  </div>
+                  <div
+                    style={{ fontSize: "12px", fontWeight: "bold", color: outlook?.action ? '#10b981' : 'var(--text-muted, #94a3b8)', textTransform: 'uppercase' }}
+                  >
+                    {outlook?.action || ratingText}
                   </div>
                 </div>
               </div>

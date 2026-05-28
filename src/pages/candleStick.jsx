@@ -193,7 +193,7 @@ export default function Candlestick() {
     const tfFromUrl = params.get("tf");
 
     if (symbolFromUrl) {
-      setSelectedCurrency(symbolFromUrl);
+      setSelectedCurrency(symbolFromUrl.toUpperCase());
     }
 
     if (tfFromUrl) {
@@ -973,7 +973,7 @@ export default function Candlestick() {
     const tickData = tick.ohlcv || tick;
     const tickTime = tick.timestamp || tickData.time;
     if (!tickTime || !seriesRef.current) return;
-    if (tick.symbol && tick.symbol !== selectedCurrency) return;
+    if (tick.symbol && tick.symbol.toUpperCase() !== selectedCurrency?.toUpperCase()) return;
 
     setLivePrice(Number(tickData.close));
     setLiveOhlcv(tickData);
@@ -1019,7 +1019,9 @@ export default function Candlestick() {
 
   const handleWatchlistResponse = useCallback((res) => {
     if (res && Array.isArray(res.data)) {
-      const item = res.data.find((w) => w.symbol === selectedCurrency);
+      const item = res.data.find(
+        (w) => w.symbol.toUpperCase() === selectedCurrency?.toUpperCase()
+      );
       if (item) {
         const price = item.price ?? item.lastPrice;
         if (price !== undefined && price !== null) {
@@ -1030,7 +1032,7 @@ export default function Candlestick() {
   }, [selectedCurrency]);
 
   const handleWatchlistUpdate = useCallback((tick) => {
-    if (tick && tick.symbol === selectedCurrency) {
+    if (tick && tick.symbol?.toUpperCase() === selectedCurrency?.toUpperCase()) {
       const price = tick.price ?? tick.lastPrice;
       if (price !== undefined && price !== null) {
         setLivePrice(Number(price));

@@ -1,23 +1,33 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, lazy, Suspense } from "react";
 import "./CryptoEdgeDashboard.css";
 import { useTheme } from "../../context/ThemeContext";
-// Import split components
+// Structural components — always needed, keep eager
 import Sidebar from "../../../src/components/dashboard/layout/Sidebar";
 import TopTickerBar from "../../../src/components/dashboard/layout/TopTickerBar";
 import HeaderControls from "../../../src/components/dashboard/layout/HeaderControls";
-import Overview from "./overview/Overview";
-import SocialIntelligence from "./socialIntellingence/socialIntellingence";
-import Arbitrage from "./arbitrage/Arbitrage";
-import Financials from "./financials/Financial";
-import MarketData from "./marketData/MarketData";
-import OnChain from "./onChain/onChain";
-import WatchlistPanel from "../../components/watchlist/WatchlistPanel";
-import MarketSentiment from "./marketSentiment/MarketSentiment";
-import socket from "../../services/websocket/socket";
-import Settings from "./settings/Settings";
-import { useSocket } from "../../services/websocket/useSocket";
-import Watchlist from "./watchlist/Watchlist";
 import { Spinner } from "../../components/tradingModals/Spinner";
+import socket from "../../services/websocket/socket";
+import { useSocket } from "../../services/websocket/useSocket";
+
+// ── Tab panels — lazy-loaded (each becomes its own JS chunk) ────────────────
+const Overview           = lazy(() => import("./overview/Overview"));
+const SocialIntelligence = lazy(() => import("./socialIntellingence/socialIntellingence"));
+const Arbitrage          = lazy(() => import("./arbitrage/Arbitrage"));
+const Financials         = lazy(() => import("./financials/Financial"));
+const MarketData         = lazy(() => import("./marketData/MarketData"));
+const OnChain            = lazy(() => import("./onChain/onChain"));
+const WatchlistPanel     = lazy(() => import("../../components/watchlist/WatchlistPanel"));
+const MarketSentiment    = lazy(() => import("./marketSentiment/MarketSentiment"));
+const Settings           = lazy(() => import("./settings/Settings"));
+const Watchlist          = lazy(() => import("./watchlist/Watchlist"));
+
+// Minimal tab-switch fallback
+const TabLoader = () => (
+  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
+    <Spinner />
+  </div>
+);
+
 
 const CryptoEdgeDashboard = () => {
   const { theme } = useTheme();
@@ -215,89 +225,91 @@ const CryptoEdgeDashboard = () => {
               }}
             >
 
-              {activeTab === "Overview" && (
-                <Overview
-                  marketMetrics={marketMetrics}
-                  fearGreed={fearGreed}
-                  socialStats={socialStats}
-                  prices={prices}
-                  selectedSymbol={selectedSymbol}
-                  orderBook={orderBook}
-                  tvlData={tvlData}
-                  tvContainerRef={tvContainerRef}
-                  financials={financials}
-                  arbitrage={arbitrage}
-                  alerts={alerts}
-                  activeTab={activeTab}
-                  sentimentData={sentimentData}
-                />
-              )}
+              <Suspense fallback={<TabLoader />}>
+                {activeTab === "Overview" && (
+                  <Overview
+                    marketMetrics={marketMetrics}
+                    fearGreed={fearGreed}
+                    socialStats={socialStats}
+                    prices={prices}
+                    selectedSymbol={selectedSymbol}
+                    orderBook={orderBook}
+                    tvlData={tvlData}
+                    tvContainerRef={tvContainerRef}
+                    financials={financials}
+                    arbitrage={arbitrage}
+                    alerts={alerts}
+                    activeTab={activeTab}
+                    sentimentData={sentimentData}
+                  />
+                )}
 
-              {activeTab === "Social Intelligence" && (
-                <SocialIntelligence
-                  isSubComponent={true}
-                  selectedSymbol={selectedSymbol}
-                />
-              )}
+                {activeTab === "Social Intelligence" && (
+                  <SocialIntelligence
+                    isSubComponent={true}
+                    selectedSymbol={selectedSymbol}
+                  />
+                )}
 
-              {activeTab === "Arbitrage" && (
-                <Arbitrage
-                  isSubComponent={true}
-                  selectedSymbol={selectedSymbol}
-                />
-              )}
+                {activeTab === "Arbitrage" && (
+                  <Arbitrage
+                    isSubComponent={true}
+                    selectedSymbol={selectedSymbol}
+                  />
+                )}
 
-              {activeTab === "Financials" && (
-                <Financials
-                  isSubComponent={true}
-                  selectedSymbol={selectedSymbol}
-                />
-              )}
+                {activeTab === "Financials" && (
+                  <Financials
+                    isSubComponent={true}
+                    selectedSymbol={selectedSymbol}
+                  />
+                )}
 
-              {activeTab === "Market Data" && (
-                <MarketData
-                  isSubComponent={true}
-                  selectedSymbol={selectedSymbol}
-                  coins={marketCoins}
-                  setCoins={setMarketCoins}
-                  marketMetrics={marketMetrics}
-                  setMarketMetrics={setMarketMetrics}
-                  overviewChartData={overviewChartData}
-                  setOverviewChartData={setOverviewChartData}
-                  flashStates={flashStates}
-                  setFlashStates={setFlashStates}
-                />
-              )}
+                {activeTab === "Market Data" && (
+                  <MarketData
+                    isSubComponent={true}
+                    selectedSymbol={selectedSymbol}
+                    coins={marketCoins}
+                    setCoins={setMarketCoins}
+                    marketMetrics={marketMetrics}
+                    setMarketMetrics={setMarketMetrics}
+                    overviewChartData={overviewChartData}
+                    setOverviewChartData={setOverviewChartData}
+                    flashStates={flashStates}
+                    setFlashStates={setFlashStates}
+                  />
+                )}
 
-              {activeTab === "On-Chain (TVL)" && (
-                <OnChain
-                  isSubComponent={true}
-                  selectedSymbol={selectedSymbol}
-                />
-              )}
-              {activeTab === "Market Sentiment" && (
-                <MarketSentiment
-                  isSubComponent={true}
-                  selectedSymbol={selectedSymbol}
-                />
-              )}
+                {activeTab === "On-Chain (TVL)" && (
+                  <OnChain
+                    isSubComponent={true}
+                    selectedSymbol={selectedSymbol}
+                  />
+                )}
+                {activeTab === "Market Sentiment" && (
+                  <MarketSentiment
+                    isSubComponent={true}
+                    selectedSymbol={selectedSymbol}
+                  />
+                )}
 
-              {activeTab === "Watchlist" && (
-                <Watchlist
-                  onClose={() => setActiveTab("Overview")}
-                  activeCurrency={activeCurrency}
-                  setActiveCurrency={(sym) => {
-                    setActiveCurrency(sym);
-                    setSelectedSymbol(sym);
-                  }}
-                />
-              )}
+                {activeTab === "Watchlist" && (
+                  <Watchlist
+                    onClose={() => setActiveTab("Overview")}
+                    activeCurrency={activeCurrency}
+                    setActiveCurrency={(sym) => {
+                      setActiveCurrency(sym);
+                      setSelectedSymbol(sym);
+                    }}
+                  />
+                )}
 
-              {activeTab === "Settings" && (
-                <Settings
-                  isSubComponent={true}
-                />
-              )}
+                {activeTab === "Settings" && (
+                  <Settings
+                    isSubComponent={true}
+                  />
+                )}
+              </Suspense>
             </div>
 
           </main>

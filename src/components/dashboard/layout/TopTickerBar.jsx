@@ -78,4 +78,4 @@ const TopTickerBar = ({ prices, selectedSymbol }) => {
   );
 };
 
-export default TopTickerBar;
+export default React.memo(TopTickerBar);

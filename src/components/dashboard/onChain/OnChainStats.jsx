@@ -95,4 +95,4 @@ const OnChainStats = ({ data, displayTvl, displayTvlChange }) => {
   );
 };
 
-export default OnChainStats;
+export default React.memo(OnChainStats);

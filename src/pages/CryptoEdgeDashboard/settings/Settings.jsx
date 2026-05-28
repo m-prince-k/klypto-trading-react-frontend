@@ -251,7 +251,7 @@ const Settings = () => {
             <div className="settings-modal-body">
               {modalConfig.type === 'select' ? (
                 <select
-                  className="form-control form-control-dark"
+                  className="custom-input"
                   value={tempValue}
                   onChange={(e) => setTempValue(e.target.value)}
                 >
@@ -262,7 +262,14 @@ const Settings = () => {
               ) : modalConfig.field === 'phone' ? (
                 <div>
                   <div className="input-group">
-                    <span className="input-group-text bg-dark text-light border-secondary">
+                    <span 
+                      className="input-group-text" 
+                      style={{ 
+                        backgroundColor: 'var(--bg-secondary)', 
+                        color: 'var(--text-main)', 
+                        borderColor: 'var(--border-color)' 
+                      }}
+                    >
                       {userData.phone 
                         ? (userData.phone.includes(' ') 
                             ? userData.phone.split(' ')[0] 
@@ -271,14 +278,14 @@ const Settings = () => {
                     </span>
                     <input
                       type={modalConfig.type}
-                      className="form-control form-control-dark"
+                      className="form-control custom-input"
                       value={tempValue}
                       onChange={(e) => {
                         setTempValue(e.target.value);
                         if (modalConfig.errorMsg) setModalConfig({ ...modalConfig, errorMsg: '' });
                       }}
                       placeholder="Enter 10 digit number"
-                      style={{ backgroundColor: '#2a2d35', color: '#fff', border: '1px solid var(--border-color)' }}
+                      style={{ borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }}
                     />
                   </div>
                   {modalConfig.errorMsg && <div style={{ color: '#ff4d4f', fontSize: '13px', marginTop: '6px', textAlign: 'left' }}>{modalConfig.errorMsg}</div>}
@@ -287,13 +294,12 @@ const Settings = () => {
                 <div>
                   <input
                     type={modalConfig.type}
-                    className="form-control form-control-dark"
+                    className="custom-input"
                     value={tempValue}
                     onChange={(e) => {
                       setTempValue(e.target.value);
                       if (modalConfig.errorMsg) setModalConfig({ ...modalConfig, errorMsg: '' });
                     }}
-                    style={{ backgroundColor: '#2a2d35', color: '#fff', border: '1px solid var(--border-color)' }}
                   />
                   {modalConfig.errorMsg && <div style={{ color: '#ff4d4f', fontSize: '13px', marginTop: '6px', textAlign: 'left' }}>{modalConfig.errorMsg}</div>}
                 </div>

@@ -1,4 +1,4 @@
-import { FiPlus } from "react-icons/fi";
+import { FiPlus, FiHome } from "react-icons/fi";
 import { VscGraphLine } from "react-icons/vsc";
 import { useState, useEffect } from "react";
 import { ListingModal } from "./ListingModal";
@@ -75,6 +75,17 @@ export default function ChartHeader({
       <div className="d-flex align-items-center gap-3 px-3 py-2 shadow-sm" style={{ background: "var(--bg-card, #ffffff)", borderBottom: "1px solid var(--border-color, #e2e8f0)" }}>
         {/* Name/Symbol Button */}
         <ProfileDropDown /> 
+
+        {/* Home Button to Dashboard */}
+        <button
+          title="Dashboard"
+          onClick={() => navigate("/dashboard")}
+          className="btn d-flex align-items-center justify-content-center"
+          style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: "var(--bg-main, #f4f6f8)", color: "var(--text-main, #131722)", border: "1px solid var(--border-color, #e2e8f0)" }}
+        >
+          <FiHome size={18} />
+        </button>
+
         <button
           title="Symbol Search"
           onClick={() => openModal("Symbol Search")}

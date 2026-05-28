@@ -12,7 +12,7 @@ export default function Login() {
 
   useEffect(() => {
     if (isAuthenticated()) {
-      navigate("/candleStick", { replace: true });
+      navigate("/dashboard", { replace: true });
     }
   }, [navigate]);
 
@@ -81,7 +81,7 @@ export default function Login() {
       }
 
       toast.success("Login successful!");
-      navigate("/candleStick");
+      navigate("/dashboard");
     } catch (error) {
       toast.error(error?.message);
     } finally {

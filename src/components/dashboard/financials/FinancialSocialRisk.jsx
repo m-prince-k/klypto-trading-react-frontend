@@ -162,7 +162,7 @@ export default function FinancialSocialRisk({
                 {fundamentals?.team?.slice(0, 4).map((member, i) => (
                   <div key={i} className="d-flex-center justify-content-between">
                     <div className="d-flex-center" style={{ gap: '12px' }}>
-                      <div className="fin-team-avatar d-flex-center justify-content-center" style={{ width: '32px', height: '32px', fontSize: '16px', backgroundColor: 'var(--bg-primary, #0b0f19)', borderRadius: '50%', border: '1px solid var(--border-color)' }}>👨‍💻</div>
+                      <div className="fin-team-avatar d-flex-center justify-content-center" style={{ width: '32px', height: '32px', fontSize: '16px', backgroundColor: 'var(--bg-secondary)', borderRadius: '50%', border: '1px solid var(--border-color)' }}>👨‍💻</div>
                       <div className='text-left'>
                         <div style={{ color: 'var(--text-main, #fff)', fontSize: '12px', fontWeight: 'bold', lineHeight: '1.2' }}>{member.name}</div>
                         <div style={{ color: 'var(--text-muted, #94a3b8)', fontSize: '10px', marginTop: '4px' }}>{member.role}</div>
@@ -177,9 +177,9 @@ export default function FinancialSocialRisk({
               <div style={{ fontSize: '10px', color: 'var(--text-muted, #94a3b8)', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>INVESTORS</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {fundamentals?.investors?.slice(0, 5).map((inv, i) => (
-                  <div key={i} className="d-flex-center" style={{ background: 'var(--bg-primary, #0b0f19)', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                  <div key={i} className="d-flex-center" style={{ background: 'var(--bg-secondary)', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                     <span style={{ color: ['#f59e0b', '#3b82f6', '#8b5cf6', '#10b981', '#f43f5e'][i % 5], marginRight: '10px', fontWeight: 'bold', fontSize: '12px' }}>{inv.charAt(0)}</span>
-                    <span style={{ color: 'var(--text-main, #fff)', fontSize: '11px', fontWeight: '500' }}>{inv}</span>
+                    <span style={{ color: 'var(--text-main)', fontSize: '11px', fontWeight: '500' }}>{inv}</span>
                   </div>
                 ))}
               </div>

@@ -79,4 +79,4 @@ const OnChainTables = ({ data, setActiveModal, setModalSearch }) => {
   );
 };
 
-export default OnChainTables;
+export default React.memo(OnChainTables);

@@ -47,7 +47,8 @@ export default function Overview({
         filter: isLoading ? 'blur(4px)' : 'none',
         opacity: isLoading ? 0.6 : 1,
         pointerEvents: isLoading ? 'none' : 'auto',
-        display: 'contents'
+        width: '100%',
+        height: '100%'
       }}>
       {/* Row 1: 5 Advanced Metric Cards */}
       <AdvancedMetricsGrid

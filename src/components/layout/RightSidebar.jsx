@@ -60,8 +60,9 @@ const RightSidebar = ({
           onMouseEnter={(e) => { if (!item.active) e.currentTarget.style.color = "var(--text-main, #131722)"; }}
           onMouseLeave={(e) => { if (!item.active) e.currentTarget.style.color = "var(--text-muted, #787b86)"; }}
           onClick={() => {
-            if (item.id === 'watchlist' && toggleWatchlist) {
-              toggleWatchlist();
+            if (item.id === 'watchlist') {
+              if (toggleWatchlist) toggleWatchlist();
+              if (toggleDetails) toggleDetails();
             } else if (item.id === 'details' && toggleDetails) {
               toggleDetails();
             } else if (item.id === 'alerts' && toggleAlerts) {
