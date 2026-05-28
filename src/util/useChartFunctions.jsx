@@ -9,7 +9,7 @@ export default function useChartFunctions({
 }) {
   /* ================= FETCH INDICATOR API ================= */
 
-  async function fetchDataByCurrency(selectedCurrency, timeframeValue) {
+  async function fetchDataByCurrency(selectedCurrency, timeframeValue, isFutures = false) {
     const symbol = selectedCurrency || "BTCUSD";
     const interval = timeframeValue || "1m";
 
@@ -19,22 +19,28 @@ export default function useChartFunctions({
     // return response;
 
     return new Promise((resolve, reject) => {
+      const responseEvent = isFutures ? "futures-chart-data" : "listing-response";
+      const requestEvent = isFutures ? "request-futures-chart" : "get-listing";
+
       const handleResponse = (res) => {
-        socket.off("listing-response", handleResponse);
+        if (isFutures) {
+          console.log("[useChartFunctions] Event: futures-chart-data Payload:", res);
+        }
+        socket.off(responseEvent, handleResponse);
         socket.off("listing-error", handleError);
         resolve(res);
       };
 
       const handleError = (err) => {
-        socket.off("listing-response", handleResponse);
+        socket.off(responseEvent, handleResponse);
         socket.off("listing-error", handleError);
         reject(err);
       };
 
-      socket.on("listing-response", handleResponse);
+      socket.on(responseEvent, handleResponse);
       socket.on("listing-error", handleError);
 
-      socket.emit("get-listing", { symbol, interval, limit: 1000 });
+      socket.emit(requestEvent, { symbol, interval, limit: 1000 });
     });
   }
 

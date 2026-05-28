@@ -7,6 +7,7 @@ import SocketEvents from "../../services/websocket/socketEvents";
 import apiService from "../../services/apiServices";
 import { useDebounce } from "../../util/common";
 import { useSocket } from "../../services/websocket/useSocket";
+import { Spinner } from "react-bootstrap";
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
@@ -718,8 +719,7 @@ export default function WatchlistPanel({
               {/* ── Loading: spinner + shimmer skeleton rows ── */}
               {isLoading && (
                 <div className="wl-loading-wrap">
-                  <div className="wl-spinner" />
-                  <span className="wl-loading-text">Fetching watchlist...</span>
+                  <Spinner />
                   <div className="wl-skeleton-rows">
                     {Array.from({ length: 7 }).map((_, i) => (
                       <div className="wl-skeleton-row" key={i}>

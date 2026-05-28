@@ -9,8 +9,7 @@ import {
 import socket from "../../services/websocket/socket";
 import SocketEvents from "../../services/websocket/socketEvents";
 import { useSocket } from "../../services/websocket/useSocket";
-
-export default function DetailsPanel({ onClose, symbol }) {
+export default function DetailsPanel({ onClose, symbol, isFutures }) {
   const [priceData, setPriceData] = useState({
     lastPrice: 0,
     change: 0,
@@ -212,7 +211,7 @@ export default function DetailsPanel({ onClose, symbol }) {
                     fontWeight: "600",
                   }}
                 >
-                  SPOT
+                  {isFutures ? "FUTURES" : "SPOT"}
                 </span>
               </div>
               <div className="text-muted" style={{ fontSize: "11px" }}>

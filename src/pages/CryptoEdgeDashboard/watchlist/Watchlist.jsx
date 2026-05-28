@@ -312,6 +312,7 @@ export default function Watchlist({ activeCurrency, setActiveCurrency }) {
             Watchlist
             {watchlist !== null && <span className="wl-tab-count">{watchlist.length}</span>}
           </button>
+          {/*
           <button
             className={`wl-page-tab ${activeTab === "futures" ? "active" : ""}`}
             onClick={() => setActiveTab("futures")}
@@ -319,6 +320,7 @@ export default function Watchlist({ activeCurrency, setActiveCurrency }) {
             Futures
             {futuresData !== null && futuresData.length > 0 && <span className="wl-tab-count">{futuresData.length}</span>}
           </button>
+          */}
         </div>
       </div>
 
@@ -482,7 +484,7 @@ export default function Watchlist({ activeCurrency, setActiveCurrency }) {
                 {isLoading && (
                   <div className="wl-center-loader">
                     <Spinner />
-                    <span className="wl-loading-text">Fetching watchlist…</span>
+                    
                     <div className="wl-skeleton-rows">
                       {Array.from({ length: 8 }).map((_, i) => (
                         <div className="wl-skeleton-row" key={i}>
@@ -668,7 +670,12 @@ export default function Watchlist({ activeCurrency, setActiveCurrency }) {
                     const isPositive  = parseFloat(row.change24h) >= 0;
 
                     return (
-                      <tr key={row.symbol} className={`wl-futures-row ${row.flashClass || ""}`}>
+                      <tr 
+                        key={row.symbol} 
+                        className={`wl-futures-row ${row.flashClass || ""}`}
+                        onClick={() => window.open(`/candleStick?symbol=${row.symbol}&market=futures`, "_blank")}
+                        style={{ cursor: "pointer" }}
+                      >
                         <td className="td-symbol">
                           <div className="futures-sym-cell">
                             {/* <span className={`star-icon ${isStarred ? "starred" : ""}`}>{isStarred ? "★" : "☆"}</span> */}

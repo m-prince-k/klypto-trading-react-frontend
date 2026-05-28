@@ -5,6 +5,9 @@ import { useNavigate } from "react-router-dom";
 import apiService from "../../services/apiServices";
 import { useDebounce } from "../../util/common";
 import { Spinner } from "./Spinner";
+import { useSocket } from "../../services/websocket/useSocket";
+import socket from "../../services/websocket/socket";
+import SocketEvents from "../../services/websocket/socketEvents";
 
 const TABS = ["All", "Spot", "Futures"];
 
@@ -60,6 +63,51 @@ export const GlobalSearchModal = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState("All");
 
   const navigate = useNavigate();
+
+  // --- Futures State ---
+  const [futuresData, setFuturesData] = useState([]);
+  const [futuresLoading, setFuturesLoading] = useState(true);
+  const [futuresError, setFuturesError] = useState(null);
+
+  const handleFuturesTickerUpdate = (updates) => {
+    const map = {};
+    if (Array.isArray(updates)) updates.forEach(u => { if (u?.symbol) map[u.symbol.toUpperCase()] = u; });
+
+    setFuturesData(prev => {
+      if (!prev?.length) return prev;
+      let changed = false;
+      const next = prev.map(row => {
+        const sym = row.symbol?.toUpperCase() || "";
+        if (map[sym]) {
+          changed = true;
+          const upd = map[sym];
+          let flashClass = "";
+          if (row.lastPrice && upd.lastPrice) {
+            const op = parseFloat(row.lastPrice), np = parseFloat(upd.lastPrice);
+            if (np > op) flashClass = "flash-up-text";
+            else if (np < op) flashClass = "flash-down-text";
+          }
+          return { ...row, ...upd, flashClass };
+        }
+        if (row.flashClass) { changed = true; return { ...row, flashClass: "" }; }
+        return row;
+      });
+      return changed ? next : prev;
+    });
+  };
+
+  useSocket({
+    setFuturesData,
+    setFuturesLoading,
+    setFuturesError,
+    handleFuturesTickerUpdate,
+  });
+
+  useEffect(() => {
+    if (isOpen && activeTab === "Futures") {
+      socket.emit(SocketEvents.FUTURES.REQUEST_INITIAL);
+    }
+  }, [isOpen, activeTab]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -529,6 +577,21 @@ export const GlobalSearchModal = ({ isOpen, onClose }) => {
                   onClick={() => setActiveTab(tab)}
                 >
                   {tab}
+                  {tab === "Futures" && futuresData.length > 0 && (
+                    <span
+                      style={{
+                        marginLeft: "6px",
+                        background: activeTab === "Futures" ? "rgba(41,98,255,0.15)" : "#f1f3f6",
+                        color: activeTab === "Futures" ? "#2962ff" : "#64748b",
+                        padding: "2px 6px",
+                        borderRadius: "10px",
+                        fontSize: "10px",
+                        fontWeight: "600",
+                      }}
+                    >
+                      {futuresData.length}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -537,7 +600,83 @@ export const GlobalSearchModal = ({ isOpen, onClose }) => {
 
           {/* Results */}
           <div className="gsm-results">
-            {loading ? (
+            {activeTab === "Futures" ? (
+              futuresLoading ? (
+                <div className="gsm-state">
+                  <Spinner />
+                </div>
+              ) : futuresError ? (
+                <div className="gsm-state">
+                  <span className="gsm-error-text">{futuresError}</span>
+                </div>
+              ) : futuresData.length > 0 ? (
+                futuresData
+                  .filter((curr) =>
+                    !debouncedSearch ||
+                    curr.symbol?.toLowerCase().includes(debouncedSearch.toLowerCase())
+                  )
+                  .map((curr, idx) => (
+                    <div
+                      key={idx}
+                      className="gsm-row"
+                      onMouseEnter={() => setHoveredIndex(idx)}
+                      onMouseLeave={() => setHoveredIndex(null)}
+                      onClick={() => {
+                        navigate(`/candleStick?symbol=${curr?.symbol}&market=futures`);
+                        onClose();
+                      }}
+                    >
+                      <div className="gsm-row-left">
+                        <div className="gsm-avatar">
+                          <SymbolIcon symbol={curr?.symbol || "F"} />
+                        </div>
+                        <div className="gsm-text-block">
+                          <span className="gsm-symbol-name">{curr?.symbol}</span>
+                          <span className="gsm-full-name text-left">
+                            {curr?.expiryDate || "Perpetual"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="gsm-row-right" style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", width: "80px" }}>
+                          <span style={{ fontSize: "12px", fontWeight: "600" }}>{curr?.lastPrice || "0.00"}</span>
+                          <span style={{ fontSize: "11px", color: (curr?.change24h || 0) >= 0 ? "#089981" : "#f23645" }}>
+                            {(curr?.change24h || 0) >= 0 ? "+" : ""}{curr?.change24h || "0.00"}%
+                          </span>
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", width: "70px" }}>
+                          <span style={{ fontSize: "11px", color: "var(--text-muted, #64748b)" }}>Vol</span>
+                          <span style={{ fontSize: "11px", fontWeight: "500" }}>
+                            {Number(curr?.quoteVolume24h || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                          </span>
+                        </div>
+                        <button
+                          className="gsm-chart-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(`/candleStick?symbol=${curr?.symbol}&market=futures`, "_blank");
+                            onClose();
+                          }}
+                          title="Open Chart"
+                        >
+                          <FiBarChart2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+              ) : (
+                <div className="gsm-state">
+                  <div className="gsm-state-icon-wrap">
+                    <FiSearch size={22} />
+                  </div>
+                  <span className="gsm-state-text">No futures found</span>
+                  <span className="gsm-state-sub">
+                    Try searching another symbol
+                  </span>
+                </div>
+              )
+            ) : loading ? (
               <div className="gsm-state">
                 <Spinner />
               </div>
@@ -570,7 +709,6 @@ export const GlobalSearchModal = ({ isOpen, onClose }) => {
                   </div>
 
                   <div className="gsm-row-right">
-                    <span className="gsm-exchange-pill">Binance</span>
                     <button
                       className="gsm-chart-btn"
                       onClick={(e) => {

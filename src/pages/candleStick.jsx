@@ -73,6 +73,7 @@ export default function Candlestick() {
   const params = new URLSearchParams(window.location.search);
 
   const rawSymbol = params.get("symbol");
+  const isFutures = params.get("market") === "futures";
   const [selectedCurrency, setSelectedCurrency] = useState(
     !rawSymbol || rawSymbol === "undefined" || rawSymbol === "null" ? "BTCUSDT" : rawSymbol
   );
@@ -827,7 +828,7 @@ export default function Candlestick() {
         const response = await fetchDataByCurrency(
           selectedCurrency,
           timeframeValue,
-          chartType,
+          isFutures
         );
 
         if (isCancelled) return;
@@ -1052,6 +1053,7 @@ export default function Candlestick() {
 
   useSocket({
     handleLiveTickUpdate,
+    handleFuturesChartTick: handleLiveTickUpdate,
     handleWatchlistResponse,
     handleWatchlistUpdate,
     selectedSymbol: selectedCurrency,
@@ -1062,13 +1064,23 @@ export default function Candlestick() {
     if (!selectedCurrency || !timeframeValue) return;
     const symbol = selectedCurrency;
     const interval = timeframeValue;
-    socket.emit("subscribe-live-tick", { symbol, interval });
+    
+    if (isFutures) {
+      socket.emit("subscribe-futures-chart", { symbol, interval });
+    } else {
+      socket.emit("subscribe-live-tick", { symbol, interval });
+    }
+    
     socket.emit("get-watchlist");
 
     return () => {
-      socket.emit("unsubscribe-live-tick", { symbol, interval });
+      if (isFutures) {
+        socket.emit("unsubscribe-futures-chart", { symbol, interval });
+      } else {
+        socket.emit("unsubscribe-live-tick", { symbol, interval });
+      }
     };
-  }, [selectedCurrency, timeframeValue]);
+  }, [selectedCurrency, timeframeValue, isFutures]);
 
   const { fetchDataByCurrency, fetchIndicatorData } = useChartFunctions({
     chartRef,
@@ -1649,19 +1661,6 @@ export default function Candlestick() {
                   width: "100%",
                 }}
               >
-                {indicatorLoading && (
-                  <div
-                    style={{
-                      position: "fixed",
-                      top: "50%",
-                      left: "50%",
-                      transform: "translate(-50%, -50%)",
-                      zIndex: 1000,
-                    }}
-                  >
-                    <Spinner />
-                  </div>
-                )}
                 {renderIndicators()}
               </div>
             </div>
@@ -1782,6 +1781,7 @@ export default function Candlestick() {
                       <DetailsPanel
                         onClose={() => setIsDetailsOpen(false)}
                         symbol={activeWatchlistCurrency || selectedCurrency}
+                        isFutures={isFutures}
                       />
                     </div>
                   </>

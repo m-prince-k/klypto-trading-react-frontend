@@ -47,6 +47,8 @@ export const useSocket = ({
   setFuturesLoading,
   setFuturesError,
   handleFuturesTickerUpdate,
+  setFuturesChartData,
+  handleFuturesChartTick,
 
   //Financials
   setKlines,
@@ -533,15 +535,25 @@ export const useSocket = ({
 
       /* ───────────────── FUTURES ───────────────── */
       futuresInitialData: (res) => {
-        if (setFuturesData) console.log("[useSocket] Event: futures-initial-data Payload:", res);
+        console.log("[useSocket] Event: futures-initial-data Payload:", res);
         if (res.success) setFuturesData?.(res.data);
         else setFuturesError?.(res.message || "Failed to load futures data");
         setFuturesLoading?.(false);
       },
 
       futuresTickerUpdate: (updates) => {
-        if (handleFuturesTickerUpdate) console.log("[useSocket] Event: futures-ticker-update Payload:", updates);
+        console.log("[useSocket] Event: futures-ticker-update Payload:", updates);
         if (handleFuturesTickerUpdate) handleFuturesTickerUpdate(updates);
+      },
+
+      futuresChartData: (res) => {
+        console.log("[useSocket] Event: futures-chart-data Payload:", res);
+        if (setFuturesChartData) setFuturesChartData(res);
+      },
+
+      futuresChartTick: (tick) => {
+        console.log("[useSocket] Event: futures-chart-tick Payload:", tick);
+        if (handleFuturesChartTick) handleFuturesChartTick(tick);
       },
 
       /* ───────────────── FINANCIAL ───────────────── */

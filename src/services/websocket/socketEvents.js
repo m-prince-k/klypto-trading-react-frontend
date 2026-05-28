@@ -20,6 +20,13 @@ const EVENTS = {
     INITIAL_DATA: "futures-initial-data",
     TICKER_UPDATE: "futures-ticker-update",
   },
+  FUTURES_CHART: {
+    REQUEST: "request-futures-chart",
+    DATA: "futures-chart-data",
+    SUBSCRIBE: "subscribe-futures-chart",
+    UNSUBSCRIBE: "unsubscribe-futures-chart",
+    TICK_UPDATE: "futures-chart-tick",
+  },
   INDICATORS: {
     GET_DETAILS: "get-indicator-details",
     UPDATE: "update-indicator",

@@ -251,7 +251,7 @@ export const ListingModal = ({
                       className="spinner-border text-secondary"
                       role="status"
                     >
-                      <span className="visually-hidden">Loading...</span>
+                      <span className="visually-hidden"><Spinner/></span>
                     </div>
                   </div>
                 ) : filteredIndicators.length > 0 ? (

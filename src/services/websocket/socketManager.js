@@ -65,6 +65,8 @@ export const createSocketManager = (handlers = {}) => {
     /* ───────────────────────── FUTURES ───────────────────────── */
     if (handlers.futuresInitialData) on(EVENTS.FUTURES.INITIAL_DATA, handlers.futuresInitialData);
     if (handlers.futuresTickerUpdate) on(EVENTS.FUTURES.TICKER_UPDATE, handlers.futuresTickerUpdate);
+    if (handlers.futuresChartData) on(EVENTS.FUTURES_CHART.DATA, handlers.futuresChartData);
+    if (handlers.futuresChartTick) on(EVENTS.FUTURES_CHART.TICK_UPDATE, handlers.futuresChartTick);
   };
 
   const unregister = () => {
@@ -117,6 +119,8 @@ export const createSocketManager = (handlers = {}) => {
     /* ───────────────────────── FUTURES ───────────────────────── */
     if (handlers.futuresInitialData) off(EVENTS.FUTURES.INITIAL_DATA, handlers.futuresInitialData);
     if (handlers.futuresTickerUpdate) off(EVENTS.FUTURES.TICKER_UPDATE, handlers.futuresTickerUpdate);
+    if (handlers.futuresChartData) off(EVENTS.FUTURES_CHART.DATA, handlers.futuresChartData);
+    if (handlers.futuresChartTick) off(EVENTS.FUTURES_CHART.TICK_UPDATE, handlers.futuresChartTick);
   };
 
   return {
