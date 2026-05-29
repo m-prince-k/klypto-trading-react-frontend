@@ -73,16 +73,18 @@ export default function useChartFunctions({
     for (const indicator of selectedIndicator) {
       try {
         const baseIndicatorForFetch = indicator.replace(/_\d+$/, "");
+        const config = indicatorConfigs?.[indicator] || {};
+        
         const result = await fetchDataForIndicators(
           selectedCurrency,
           baseIndicatorForFetch,
-          timeframeValue
+          timeframeValue,
+          config
         );
 
         if (!result) continue;
 
         const baseIndicator = indicator.replace(/_\d+$/, "");
-        const config = indicatorConfigs?.[indicator] || {};
         const { maType } = config;
         const rows = getRowsByIndicator(baseIndicator, maType, indicatorConfigs);
 
@@ -1059,12 +1061,8 @@ export default function useChartFunctions({
     fetchIndicatorData,
   };
 }
-async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
+async function fetchDataForIndicators(selectedCurrency, type, timeframeValue, config = {}) {
   try {
-    // const response = await apiService.post(
-    //   `/api/indicatorDetails?symbol=${selectedCurrency}&interval=${timeframeValue}&type=${type}`,
-    // );
-
     const response = await new Promise((resolve, reject) => {
       const handleResponse = (res) => {
         console.log("[Event: indicator-details-data] Raw indicator data for", type, ":", res);
@@ -1083,8 +1081,8 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
       socket.on("indicator-details-data", handleResponse);
       socket.on("indicator-error", handleError);
 
-      console.log("[Event: get-indicator-details] Emitting request for", type);
-      socket.emit("get-indicator-details", { symbol: selectedCurrency, interval: timeframeValue, type });
+      console.log("[Event: get-indicator-details] Emitting request for", type, config);
+      socket.emit("get-indicator-details", { symbol: selectedCurrency, interval: timeframeValue, type, limit: 1000, ...config });
     });
 
     console.log("Raw indicator data for", type, ":", response);

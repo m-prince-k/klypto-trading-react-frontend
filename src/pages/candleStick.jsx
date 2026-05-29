@@ -282,6 +282,47 @@ export default function Candlestick() {
     prevCurrencyRef.current = selectedCurrency;
   }, [selectedIndicator, selectedCurrency, timeframeValue]);
 
+  const prevIndicatorConfigsRef = useRef(indicatorConfigs);
+
+  useEffect(() => {
+    if (prevIndicatorConfigsRef.current === indicatorConfigs) return;
+
+    const changedIndicators = selectedIndicator.filter(ind => {
+      const prevConfig = prevIndicatorConfigsRef.current[ind];
+      const currConfig = indicatorConfigs[ind];
+      return prevConfig !== currConfig;
+    });
+
+    prevIndicatorConfigsRef.current = indicatorConfigs;
+
+    if (changedIndicators.length > 0) {
+      changedIndicators.forEach((indicator) => {
+        const entry = indicatorSeriesRef.current[indicator];
+        if (!entry) return;
+
+        const paneKey = resolvePaneKey(indicator);
+        const pane = panesRef.current[paneKey];
+        const chart = pane?.chart ?? chartRef.current;
+        if (!chart) return;
+
+        if (entry && typeof entry === "object" && !entry.priceScale) {
+          Object.values(entry).forEach((series) => {
+            if (!series || typeof series.setData !== "function") return;
+            try { chart.removeSeries(series); } catch { }
+          });
+        } else {
+          try { chart.removeSeries(entry); } catch { }
+        }
+        delete indicatorSeriesRef.current[indicator];
+      });
+
+      setIndicatorLoading(true);
+      fetchIndicatorData(changedIndicators, selectedCurrency, timeframeValue).finally(() => {
+        setIndicatorLoading(false);
+      });
+    }
+  }, [indicatorConfigs, selectedIndicator, selectedCurrency, timeframeValue]);
+
   const toggleIndicatorVisibility = (indicator) => {
     const currentVisible = indicatorVisibility[indicator] ?? true;
     const newVisibility = !currentVisible;
@@ -607,7 +648,7 @@ export default function Candlestick() {
     if (isSingle) {
       const val = typeof value === "number" ? value : value.v;
       const dynamicColor = typeof value === "object" ? value.c : undefined;
-      
+
       const style =
         indicatorStyle?.[indicator]?.sma ||
         indicatorStyle?.[indicator]?.ma ||
@@ -713,7 +754,7 @@ export default function Candlestick() {
           const valObj = value[key];
           const val = valObj?.v !== undefined ? valObj.v : valObj;
           const dynamicColor = valObj?.c;
-          
+
           const color = dynamicColor ||
             indicatorStyle?.[indicator]?.[key]?.color ||
             "var(--text-main, #333)";
@@ -1107,17 +1148,17 @@ export default function Candlestick() {
       const baseType = indicatorKey.replace(/_\d+$/, "");
       if (baseType === type) {
         let pointData = null;
-        
+
         // 1. Direct flat object (e.g. { time: 1234, rsi: 48, smoothingMA: 52 })
         if (typeof tickData === "object" && !Array.isArray(tickData) && tickData.time !== undefined) {
           pointData = tickData;
-        } 
+        }
         // 2. Array of points
         else if (Array.isArray(tickData)) {
           if (tickData.length > 0) {
             pointData = tickData[tickData.length - 1];
           }
-        } 
+        }
         // 3. Object of arrays
         else if (typeof tickData === "object") {
           pointData = {};
@@ -1141,10 +1182,10 @@ export default function Candlestick() {
           if (parsedTime > 1e10) {
             parsedTime = Math.floor(parsedTime / 1000);
           }
-          
+
           // Force sync to the live OHLCV candle time so it aligns exactly
           if (latestOhlcvTimeRef.current) {
-             parsedTime = latestOhlcvTimeRef.current;
+            parsedTime = latestOhlcvTimeRef.current;
           }
 
           Object.keys(groupedSeries).forEach((lineName) => {
@@ -1154,14 +1195,14 @@ export default function Candlestick() {
               if (val !== undefined && val !== null) {
                 series.update({ time: parsedTime, value: Number(val) });
               } else if (lineName === "overboughtFill" || lineName === "oversoldFill") {
-                 // For RSI fills, update using the base value if available
-                 const rsiVal = pointData.rsi ?? pointData.RSI ?? pointData.value;
-                 if (rsiVal !== undefined && rsiVal !== null) {
-                    series.update({ time: parsedTime, value: Number(rsiVal) });
-                 }
+                // For RSI fills, update using the base value if available
+                const rsiVal = pointData.rsi ?? pointData.RSI ?? pointData.value;
+                if (rsiVal !== undefined && rsiVal !== null) {
+                  series.update({ time: parsedTime, value: Number(rsiVal) });
+                }
               } else if (groupedSeries.staticValues && groupedSeries.staticValues[lineName] !== undefined) {
-                 // Advance flat lines (upper, middle, lower, bandBackground) to the new live candle
-                 series.update({ time: parsedTime, value: Number(groupedSeries.staticValues[lineName]) });
+                // Advance flat lines (upper, middle, lower, bandBackground) to the new live candle
+                series.update({ time: parsedTime, value: Number(groupedSeries.staticValues[lineName]) });
               }
             }
           });
@@ -1184,13 +1225,13 @@ export default function Candlestick() {
     if (!selectedCurrency || !timeframeValue) return;
     const symbol = selectedCurrency;
     const interval = timeframeValue;
-    
+
     if (isFutures) {
       socket.emit("subscribe-futures-chart", { symbol, interval });
     } else {
       socket.emit("subscribe-live-tick", { symbol, interval });
     }
-    
+
     socket.emit("get-watchlist");
 
     // Subscribe to indicator ticks
@@ -1936,11 +1977,11 @@ export default function Candlestick() {
                 )}
 
                 {isAlertsOpen && (
-                  <AlertsPanel 
-                    alertsFeed={alertsFeed} 
-                    matchedCoins={matchedCoins} 
+                  <AlertsPanel
+                    alertsFeed={alertsFeed}
+                    matchedCoins={matchedCoins}
                     scanner={scanner}
-                    onClose={() => setIsAlertsOpen(false)} 
+                    onClose={() => setIsAlertsOpen(false)}
                   />
                 )}
               </div>
