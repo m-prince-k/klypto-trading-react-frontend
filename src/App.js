@@ -1,4 +1,5 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import WaveletDashboard from "./pages/wavelet/WaveletDashboard";
 import "./App.css";
 import "./styles/theme.css";
 import { ThemeProvider } from "./context/ThemeContext";
@@ -93,6 +94,7 @@ function App() {
                 {/* <Route path="/" element={<Form />} /> */}
                 <Route path="/testing" element={<Testing />} />
                 <Route path="/tradingview" element={<TradingViewChart />} />
+                <Route path="/wavelet" element={<WaveletDashboard />} />
                 <Route
                   path="/dashboard"
                   element={

@@ -1,0 +1,19 @@
+
+/* TradingView Shell */
+.tv-shell { display: flex; flex-direction: column; height: 100vh; background-color: #0B0E14; color: #c5cbd5; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+.tv-top-nav { display: flex; align-items: center; padding: 0 16px; height: 40px; border-bottom: 1px solid #1E222D; font-size: 13px; gap: 16px; }
+.tv-nav-item { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+.tv-nav-item:hover { color: white; }
+.tv-main-layout { display: flex; flex: 1; overflow: hidden; }
+.tv-left-toolbar { width: 50px; border-right: 1px solid #1E222D; display: flex; flex-direction: column; align-items: center; padding-top: 10px; gap: 16px; font-size: 16px; flex-shrink: 0; }
+.tv-toolbar-icon { cursor: pointer; opacity: 0.7; }
+.tv-toolbar-icon:hover { opacity: 1; }
+
+/* Progress Bars */
+.circular-progress { position: relative; width: 100px; height: 100px; border-radius: 50%; background: conic-gradient(#4caf50 78%, #1E222D 0); display: flex; align-items: center; justify-content: center; margin: 10px auto; }
+.circular-progress::before { content: ""; position: absolute; inset: 6px; border-radius: 50%; background: #131722; }
+.circular-progress-text { position: relative; font-size: 24px; font-weight: bold; color: white; }
+.horizontal-progress-bg { height: 6px; background-color: #1E222D; border-radius: 3px; margin-top: 4px; overflow: hidden; }
+.horizontal-progress-fill { height: 100%; border-radius: 3px; }
+.fill-blue { background-color: #2196f3; width: 72%; }
+.fill-purple { background-color: #9c27b0; width: 68%; }
