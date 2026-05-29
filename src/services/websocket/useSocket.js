@@ -542,7 +542,7 @@ export const useSocket = ({
       },
 
       futuresTickerUpdate: (updates) => {
-        console.log("[useSocket] Event: futures-ticker-update Payload:", updates);
+        // console.log("[useSocket] Event: futures-ticker-update Payload:", updates);
         if (handleFuturesTickerUpdate) handleFuturesTickerUpdate(updates);
       },
 
@@ -729,12 +729,13 @@ export const useSocket = ({
       // }
 
       if (safeSymbol) {
-        if (setPrices || setCoinDetail || setFlashStates || setOverviewChartData) {
-          manager.emit(EVENTS.LIVE_TICK.SUBSCRIBE, {
-            symbol: safeSymbol,
-            interval: "5m",
-          });
-        }
+        // Commented out to let CandleStick control live ticks
+        // if (setPrices || setCoinDetail || setFlashStates || setOverviewChartData) {
+        //   manager.emit(EVENTS.LIVE_TICK.SUBSCRIBE, {
+        //     symbol: safeSymbol,
+        //     interval: "5m",
+        //   });
+        // }
 
         if (setFinanceData || setFinancials || setMarketExtra || setDepthData || setTvlData) {
           console.log("EMITTING SUBSCRIBE FOR:", safeSymbol);
@@ -775,9 +776,10 @@ export const useSocket = ({
       if (safeSymbol) {
         console.log("EMITTING UNSUBSCRIBE FOR:", safeSymbol);
         
-        if (setPrices || setCoinDetail || setFlashStates || setOverviewChartData) {
-          manager.emit(EVENTS.LIVE_TICK.UNSUBSCRIBE, { symbol: safeSymbol, interval: "5m" });
-        }
+        // Commented out to let CandleStick control live ticks
+        // if (setPrices || setCoinDetail || setFlashStates || setOverviewChartData) {
+        //   manager.emit(EVENTS.LIVE_TICK.UNSUBSCRIBE, { symbol: safeSymbol, interval: "5m" });
+        // }
         
         if (setFinanceData || setFinancials || setMarketExtra || setDepthData || setTvlData) {
           manager.emit("unsubscribe-financial", { symbol: safeSymbol });

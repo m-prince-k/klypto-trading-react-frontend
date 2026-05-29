@@ -841,9 +841,16 @@ export default function Candlestick() {
           seriesRef.current = null;
         }
 
-        const data = response?.data || [];
+        const rawData = response?.data || [];
 
-        if (!Array.isArray(data) || !data.length) return;
+        if (!Array.isArray(rawData) || !rawData.length) return;
+
+        // Normalize time to seconds to match live tick updates
+        const data = rawData.map(d => {
+          let t = Number(d.time || d.openTime);
+          if (t > 1e10) t = Math.floor(t / 1000);
+          return { ...d, time: t };
+        });
 
         setLivePrice(Number(data[data.length - 1]?.close));
 

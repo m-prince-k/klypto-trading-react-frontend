@@ -19,13 +19,17 @@ export default function useChartFunctions({
     // return response;
 
     return new Promise((resolve, reject) => {
-      const responseEvent = isFutures ? "futures-chart-data" : "listing-response";
-      const requestEvent = isFutures ? "request-futures-chart" : "get-listing";
+      // Commented out futures logic
+      // const responseEvent = isFutures ? "futures-chart-data" : "listing-response";
+      // const requestEvent = isFutures ? "request-futures-chart" : "get-listing";
+      const responseEvent = "listing-response";
+      const requestEvent = "get-listing";
 
       const handleResponse = (res) => {
-        if (isFutures) {
-          console.log("[useChartFunctions] Event: futures-chart-data Payload:", res);
-        }
+        // if (isFutures) {
+        //   console.log("[useChartFunctions] Event: futures-chart-data Payload:", res);
+        // }
+        console.log(`[useChartFunctions] Event: ${responseEvent} Payload:`, res);
         socket.off(responseEvent, handleResponse);
         socket.off("listing-error", handleError);
         resolve(res);
@@ -36,6 +40,13 @@ export default function useChartFunctions({
         socket.off("listing-error", handleError);
         reject(err);
       };
+
+      // Temporary listener to log live-tick-update as requested
+      const handleLiveTick = (tick) => {
+        console.log(`[useChartFunctions] Event: live-tick-update Payload:`, tick);
+      };
+      // We attach it just to log it (note: typically you'd want to unsubscribe this in the component)
+      socket.on("live-tick-update", handleLiveTick);
 
       socket.on(responseEvent, handleResponse);
       socket.on("listing-error", handleError);
@@ -925,6 +936,33 @@ export default function useChartFunctions({
 
             break;
           }
+
+          case "SSL_HYBRID": {
+            const baselineData = result?.data?.baseline ?? [];
+            const ssl1Data = result?.data?.ssl1 ?? [];
+            const ssl2Data = result?.data?.ssl2 ?? [];
+            const upperChannelData = result?.data?.upperChannel ?? [];
+            const lowerChannelData = result?.data?.lowerChannel ?? [];
+            const atrUpperData = result?.data?.atrUpper ?? [];
+            const atrLowerData = result?.data?.atrLower ?? [];
+
+            indicatorSeriesRef.current[indicator] = {
+              result,
+              rows,
+            };
+
+            latestIndicatorValuesRef.current[indicator] = {
+              baseline: baselineData[baselineData.length - 1]?.value ?? null,
+              ssl1: ssl1Data[ssl1Data.length - 1]?.value ?? null,
+              ssl2: ssl2Data[ssl2Data.length - 1]?.value ?? null,
+              upperChannel: upperChannelData[upperChannelData.length - 1]?.value ?? null,
+              lowerChannel: lowerChannelData[lowerChannelData.length - 1]?.value ?? null,
+              atrUpper: atrUpperData[atrUpperData.length - 1]?.value ?? null,
+              atrLower: atrLowerData[atrLowerData.length - 1]?.value ?? null,
+            };
+
+            break;
+          }
           case "AD": {
             const adData = result?.data ?? [];
 
@@ -997,6 +1035,8 @@ export default function useChartFunctions({
                 val: result?.volumeval ?? null,
               },
             };
+
+
 
           /* ================= DEFAULT ================= */
 
@@ -1103,6 +1143,84 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
                 value: d.parabolic,
               }))) ?? [],
         };
+
+
+      case "SSL_HYBRID":
+        return {
+          type: "multi",
+          data: {
+            baseline:
+              response?.data
+                ?.filter((d) => d.baseline != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: d.baseline,
+                  close: d.close, // ✅ needed for all color logic
+                  upperChannel: d.upperChannel, // ✅ needed for baseline color
+                  lowerChannel: d.lowerChannel, // ✅ needed for baseline color
+                })) ?? [],
+
+            ssl1:
+              response?.data
+                ?.filter((d) => d.ssl1 != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: d.ssl1,
+                  close: d.close, // ✅ needed for ssl1 color
+                })) ?? [],
+
+            ssl2:
+              response?.data
+                ?.filter((d) => d.ssl2 != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: d.ssl2,
+                  close: d.close, // ✅ needed for ssl2 color
+                  atr: d.atr, // ✅ needed for buy_atr / sell_atr
+                })) ?? [],
+
+            upperChannel:
+              response.data
+                ?.filter((d) => d.upperChannel != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: d.upperChannel,
+                })) ?? [],
+
+            lowerChannel:
+              response.data
+                ?.filter((d) => d.lowerChannel != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: d.lowerChannel,
+                })) ?? [],
+
+            atrUpper:
+              response.data
+                ?.filter((d) => d.atrUpper != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  value: d.atrUpper,
+                })) ?? [],
+
+            atrLower:
+              response.data
+                ?.filter((d) => d.atrLower != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time) ,
+                  value: d.atrLower,
+                })) ?? [],
+
+            // sslExit:
+            //   response.data
+            //     ?.filter((d) => d.sslExit != null && d.time != null)
+            //     .map((d) => ({
+            //       time: Number(d.time) + IST_OFFSET,
+            //       value: d.sslExit,
+            //     })) ?? [],
+          },
+        };
+
 
       case "BBW":
         return {
@@ -1357,11 +1475,11 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
           data: {
             series: Array.isArray(response?.data?.series)
               ? response.data.series
-                  .filter((d) => d.uo != null && d.time != null)
-                  .map((d) => ({
-                    time: Number(d.time),
-                    uo: Number(d.uo),
-                  }))
+                .filter((d) => d.uo != null && d.time != null)
+                .map((d) => ({
+                  time: Number(d.time),
+                  uo: Number(d.uo),
+                }))
               : [],
           },
         };
