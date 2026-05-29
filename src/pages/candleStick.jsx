@@ -282,46 +282,7 @@ export default function Candlestick() {
     prevCurrencyRef.current = selectedCurrency;
   }, [selectedIndicator, selectedCurrency, timeframeValue]);
 
-  const prevIndicatorConfigsRef = useRef(indicatorConfigs);
 
-  useEffect(() => {
-    if (prevIndicatorConfigsRef.current === indicatorConfigs) return;
-
-    const changedIndicators = selectedIndicator.filter(ind => {
-      const prevConfig = prevIndicatorConfigsRef.current[ind];
-      const currConfig = indicatorConfigs[ind];
-      return prevConfig !== currConfig;
-    });
-
-    prevIndicatorConfigsRef.current = indicatorConfigs;
-
-    if (changedIndicators.length > 0) {
-      changedIndicators.forEach((indicator) => {
-        const entry = indicatorSeriesRef.current[indicator];
-        if (!entry) return;
-
-        const paneKey = resolvePaneKey(indicator);
-        const pane = panesRef.current[paneKey];
-        const chart = pane?.chart ?? chartRef.current;
-        if (!chart) return;
-
-        if (entry && typeof entry === "object" && !entry.priceScale) {
-          Object.values(entry).forEach((series) => {
-            if (!series || typeof series.setData !== "function") return;
-            try { chart.removeSeries(series); } catch { }
-          });
-        } else {
-          try { chart.removeSeries(entry); } catch { }
-        }
-        delete indicatorSeriesRef.current[indicator];
-      });
-
-      setIndicatorLoading(true);
-      fetchIndicatorData(changedIndicators, selectedCurrency, timeframeValue).finally(() => {
-        setIndicatorLoading(false);
-      });
-    }
-  }, [indicatorConfigs, selectedIndicator, selectedCurrency, timeframeValue]);
 
   const toggleIndicatorVisibility = (indicator) => {
     const currentVisible = indicatorVisibility[indicator] ?? true;

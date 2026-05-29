@@ -181,16 +181,18 @@ export default function IndicatorPropertyDialog({
     marginRight: "1rem",
   };
 
-  const currentConfig = indicatorConfigs[activeBarIndicator];
+  const [localConfig, setLocalConfig] = useState(() => indicatorConfigs[activeBarIndicator] || {});
+  const currentConfig = localConfig;
   const [indicatorLoading, setIndicatorLoading] = useState(false);
 
+  useEffect(() => {
+    setLocalConfig(indicatorConfigs[activeBarIndicator] || {});
+  }, [indicatorConfigs, activeBarIndicator]);
+
   const updateProperty = (key, value) => {
-    setIndicatorConfigs((prev) => ({
+    setLocalConfig((prev) => ({
       ...prev,
-      [activeBarIndicator]: {
-        ...prev[activeBarIndicator],
-        [key]: value,
-      },
+      [key]: value,
     }));
   };
 
@@ -210,18 +212,15 @@ export default function IndicatorPropertyDialog({
   };
 
   const handleChange = (key, value) => {
-  updateProperty(key, value === "" ? "" : Number(value));
-};
+    updateProperty(key, value === "" ? "" : Number(value));
+  };
 
   const updateNestedDoubleProperty = (band, key, value) => {
-    setIndicatorConfigs((prev) => ({
+    setLocalConfig((prev) => ({
       ...prev,
-      [activeBarIndicator]: {
-        ...prev[activeBarIndicator],
-        [band]: {
-          ...prev[activeBarIndicator][band],
-          [key]: value,
-        },
+      [band]: {
+        ...prev[band],
+        [key]: value,
       },
     }));
   };
@@ -230,7 +229,7 @@ export default function IndicatorPropertyDialog({
      OK BUTTON
   ========================== */
   const handleIndicatorPropertyChange = async () => {
-    const config = indicatorConfigs?.[activeBarIndicator] || {};
+    const config = localConfig;
     const { maType } = config;
 
     const payload = {
@@ -244,11 +243,6 @@ export default function IndicatorPropertyDialog({
     setIndicatorLoading(true);
     try {
       setIndicatorLoading(true); // START LOADER
-
-      // const response = await apiService.post(
-      //   `/api/updateIndicator?symbol=${selectedCurrency}&interval=${timeframeValue}`,
-      //   payload,
-      // );
 
       const response = await new Promise((resolve, reject) => {
         const handleResponse = (res) => {
@@ -272,8 +266,6 @@ export default function IndicatorPropertyDialog({
         socket.emit("update-indicator", { symbol: selectedCurrency, interval: timeframeValue, ...payload });
       });
 
-      // console.log("Indicator updated:", response);
-
       updateIndicatorFromInput(
         activeBarIndicator,
         response,
@@ -281,6 +273,12 @@ export default function IndicatorPropertyDialog({
         latestIndicatorValuesRef,
         maType,
       );
+
+      // Finally update the global configs so other components know about it
+      setIndicatorConfigs((prev) => ({
+        ...prev,
+        [activeBarIndicator]: localConfig,
+      }));
 
       setIndicatorProperty(false);
     } catch (error) {
