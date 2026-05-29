@@ -41,6 +41,7 @@ import useChartFunctions from "../util/useChartFunctions";
 import { indicatorComponents } from "../components/indicator/IndicatorIndex";
 import { Spinner } from "../components/tradingModals/Spinner";
 import IndicatorBar from "../components/indicator/IndicatorBar";
+import AlertsPanel from "../components/watchlist/AlertsPanel";
 import WatchlistPanel from "../components/watchlist/WatchlistPanel";
 import DetailsPanel from "../components/watchlist/DetailsPanel";
 import {
@@ -53,6 +54,7 @@ import RightSidebar from "../components/layout/RightSidebar";
 import { Button } from "react-bootstrap";
 import socket from "../services/websocket/socket";
 import { useSocket } from "../services/websocket/useSocket";
+import useAlerts from "../util/useAlerts";
 
 export default function Candlestick() {
   const { theme } = useTheme();
@@ -68,6 +70,7 @@ export default function Candlestick() {
   const fetchedIndicatorsRef = useRef(new Set());
   const mainChartHeightRef = useRef(500);
   const zoomBtnRef = useRef(null);
+  const latestOhlcvTimeRef = useRef(null);
 
   const [openForm, setOpenForm] = useState(false);
   const params = new URLSearchParams(window.location.search);
@@ -107,6 +110,11 @@ export default function Candlestick() {
   const [isDraggingWidth, setIsDraggingWidth] = useState(false);
   const [isDraggingHeight, setIsDraggingHeight] = useState(false);
   const [showZoomButtons, setShowZoomButtons] = useState(false);
+
+  // Alerts
+  const alertsHookData = useAlerts();
+  console.log("CandleStick alertsHookData:", alertsHookData);
+  const { addAlert, matchedCoins, alertsFeed, scanner } = alertsHookData || {};
 
   const sidebarContainerRef = useRef(null);
 
@@ -334,6 +342,18 @@ export default function Candlestick() {
       },
       paneIndex,
     );
+
+    // Force the price scale for this pane to be visible as a true axis, not just an overlay
+    if (paneIndex !== 0 && series) {
+      try {
+        series.priceScale().applyOptions({
+          visible: true,
+          autoScale: true,
+        });
+      } catch (e) {
+        console.warn("Could not apply price scale options:", e);
+      }
+    }
 
     // 🔥 ADD THIS BLOCK (same as first project)
     if (paneIndex !== 0) {
@@ -1018,6 +1038,8 @@ export default function Candlestick() {
       if (parsedTime > 1e10) {
         parsedTime = Math.floor(parsedTime / 1000);
       }
+      latestOhlcvTimeRef.current = parsedTime;
+
       switch (chartType) {
         case "line":
         case "area":
@@ -1076,12 +1098,76 @@ export default function Candlestick() {
   }, [selectedCurrency]);
 
   const handleIndicatorTick = useCallback((tick) => {
-    // Console log added as requested
-    console.log("[Event: indicator-tick-update] Received indicator tick:", tick);
+    const type = tick?.indicatorType || tick?.type;
+    const tickData = tick?.latestTick || tick?.data;
 
-    // If the tick has a timestamp, ensure it matches the chart's format (seconds)
-    // The exact update logic will depend on the backend tick structure
-    // e.g. updating indicatorSeriesRef.current[type].update({ time: parsedTime, value: ... })
+    if (!type || !tickData) return;
+
+    Object.entries(indicatorSeriesRef.current).forEach(([indicatorKey, groupedSeries]) => {
+      const baseType = indicatorKey.replace(/_\d+$/, "");
+      if (baseType === type) {
+        let pointData = null;
+        
+        // 1. Direct flat object (e.g. { time: 1234, rsi: 48, smoothingMA: 52 })
+        if (typeof tickData === "object" && !Array.isArray(tickData) && tickData.time !== undefined) {
+          pointData = tickData;
+        } 
+        // 2. Array of points
+        else if (Array.isArray(tickData)) {
+          if (tickData.length > 0) {
+            pointData = tickData[tickData.length - 1];
+          }
+        } 
+        // 3. Object of arrays
+        else if (typeof tickData === "object") {
+          pointData = {};
+          let hasData = false;
+          Object.keys(tickData).forEach((key) => {
+            const arr = tickData[key];
+            if (Array.isArray(arr) && arr.length > 0) {
+              const pt = arr[arr.length - 1];
+              if (pt && pt.time !== undefined) {
+                if (!pointData.time) pointData.time = pt.time;
+                pointData[key] = pt.value !== undefined ? pt.value : pt[key];
+                hasData = true;
+              }
+            }
+          });
+          if (!hasData) pointData = null;
+        }
+
+        if (pointData && pointData.time !== undefined) {
+          let parsedTime = Number(pointData.time);
+          if (parsedTime > 1e10) {
+            parsedTime = Math.floor(parsedTime / 1000);
+          }
+          
+          // Force sync to the live OHLCV candle time so it aligns exactly
+          if (latestOhlcvTimeRef.current) {
+             parsedTime = latestOhlcvTimeRef.current;
+          }
+
+          Object.keys(groupedSeries).forEach((lineName) => {
+            const series = groupedSeries[lineName];
+            if (series && typeof series.update === "function") {
+              const val = pointData[lineName] ?? pointData[lineName.toUpperCase()] ?? pointData.value;
+              if (val !== undefined && val !== null) {
+                series.update({ time: parsedTime, value: Number(val) });
+              } else if (lineName === "overboughtFill" || lineName === "oversoldFill") {
+                 // For RSI fills, update using the base value if available
+                 const rsiVal = pointData.rsi ?? pointData.RSI ?? pointData.value;
+                 if (rsiVal !== undefined && rsiVal !== null) {
+                    series.update({ time: parsedTime, value: Number(rsiVal) });
+                 }
+              } else if (groupedSeries.staticValues && groupedSeries.staticValues[lineName] !== undefined) {
+                 // Advance flat lines (upper, middle, lower, bandBackground) to the new live candle
+                 series.update({ time: parsedTime, value: Number(groupedSeries.staticValues[lineName]) });
+              }
+            }
+          });
+        }
+      }
+    });
   }, []);
 
   useSocket({
@@ -1600,6 +1686,7 @@ export default function Candlestick() {
                                 value={value}
                                 liveOhlcv={liveOhlcv}
                                 symbol={selectedCurrency}
+                                addAlert={addAlert}
                               />
                             )}
                           </div>
@@ -1727,12 +1814,12 @@ export default function Candlestick() {
               ref={sidebarContainerRef}
               style={{
                 position: "relative",
-                width: isWatchlistOpen ? `${sidebarWidth}px` : "0px",
+                width: (isWatchlistOpen || isAlertsOpen) ? `${sidebarWidth}px` : "0px",
                 transition: isDraggingWidth
                   ? "none"
                   : "width 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
                 overflow: "hidden",
-                borderLeft: isWatchlistOpen
+                borderLeft: (isWatchlistOpen || isAlertsOpen)
                   ? "1px solid var(--border-color, #e2e8f0)"
                   : "none",
                 backgroundColor: "var(--bg-card, #ffffff)",
@@ -1744,7 +1831,7 @@ export default function Candlestick() {
               }}
             >
               {/* Width Resizer Handle on the left edge */}
-              {isWatchlistOpen && (
+              {(isWatchlistOpen || isAlertsOpen) && (
                 <div
                   onMouseDown={startWidthResize}
                   style={{
@@ -1780,69 +1867,81 @@ export default function Candlestick() {
                   minHeight: 0,
                 }}
               >
-                {/* Watchlist Panel (Top) */}
-                <div
-                  style={{
-                    flex: 1,
-                    overflowY: "auto",
-                    overflowX: "hidden",
-                    display: "flex",
-                    flexDirection: "column",
-                  }}
-                >
-                  <WatchlistPanel
-                    onClose={() => setIsWatchlistOpen(false)}
-                    activeCurrency={activeWatchlistCurrency}
-                    setActiveCurrency={(symbol) => {
-                      setActiveWatchlistCurrency(symbol);
-                      setSelectedCurrency(symbol);
-                    }}
-                  />
-                </div>
-
-                {/* Details Panel (Bottom) */}
-                {isDetailsOpen && (
+                {isWatchlistOpen && (
                   <>
-                    {/* Horizontal Height Resizer Handle */}
-                    <div
-                      onMouseDown={startHeightResize}
-                      style={{
-                        height: "5px",
-                        cursor: "row-resize",
-                        zIndex: 100,
-                        backgroundColor: isDraggingHeight
-                          ? "var(--accent-color, #2962ff)"
-                          : "var(--border-color, #e2e8f0)",
-                        borderTop: "1px solid var(--border-color, #e2e8f0)",
-                        borderBottom: "1px solid var(--border-color, #e2e8f0)",
-                        transition: "background-color 0.2s",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor =
-                          "var(--accent-color, #2962ff)";
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isDraggingHeight)
-                          e.target.style.backgroundColor =
-                            "var(--border-color, #e2e8f0)";
-                      }}
-                    />
+                    {/* Watchlist Panel (Top) */}
                     <div
                       style={{
-                        height: `${detailsHeight}px`,
-                        overflow: "hidden",
+                        flex: 1,
+                        overflowY: "auto",
+                        overflowX: "hidden",
                         display: "flex",
-
                         flexDirection: "column",
                       }}
                     >
-                      <DetailsPanel
-                        onClose={() => setIsDetailsOpen(false)}
-                        symbol={activeWatchlistCurrency || selectedCurrency}
-                        isFutures={isFutures}
+                      <WatchlistPanel
+                        onClose={() => setIsWatchlistOpen(false)}
+                        activeCurrency={activeWatchlistCurrency}
+                        setActiveCurrency={(symbol) => {
+                          setActiveWatchlistCurrency(symbol);
+                          setSelectedCurrency(symbol);
+                        }}
                       />
                     </div>
+
+                    {/* Details Panel (Bottom) */}
+                    {isDetailsOpen && (
+                      <>
+                        {/* Horizontal Height Resizer Handle */}
+                        <div
+                          onMouseDown={startHeightResize}
+                          style={{
+                            height: "5px",
+                            cursor: "row-resize",
+                            zIndex: 100,
+                            backgroundColor: isDraggingHeight
+                              ? "var(--accent-color, #2962ff)"
+                              : "var(--border-color, #e2e8f0)",
+                            borderTop: "1px solid var(--border-color, #e2e8f0)",
+                            borderBottom: "1px solid var(--border-color, #e2e8f0)",
+                            transition: "background-color 0.2s",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.backgroundColor =
+                              "var(--accent-color, #2962ff)";
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isDraggingHeight)
+                              e.target.style.backgroundColor =
+                                "var(--border-color, #e2e8f0)";
+                          }}
+                        />
+                        <div
+                          style={{
+                            height: `${detailsHeight}px`,
+                            overflow: "hidden",
+                            display: "flex",
+                            flexDirection: "column",
+                          }}
+                        >
+                          <DetailsPanel
+                            onClose={() => setIsDetailsOpen(false)}
+                            symbol={activeWatchlistCurrency || selectedCurrency}
+                            isFutures={isFutures}
+                          />
+                        </div>
+                      </>
+                    )}
                   </>
+                )}
+
+                {isAlertsOpen && (
+                  <AlertsPanel 
+                    alertsFeed={alertsFeed} 
+                    matchedCoins={matchedCoins} 
+                    scanner={scanner}
+                    onClose={() => setIsAlertsOpen(false)} 
+                  />
                 )}
               </div>
             </div>

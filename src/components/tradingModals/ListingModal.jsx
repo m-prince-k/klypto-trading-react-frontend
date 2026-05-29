@@ -7,6 +7,7 @@ import { Spinner } from "./Spinner";
 import apiService from "../../services/apiServices";
 import { useDebounce } from "../../util/common";
 import IndicatorAlert from "../indicator/IndicatorAlert";
+import useAlerts from "../../util/useAlerts";
 
 export const ListingModal = ({
   isOpen,
@@ -20,6 +21,7 @@ export const ListingModal = ({
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { addAlert } = useAlerts();
   const [activeTab, setActiveTab] = useState("Indicators");
   const [indicators, setIndicators] = useState([]);
   const [currencies, setCurrencies] = useState([]);
@@ -27,8 +29,8 @@ export const ListingModal = ({
   const [error, setError] = useState(null);
   const [searchIndicator, setSearchIndicator] = useState("");
   const [searchCurrency, setSearchCurrency] = useState("");
-  const debouncedCurrency = useDebounce(selectedCurrency, 500);
-  const debouncedIndicator = useDebounce(selectedIndicator, 500);
+  const debouncedCurrency = useDebounce(searchCurrency, 500);
+  const debouncedIndicator = useDebounce(searchIndicator, 500);
 
   // API calling- Indicators
   async function fetchIndicators() {
@@ -80,7 +82,7 @@ export const ListingModal = ({
     if (title === "Symbol Search") {
       fetchCurrencies();
     }
-  }, [title]);
+  }, [title, debouncedIndicator, debouncedCurrency]);
 
   const filteredIndicators = (indicators ?? []).filter((item) => {
     if (!searchIndicator) return true;
@@ -296,7 +298,7 @@ export const ListingModal = ({
 
         {title === "Alerts" && (
           <div>
-            <IndicatorAlert />
+            <IndicatorAlert onClose={onClose} addAlert={addAlert} activeIndicators={selectedIndicator} />
           </div>
         )}
       </div>

@@ -13,6 +13,7 @@ export default function RSIPlot({
   chart,
   panesRef,
   containerRef,
+  pane,
 }) {
   const canvasRef = useRef(null);
 
@@ -81,9 +82,22 @@ export default function RSIPlot({
       }
     });
 
+    let timePoints = [];
+    try {
+      if (pane && typeof pane.data === "function") {
+        timePoints = pane.data().map((d) => d.time);
+      }
+    } catch (e) {
+      // Fallback if data() is not available
+    }
+
+    if (!timePoints || timePoints.length === 0) {
+      timePoints = rsiData.map((p) => p.time);
+    }
+
     const makeLevelData = (value) =>
-      rsiData.map((p) => ({
-        time: p.time,
+      timePoints.map((time) => ({
+        time,
         value,
       }));
 
@@ -122,8 +136,8 @@ export default function RSIPlot({
     groupedSeries.middle = middleLine;
     groupedSeries.lower = lowerLine;
 
-    const bandData = rsiData?.map((p) => ({
-      time: p.time,
+    const bandData = timePoints.map((time) => ({
+      time,
       value: upper,
     }));
 
@@ -193,6 +207,14 @@ export default function RSIPlot({
     groupedSeries.rsiData = rsiData;
     groupedSeries.bbUpperData = bbUpperData;
     groupedSeries.bbLowerData = bbLowerData;
+
+    // Attach static values so the live tick handler knows how to advance these flat lines
+    groupedSeries.staticValues = {
+      upper,
+      middle,
+      lower,
+      bandBackground: upper,
+    };
 
     indicatorSeriesRef.current[indicator] = groupedSeries;
   }, [result]);

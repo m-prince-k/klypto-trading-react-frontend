@@ -1061,31 +1061,31 @@ export default function useChartFunctions({
 }
 async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
   try {
-    const response = await apiService.post(
-      `/api/indicatorDetails?symbol=${selectedCurrency}&interval=${timeframeValue}&type=${type}`,
-    );
+    // const response = await apiService.post(
+    //   `/api/indicatorDetails?symbol=${selectedCurrency}&interval=${timeframeValue}&type=${type}`,
+    // );
 
-    // const response = await new Promise((resolve, reject) => {
-    //   const handleResponse = (res) => {
-    //     console.log("[Event: indicator-details-data] Raw indicator data for", type, ":", res);
-    //     socket.off("indicator-details-data", handleResponse);
-    //     socket.off("indicator-error", handleError);
-    //     resolve(res);
-    //   };
+    const response = await new Promise((resolve, reject) => {
+      const handleResponse = (res) => {
+        console.log("[Event: indicator-details-data] Raw indicator data for", type, ":", res);
+        socket.off("indicator-details-data", handleResponse);
+        socket.off("indicator-error", handleError);
+        resolve(res);
+      };
 
-    //   const handleError = (err) => {
-    //     console.error("[Event: indicator-error] Raw indicator error for", type, ":", err);
-    //     socket.off("indicator-details-data", handleResponse);
-    //     socket.off("indicator-error", handleError);
-    //     reject(err);
-    //   };
+      const handleError = (err) => {
+        console.error("[Event: indicator-error] Raw indicator error for", type, ":", err);
+        socket.off("indicator-details-data", handleResponse);
+        socket.off("indicator-error", handleError);
+        reject(err);
+      };
 
-    //   socket.on("indicator-details-data", handleResponse);
-    //   socket.on("indicator-error", handleError);
+      socket.on("indicator-details-data", handleResponse);
+      socket.on("indicator-error", handleError);
 
-    //   console.log("[Event: get-indicator-details] Emitting request for", type);
-    //   socket.emit("get-indicator-details", { symbol: selectedCurrency, interval: timeframeValue, type });
-    // });
+      console.log("[Event: get-indicator-details] Emitting request for", type);
+      socket.emit("get-indicator-details", { symbol: selectedCurrency, interval: timeframeValue, type });
+    });
 
     console.log("Raw indicator data for", type, ":", response);
 

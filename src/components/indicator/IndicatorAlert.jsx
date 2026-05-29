@@ -1,195 +1,281 @@
 import { useState } from "react";
-import { FaC } from "react-icons/fa6";
 import { IoMdClose } from "react-icons/io";
 
-export default function IndicatorAlert({ onClose, value, symbol, liveOhlcv }) {
-  console.log("Live OHLCV in Alert:", liveOhlcv);
-  return (
-      <div className="w-full h-[66px] overflow-y" style={{ color: "var(--text-main, #131722)" }}>
-        <div>
-          {/* Header */}
+export default function IndicatorAlert({ onClose, value, symbol, liveOhlcv, addAlert, activeIndicators = [] }) {
+  const uniqueIndicators = Array.from(
+    new Set(activeIndicators.map((slug) => slug.split('_')[0]))
+  );
+  const defaultIndicator = uniqueIndicators.length > 0 ? uniqueIndicators[0] : "RSI";
+  const [alertIndicator, setAlertIndicator] = useState(defaultIndicator);
+  const [alertCondition, setAlertCondition] = useState("crossesAbove");
+  const [alertValue, setAlertValue] = useState(value || "");
+  const [alertExpiration, setAlertExpiration] = useState("");
 
-          {/* Tabs */}
-          <div className="flex gap-4 sm:gap-6 border-b mb-4 text-xs sm:text-sm overflow-x-auto" style={{ borderColor: "var(--border-color, #e2e8f0)" }}>
-            <button 
-              className="pb-2 font-medium whitespace-nowrap"
-              style={{ borderBottom: "2px solid var(--text-main, #000000)", color: "var(--text-main, #131722)", background: "transparent", borderTop: "none", borderLeft: "none", borderRight: "none" }}
-            >
-              Settings
-            </button>
-            <button className="pb-2 whitespace-nowrap" style={{ color: "var(--text-muted, #64748b)", background: "transparent", border: "none" }}>
-              Message
-            </button>
-            <button className="pb-2 whitespace-nowrap" style={{ color: "var(--text-muted, #64748b)", background: "transparent", border: "none" }}>
-              Notifications
-            </button>
+  console.log("IndicatorAlert render: addAlert is:", addAlert, "type:", typeof addAlert);
+
+  const handleCreate = () => {
+    if (!alertValue) {
+      console.error("Failed to create alert: Alert value is empty!");
+      return;
+    }
+
+    try {
+      if (typeof addAlert === "function") {
+        addAlert({
+          indicator: alertIndicator,
+          condition: alertCondition,
+          value: alertValue,
+          expirationDate: alertExpiration,
+        });
+        console.log("Successfully created the alert with value:", alertValue);
+      } else {
+        console.error("Failed to create alert: addAlert is not a function!");
+      }
+
+      if (typeof onClose === "function") {
+        onClose();
+      }
+    } catch (err) {
+      console.error("Failed to create alert:", err);
+    }
+  };
+
+  const labelStyle = {
+    fontSize: "11px",
+    fontWeight: 500,
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
+    color: "var(--text-muted, #64748b)",
+    flexShrink: 0,
+    width: "76px",
+    paddingTop: "9px",
+    textAlign: "left",
+  };
+
+  const selectStyle = {
+    padding: "8px 10px",
+    borderRadius: "8px",
+    border: "1px solid var(--border-color, #cbd5e1)",
+    backgroundColor: "var(--bg-card, #f8fafc)",
+    color: "var(--text-main, #131722)",
+    fontSize: "13px",
+    width: "100%",
+  };
+
+  const disabledSelectStyle = {
+    ...selectStyle,
+    backgroundColor: "var(--bg-card, #f1f5f9)",
+    color: "var(--text-muted, #94a3b8)",
+    cursor: "not-allowed",
+  };
+
+  const rowStyle = {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: "50px",
+  };
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "calc(90vh - 80px)",
+        maxHeight: "560px",
+        color: "var(--text-main, #131722)",
+      }}
+    >
+      {/* Tabs */}
+      <div
+        style={{
+          flexShrink: 0,
+          display: "flex",
+          gap: "24px",
+          borderBottom: "1px solid var(--border-color, #e2e8f0)",
+          marginBottom: "16px",
+        }}
+      >
+        {["Settings", "Message", "Notifications"].map((tab) => (
+          <button
+            key={tab}
+            style={{
+              background: "transparent",
+              border: "none",
+              borderBottom: tab === "Settings" ? "2px solid var(--text-main, #131722)" : "2px solid transparent",
+              color: tab === "Settings" ? "var(--text-main, #131722)" : "var(--text-muted, #64748b)",
+              padding: "8px 0",
+              fontSize: "13px",
+              fontWeight: tab === "Settings" ? 500 : 400,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {/* Scrollable body */}
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          minHeight: 0,
+          paddingRight: "4px",
+          scrollbarWidth: "thin",
+          scrollbarColor: "var(--border-color, #cbd5e1) transparent",
+        }}
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "13px" }}>
+
+          {/* Condition row */}
+          <div style={rowStyle}>
+            <label style={labelStyle}>Condition</label>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "8px" }}>
+              <select
+                value={alertIndicator}
+                onChange={(e) => setAlertIndicator(e.target.value)}
+                style={selectStyle}
+              >
+                {uniqueIndicators.length > 0 ? (
+                  uniqueIndicators.map((indicator) => (
+                    <option key={indicator} value={indicator}>
+                      {indicator}
+                    </option>
+                  ))
+                ) : (
+                  <option value="RSI">RSI</option>
+                )}
+              </select>
+
+              <select
+                value={alertCondition}
+                onChange={(e) => setAlertCondition(e.target.value)}
+                style={selectStyle}
+              >
+                <option value="crossesAbove">Crosses Above</option>
+                <option value="crossesBelow">Crosses Below</option>
+                <option value="greaterThan">Greater Than</option>
+                <option value="lessThan">Less Than</option>
+              </select>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                <select style={selectStyle}>
+                  <option>Value</option>
+                </select>
+                <input
+                  type="number"
+                  value={alertValue}
+                  onChange={(e) => setAlertValue(e.target.value)}
+                  placeholder="e.g. 70"
+                  style={selectStyle}
+                />
+              </div>
+            </div>
           </div>
 
-          {/* Form */}
-          <div className="flex flex-col gap-3 text-left text-xs sm:text-sm">
-            {/* Symbols */}
-            <div className="flex justify-between gap-5 items-start">
-              <label style={{ color: "var(--text-main, #131722)" }} className="mt-3">Symbols</label>
-              <div 
-                className="mt-1 w-[70%] border rounded-lg px-3 py-2"
+          <hr style={{ border: "none", borderTop: "1px solid var(--border-color, #e2e8f0)", margin: 0 }} />
+
+          {/* Interval row */}
+          <div style={rowStyle}>
+            <label style={labelStyle}>Interval</label>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
+              <select disabled style={disabledSelectStyle}>
+                <option>Same as chart</option>
+              </select>
+              <button
                 style={{
-                  backgroundColor: "var(--bg-main, #f1f5f9)",
-                  borderColor: "var(--border-color, #cbd5e1)",
-                  color: "var(--text-main, #131722)"
+                  background: "transparent",
+                  border: "none",
+                  color: "#378ADD",
+                  fontSize: "13px",
+                  cursor: "pointer",
+                  padding: "2px 0",
+                  textAlign: "left",
+                  width: "fit-content",
                 }}
               >
-                {symbol}
-              </div>
-            </div>
-
-            {/* Condition */}
-            <div className="flex justify-between gap-2">
-              <label style={{ color: "var(--text-main, #131722)" }} className="mt-3">Condition</label>
-              <div className="w-[70%] flex flex-col gap-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
-                  <select 
-                    className="border rounded-lg px-2 py-2"
-                    style={{
-                      backgroundColor: "var(--bg-card, #ffffff)",
-                      borderColor: "var(--border-color, #cbd5e1)",
-                      color: "var(--text-main, #131722)"
-                    }}
-                  >
-                    <option>SMA (9, close)</option>
-                  </select>
-                  <select 
-                    className="border rounded-lg px-2 py-2"
-                    style={{
-                      backgroundColor: "var(--bg-card, #ffffff)",
-                      borderColor: "var(--border-color, #cbd5e1)",
-                      color: "var(--text-main, #131722)"
-                    }}
-                  >
-                    <option>MA</option>
-                  </select>
-                </div>
-
-                {/* Crossing */}
-                <select 
-                  className="border rounded-lg px-2 py-2 w-full"
-                  style={{
-                    backgroundColor: "var(--bg-card, #ffffff)",
-                    borderColor: "var(--border-color, #cbd5e1)",
-                    color: "var(--text-main, #131722)"
-                  }}
-                >
-                  <option>Crossing</option>
-                </select>
-
-                {/* Value */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <select 
-                    className="border rounded-lg px-2 py-2"
-                    style={{
-                      backgroundColor: "var(--bg-card, #ffffff)",
-                      borderColor: "var(--border-color, #cbd5e1)",
-                      color: "var(--text-main, #131722)"
-                    }}
-                  >
-                    <option>Value</option>
-                    <option>Price</option>
-                  </select>
-                  <input
-                    type="number"
-                    value={value}
-                    className="border rounded-lg px-2 py-2"
-                    style={{
-                      backgroundColor: "var(--bg-card, #ffffff)",
-                      borderColor: "var(--border-color, #cbd5e1)",
-                      color: "var(--text-main, #131722)"
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Interval */}
-            <div className="flex justify-between gap-5 items-start">
-              <label style={{ color: "var(--text-main, #131722)" }} className="mt-3">Interval</label>
-              <div className=" w-[70%] flex flex-col gap-3">
-                <select 
-                  className="border rounded-lg px-2 py-2"
-                  style={{
-                    backgroundColor: "var(--bg-card, #ffffff)",
-                    borderColor: "var(--border-color, #cbd5e1)",
-                    color: "var(--text-main, #131722)"
-                  }}
-                >
-                  <option>Same as chart</option>
-                </select>
-                {/* Add Condition */}
-                <button className="text-blue-600 text-xs sm:text-sm w-fit" style={{ background: "transparent", border: "none", cursor: "pointer" }}>
-                  + Add condition
-                </button>
-              </div>
-            </div>
-
-            {/* Trigger + Expiration */}
-            <div className="flex flex-col gap-2">
-              <div className="flex gap-4 items-center">
-                <label style={{ color: "var(--text-main, #131722)", width: "80px" }}>Trigger</label>
-                <select 
-                  className="px-2 py-2 rounded-lg border"
-                  style={{
-                    backgroundColor: "var(--bg-card, #ffffff)",
-                    borderColor: "var(--border-color, #cbd5e1)",
-                    color: "var(--text-main, #131722)"
-                  }}
-                >
-                  <option>Once only</option>
-                </select>
-              </div>
-
-              <div className="flex gap-4 items-center">
-                <label style={{ color: "var(--text-main, #131722)", width: "80px" }}>Expiration</label>
-                <select 
-                  className="px-2 py-2 rounded-lg border"
-                  style={{
-                    backgroundColor: "var(--bg-card, #ffffff)",
-                    borderColor: "var(--border-color, #cbd5e1)",
-                    color: "var(--text-main, #131722)"
-                  }}
-                >
-                  <option>March 14, 2026 at 11:24</option>
-                </select>
-              </div>
+                + Add condition
+              </button>
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 mt-5">
-            <button
-              onClick={onClose}
-              className="w-full sm:w-auto px-4 py-2 rounded-lg border transition-colors"
-              style={{
-                backgroundColor: "var(--bg-card, #ffffff)",
-                borderColor: "var(--border-color, #e2e8f0)",
-                color: "var(--text-main, #131722)"
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "var(--bg-card-hover, #f1f5f9)"}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "var(--bg-card, #ffffff)"}
-            >
-              Cancel
-            </button>
+          <hr style={{ border: "none", borderTop: "1px solid var(--border-color, #e2e8f0)", margin: 0 }} />
 
-            <button 
-              className="w-full sm:w-auto px-4 py-2 rounded-lg border-0 transition-opacity"
-              style={{
-                backgroundColor: "var(--text-main, #000000)",
-                color: "var(--bg-card, #ffffff)"
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
-              onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
-            >
-              Create
-            </button>
+          {/* Trigger row */}
+          <div style={rowStyle}>
+            <label style={labelStyle}>Trigger</label>
+            <div style={{ width: "180px" }}>
+              <select disabled style={disabledSelectStyle}>
+                <option>Once only</option>
+              </select>
+            </div>
           </div>
+
+          {/* Expiration row */}
+          <div style={rowStyle}>
+            <label style={labelStyle}>Expiration</label>
+            <div style={{ width: "180px" }}>
+              <input
+                type="datetime-local"
+                value={alertExpiration}
+                onChange={(e) => setAlertExpiration(e.target.value)}
+                style={selectStyle}
+              />
+            </div>
+          </div>
+
         </div>
       </div>
+
+      {/* Footer */}
+      <div
+        style={{
+          flexShrink: 0,
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: "8px",
+          paddingTop: "12px",
+          marginTop: "4px",
+          borderTop: "1px solid var(--border-color, #e2e8f0)",
+        }}
+      >
+        <button
+          onClick={() => {
+            if (typeof onClose === "function") onClose();
+          }}
+          style={{
+            padding: "8px 18px",
+            borderRadius: "8px",
+            border: "1px solid var(--border-color, #e2e8f0)",
+            backgroundColor: "var(--bg-card, #ffffff)",
+            color: "var(--text-main, #131722)",
+            fontSize: "13px",
+            cursor: "pointer",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-card-hover, #f1f5f9)")}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-card, #ffffff)")}
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleCreate}
+          style={{
+            padding: "8px 18px",
+            borderRadius: "8px",
+            border: "none",
+            backgroundColor: "var(--text-main, #000000)",
+            color: "var(--bg-card, #ffffff)",
+            fontSize: "13px",
+            fontWeight: 500,
+            cursor: "pointer",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
+          onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+        >
+          Create
+        </button>
+      </div>
+    </div>
   );
 }
