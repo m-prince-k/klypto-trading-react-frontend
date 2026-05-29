@@ -10,6 +10,7 @@ export default function CCIPlot({
   addSeries,
   chart,
   containerRef,
+  panesRef,
   pane
 }) {
 
@@ -138,109 +139,184 @@ export default function CCIPlot({
 
   }, [result]);
 
-
-  /* ================= CREATE CLOUD CANVAS ================= */
-
-  useEffect(() => {
-
-    if (!chart?.current || !chart) return;
-    if (cloudCanvasRef.current) return;
-
-    const rect = chart.current.getBoundingClientRect();
-
-    const canvas = document.createElement("canvas");
-
-    canvas.width = rect.width;
-    canvas.height = rect.height;
-
-    canvas.style.position = "absolute";
-    canvas.style.left = "0";
-    canvas.style.top = "0";
-    canvas.style.pointerEvents = "none";
-    canvas.style.zIndex = "1";
-
-    chart.current.appendChild(canvas);
-
-    cloudCanvasRef.current = canvas;
-    cloudCtxRef.current = canvas.getContext("2d");
-
-  }, [chart]);
-
-
-  /* ================= DRAW BOLLINGER CLOUD ================= */
+  /* ================= CANVAS INIT ================= */
 
   useEffect(() => {
+    if (!panesRef?.current || !containerRef?.current) return;
 
-    const cciGroup = chart.current?.CCI;
+    let retryCount = 0;
+    const MAX_RETRIES = 10;
 
-    const upperSeries = cciGroup?.bbUpper;
-    const lowerSeries = cciGroup?.bbLower;
+    const initCanvas = () => {
+      const paneKey = indicator;
+      const currentPane = panesRef.current[paneKey];
+      const paneDiv = currentPane?.div;
 
-    const upperData = cciGroup?.result?.data?.bbUpper;
-    const lowerData = cciGroup?.result?.data?.bbLower;
-
-    const fillStyle = indicatorStyle?.[indicator]?.bbFill;
-
-    const ctx = cloudCtxRef.current;
-    const canvas = cloudCanvasRef.current;
-
-    if (!ctx || !canvas) return;
-    if (!upperSeries || !lowerSeries) return;
-    if (!upperData?.length || !lowerData?.length) return;
-    if (!fillStyle?.visible) return;
-
-    const drawCloud = () => {
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      ctx.beginPath();
-
-      upperData.forEach((p, i) => {
-
-        const x = chart.timeScale().timeToCoordinate(p.time);
-        const y = upperSeries.priceToCoordinate(p.value);
-
-        if (x === null || y === null) return;
-
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-
-      });
-
-      for (let i = lowerData.length - 1; i >= 0; i--) {
-
-        const p = lowerData[i];
-
-        const x = chart.timeScale().timeToCoordinate(p.time);
-        const y = lowerSeries.priceToCoordinate(p.value);
-
-        if (x === null || y === null) continue;
-
-        ctx.lineTo(x, y);
+      if (!paneDiv) {
+        if (retryCount < MAX_RETRIES) {
+          retryCount++;
+          setTimeout(initCanvas, 100);
+        }
+        return;
       }
 
-      ctx.closePath();
+      if (
+        cloudCanvasRef.current &&
+        cloudCanvasRef.current.parentNode === containerRef.current
+      ) {
+        drawBBCloud();
+        return;
+      }
 
-      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      if (cloudCanvasRef.current) cloudCanvasRef.current.remove();
 
-      gradient.addColorStop(0, fillStyle?.topFillColor1 || "rgba(33,150,243,0.2)");
-      gradient.addColorStop(1, fillStyle?.bottomFillColor1 || "rgba(33,150,243,0)");
+      const canvas = document.createElement("canvas");
+      canvas.style.position = "absolute";
+      canvas.style.top = "0";
+      canvas.style.left = "0";
+      canvas.style.pointerEvents = "none";
+      canvas.style.zIndex = "10";
 
-      ctx.fillStyle = gradient;
-      ctx.fill();
+      containerRef.current.appendChild(canvas);
+
+      cloudCanvasRef.current = canvas;
+
+      drawBBCloud();
     };
 
-    drawCloud();
+    initCanvas();
+  }, [panesRef, result, containerRef]);
 
-    chart.timeScale().subscribeVisibleLogicalRangeChange(drawCloud);
-    chart.subscribeCrosshairMove(drawCloud);
+  /* ================= DRAW BB CLOUD ================= */
+
+  const drawBBCloud = () => {
+    const paneKey = indicator;
+    const currentPane = panesRef.current?.[paneKey];
+    const paneDiv = currentPane?.div;
+    const paneChart = currentPane?.chart;
+
+    if (!cloudCanvasRef.current || !paneDiv || !paneChart || !containerRef?.current) return;
+
+    const canvas = cloudCanvasRef.current;
+    const ctx = canvas.getContext("2d");
+
+    const paneRect = paneDiv.getBoundingClientRect();
+    const chartRect = containerRef.current.getBoundingClientRect();
+    const topOffset = paneRect.top - chartRect.top;
+    const leftOffset = paneRect.left - chartRect.left;
+
+    canvas.width = chartRect.width;
+    canvas.height = chartRect.height;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const cciGroup = indicatorSeriesRef.current?.[indicator];
+    if (!cciGroup) return;
+
+    const upperData = cciGroup.result?.data?.bbUpper || [];
+    const lowerData = cciGroup.result?.data?.bbLower || [];
+
+    if (!upperData.length || !lowerData.length) return;
+
+    const fillStyle = indicatorStyle?.[indicator]?.bbFill;
+    if (!fillStyle?.visible) return;
+
+    ctx.save();
+    ctx.translate(leftOffset, topOffset);
+
+    ctx.beginPath();
+
+    for (let i = 0; i < upperData.length; i++) {
+      const p = upperData[i];
+      const x = paneChart.timeScale().timeToCoordinate(p.time);
+      const y = cciGroup.bbUpper?.priceToCoordinate(p.value);
+
+      if (x == null || y == null) continue;
+
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+
+    for (let i = lowerData.length - 1; i >= 0; i--) {
+      const p = lowerData[i];
+      const x = paneChart.timeScale().timeToCoordinate(p.time);
+      const y = cciGroup.bbLower?.priceToCoordinate(p.value);
+
+      if (x == null || y == null) continue;
+
+      ctx.lineTo(x, y);
+    }
+
+    ctx.closePath();
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, fillStyle?.topFillColor1 || "rgba(33,150,243,0.2)");
+    gradient.addColorStop(1, fillStyle?.bottomFillColor1 || "rgba(33,150,243,0)");
+
+    ctx.fillStyle = gradient;
+    ctx.fill();
+
+    ctx.restore();
+  };
+
+  useEffect(() => {
+    const resizeObserver = new ResizeObserver(() => {
+      drawBBCloud();
+    });
+
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+
+    return () => resizeObserver.disconnect();
+  }, []);
+
+  useEffect(() => {
+    let animationFrame;
+
+    const loop = () => {
+      drawBBCloud();
+      animationFrame = requestAnimationFrame(loop);
+    };
+
+    loop();
+
+    return () => cancelAnimationFrame(animationFrame);
+  }, []);
+
+  useEffect(() => {
+    const paneKey = indicator;
+    const currentPane = panesRef.current?.[paneKey];
+    const paneChart = currentPane?.chart;
+
+    if (!paneChart) return;
+
+    const redraw = () => {
+      requestAnimationFrame(drawBBCloud);
+    };
+
+    const timeScale = paneChart.timeScale();
+
+    timeScale.subscribeVisibleTimeRangeChange(redraw);
+    timeScale.subscribeVisibleLogicalRangeChange(redraw);
+    paneChart.subscribeCrosshairMove(redraw);
 
     return () => {
-      chart.timeScale().unsubscribeVisibleLogicalRangeChange(drawCloud);
-      chart.unsubscribeCrosshairMove(drawCloud);
+      timeScale.unsubscribeVisibleTimeRangeChange(redraw);
+      timeScale.unsubscribeVisibleLogicalRangeChange(redraw);
+      paneChart.unsubscribeCrosshairMove(redraw);
     };
+  }, [panesRef, indicator]);
 
-  }, [indicatorStyle?.[indicator]?.bbFill, result]);
+  /* ================= CLEANUP CANVAS ================= */
+
+  useEffect(() => {
+    return () => {
+      if (cloudCanvasRef.current) {
+        cloudCanvasRef.current.remove();
+        cloudCanvasRef.current = null;
+      }
+    };
+  }, []);
 
 
   /* ================= STYLE UPDATE ================= */
@@ -267,7 +343,17 @@ export default function CCIPlot({
 
     });
 
-  }, [indicatorStyle]);
+    if (cciGroup.bgFill) {
+      cciGroup.bgFill.applyOptions({
+        topFillColor1: styles?.bgFill?.topFillColor1,
+        topFillColor2: styles?.bgFill?.topFillColor2,
+        visible: styles?.bgFill?.visible ?? true,
+      });
+    }
+
+    drawBBCloud();
+
+  }, [indicatorStyle, result]);
 
   return null;
 }

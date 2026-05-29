@@ -22,25 +22,25 @@ export const ChartProprties = {
     fontFamily: "Inter, sans-serif",
   },
 
-localization: {
-  priceFormatter: (price) => {
-    if (price < 1) return price.toFixed(7);
-    return price.toFixed(2);
+  localization: {
+    priceFormatter: (price) => {
+      if (price < 1) return price.toFixed(7);
+      return price.toFixed(2);
+    },
+    timeFormatter: (timestamp) => {
+      const date = new Date(timestamp * 1000);
+      return date.toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
+    },
   },
-  timeFormatter: (timestamp) => {
-    const date = new Date(timestamp * 1000);
-    return date.toLocaleString("en-IN", {
-      timeZone: "Asia/Kolkata",
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-  },
-},
-  
+
 
   timeScale: {
     timeVisible: true,
@@ -326,21 +326,25 @@ export const getSeriesColor = (series) => {
 
 export const chartSeriesStyles = {
   candlestick: {
-    upColor: "#69ff44ff",
-    downColor: "#ff4141ff",
-    borderUpColor: "#69ff44ff",
-    borderDownColor: "#ff6363ff",
-    wickUpColor: "#69ff44ff",
-    wickDownColor: "#ff4141ff",
+    upColor: "#4ade80",        // lighter green (highlight)
+    downColor: "#f87171",      // lighter red
+
+    borderUpColor: "#16a34a",  // darker edge = depth
+    borderDownColor: "#dc2626",
+
+    wickUpColor: "#22c55e",    // mid tone
+    wickDownColor: "#ef4444",
   },
 
   hollowcandles: {
     upColor: "transparent",
-    downColor: "#ff4141ff",
-    borderUpColor: "#69ff44ff",
-    borderDownColor: "#ff4141ff",
-    wickUpColor: "#69ff44ff",
-    wickDownColor: "#ff4141ff",
+    downColor: "#ef4444CC",
+
+    borderUpColor: "#22c55e",
+    borderDownColor: "#ef4444",
+
+    wickUpColor: "#22c55e",
+    wickDownColor: "#ef4444",
   },
 
   line: {
@@ -348,7 +352,7 @@ export const chartSeriesStyles = {
   },
 
   bar: {
-    upColor: "#69ff44ff",
+    upColor: "#2f831aff",
     downColor: "#ff4141ff",
   },
 
@@ -634,7 +638,7 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
   let baseIndicator = indicator.startsWith("CUSTOM_")
     ? indicator.replace("CUSTOM_", "")
     : indicator;
-  baseIndicator = baseIndicator.split("_")[0];
+  baseIndicator = baseIndicator.replace(/_\d+$/, "");
 
   switch (baseIndicator) {
     case "SMA": {
@@ -1882,6 +1886,65 @@ export const getRowsByIndicator = (indicator, maType, indicatorConfigs) => {
           showValue: true,
         },
       ];
+
+    case "SSL_HYBRID": {
+      return [
+        {
+          key: "candles",
+          label: "Candle & Fill Colors",
+          type: "checkbox",
+          children: [
+            {
+              key: "up",
+              parent: "candles",
+              label: "Bullish Color",
+              type: "fill",
+            },
+            {
+              key: "down",
+              parent: "candles",
+              label: "Bearish Color",
+              type: "fill",
+            },
+          ],
+        },
+        {
+          key: "ssl1",
+          label: "SSL1",
+          type: "line",
+        },
+        {
+          key: "ssl2",
+          label: "SSL2",
+          type: "line",
+        },
+        {
+          key: "atrUpper",
+          label: "+ATR",
+          type: "line",
+        },
+        {
+          key: "atrLower",
+          label: "-ATR",
+          type: "line",
+        },
+        {
+          key: "exitArrows",
+          label: "Exit Arrows",
+          type: "marker",
+        },
+        {
+          key: "signalDiamonds",
+          label: "Signal Diamonds",
+          type: "marker",
+        },
+        {
+          key: "baselineFill",
+          label: "Baseline Background",
+          type: "fill",
+        },
+      ];
+    }
 
     default:
       return [];

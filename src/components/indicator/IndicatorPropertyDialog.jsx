@@ -4,6 +4,7 @@ import apiService from "../../services/apiServices";
 import useChartFunctions from "../../util/useChartFunctions";
 import { updateIndicatorFromInput } from "./IndicatorIndex";
 import React, { useEffect, useState } from "react";
+import socket from "../../services/websocket/socket";
 
 /* =========================
    BASE SETTINGS COMPONENT
@@ -233,7 +234,7 @@ export default function IndicatorPropertyDialog({
     const { maType } = config;
 
     const payload = {
-      type: activeBarIndicator.split("_")[0],
+      type: activeBarIndicator.replace(/_\d+$/, ""),
       ...config,
     };
 
@@ -244,12 +245,34 @@ export default function IndicatorPropertyDialog({
     try {
       setIndicatorLoading(true); // START LOADER
 
-      const response = await apiService.post(
-        `/api/updateIndicator?symbol=${selectedCurrency}&interval=${timeframeValue}`,
-        payload,
-      );
+      // const response = await apiService.post(
+      //   `/api/updateIndicator?symbol=${selectedCurrency}&interval=${timeframeValue}`,
+      //   payload,
+      // );
 
-      console.log("Indicator updated:", response);
+      const response = await new Promise((resolve, reject) => {
+        const handleResponse = (res) => {
+          console.log("[Event: indicator-update-data] Indicator updated:", res);
+          socket.off("indicator-update-data", handleResponse);
+          socket.off("indicator-error", handleError);
+          resolve(res);
+        };
+
+        const handleError = (err) => {
+          console.error("[Event: indicator-error] Indicator update error:", err);
+          socket.off("indicator-update-data", handleResponse);
+          socket.off("indicator-error", handleError);
+          reject(err);
+        };
+
+        socket.on("indicator-update-data", handleResponse);
+        socket.on("indicator-error", handleError);
+
+        console.log("[Event: update-indicator] Emitting update with payload:", payload);
+        socket.emit("update-indicator", { symbol: selectedCurrency, interval: timeframeValue, ...payload });
+      });
+
+      // console.log("Indicator updated:", response);
 
       updateIndicatorFromInput(
         activeBarIndicator,
@@ -289,7 +312,7 @@ export default function IndicatorPropertyDialog({
   ========================== */
 
   function renderIndicatorSetting() {
-    const baseIndicator = activeBarIndicator.split("_")[0];
+    const baseIndicator = activeBarIndicator.replace(/_\d+$/, "");
     switch (baseIndicator) {
       case "SMA":
       case "EMA":
@@ -442,6 +465,455 @@ export default function IndicatorPropertyDialog({
             </div>
           </>
         );
+
+         case "SSL_HYBRID":
+        return (
+          <>
+            {/* =========================
+    DISPLAY CONTROLS
+========================= */}
+            <h6 className="mb-3 fw-bold">Display Controls</h6>
+
+            <div className="mb-3">
+              <label className="form-label">Display Mode</label>
+
+              <select
+                className="form-select"
+                value={currentConfig.displayMode}
+                onChange={(e) => updateProperty("displayMode", e.target.value)}
+              >
+                <option value="FULL_DISPLAY">Full Display</option>
+
+                <option value="BASELINE_ONLY">Baseline Only</option>
+
+                <option value="SSL_ONLY">SSL Only</option>
+
+                <option value="BASELINE_SSL">Baseline + SSL</option>
+
+                <option value="ENTRY_EXIT_ONLY">Entry/Exit Only</option>
+              </select>
+            </div>
+            {/* =========================
+          SSL SETTINGS
+      ========================= */}
+            <h6 className="mb-3 fw-bold">SSL Settings</h6>
+
+            <div className="mb-3">
+              <label className="form-label">Baseline Type</label>
+              <select
+                className="form-select"
+                value={currentConfig.maType}
+                onChange={(e) => updateProperty("maType", e.target.value)}
+              >
+                {[
+                  "SMA",
+                  "EMA",
+                  "DEMA",
+                  "TEMA",
+                  "LSMA",
+                  "WMA",
+                  "MF",
+                  "VAMA",
+                  "TMA",
+                  "HMA",
+                  "JMA",
+                  "Kijun v2",
+                  "EDSMA",
+                  "McGinley",
+                ].map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Baseline Length</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.baseLen}
+                onChange={(e) =>
+                  updateProperty("baseLen", Math.max(1, Number(e.target.value)))
+                }
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Source</label>
+              <select
+                className="form-select"
+                value={currentConfig.src}
+                onChange={(e) => updateProperty("src", e.target.value)}
+              >
+                {["Close", "Open", "High", "Low", "HL2", "HLC3", "OHLC4"].map(
+                  (opt) => (
+                    <option key={opt} value={opt.toLowerCase()}>
+                      {opt}
+                    </option>
+                  ),
+                )}
+              </select>
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Channel Multiplier</label>
+              <input
+                type="number"
+                step="0.1"
+                className="form-control"
+                value={currentConfig.multy}
+                onChange={(e) =>
+                  updateProperty("multy", Number(e.target.value))
+                }
+              />
+            </div>
+
+            {/* =========================
+          SSL2 SETTINGS
+      ========================= */}
+            <h6 className="mb-3 fw-bold">SSL2 Settings</h6>
+
+            <div className="mb-3">
+              <label className="form-label">SSL2 Type</label>
+              <select
+                className="form-select"
+                value={currentConfig.ssl2Type}
+                onChange={(e) => updateProperty("ssl2Type", e.target.value)}
+              >
+                {[
+                  "SMA",
+                  "EMA",
+                  "DEMA",
+                  "TEMA",
+                  "WMA",
+                  "MF",
+                  "VAMA",
+                  "TMA",
+                  "HMA",
+                  "JMA",
+                  "McGinley",
+                ].map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">SSL2 Length</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.ssl2Len}
+                onChange={(e) =>
+                  updateProperty("ssl2Len", Math.max(1, Number(e.target.value)))
+                }
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Continuation ATR Criteria</label>
+              <input
+                type="number"
+                step="0.1"
+                className="form-control"
+                value={currentConfig.atrCrit}
+                onChange={(e) =>
+                  updateProperty("atrCrit", Number(e.target.value))
+                }
+              />
+            </div>
+
+            {/* =========================
+          EXIT SETTINGS
+      ========================= */}
+            <h6 className="mb-3 fw-bold">Exit Settings</h6>
+
+            <div className="mb-3">
+              <label className="form-label">Exit Type</label>
+              <select
+                className="form-select"
+                value={currentConfig.ssl3Type}
+                onChange={(e) => updateProperty("ssl3Type", e.target.value)}
+              >
+                {[
+                  "DEMA",
+                  "TEMA",
+                  "LSMA",
+                  "VAMA",
+                  "TMA",
+                  "HMA",
+                  "JMA",
+                  "Kijun v2",
+                  "McGinley",
+                  "MF",
+                ].map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Exit Length</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.ssl3Len}
+                onChange={(e) =>
+                  updateProperty("ssl3Len", Math.max(1, Number(e.target.value)))
+                }
+              />
+            </div>
+
+            {/* =========================
+          ATR SETTINGS
+      ========================= */}
+            <h6 className="mb-3 fw-bold">ATR Settings</h6>
+
+            <div className="mb-3">
+              <label className="form-label">ATR Period</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.atrLen}
+                onChange={(e) =>
+                  updateProperty("atrLen", Math.max(1, Number(e.target.value)))
+                }
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">ATR Multiplier</label>
+              <input
+                type="number"
+                step="0.1"
+                className="form-control"
+                value={currentConfig.atrMult}
+                onChange={(e) =>
+                  updateProperty("atrMult", Number(e.target.value))
+                }
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">ATR Smoothing</label>
+              <select
+                className="form-select"
+                value={currentConfig.atrSmoothing}
+                onChange={(e) => updateProperty("atrSmoothing", e.target.value)}
+              >
+                {["RMA", "SMA", "EMA", "WMA"].map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-check mb-3">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                checked={currentConfig.showAtrBands}
+                onChange={(e) =>
+                  updateProperty("showAtrBands", e.target.checked)
+                }
+              />
+              <label className="form-check-label">Show ATR Bands</label>
+            </div>
+
+            {/* =========================
+          RISK SETTINGS
+      ========================= */}
+            <h6 className="mb-3 fw-bold">Risk Assessment</h6>
+
+            <div className="mb-3">
+              <label className="form-label">Risk Lookback Period</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.riskLookback}
+                onChange={(e) =>
+                  updateProperty(
+                    "riskLookback",
+                    Math.max(1, Number(e.target.value)),
+                  )
+                }
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Risk Sensitivity</label>
+              <input
+                type="number"
+                step="0.1"
+                className="form-control"
+                value={currentConfig.riskSensitivity}
+                onChange={(e) =>
+                  updateProperty("riskSensitivity", Number(e.target.value))
+                }
+              />
+            </div>
+
+            <div className="form-check mb-3">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                checked={currentConfig.enableRiskGradient}
+                onChange={(e) =>
+                  updateProperty("enableRiskGradient", e.target.checked)
+                }
+              />
+              <label className="form-check-label">Enable Risk Gradient</label>
+            </div>
+
+            {/* =========================
+          JMA SETTINGS
+      ========================= */}
+            <h6 className="mb-3 fw-bold">Jurik (JMA) Settings</h6>
+
+            <div className="mb-3">
+              <label className="form-label">Phase</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.phase}
+                onChange={(e) =>
+                  updateProperty("phase", Number(e.target.value))
+                }
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Power</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.power}
+                onChange={(e) =>
+                  updateProperty("power", Number(e.target.value))
+                }
+              />
+            </div>
+
+            {/* =========================
+          KIJUN SETTINGS
+      ========================= */}
+            <h6 className="mb-3 fw-bold">Kijun Settings</h6>
+
+            <div className="mb-3">
+              <label className="form-label">Kijun Mod Divider</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.kijunDivider}
+                onChange={(e) =>
+                  updateProperty("kijunDivider", Number(e.target.value))
+                }
+              />
+            </div>
+
+            {/* =========================
+          VAMA SETTINGS
+      ========================= */}
+            <h6 className="mb-3 fw-bold">VAMA Settings</h6>
+
+            <div className="mb-3">
+              <label className="form-label">Volatility Lookback Length</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.volatilityLookback}
+                onChange={(e) =>
+                  updateProperty(
+                    "volatilityLookback",
+                    Math.max(1, Number(e.target.value)),
+                  )
+                }
+              />
+            </div>
+
+            {/* =========================
+          MODULAR FILTER SETTINGS
+      ========================= */}
+            <h6 className="mb-3 fw-bold">Modular Filter Settings</h6>
+
+            <div className="mb-3">
+              <label className="form-label">Beta</label>
+              <input
+                type="number"
+                step="0.1"
+                className="form-control"
+                value={currentConfig.beta}
+                onChange={(e) => updateProperty("beta", Number(e.target.value))}
+              />
+            </div>
+
+            <div className="form-check mb-3">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                checked={currentConfig.feedback}
+                onChange={(e) => updateProperty("feedback", e.target.checked)}
+              />
+              <label className="form-check-label">Feedback</label>
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Feedback Weighting</label>
+              <input
+                type="number"
+                step="0.1"
+                className="form-control"
+                value={currentConfig.feedbackWeighting}
+                onChange={(e) =>
+                  updateProperty("feedbackWeighting", Number(e.target.value))
+                }
+              />
+            </div>
+
+            {/* =========================
+          EDSMA SETTINGS
+      ========================= */}
+            <h6 className="mb-3 fw-bold">EDSMA Settings</h6>
+
+            <div className="mb-3">
+              <label className="form-label">Super Smoother Filter Length</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.superSmootherLength}
+                onChange={(e) =>
+                  updateProperty(
+                    "superSmootherLength",
+                    Math.max(1, Number(e.target.value)),
+                  )
+                }
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Super Smoother Filter Poles</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentConfig.superSmootherPoles}
+                onChange={(e) =>
+                  updateProperty(
+                    "superSmootherPoles",
+                    Math.max(1, Number(e.target.value)),
+                  )
+                }
+              />
+            </div>
+          </>
+        );
+
 
       case "PSAR":
         return (
@@ -1777,6 +2249,7 @@ export default function IndicatorPropertyDialog({
       show={indicatorProperty}
       onHide={() => setIndicatorProperty(false)}
       centered
+      scrollable={true}
       contentClassName="border-0 shadow-lg"
       style={{ borderRadius: 16 }}
     >
@@ -1789,11 +2262,11 @@ export default function IndicatorPropertyDialog({
             letterSpacing: "-0.2px",
           }}
         >
-          {activeBarIndicator.split("_")[0]}
+          {activeBarIndicator.replace(/_\d+$/, "")}
         </Modal.Title>
       </Modal.Header>
 
-      <Modal.Body className="px-0 pt-0 pb-0" style={{ backgroundColor: 'var(--bg-card)' }}>
+      <Modal.Body className="px-0 pt-0 pb-0" style={{ backgroundColor: 'var(--bg-card)', maxHeight: '65vh', overflowY: 'auto' }}>
         <Tabs
           defaultActiveKey="inputs"
           className="px-4 mb-0"

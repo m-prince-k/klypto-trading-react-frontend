@@ -43,10 +43,16 @@ export default function useChartFunctions({
 
       // Temporary listener to log live-tick-update as requested
       const handleLiveTick = (tick) => {
-        console.log(`[useChartFunctions] Event: live-tick-update Payload:`, tick);
+        // console.log(`[useChartFunctions] Event: live-tick-update Payload:`, tick);
       };
       // We attach it just to log it (note: typically you'd want to unsubscribe this in the component)
       socket.on("live-tick-update", handleLiveTick);
+
+      // Temporary listener to check if backend is sending futures-chart-data instead
+      const handleFuturesData = (data) => {
+        console.log(`[DEBUG] Backend sent futures-chart-data instead of listing-response!`, data);
+      };
+      socket.on("futures-chart-data", handleFuturesData);
 
       socket.on(responseEvent, handleResponse);
       socket.on("listing-error", handleError);
@@ -66,7 +72,7 @@ export default function useChartFunctions({
 
     for (const indicator of selectedIndicator) {
       try {
-        const baseIndicatorForFetch = indicator.split('_')[0];
+        const baseIndicatorForFetch = indicator.replace(/_\d+$/, "");
         const result = await fetchDataForIndicators(
           selectedCurrency,
           baseIndicatorForFetch,
@@ -75,7 +81,7 @@ export default function useChartFunctions({
 
         if (!result) continue;
 
-        const baseIndicator = indicator.split('_')[0];
+        const baseIndicator = indicator.replace(/_\d+$/, "");
         const config = indicatorConfigs?.[indicator] || {};
         const { maType } = config;
         const rows = getRowsByIndicator(baseIndicator, maType, indicatorConfigs);
@@ -1058,6 +1064,28 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue) {
     const response = await apiService.post(
       `/api/indicatorDetails?symbol=${selectedCurrency}&interval=${timeframeValue}&type=${type}`,
     );
+
+    // const response = await new Promise((resolve, reject) => {
+    //   const handleResponse = (res) => {
+    //     console.log("[Event: indicator-details-data] Raw indicator data for", type, ":", res);
+    //     socket.off("indicator-details-data", handleResponse);
+    //     socket.off("indicator-error", handleError);
+    //     resolve(res);
+    //   };
+
+    //   const handleError = (err) => {
+    //     console.error("[Event: indicator-error] Raw indicator error for", type, ":", err);
+    //     socket.off("indicator-details-data", handleResponse);
+    //     socket.off("indicator-error", handleError);
+    //     reject(err);
+    //   };
+
+    //   socket.on("indicator-details-data", handleResponse);
+    //   socket.on("indicator-error", handleError);
+
+    //   console.log("[Event: get-indicator-details] Emitting request for", type);
+    //   socket.emit("get-indicator-details", { symbol: selectedCurrency, interval: timeframeValue, type });
+    // });
 
     console.log("Raw indicator data for", type, ":", response);
 

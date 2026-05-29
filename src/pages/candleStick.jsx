@@ -299,7 +299,7 @@ export default function Candlestick() {
   //  GET PANE INDEX
   const getPaneIndex = (indicator) => {
     // ❗ overlay indicators → always main pane
-    const baseIndicator = indicator.split("_")[0];
+    const baseIndicator = indicator.replace(/_\d+$/, "");
     if (!PANE_INDICATORS.has(baseIndicator)) return 0;
 
     if (paneIndexRef.current[indicator] !== undefined) {
@@ -576,13 +576,18 @@ export default function Candlestick() {
   // RENDER INDICATOR VALUE
 
   const renderValue = (indicator, value) => {
-    if (value == null) return "--";
+    if (!value) return "--";
 
-    const baseIndicator = indicator.split("_")[0];
-    const showPercent = baseIndicator === "AROON"; // Only show % for Aroon
+    const baseIndicator = indicator.replace(/_\d+$/, "");
+    const showPercent = ["ROC", "PPO", "AROON"].includes(baseIndicator);
 
-    /* ================= NUMBER VALUES ================= */
-    if (typeof value === "number") {
+    // Single value handling
+    const isSingle = typeof value === "number" || (typeof value === "object" && value.v !== undefined && Object.keys(value).length <= 3 && "v" in value);
+
+    if (isSingle) {
+      const val = typeof value === "number" ? value : value.v;
+      const dynamicColor = typeof value === "object" ? value.c : undefined;
+      
       const style =
         indicatorStyle?.[indicator]?.sma ||
         indicatorStyle?.[indicator]?.ma ||
@@ -590,11 +595,11 @@ export default function Candlestick() {
 
       if (style?.visible === false) return null;
 
-      const color = style?.color || "var(--text-main, #333)";
+      const color = dynamicColor || style?.color || "var(--text-main, #333)";
 
       return (
         <span style={{ color }}>
-          {Number(value).toFixed(2)}
+          {Number(val).toFixed(2)}
           {showPercent ? "%" : ""}
         </span>
       );
@@ -685,8 +690,11 @@ export default function Candlestick() {
           return value[key] != null;
         })
         .map((key) => {
-          const val = value[key];
-          const color =
+          const valObj = value[key];
+          const val = valObj?.v !== undefined ? valObj.v : valObj;
+          const dynamicColor = valObj?.c;
+          
+          const color = dynamicColor ||
             indicatorStyle?.[indicator]?.[key]?.color ||
             "var(--text-main, #333)";
 
@@ -705,7 +713,7 @@ export default function Candlestick() {
 
   const renderIndicators = () => {
     return selectedIndicator.map((indicator) => {
-      const baseIndicator = indicator.split("_")[0];
+      const baseIndicator = indicator.replace(/_\d+$/, "");
       const Component = indicatorComponents[baseIndicator];
       if (!Component) return null;
 
@@ -747,8 +755,10 @@ export default function Candlestick() {
 
         const price = param.seriesData?.get(series);
         if (price !== undefined) {
-          indicatorValues[lineName] =
-            typeof price === "object" ? price.value : price;
+          indicatorValues[lineName] = {
+            v: typeof price === "object" ? price.value ?? price : price,
+            c: typeof price === "object" ? price.color : undefined
+          };
         }
       });
 
@@ -979,22 +989,29 @@ export default function Candlestick() {
     };
   }, [chartType, timeframeValue, selectedCurrency]);
 
+  const lastStateUpdateRef = useRef(0);
+
   // Subscribe to live ticks for real-time candle formation
   const handleLiveTickUpdate = useCallback((tick) => {
-    console.log("handleLiveTickUpdate received tick:", tick);
+    // console.log("handleLiveTickUpdate received tick:", tick);
     if (!tick) return;
     const tickData = tick.ohlcv || tick;
     const tickTime = tick.timestamp || tickData.time;
-    console.log("Parsed tickTime:", tickTime, "seriesRef.current:", !!seriesRef.current);
+    // console.log("Parsed tickTime:", tickTime, "seriesRef.current:", !!seriesRef.current);
     if (!tickTime || !seriesRef.current) return;
     if (tick.symbol && tick.symbol.toUpperCase() !== selectedCurrency?.toUpperCase()) {
-      console.log("Symbol mismatch. tick.symbol:", tick.symbol, "selectedCurrency:", selectedCurrency);
+      // console.log("Symbol mismatch. tick.symbol:", tick.symbol, "selectedCurrency:", selectedCurrency);
       return;
     }
-    console.log("Updating chart with tickData:", tickData);
+    // console.log("Updating chart with tickData:", tickData);
 
-    setLivePrice(Number(tickData.close));
-    setLiveOhlcv(tickData);
+    // Throttle React state updates to max 2 times per second to prevent UI freezing
+    const now = Date.now();
+    if (now - lastStateUpdateRef.current > 500) {
+      setLivePrice(Number(tickData.close));
+      setLiveOhlcv(tickData);
+      lastStateUpdateRef.current = now;
+    }
 
     try {
       let parsedTime = Number(tickTime);
@@ -1058,11 +1075,21 @@ export default function Candlestick() {
     }
   }, [selectedCurrency]);
 
+  const handleIndicatorTick = useCallback((tick) => {
+    // Console log added as requested
+    console.log("[Event: indicator-tick-update] Received indicator tick:", tick);
+
+    // If the tick has a timestamp, ensure it matches the chart's format (seconds)
+    // The exact update logic will depend on the backend tick structure
+    // e.g. updating indicatorSeriesRef.current[type].update({ time: parsedTime, value: ... })
+  }, []);
+
   useSocket({
     handleLiveTickUpdate,
     handleFuturesChartTick: handleLiveTickUpdate,
     handleWatchlistResponse,
     handleWatchlistUpdate,
+    handleIndicatorTick,
     selectedSymbol: selectedCurrency,
     selectedPeriod: timeframeValue,
   });
@@ -1080,14 +1107,38 @@ export default function Candlestick() {
     
     socket.emit("get-watchlist");
 
+    // Subscribe to indicator ticks
+    selectedIndicator.forEach((indicator) => {
+      const config = indicatorConfigs[indicator] || {};
+      const payload = {
+        symbol,
+        interval,
+        type: indicator.replace(/_\d+$/, ""),
+        ...config,
+      };
+      socket.emit("subscribe-indicator-tick", payload);
+    });
+
     return () => {
       if (isFutures) {
         socket.emit("unsubscribe-futures-chart", { symbol, interval });
       } else {
         socket.emit("unsubscribe-live-tick", { symbol, interval });
       }
+
+      // Unsubscribe from indicator ticks
+      selectedIndicator.forEach((indicator) => {
+        const config = indicatorConfigs[indicator] || {};
+        const payload = {
+          symbol,
+          interval,
+          type: indicator.replace(/_\d+$/, ""),
+          ...config,
+        };
+        socket.emit("unsubscribe-indicator-tick", payload);
+      });
     };
-  }, [selectedCurrency, timeframeValue, isFutures]);
+  }, [selectedCurrency, timeframeValue, isFutures, selectedIndicator, indicatorConfigs]);
 
   const { fetchDataByCurrency, fetchIndicatorData } = useChartFunctions({
     chartRef,
@@ -1471,7 +1522,7 @@ export default function Candlestick() {
                           /[\s/%]+/g,
                           "",
                         );
-                        const baseIndicator = normalizedType.split("_")[0];
+                        const baseIndicator = normalizedType.replace(/_\d+$/, "");
                         const value = liveIndicatorData[normalizedType];
                         return (
                           <div

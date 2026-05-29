@@ -77,6 +77,7 @@ export const useSocket = ({
   handleLiveTickUpdate,
   handleWatchlistResponse,
   handleWatchlistUpdate,
+  handleIndicatorTick,
 }) => {
   useEffect(() => {
     // Debounce bucket for binanceTicker updates — prevents re-render storm at 20fps
@@ -443,19 +444,22 @@ export const useSocket = ({
 
       /* ───────────────── INDICATORS ───────────────── */
       indicatorDetailsData: (res) => {
-        // console.log("Indicator details:", res);
+        console.log("[useSocket] Event: indicator-details-data Payload:", res);
       },
 
       indicatorUpdateData: (res) => {
-        // console.log("Indicator updated:", res);
+        console.log("[useSocket] Event: indicator-update-data Payload:", res);
       },
 
       indicatorTickUpdate: (tick) => {
-        // console.log("Indicator tick:", tick);
+        console.log("[useSocket] Event: indicator-tick-update Payload:", tick);
+        if (handleIndicatorTick) {
+          handleIndicatorTick(tick);
+        }
       },
 
       indicatorError: (err) => {
-        // console.error("Indicator error:", err);
+        console.error("[useSocket] Event: indicator-error Payload:", err);
       },
 
 
@@ -749,7 +753,7 @@ export const useSocket = ({
         if (setKlines || setChartData) {
           const validIntervals = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d', '1w', '1M'];
           let interval = validIntervals.includes(selectedPeriod) ? selectedPeriod : "1d";
-          let limit = 200; // Consistent lookback of 200 candles to ensure enough chart data
+          let limit = 1000; // Consistent lookback of 200 candles to ensure enough chart data
           manager.emit(EVENTS.LISTING.GET, { symbol: safeSymbol, interval, limit });
         }
 

@@ -1,5 +1,6 @@
 import { Row, Col, Form } from "react-bootstrap";
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import ColorPalettePanel from "./ColorPalettePanel";
 import { getRowsByIndicator } from "../../util/common";
 
@@ -10,12 +11,14 @@ export default function IndicatorStyle({
   indicatorConfigs,
 }) {
   const normalizedType = activeBarIndicator.replace(/[\s/%]+/g, "");
+  const baseIndicator = normalizedType.replace(/_\d+$/, "");
   const selectedStyle = indicatorStyle?.[normalizedType];
   const config = indicatorConfigs?.[normalizedType] || {};
   const { maType, maLength } = config;
-  const rows = getRowsByIndicator(normalizedType, maType, indicatorConfigs);
+  const rows = getRowsByIndicator(baseIndicator, maType, indicatorConfigs);
 
   const [activePalette, setActivePalette] = useState(null);
+  const [paletteCoords, setPaletteCoords] = useState({ top: 0, left: 0 });
   const paletteRef = useRef(null);
 
   /* ================= UPDATE FUNCTION ================= */
@@ -38,6 +41,7 @@ export default function IndicatorStyle({
           ].includes(key)) ||
         (section === "volumeBars" && ["up", "down"].includes(key)) ||
         (section === "awoBars" && ["up", "down"].includes(key)) ||
+        (section === "candles" && ["up", "down"].includes(key)) ||
         // ✅ AO oscillator palette
         (section === "oscillator" && ["up", "down"].includes(key)) ||
         // ✅ AO fill palette
@@ -87,7 +91,7 @@ export default function IndicatorStyle({
 
   /* ================= FILL / COLOR PREVIEW ================= */
   const getFillPreview = (row, selectedStyle) => {
-    // HISTOGRAM + VOLUME + AWO + AO (PALETTE CHILDREN)
+    // HISTOGRAM + VOLUME + AWO + AO + CANDLES (PALETTE CHILDREN)
     if (
       (row.parent === "histogram" &&
         selectedStyle?.histogram?.palette?.[row.key]) ||
@@ -95,6 +99,8 @@ export default function IndicatorStyle({
         selectedStyle?.volumeBars?.palette?.[row.key]) ||
       (row.parent === "awoBars" &&
         selectedStyle?.awoBars?.palette?.[row.key]) ||
+      (row.parent === "candles" &&
+        selectedStyle?.candles?.palette?.[row.key]) ||
       // ✅ AO oscillator palette preview
       (row.parent === "oscillator" &&
         selectedStyle?.oscillator?.palette?.[row.key]) ||
@@ -198,9 +204,13 @@ export default function IndicatorStyle({
                   <div
                     onClick={(e) => {
                       e.stopPropagation();
-                      setActivePalette(
-                        activePalette === row.key ? null : row.key,
-                      );
+                      if (activePalette === row.key) {
+                        setActivePalette(null);
+                      } else {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setPaletteCoords({ top: rect.bottom + window.scrollY + 8, left: rect.left + window.scrollX - 250 });
+                        setActivePalette(row.key);
+                      }
                     }}
                     style={{
                       width: 34,
@@ -230,14 +240,14 @@ export default function IndicatorStyle({
                     }}
                   />
 
-                  {activePalette === row.key && (
+                  {activePalette === row.key && createPortal(
                     <div
                       ref={paletteRef}
                       style={{
                         position: "absolute",
-                        top: 42,
-                        left: 0,
-                        zIndex: 9999,
+                        top: paletteCoords.top,
+                        left: Math.max(10, paletteCoords.left),
+                        zIndex: 100000,
                         borderRadius: 10,
                         boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
                         overflow: "hidden",
@@ -258,6 +268,13 @@ export default function IndicatorStyle({
                                       row.key
                                     ],
                                 }
+                            : row.parent === "candles"
+                              ? {
+                                  color:
+                                    selectedStyle?.candles?.palette?.[
+                                      row.key
+                                    ],
+                                }
                               : (selectedStyle?.[row.key] ?? row)
                         }
                         onChange={(style) => {
@@ -265,6 +282,8 @@ export default function IndicatorStyle({
                             update("histogram", row.key, style.color);
                           } else if (row.parent === "volumeBars") {
                             update("volumeBars", row.key, style.color);
+                          } else if (row.parent === "candles") {
+                            update("candles", row.key, style.color);
                           } else {
                             Object.entries(style).forEach(([k, v]) =>
                               update(row.key, k, v),
@@ -272,7 +291,8 @@ export default function IndicatorStyle({
                           }
                         }}
                       />
-                    </div>
+                    </div>,
+                    document.body
                   )}
                 </>
               )}
