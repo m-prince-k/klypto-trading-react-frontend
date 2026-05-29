@@ -82,7 +82,7 @@ export default function SSLPlot({
   /* ================= CREATE SSL ================= */
 
   useEffect(() => {
-    if (!result) return;
+    if (!result) { console.log('SSLPlot: no result'); return; } console.log('SSLPlot result.data:', Object.keys(result?.data || {}));
 
     if (indicatorSeriesRef.current?.[indicator]) {
       Object.values(indicatorSeriesRef.current[indicator]).forEach((s) => {

@@ -29,15 +29,23 @@ export default function DetailsPanel({ onClose, symbol, isFutures }) {
   const quoteAsset = safeSymbol ? safeSymbol.slice(baseAsset.length) : "";
 
   // Common handler for price updates (from either watchlist or live-tick)
-  const handlePriceUpdate = (tick) => {
-    if (!tick || !tick.symbol) return;
-    if (tick.symbol.toUpperCase() !== safeSymbol) return;
+  const handlePriceUpdate = (payload) => {
+    if (!payload) return;
+
+    let tick = payload;
+    if (Array.isArray(payload)) {
+      tick = payload.find((t) => t.symbol?.toUpperCase() === safeSymbol);
+      if (!tick) return;
+    }
+
+    if (!tick.symbol || tick.symbol.toUpperCase() !== safeSymbol) return;
 
     // Normalize API fields
+    const ohlcv = tick.ohlcv ?? tick.liveOHLCV ?? {};
     const normalized = {
-      lastPrice: tick.price ?? tick.lastPrice ?? tick.close,
-      change: tick.change,
-      changePercent: tick.changePct ?? tick.changePercent,
+      lastPrice: tick.price ?? tick.lastPrice ?? tick.close ?? ohlcv.close ?? ohlcv.lastPrice,
+      change: tick.change ?? ohlcv.change,
+      changePercent: tick.changePct ?? tick.changePercent ?? ohlcv.changePercent ?? ohlcv.changePct,
     };
 
     setPriceData((prev) => {

@@ -30,7 +30,6 @@ export const ListingModal = ({
   const [searchIndicator, setSearchIndicator] = useState("");
   const [searchCurrency, setSearchCurrency] = useState("");
   const debouncedCurrency = useDebounce(searchCurrency, 500);
-  const debouncedIndicator = useDebounce(searchIndicator, 500);
 
   // API calling- Indicators
   async function fetchIndicators() {
@@ -38,13 +37,7 @@ export const ListingModal = ({
     setError(null);
     let response;
     try {
-      if (debouncedIndicator) {
-        response = await apiService.post(
-          `/api/getIndicators?q=${debouncedIndicator}`,
-        );
-      } else {
-        response = await apiService.post(`/api/getIndicators`);
-      }
+      response = await apiService.post(`/api/getIndicators`);
       setIndicators(response?.data);
     } catch (err) {
       console.error(err);
@@ -61,11 +54,11 @@ export const ListingModal = ({
     let response;
     try {
       if (!debouncedCurrency) {
+        response = await apiService.post(`/api/getCurrencies`);
+      } else {
         response = await apiService.post(
           `api/getCurrencies?symbol=${debouncedCurrency}`,
         );
-      } else {
-        response = await apiService.post(`api/getCurrencies`);
       }
       setCurrencies(await response?.data);
     } catch (err) {
@@ -82,7 +75,7 @@ export const ListingModal = ({
     if (title === "Symbol Search") {
       fetchCurrencies();
     }
-  }, [title, debouncedIndicator, debouncedCurrency]);
+  }, [title, debouncedCurrency]);
 
   const filteredIndicators = (indicators ?? []).filter((item) => {
     if (!searchIndicator) return true;
