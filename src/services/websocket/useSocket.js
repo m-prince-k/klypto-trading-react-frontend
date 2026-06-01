@@ -136,7 +136,7 @@ export const useSocket = ({
 
       marketSentiment: (data) => {
         // binance-sentiment
-        if (setSentimentData || setFearGreed || setSocialStats || setTvlData || setFinancials || setMarketMetrics) console.log("[useSocket] Event: binance-sentiment Payload:", data);
+        console.log("🚀 MARKET SENTIMENT (binance-sentiment) RESPONSE:", data);
 
         const mergeValidProps = (prev, incoming) => {
           if (!incoming || typeof incoming !== 'object') return prev;
@@ -171,7 +171,7 @@ export const useSocket = ({
 
       marketSentimentData: (data) => {
         // market-sentiment-data — real API sentiment stream
-        console.log("[useSocket] Event: market-sentiment-data Response:", data);
+        console.log("🚀 MARKET SENTIMENT (market-sentiment-data) RESPONSE:", data);
         const mergeValidProps = (prev, incoming) => {
           if (!incoming || typeof incoming !== 'object') return prev;
           const updated = { ...prev };
@@ -753,12 +753,12 @@ export const useSocket = ({
         if (setKlines || setChartData) {
           const validIntervals = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d', '1w', '1M'];
           let interval = validIntervals.includes(selectedPeriod) ? selectedPeriod : "1d";
-          let limit = 1000; // Consistent lookback of 200 candles to ensure enough chart data
+          let limit = 3000; 
           manager.emit(EVENTS.LISTING.GET, { symbol: safeSymbol, interval, limit });
         }
 
         if (setSentimentData) {
-          manager.emit(EVENTS.MARKET.SENTIMENT_UPDATE, { symbol: safeSymbol });
+          manager.emit(EVENTS.MARKET_SENTIMENT.GET, { symbol: safeSymbol });
         }
 
         if (setOrderBook) {
@@ -814,7 +814,7 @@ export const useSocket = ({
     if (socket.connected) {
       const validIntervals = ['1m','3m','5m','15m','30m','1h','2h','4h','6h','8h','12h','1d','3d','1w','1M'];
       let interval = validIntervals.includes(selectedPeriod) ? selectedPeriod : "1d";
-      let limit = 200;
+      let limit = 3000;
       console.log(`[useSocket] Chart Timeframe Changed! Emitting LISTING.GET for ${safeSymbol} at interval ${interval}`);
       socket.emit(EVENTS.LISTING.GET, { symbol: safeSymbol, interval, limit });
     } else {

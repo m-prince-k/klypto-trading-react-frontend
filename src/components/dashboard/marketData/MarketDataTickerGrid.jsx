@@ -47,7 +47,7 @@ export default function MarketDataTickerGrid({ marketMetrics, renderSparkline })
           </div>
         </div>
         <div className="stat-chart-container">
-          {renderSparkline([51.8, 51.7, 51.9, 51.6, 51.5, 51.3, marketMetrics?.btcDominance || 51.3], marketMetrics?.btcDominanceChange || 0)}
+          {renderSparkline([51.8, 51.7, 51.9, 51.6, 51.5, 51.3, marketMetrics?.btcDominance || 0], marketMetrics?.btcDominanceChange || 0)}
         </div>
       </div>
 
@@ -84,8 +84,8 @@ export default function MarketDataTickerGrid({ marketMetrics, renderSparkline })
               </defs>
               <path d="M 10,38 A 30,30 0 0,1 70,38" fill="none" stroke="#2b3139" strokeWidth="5.5" strokeLinecap="round" />
               <path d="M 10,38 A 30,30 0 0,1 70,38" fill="none" stroke="url(#gauge-gradient)" strokeWidth="5.5" strokeLinecap="round" strokeDasharray="94.2" strokeDashoffset={94.2 - (94.2 * (marketMetrics?.fearGreedIndex || 50)) / 100} />
-              <line x1="40" y1="38" x2="40" y2="15" stroke="var(--text-primary)" strokeWidth="2.5" strokeLinecap="round" transform={`rotate(${-90 + ((marketMetrics?.fearGreedIndex || 50) / 100) * 180}, 40, 38)`} style={{ transformOrigin: '40px 38px' }} />
-              <circle cx="40" cy="38" r="3.5" fill="var(--text-primary)" />
+              <line x1="40" y1="38" x2="40" y2="15" stroke="var(--text-main, #131722)" strokeWidth="2.5" strokeLinecap="round" transform={`rotate(${-90 + ((marketMetrics?.fearGreedIndex || 50) / 100) * 180}, 40, 38)`} />
+              <circle cx="40" cy="38" r="3.5" fill="var(--text-main, #131722)" />
             </svg>
           </div>
           <div className="fg-text-container">

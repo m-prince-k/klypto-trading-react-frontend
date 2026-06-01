@@ -21,6 +21,16 @@ const AdvancedMetricsGrid = ({ selectedSymbol = "SOL", marketMetrics, fearGreed,
   const fgVal = Number(fearGreed?.value) || 50;
   const fgColor = fgVal <= 45 ? '#ef4444' : fgVal < 55 ? '#f59e0b' : '#10b981';
 
+  const regimeData = sentimentData?.marketRegime || {};
+  const regimeName = regimeData?.regime ;
+  const regimeStrength = regimeData?.strength ;
+  const regimeFilledBars = regimeData?.filledBars;
+
+  const isBull = regimeName ? regimeName.toUpperCase().includes('BULL') : false;
+  const isBear = regimeName ? regimeName.toUpperCase().includes('BEAR') : false;
+  const regimeColor = isBull ? '#10b981' : isBear ? '#ef4444' : '#f59e0b';
+  const regimeIcon = isBull ? '🐂' : isBear ? '🐻' : '⚖️';
+
   const fmtPct = (val) => (val != null ? `${Number(val).toFixed(2)}%` : 'N/A');
 
   return (
@@ -33,29 +43,38 @@ const AdvancedMetricsGrid = ({ selectedSymbol = "SOL", marketMetrics, fearGreed,
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '4px', flex: 1 }}>
           <svg width="34" height="34" viewBox="0 0 64 64" fill="none">
-            <circle cx="32" cy="32" r="30" fill="url(#regime-glow)" fillOpacity="0.15" stroke="#10b981" strokeWidth="1" />
-            <path d="M18 42 L28 28 L36 34 L48 18" stroke="#10b981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-            <polygon points="48,18 42,22 46,26" fill="#10b981" />
+            <circle cx="32" cy="32" r="30" fill="url(#regime-glow)" fillOpacity="0.15" stroke={regimeColor} strokeWidth="1" />
+            <path 
+                d={isBull ? "M18 42 L28 28 L36 34 L48 18" : isBear ? "M18 18 L28 32 L36 26 L48 42" : "M18 32 L28 28 L36 36 L48 32"} 
+                stroke={regimeColor} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" 
+            />
+            {isBull && <polygon points="48,18 42,22 46,26" fill={regimeColor} />}
+            {isBear && <polygon points="48,42 42,38 46,34" fill={regimeColor} />}
+            {(!isBull && !isBear) && <polygon points="48,32 42,28 42,36" fill={regimeColor} />}
             <defs>
               <radialGradient id="regime-glow" cx="0" cy="0" r="1">
-                <stop offset="0%" stopColor="#10b981" />
-                <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+                <stop offset="0%" stopColor={regimeColor} />
+                <stop offset="100%" stopColor={regimeColor} stopOpacity="0" />
               </radialGradient>
             </defs>
           </svg>
-          <div>
-            <div style={{ fontSize: '17px', fontWeight: 'bold', color: '#10b981', display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <span>🐂</span> BULL REGIME
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', overflow: 'hidden' }}>
+            <div style={{ fontSize: '13px', fontWeight: 'bold', color: regimeColor, display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap' }}>
+              <span>{regimeIcon}</span> {regimeName ? regimeName.toUpperCase() : ''}
             </div>
-            <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Strength: 72/100</div>
+            {regimeStrength != null && (
+              <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', marginTop: '4px' }}>Strength: {regimeStrength}/100</div>
+            )}
           </div>
         </div>
-        <div className="regime-segments">
-          <div className="regime-seg active"></div>
-          <div className="regime-seg active"></div>
-          <div className="regime-seg active"></div>
-          <div className="regime-seg active"></div>
-          <div className="regime-seg"></div>
+        <div className="regime-segments" style={{ marginTop: 'auto', paddingTop: '10px' }}>
+          {[1, 2, 3, 4, 5].map((bar) => (
+            <div 
+                key={bar} 
+                className={`regime-seg ${bar <= regimeFilledBars ? 'active' : ''}`} 
+                style={bar <= regimeFilledBars ? { backgroundColor: regimeColor, boxShadow: `0 0 6px ${regimeColor}` } : {}}
+            />
+          ))}
         </div>
       </div>
 

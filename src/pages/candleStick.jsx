@@ -55,6 +55,8 @@ import { Button } from "react-bootstrap";
 import socket from "../services/websocket/socket";
 import { useSocket } from "../services/websocket/useSocket";
 import useAlerts from "../util/useAlerts";
+import { usePatterns } from "../util/usePatterns";
+import ChartPatternsPanel from "../components/chart/rightbar/ChartPatternsPanel";
 
 export default function Candlestick() {
   const { theme } = useTheme();
@@ -103,6 +105,7 @@ export default function Candlestick() {
   const [isWatchlistOpen, setIsWatchlistOpen] = useState(true);
   const [isDetailsOpen, setIsDetailsOpen] = useState(true);
   const [isAlertsOpen, setIsAlertsOpen] = useState(false);
+  const [isPatternsOpen, setIsPatternsOpen] = useState(false);
 
   // Resizable layout states
   const [sidebarWidth, setSidebarWidth] = useState(350);
@@ -110,13 +113,28 @@ export default function Candlestick() {
   const [isDraggingWidth, setIsDraggingWidth] = useState(false);
   const [isDraggingHeight, setIsDraggingHeight] = useState(false);
   const [showZoomButtons, setShowZoomButtons] = useState(false);
+  const [chartError, setChartError] = useState(null);
+  const prevChartTypeRef = useRef(chartType);
 
   // Alerts
   const alertsHookData = useAlerts();
-  console.log("CandleStick alertsHookData:", alertsHookData);
+  // console.log("CandleStick alertsHookData:", alertsHookData);
   const { addAlert, matchedCoins, alertsFeed, scanner } = alertsHookData || {};
 
   const sidebarContainerRef = useRef(null);
+
+  const {
+    loading: patternsLoading,
+    selectedPatterns,
+    togglePattern,
+    sidebarMode,
+    setSidebarMode,
+    availablePatterns,
+    chartData,
+    showModal,
+    setShowModal,
+    modalText,
+  } = usePatterns(selectedCurrency, timeframeValue, chartRef, seriesRef);
 
   // Width resizing logic
   useEffect(() => {
@@ -855,6 +873,7 @@ export default function Candlestick() {
 
     const loadChart = async () => {
       try {
+        setChartError(null);
         setMainChartLoading(true);
 
         const response = await fetchDataByCurrency(
@@ -865,8 +884,11 @@ export default function Candlestick() {
 
         if (isCancelled) return;
 
-        // remove previous series to avoid showing old data before adding the new series
-        if (seriesRef.current) {
+        // Check if chart type changed. If not, reuse the existing series to prevent blanking.
+        const typeChanged = prevChartTypeRef.current !== chartType;
+        prevChartTypeRef.current = chartType;
+
+        if (seriesRef.current && typeChanged) {
           try {
             chartRef.current.removeSeries(seriesRef.current);
           } catch (e) { }
@@ -875,18 +897,54 @@ export default function Candlestick() {
 
         const rawData = response?.data || [];
 
-        if (!Array.isArray(rawData) || !rawData.length) return;
+        if (!Array.isArray(rawData) || !rawData.length) {
+            setChartError("Network Error: Invalid or empty data received.");
+            return;
+        }
 
-        // Normalize time to seconds to match live tick updates
-        const data = rawData.map(d => {
+        // Normalize time and values to ensure correct chronological order and type
+        const processedData = rawData.map(d => {
           let t = Number(d.time || d.openTime);
           if (t > 1e10) t = Math.floor(t / 1000);
-          return { ...d, time: t };
+          return { 
+            time: t,
+            open: Number(d.open),
+            high: Number(d.high),
+            low: Number(d.low),
+            close: Number(d.close),
+            volume: Number(d.volume || 0)
+          };
+        }).sort((a, b) => a.time - b.time);
+
+        // Deduplicate timestamps (keep the latest data for any given timestamp)
+        const uniqueDataMap = new Map();
+        processedData.forEach(item => {
+           uniqueDataMap.set(item.time, item);
         });
+        const data = Array.from(uniqueDataMap.values()).sort((a, b) => a.time - b.time);
 
         setLivePrice(Number(data[data.length - 1]?.close));
 
-        switch (chartType) {
+        if (seriesRef.current) {
+          // Seamless update: just set data
+          if (chartType === "heikinashi") {
+            seriesRef.current.setData(convertToHeikinAshi(data));
+          } else if (chartType === "histogram") {
+            seriesRef.current.setData(
+              data.map((d, index, arr) => {
+                const prev = arr[index - 1];
+                const isUp = prev ? d.close >= prev.close : true;
+                return { time: d.time, value: d.volume, color: isUp ? "#26a69a" : "#f23645" };
+              })
+            );
+          } else if (chartType === "line" || chartType === "area" || chartType === "baseline") {
+            seriesRef.current.setData(data.map((d) => ({ time: d.time, value: Number(d.close) })));
+          } else {
+            seriesRef.current.setData(data);
+          }
+        } else {
+          // Create new series
+          switch (chartType) {
           case "line":
             seriesRef.current = chartRef.current.addSeries(
               LineSeries,
@@ -994,11 +1052,13 @@ export default function Candlestick() {
             );
 
             seriesRef.current.setData(data);
-        }
+          } // close switch
+        } // close else
 
         chartRef.current.timeScale().fitContent();
       } catch (err) {
         console.error("Chart load error", err);
+        setChartError(err.message || "Network Error: Could not load chart data");
       } finally {
         setMainChartLoading(false);
       }
@@ -1263,6 +1323,49 @@ export default function Candlestick() {
   };
   return (
     <>
+      {/* Pattern Modal */}
+      {showModal && (
+        <div style={{
+            position: 'fixed',
+            top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999
+        }}>
+            <div style={{
+                backgroundColor: 'var(--bg-card, #ffffff)',
+                padding: '24px',
+                borderRadius: '8px',
+                color: 'var(--text-main, #131722)',
+                minWidth: '320px',
+                textAlign: 'center',
+                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                border: '1px solid var(--border-color, #e2e8f0)'
+            }}>
+                <p style={{ margin: '0 0 20px 0', fontSize: '15px', fontWeight: '500' }}>{modalText}</p>
+                <button 
+                    onClick={() => setShowModal(false)}
+                    style={{
+                        padding: '8px 24px',
+                        backgroundColor: '#2962ff',
+                        border: 'none',
+                        borderRadius: '6px',
+                        color: '#ffffff',
+                        cursor: 'pointer',
+                        fontWeight: '600',
+                        fontSize: '14px',
+                        transition: 'background-color 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = '#1e40af'}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = '#2962ff'}
+                >
+                    Close
+                </button>
+            </div>
+        </div>
+      )}
       <SEO
         title="Best Crypto Trading Platform"
         description="Trade crypto instantly with low fees"
@@ -1337,6 +1440,53 @@ export default function Candlestick() {
                   flexDirection: "column",
                 }}
               >
+                {/* Network Error Overlay */}
+                {chartError && (
+                  <div style={{
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    backgroundColor: "var(--bg-card, rgba(30, 41, 59, 0.95))",
+                    padding: "20px 32px",
+                    borderRadius: "8px",
+                    border: "1px solid var(--border-color, #ef4444)",
+                    color: "var(--text-main, #ffffff)",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: "12px",
+                    zIndex: 20,
+                    boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.5)"
+                  }}>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <span style={{ fontSize: "16px", fontWeight: "600" }}>{chartError}</span>
+                    <button 
+                      onClick={() => {
+                        setChartError(null);
+                        setMainChartLoading(true);
+                      }}
+                      style={{
+                        padding: "6px 16px",
+                        marginTop: "4px",
+                        backgroundColor: "var(--bg-secondary, #334155)",
+                        border: "1px solid var(--border-color, #475569)",
+                        color: "var(--text-main)",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                        fontSize: "12px"
+                      }}
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                )}
+                
+                {/* Main chart rendering area */}
                 {mainChartLoading && (
                   <div
                     style={{
@@ -1816,12 +1966,12 @@ export default function Candlestick() {
               ref={sidebarContainerRef}
               style={{
                 position: "relative",
-                width: (isWatchlistOpen || isAlertsOpen) ? `${sidebarWidth}px` : "0px",
+                width: (isWatchlistOpen || isAlertsOpen || isPatternsOpen) ? `${sidebarWidth}px` : "0px",
                 transition: isDraggingWidth
                   ? "none"
                   : "width 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
                 overflow: "hidden",
-                borderLeft: (isWatchlistOpen || isAlertsOpen)
+                borderLeft: (isWatchlistOpen || isAlertsOpen || isPatternsOpen)
                   ? "1px solid var(--border-color, #e2e8f0)"
                   : "none",
                 backgroundColor: "var(--bg-card, #ffffff)",
@@ -1833,7 +1983,7 @@ export default function Candlestick() {
               }}
             >
               {/* Width Resizer Handle on the left edge */}
-              {(isWatchlistOpen || isAlertsOpen) && (
+              {(isWatchlistOpen || isAlertsOpen || isPatternsOpen) && (
                 <div
                   onMouseDown={startWidthResize}
                   style={{
@@ -1945,6 +2095,18 @@ export default function Candlestick() {
                     onClose={() => setIsAlertsOpen(false)}
                   />
                 )}
+                {isPatternsOpen && (
+                  <ChartPatternsPanel
+                    selectedPatterns={selectedPatterns}
+                    togglePattern={togglePattern}
+                    onClose={() => setIsPatternsOpen(false)}
+                    loading={patternsLoading}
+                    sidebarMode={sidebarMode}
+                    setSidebarMode={setSidebarMode}
+                    availablePatterns={availablePatterns}
+                    chartData={chartData}
+                  />
+                )}
               </div>
             </div>
 
@@ -1955,6 +2117,7 @@ export default function Candlestick() {
                 toggleWatchlist={() => {
                   setIsWatchlistOpen(!isWatchlistOpen);
                   setIsAlertsOpen(false);
+                  setIsPatternsOpen(false);
                 }}
                 isDetailsOpen={isDetailsOpen}
                 toggleDetails={() => {
@@ -1965,12 +2128,21 @@ export default function Candlestick() {
                     setIsDetailsOpen(true);
                   }
                   setIsAlertsOpen(false);
+                  setIsPatternsOpen(false);
                 }}
                 isAlertsOpen={isAlertsOpen}
                 toggleAlerts={() => {
                   setIsAlertsOpen(!isAlertsOpen);
                   setIsWatchlistOpen(false);
                   setIsDetailsOpen(false);
+                  setIsPatternsOpen(false);
+                }}
+                isPatternsOpen={isPatternsOpen}
+                togglePatterns={() => {
+                  setIsPatternsOpen(!isPatternsOpen);
+                  setIsWatchlistOpen(false);
+                  setIsDetailsOpen(false);
+                  setIsAlertsOpen(false);
                 }}
               />
             </div>

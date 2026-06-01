@@ -5,6 +5,20 @@ const SocialFinancialGrid = ({ alerts, socialStats, financials, priceCompass }) 
   const [isCompassModalOpen, setIsCompassModalOpen] = useState(false);
   const currentPriceCompass = priceCompass || { deviation: "0", prices: [] };
 
+  const parseAmount = (str) => {
+    if (!str) return 0;
+    const cleanStr = str.replace(/[^0-9.]/g, '');
+    return parseFloat(cleanStr) || 0;
+  };
+  
+  const whaleBuyRaw = financials?.whaleBuy || "$0M";
+  const whaleSellRaw = financials?.whaleSell || "$0M";
+  const whaleBuyNum = parseAmount(whaleBuyRaw);
+  const whaleSellNum = parseAmount(whaleSellRaw);
+  const totalWhale = whaleBuyNum + whaleSellNum || 1; 
+  const buyPct = Math.round((whaleBuyNum / totalWhale) * 100);
+  const sellPct = 100 - buyPct;
+
   const prices = currentPriceCompass?.prices || [];
   const sum = prices.reduce((acc, curr) => acc + parseFloat(curr?.price || 0), 0);
   const avgPrice = sum / (prices.length || 1);
@@ -236,7 +250,7 @@ const SocialFinancialGrid = ({ alerts, socialStats, financials, priceCompass }) 
               </h4>
             </div>
             <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-              <div style={{ height: '90px', width: '100%', position: 'relative', margin: '6px 0' }}>
+              <div style={{ height: '110px', width: '100%', position: 'relative', margin: '6px 0' }}>
                 <svg width="100%" height="100%" viewBox="0 0 100 100">
                   <polygon points="50,10 88,38 73,83 27,83 12,38" fill="none" stroke="rgba(167, 139, 250, 0.4)" strokeWidth="1" />
                   <polygon points="50,25 78.5,46 67.5,72 32.5,72 21.5,46" fill="none" stroke="rgba(167, 139, 250, 0.4)" strokeWidth="1" />
@@ -254,7 +268,7 @@ const SocialFinancialGrid = ({ alerts, socialStats, financials, priceCompass }) 
                   <circle cx="22" cy="42" r="2.5" fill="#a78bfa" />
                 </svg>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', fontSize: '9.5px', color: 'var(--text-muted)', textAlign: 'center' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>
                 <div>
                   Social Vol:{" "}
                   <span style={{ color: "var(--text-main)", fontWeight: "bold" }}>
@@ -277,20 +291,20 @@ const SocialFinancialGrid = ({ alerts, socialStats, financials, priceCompass }) 
               <h4 className="card-title-main">Crypto Financials</h4>
             </div>
             <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-              <div style={{ height: '90px', width: '100%', position: 'relative', margin: '4px 0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="84" height="84" viewBox="0 0 36 36">
+              <div style={{ height: '110px', width: '100%', position: 'relative', margin: '4px 0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="100" height="100" viewBox="0 0 36 36">
                   <circle cx="18" cy="18" r="14" fill="none" stroke="var(--bg-secondary, #121824)" strokeWidth="2.5" />
                   <circle cx="18" cy="18" r="10" fill="none" stroke="var(--bg-secondary, #121824)" strokeWidth="2" />
                   <circle cx="18" cy="18" r="14" fill="none" stroke="#f97316" strokeWidth="2.5" strokeDasharray="70 100" strokeDashoffset="15" strokeLinecap="round" />
                   <circle cx="18" cy="18" r="10" fill="none" stroke="#3b82f6" strokeWidth="2" strokeDasharray="50 100" strokeDashoffset="45" strokeLinecap="round" />
                   <text x="18" y="20.5" textAnchor="middle" fill="var(--text-main, #ffffff)" fontSize="6.5" fontWeight="bold">REV</text>
                 </svg>
-                <div style={{ position: 'absolute', right: '0', top: '15px', display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '9px' }}>
+                <div style={{ position: 'absolute', right: '0', top: '25px', display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '11px' }}>
                   <div style={{ color: '#f97316', fontWeight: '600' }}>Revenues</div>
                   <div style={{ color: '#3b82f6', fontWeight: '600' }}>Fees</div>
                 </div>
               </div>
-              <div style={{ fontSize: '11px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <div style={{ fontSize: '13px', textAlign: 'center', color: 'var(--text-muted)' }}>
                 Total 30D Revenue: <span style={{ fontWeight: 'bold', color: 'var(--text-main)' }}>{financials?.revenue}</span>
               </div>
             </div>
@@ -302,20 +316,20 @@ const SocialFinancialGrid = ({ alerts, socialStats, financials, priceCompass }) 
               <h4 className="card-title-main">Market Movers</h4>
             </div>
             <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-              <div style={{ height: '90px', width: '100%', position: 'relative', margin: '4px 0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="84" height="84" viewBox="0 0 36 36">
-                  <circle cx="18" cy="18" r="12.5" fill="none" stroke="var(--bg-secondary, #121824)" strokeWidth="3.5" />
-                  <circle cx="18" cy="18" r="12.5" fill="none" stroke="#10b981" strokeWidth="3.8" strokeDasharray="68 100" strokeDashoffset="0" strokeLinecap="round" />
-                  <circle cx="18" cy="18" r="12.5" fill="none" stroke="#ef4444" strokeWidth="3.8" strokeDasharray="32 100" strokeDashoffset="-68" strokeLinecap="round" />
+              <div style={{ height: '110px', width: '100%', position: 'relative', margin: '4px 0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="100" height="100" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r="12.5" fill="none" stroke="var(--bg-secondary, #121824)" strokeWidth="3.5" pathLength="100" />
+                  <circle cx="18" cy="18" r="12.5" fill="none" stroke="#10b981" strokeWidth="3.8" strokeDasharray={`${buyPct} 100`} strokeDashoffset="0" strokeLinecap="round" pathLength="100" />
+                  <circle cx="18" cy="18" r="12.5" fill="none" stroke="#ef4444" strokeWidth="3.8" strokeDasharray={`${sellPct} 100`} strokeDashoffset={`-${buyPct}`} strokeLinecap="round" pathLength="100" />
                   <circle cx="18" cy="18" r="4" fill="var(--bg-secondary, #121824)" />
-                  <path d="M 18 10 L 21 16 L 15 16 Z" fill="#10b981" transform="rotate(45 18 18) translate(0,-6)" />
+                  <path d="M 18 10 L 21 16 L 15 16 Z" fill={buyPct >= 50 ? "#10b981" : "#ef4444"} transform={buyPct >= 50 ? "rotate(45 18 18) translate(0,-6)" : "rotate(135 18 18) translate(0,-6)"} />
                 </svg>
-                <div style={{ position: 'absolute', right: '0', top: '15px', display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '9px' }}>
-                  <div style={{ color: '#10b981', fontWeight: '600' }}>68% Buy</div>
-                  <div style={{ color: '#ef4444', fontWeight: '600' }}>32% Sell</div>
+                <div style={{ position: 'absolute', right: '0', top: '20px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px' }}>
+                  <div style={{ color: '#10b981', fontWeight: '600', lineHeight: '1.1' }}>{buyPct}% Buy<br/><span style={{ fontSize: '10px', color: '#8B8BA7', fontWeight: 'normal' }}>{whaleBuyRaw}</span></div>
+                  <div style={{ color: '#ef4444', fontWeight: '600', lineHeight: '1.1' }}>{sellPct}% Sell<br/><span style={{ fontSize: '10px', color: '#8B8BA7', fontWeight: 'normal' }}>{whaleSellRaw}</span></div>
                 </div>
               </div>
-              <div style={{ fontSize: '11px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <div style={{ fontSize: '13px', textAlign: 'center', color: 'var(--text-muted)' }}>
                 Whale Activity (Last 24h)
               </div>
             </div>
@@ -346,13 +360,13 @@ const SocialFinancialGrid = ({ alerts, socialStats, financials, priceCompass }) 
                       backgroundColor: alert.type === 'bullish' ? '#10b981' : alert.type === 'bearish' ? '#ef4444' : '#3b82f6'
                     }} />
                     <div>
-                      <div style={{ fontSize: '10px', color: 'var(--text-main)', fontWeight: '500', lineHeight: '1.2' }}>{alert.msg}</div>
-                      <div style={{ fontSize: '8px', color: 'var(--text-muted)', marginTop: '2px' }}>{alert.time}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-main)', fontWeight: '500', lineHeight: '1.2' }}>{alert.msg}</div>
+                      <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>{alert.time}</div>
                     </div>
                   </div>
                 ))
               ) : (
-                <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '10px', marginTop: '20px' }}>No active alerts</div>
+                <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px', marginTop: '20px' }}>No active alerts</div>
               )}
             </div>
           </div>

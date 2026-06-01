@@ -8,7 +8,9 @@ const RightSidebar = ({
   isDetailsOpen, 
   toggleDetails, 
   isAlertsOpen, 
-  toggleAlerts 
+  toggleAlerts,
+  isPatternsOpen,
+  togglePatterns
 }) => {
   const styles = {
     container: {
@@ -42,7 +44,7 @@ const RightSidebar = ({
   const menuItems = [
     { id: 'watchlist', icon: <FiList size={20} />, label: "Watchlist", active: isWatchlistOpen },
     { id: 'alerts', icon: <FiAlignLeft size={20} />, label: "Alerts" },
-    { id: 'depth', icon: <FiLayers size={20} />, label: "Market Depth" },
+    { id: 'depth', icon: <FiLayers size={20} />, label: "Chart Patterns", active: isPatternsOpen },
     { id: 'options', icon: <BsLink45Deg size={20} />, label: "Option Chain" },
     { id: 'more', icon: <FiMoreVertical size={20} />, label: "More" },
   ];
@@ -67,6 +69,8 @@ const RightSidebar = ({
               toggleDetails();
             } else if (item.id === 'alerts' && toggleAlerts) {
               toggleAlerts();
+            } else if (item.id === 'depth' && togglePatterns) {
+              togglePatterns();
             }
           }}
         >

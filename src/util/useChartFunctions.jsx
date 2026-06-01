@@ -19,43 +19,36 @@ export default function useChartFunctions({
     // return response;
 
     return new Promise((resolve, reject) => {
-      // Commented out futures logic
-      // const responseEvent = isFutures ? "futures-chart-data" : "listing-response";
-      // const requestEvent = isFutures ? "request-futures-chart" : "get-listing";
       const responseEvent = "listing-response";
       const requestEvent = "get-listing";
 
-      const handleResponse = (res) => {
-        // if (isFutures) {
-        //   console.log("[useChartFunctions] Event: futures-chart-data Payload:", res);
-        // }
-        console.log(`[useChartFunctions] Event: ${responseEvent} Payload:`, res);
+      let timeoutId;
+
+      const cleanup = () => {
+        clearTimeout(timeoutId);
         socket.off(responseEvent, handleResponse);
         socket.off("listing-error", handleError);
+      };
+
+      const handleResponse = (res) => {
+        console.log(`[useChartFunctions] Event: ${responseEvent} Payload:`, res);
+        cleanup();
         resolve(res);
       };
 
       const handleError = (err) => {
-        socket.off(responseEvent, handleResponse);
-        socket.off("listing-error", handleError);
+        cleanup();
         reject(err);
       };
 
-      // Temporary listener to log live-tick-update as requested
-      const handleLiveTick = (tick) => {
-        // console.log(`[useChartFunctions] Event: live-tick-update Payload:`, tick);
-      };
-      // We attach it just to log it (note: typically you'd want to unsubscribe this in the component)
-      socket.on("live-tick-update", handleLiveTick);
-
-      // Temporary listener to check if backend is sending futures-chart-data instead
-      const handleFuturesData = (data) => {
-        console.log(`[DEBUG] Backend sent futures-chart-data instead of listing-response!`, data);
-      };
-      socket.on("futures-chart-data", handleFuturesData);
-
       socket.on(responseEvent, handleResponse);
       socket.on("listing-error", handleError);
+
+      // Start the timeout (20 seconds)
+      timeoutId = setTimeout(() => {
+        cleanup();
+        reject(new Error("Network timeout: Failed to fetch chart data."));
+      }, 20000);
 
       socket.emit(requestEvent, { symbol, interval, limit: 1000 });
     });

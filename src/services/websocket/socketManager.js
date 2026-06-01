@@ -19,7 +19,10 @@ export const createSocketManager = (handlers = {}) => {
     /* ───────────────────────── MARKET ───────────────────────── */
     if (handlers.marketCoinsInit) on(EVENTS.MARKET.INIT, handlers.marketCoinsInit);
     if (handlers.marketSentiment) on(EVENTS.MARKET.SENTIMENT_UPDATE, handlers.marketSentiment);
-    if (handlers.marketSentimentData) on(EVENTS.MARKET_SENTIMENT.UPDATE, handlers.marketSentimentData);
+    if (handlers.marketSentimentData) {
+      on(EVENTS.MARKET_SENTIMENT.UPDATE, handlers.marketSentimentData);
+      on(EVENTS.MARKET_SENTIMENT.RESPONSE, handlers.marketSentimentData);
+    }
 
     /* ───────────────────────── BINANCE TICKER ────────────────── */
     if (handlers.binanceTicker) on(EVENTS.BINANCE_TICKER.UPDATE, handlers.binanceTicker);
@@ -73,7 +76,10 @@ export const createSocketManager = (handlers = {}) => {
     /* MARKET */
     if (handlers.marketCoinsInit) off(EVENTS.MARKET.INIT, handlers.marketCoinsInit);
     if (handlers.marketSentiment) off(EVENTS.MARKET.SENTIMENT_UPDATE, handlers.marketSentiment);
-    if (handlers.marketSentimentData) off(EVENTS.MARKET_SENTIMENT.UPDATE, handlers.marketSentimentData);
+    if (handlers.marketSentimentData) {
+      off(EVENTS.MARKET_SENTIMENT.UPDATE, handlers.marketSentimentData);
+      off(EVENTS.MARKET_SENTIMENT.RESPONSE, handlers.marketSentimentData);
+    }
 
     /* BINANCE TICKER */
     if (handlers.binanceTicker) off(EVENTS.BINANCE_TICKER.UPDATE, handlers.binanceTicker);

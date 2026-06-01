@@ -56,6 +56,7 @@ export default function Overview({
         fearGreed={fearGreed}
         socialStats={socialStats}
         prices={prices}
+        sentimentData={sentimentData}
       />
       {/* Row 2: Live TradingView Chart & Order Book */}
       <ChartAndOrderBook
