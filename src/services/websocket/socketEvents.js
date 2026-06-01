@@ -52,6 +52,9 @@ const EVENTS = {
     UNSUBSCRIBE: "unsubscribe-live-tick",
     UPDATE: "live-tick-update",
   },
+  PATTERN:{
+    UPDATE: "live-pattern-update",
+  },
   MARKET: {
     GET: "request-market-coins",
     INIT: "market-coins-init",

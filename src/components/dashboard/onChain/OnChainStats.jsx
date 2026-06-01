@@ -10,7 +10,7 @@ const OnChainStats = ({ data, displayTvl, displayTvlChange }) => {
       subtitle: "vs. previous 30 days",
       stroke: "#8b5cf6",
       fill: "rgba(139, 92, 246, 0.1)",
-      path: "M0,25 C10,20 20,28 30,22 C40,16 50,25 60,15 C70,5 80,18 100,5",
+      // path: "M0,25 C10,20 20,28 30,22 C40,16 50,25 60,15 C70,5 80,18 100,5",
     },
     {
       title: "Active Chains",
@@ -20,7 +20,7 @@ const OnChainStats = ({ data, displayTvl, displayTvlChange }) => {
       subtitle: "vs. previous 30 days",
       stroke: "#3b82f6",
       fill: "rgba(59, 130, 246, 0.1)",
-      path: "M0,22 C15,25 25,18 35,20 C45,22 55,10 65,15 C75,20 85,8 100,10",
+      // path: "M0,22 C15,25 25,18 35,20 C45,22 55,10 65,15 C75,20 85,8 100,10",
     },
     {
       title: "Protocols",
@@ -30,7 +30,7 @@ const OnChainStats = ({ data, displayTvl, displayTvlChange }) => {
       subtitle: "vs. previous 30 days",
       stroke: "#ec4899",
       fill: "rgba(236, 72, 153, 0.1)",
-      path: "M0,28 C20,28 30,22 40,24 C50,26 60,15 70,18 C80,20 90,5 100,8",
+      // path: "M0,28 C20,28 30,22 40,24 C50,26 60,15 70,18 C80,20 90,5 100,8",
     },
     {
       title: "Addresses",
@@ -40,7 +40,7 @@ const OnChainStats = ({ data, displayTvl, displayTvlChange }) => {
       subtitle: "vs. previous 30 days",
       stroke: "#10b981",
       fill: "rgba(16, 185, 129, 0.1)",
-      path: "M0,20 C15,15 25,22 40,15 C55,8 65,18 80,10 C90,5 95,12 100,5",
+      // path: "M0,20 C15,15 25,22 40,15 C55,8 65,18 80,10 C90,5 95,12 100,5",
     },
     {
       title: "24h Change",
@@ -50,7 +50,7 @@ const OnChainStats = ({ data, displayTvl, displayTvlChange }) => {
       subtitle: "vs. previous 24h",
       stroke: "#10b981",
       fill: "rgba(16, 185, 129, 0.1)",
-      path: "M0,25 C20,20 30,22 50,15 C70,8 80,12 100,5",
+      // path: "M0,25 C20,20 30,22 50,15 C70,8 80,12 100,5",
     },
   ];
 

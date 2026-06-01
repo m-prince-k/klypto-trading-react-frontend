@@ -80,7 +80,11 @@ const CryptoEdgeDashboard = () => {
     let currentHash = window.location.hash.replace("#", "");
     try { currentHash = decodeURIComponent(currentHash); } catch(e) {}
     
-    if (currentHash !== hashName) {
+    if (activeTab === "Overview") {
+      if (currentHash !== "") {
+         window.history.replaceState(null, null, window.location.pathname + window.location.search);
+      }
+    } else if (currentHash !== hashName) {
       window.history.replaceState(null, null, `#${hashName}`);
     }
   }, [activeTab]);
@@ -97,60 +101,7 @@ const CryptoEdgeDashboard = () => {
   const [prices, setPrices] = useState({});
 
   const tvContainerRef = useRef(null);
-
-  // Dynamically load the Official TradingView Technical Analysis Widget
-  useEffect(() => {
-    if (activeTab !== "Overview") return; // 👈 ONLY run when visible
-
-    let script = document.getElementById("tradingview-widget-script");
-
-    const initWidget = () => {
-      if (typeof window.TradingView !== "undefined" && tvContainerRef.current) {
-        tvContainerRef.current.innerHTML = "";
-
-        const tvDivId = `tv-embed-${selectedSymbol.toLowerCase()}`;
-        const tvDiv = document.createElement("div");
-
-        tvDiv.id = tvDivId;
-        tvDiv.style.width = "100%";
-        tvDiv.style.height = "100%";
-
-        tvContainerRef.current.appendChild(tvDiv);
-
-        new window.TradingView.widget({
-          autosize: true,
-          symbol: `BINANCE:${selectedSymbol}`,
-          interval: "1",
-          timezone: "Etc/UTC",
-          theme: theme,
-          style: "1",
-          locale: "en",
-          enable_publishing: false,
-          hide_side_toolbar: false,
-          allow_symbol_change: true,
-          container_id: tvDivId,
-          studies: ["RSI@tv-basicstudies", "MASimple@tv-basicstudies"],
-          backgroundColor: theme === "dark" ? "#07090e" : "#ffffff",
-          gridColor:
-            theme === "dark"
-              ? "rgba(255,255,255,0.02)"
-              : "rgba(0,0,0,0.04)",
-        });
-      }
-    };
-
-    if (!script) {
-      script = document.createElement("script");
-      script.id = "tradingview-widget-script";
-      script.src = "https://s3.tradingview.com/tv.js";
-      script.async = true;
-      script.onload = initWidget;
-      document.head.appendChild(script);
-    } else {
-      initWidget(); // 👈 THIS WAS MISSING BEHAVIOR
-    }
-
-  }, [selectedSymbol, theme, activeTab]); // 👈 ADD activeTab
+  // TradingView initialization moved to ChartAndOrderBook.jsx for reliable mounting
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [orderBook, setOrderBook] = useState({

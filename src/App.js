@@ -10,6 +10,7 @@ import React, { lazy, Suspense } from "react";
 import { Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./pages/auth/ProtectedRoute";
 import SocialIntelligence from "./pages/CryptoEdgeDashboard/socialIntellingence/socialIntellingence";
+import { Spinner } from "./components/tradingModals/Spinner";
 
 // ── Lazy-loaded routes (each becomes its own JS chunk) ──────────────────────
 const CandleStick           = lazy(() => import("./pages/CandleStick"));
@@ -52,7 +53,7 @@ function App() {
               autoClose={3000}
               theme="colored"
             />
-            <Suspense fallback={<PageLoader />}>
+            <Suspense fallback={<Spinner />}>
               <Routes>
                 <Route
                   path="/candleStick"

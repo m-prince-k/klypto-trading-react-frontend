@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useTheme } from '../../../context/ThemeContext';
 
 const ChartAndOrderBook = ({ selectedSymbol, baseSymbol, prices, orderBook, tvlData, tvContainerRef }) => {
   // console.log("ChartAndOrderBook orderBook:", orderBook);
@@ -13,6 +14,59 @@ const ChartAndOrderBook = ({ selectedSymbol, baseSymbol, prices, orderBook, tvlD
     if (sym.endsWith('USDC')) return `${sym.slice(0, -4)}/USDC`;
     return sym;
   };
+
+  const { theme } = useTheme();
+
+  useEffect(() => {
+    let script = document.getElementById("tradingview-widget-script");
+
+    const initWidget = () => {
+      if (typeof window.TradingView !== "undefined" && tvContainerRef.current) {
+        tvContainerRef.current.innerHTML = "";
+
+        const tvDivId = `tv-embed-${selectedSymbol.toLowerCase()}`;
+        const tvDiv = document.createElement("div");
+
+        tvDiv.id = tvDivId;
+        tvDiv.style.width = "100%";
+        tvDiv.style.height = "100%";
+
+        tvContainerRef.current.appendChild(tvDiv);
+
+        new window.TradingView.widget({
+          autosize: true,
+          symbol: `BINANCE:${selectedSymbol}`,
+          interval: "1",
+          timezone: "Etc/UTC",
+          theme: theme,
+          style: "1",
+          locale: "en",
+          enable_publishing: false,
+          hide_side_toolbar: false,
+          allow_symbol_change: true,
+          container_id: tvDivId,
+          studies: ["RSI@tv-basicstudies", "MASimple@tv-basicstudies"],
+          backgroundColor: theme === "dark" ? "#07090e" : "#ffffff",
+          gridColor:
+            theme === "dark"
+              ? "rgba(255,255,255,0.02)"
+              : "rgba(0,0,0,0.04)",
+        });
+      }
+    };
+
+    if (!script) {
+      script = document.createElement("script");
+      script.id = "tradingview-widget-script";
+      script.src = "https://s3.tradingview.com/tv.js";
+      script.async = true;
+      script.onload = initWidget;
+      document.head.appendChild(script);
+    } else {
+      // Delay slightly to ensure ref is attached if moving between tabs rapidly
+      setTimeout(initWidget, 50);
+    }
+  }, [selectedSymbol, theme, tvContainerRef]);
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '2.2fr 0.9fr 0.9fr', gap: '12px', marginBottom: '12px' }}>

@@ -2,7 +2,7 @@ import axios from "axios";
 
 // 🔹 Wavelet / Indicator service — separate base URL (port 5000)
 const waveletApi = axios.create({
-  baseURL: "http://192.168.1.13:5000",
+  baseURL: "http://192.168.1.9:5000",
   timeout: 30000,
   headers: { "Content-Type": "application/json" },
 });
@@ -22,7 +22,7 @@ const token =
 // 🔹 Create axios instance
 const api = axios.create({
   // baseURL: "https://studios-publishers-promising-rosa.trycloudflare.com",
-  baseURL: "http://192.168.1.13:7000", // change to your API
+  baseURL: "http://192.168.1.9:7000", // change to your API
   // baseURL: "http://localhost:7000", // change to your API
 
   timeout: 500000,

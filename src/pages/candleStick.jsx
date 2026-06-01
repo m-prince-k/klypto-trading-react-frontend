@@ -14,6 +14,7 @@ import { RiResetRightLine } from "react-icons/ri";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { FaCode } from "react-icons/fa6";
 import ChartHeader from "../components/tradingModals/ChartHeader";
+import ChartErrorState from "../components/tradingModals/ChartErrorState";
 import { useLocation } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import SEO from "../components/SEO";
@@ -1082,10 +1083,10 @@ export default function Candlestick() {
     // console.log("Parsed tickTime:", tickTime, "seriesRef.current:", !!seriesRef.current);
     if (!tickTime || !seriesRef.current) return;
     if (tick.symbol && tick.symbol.toUpperCase() !== selectedCurrency?.toUpperCase()) {
-      // console.log("Symbol mismatch. tick.symbol:", tick.symbol, "selectedCurrency:", selectedCurrency);
       return;
     }
-    // console.log("Updating chart with tickData:", tickData);
+    
+    console.log("📈 LIVE TICK RECEIVED:", tickData);
 
     // Throttle React state updates to max 2 times per second to prevent UI freezing
     const now = Date.now();
@@ -1247,27 +1248,46 @@ export default function Candlestick() {
     const symbol = selectedCurrency;
     const interval = timeframeValue;
 
-    if (isFutures) {
-      socket.emit("subscribe-futures-chart", { symbol, interval });
-    } else {
-      socket.emit("subscribe-live-tick", { symbol, interval });
-    }
+    const subscribe = () => {
+      if (isFutures) {
+        socket.emit("subscribe-futures-chart", { symbol, interval });
+      } else {
+        socket.emit("subscribe-live-tick", { symbol, interval });
+      }
 
-    socket.emit("get-watchlist");
+      socket.emit("get-watchlist");
 
-    // Subscribe to indicator ticks
-    selectedIndicator.forEach((indicator) => {
-      const config = indicatorConfigs[indicator] || {};
-      const payload = {
-        symbol,
-        interval,
-        type: indicator.replace(/_\d+$/, ""),
-        ...config,
+      // Set up pattern listener directly in the chart component
+      const patternListener = (data) => {
+        if(data.symbol === symbol && data.interval === interval) {
+            console.log("Naya Pattern Mila!", data);
+            // Yahan aap lines draw karne ka logic call kar sakte hain
+        }
       };
-      socket.emit("subscribe-indicator-tick", payload);
-    });
+
+      socket.on('live-pattern-update', patternListener);
+
+      // Subscribe to indicator ticks
+      selectedIndicator.forEach((indicator) => {
+        const config = indicatorConfigs[indicator] || {};
+        const payload = {
+          symbol,
+          interval,
+          type: indicator.replace(/_\d+$/, ""),
+          ...config,
+        };
+        socket.emit("subscribe-indicator-tick", payload);
+      });
+    };
+
+    // Initial subscription
+    subscribe();
+
+    // Re-subscribe if the socket drops and reconnects (e.g. tab wakes from sleep)
+    socket.on("connect", subscribe);
 
     return () => {
+      socket.off("connect", subscribe);
       if (isFutures) {
         socket.emit("unsubscribe-futures-chart", { symbol, interval });
       } else {
@@ -1285,6 +1305,9 @@ export default function Candlestick() {
         };
         socket.emit("unsubscribe-indicator-tick", payload);
       });
+
+      // Cleanup pattern listener
+      socket.off('live-pattern-update');
     };
   }, [selectedCurrency, timeframeValue, isFutures, selectedIndicator, indicatorConfigs]);
 
@@ -1442,48 +1465,10 @@ export default function Candlestick() {
               >
                 {/* Network Error Overlay */}
                 {chartError && (
-                  <div style={{
-                    position: "absolute",
-                    top: "50%",
-                    left: "50%",
-                    transform: "translate(-50%, -50%)",
-                    backgroundColor: "var(--bg-card, rgba(30, 41, 59, 0.95))",
-                    padding: "20px 32px",
-                    borderRadius: "8px",
-                    border: "1px solid var(--border-color, #ef4444)",
-                    color: "var(--text-main, #ffffff)",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: "12px",
-                    zIndex: 20,
-                    boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.5)"
-                  }}>
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="12" y1="8" x2="12" y2="12"></line>
-                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                    </svg>
-                    <span style={{ fontSize: "16px", fontWeight: "600" }}>{chartError}</span>
-                    <button 
-                      onClick={() => {
-                        setChartError(null);
-                        setMainChartLoading(true);
-                      }}
-                      style={{
-                        padding: "6px 16px",
-                        marginTop: "4px",
-                        backgroundColor: "var(--bg-secondary, #334155)",
-                        border: "1px solid var(--border-color, #475569)",
-                        color: "var(--text-main)",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                        fontSize: "12px"
-                      }}
-                    >
-                      Dismiss
-                    </button>
-                  </div>
+                  <ChartErrorState onRetry={() => {
+                    setChartError(null);
+                    setMainChartLoading(true);
+                  }} />
                 )}
                 
                 {/* Main chart rendering area */}
@@ -1609,6 +1594,10 @@ export default function Candlestick() {
                     top: "54px",
                     left: "8px",
                     zIndex: 50,
+                    filter: chartError ? "blur(3px)" : "none",
+                    opacity: chartError ? 0.6 : 1,
+                    pointerEvents: chartError ? "none" : "auto",
+                    transition: "filter 0.3s, opacity 0.3s"
                   }}
                 >
                   <Button

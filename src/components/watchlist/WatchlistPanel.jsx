@@ -7,7 +7,7 @@ import SocketEvents from "../../services/websocket/socketEvents";
 import apiService from "../../services/apiServices";
 import { useDebounce } from "../../util/common";
 import { useSocket } from "../../services/websocket/useSocket";
-import { Spinner } from "react-bootstrap";
+import { Spinner } from "../tradingModals/Spinner";
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
@@ -471,6 +471,16 @@ export default function WatchlistPanel({
 
   useEffect(() => {
     socket.emit("get-watchlist");
+    
+    // Stop loading if the backend doesn't respond (network error)
+    const fallbackTimeout = setTimeout(() => {
+      setWatchlist((prev) => {
+        if (prev === null) return [];
+        return prev;
+      });
+    }, 8000);
+
+    return () => clearTimeout(fallbackTimeout);
   }, []);
 
   // 2. Fetch all matching symbols from the backend when in Add Mode

@@ -822,7 +822,6 @@ export const useSocket = ({
     }
   }, [selectedPeriod, selectedSymbol]);
 
-  // Separate effect: re-subscribe onchain whenever the date range changes
   useEffect(() => {
     if (!setOnchainData || !selectedSymbol) return;
 
