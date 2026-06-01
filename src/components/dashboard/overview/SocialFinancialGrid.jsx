@@ -16,7 +16,6 @@ const SocialFinancialGrid = ({ alerts, socialStats, financials }) => {
           <h4 className="card-title-main" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             Social Intelligence <span style={{ fontSize: '10px', color: '#a78bfa' }}>↗</span>
           </h4>
-          <span className="glow-tag-purple">LUNARCRUSH</span>
         </div>
 
         {/* Purple Radar Spider web SVG */}
@@ -64,7 +63,6 @@ const SocialFinancialGrid = ({ alerts, socialStats, financials }) => {
       <div className="premium-card">
         <div className="card-header-row">
           <h4 className="card-title-main">Crypto Financials</h4>
-          <span className="glow-tag-orange">TOKEN TERMINAL</span>
         </div>
 
         {/* Concentric Double Donut SVG */}
@@ -96,7 +94,6 @@ const SocialFinancialGrid = ({ alerts, socialStats, financials }) => {
       <div className="premium-card">
         <div className="card-header-row">
           <h4 className="card-title-main">Market Movers</h4>
-          <span className="glow-tag-orange">TOKEN TERMINAL</span>
         </div>
 
         {/* Slit Donut Pie SVG */}
@@ -122,7 +119,6 @@ const SocialFinancialGrid = ({ alerts, socialStats, financials }) => {
       <div className="premium-card">
         <div className="card-header-row">
           <h4 className="card-title-main">Alerts Feed</h4>
-          <span className="glow-tag-yellow">SYSTEM STATUS</span>
         </div>
         <div
           style={{

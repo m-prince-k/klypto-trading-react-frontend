@@ -21,7 +21,6 @@ const ChartAndOrderBook = ({ selectedSymbol, baseSymbol, prices, orderBook, tvlD
       <div className="premium-card">
         <div className="card-header-row">
           <h4 className="card-title-main">Live Market Overview</h4>
-          <span className="glow-tag-green">CCXT (BINANCE)</span>
         </div>
         <div style={{ fontSize: '10px', color: '#8f9cae', marginBottom: '10px' }}>
           <span style={{ fontWeight: 'bold', color: 'var(--text-main, #ffffff)' }}>{formatSymbol(selectedSymbol)}</span> | 1m | CURRENT PRICE: <span style={{ color: currentPriceObj.isUp ? '#10b981' : '#ef4444', fontWeight: 'bold' }}>{currentPriceObj.price ? `$${currentPriceObj.price}` : ''}</span>
@@ -77,7 +76,6 @@ const ChartAndOrderBook = ({ selectedSymbol, baseSymbol, prices, orderBook, tvlD
       <div className="premium-card">
         <div className="card-header-row">
           <h4 className="card-title-main">Total Value Locked</h4>
-          <span className="glow-tag-green">DEFILLAMA</span>
         </div>
         <div style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--text-main, #ffffff)' }}>{tvlData?.total}</div>
         <div style={{ fontSize: '9.5px', color: '#10b981', fontWeight: 'bold', marginTop: '-3px' }}>▲ +2.34% (7D growth)</div>

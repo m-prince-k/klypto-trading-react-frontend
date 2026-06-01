@@ -26,7 +26,6 @@ const HeatmapArbitrageGrid = ({ socialStats, arbitrage, tvlData, priceCompass })
         >
           <div className="card-header-row">
             <h4 className="card-title-main">Top Arbitrage</h4>
-            <span className="glow-tag-green">CCXT PRICES</span>
           </div>
           <div
             style={{
@@ -37,17 +36,17 @@ const HeatmapArbitrageGrid = ({ socialStats, arbitrage, tvlData, priceCompass })
             }}
           >
             {arbitrage && arbitrage.length > 0 ? (
-              arbitrage?.slice(0, 6).map((arb, i) => (
+              arbitrage?.slice(0, 7).map((arb, i) => (
                 <div key={`arb-${i}`} className="compass-item-row">
                   <div>
                     <span style={{ fontWeight: "bold", color: "var(--text-main)" }}>
                       {arb.symbol}
                     </span>
-                    <div style={{ fontSize: "8px", color: "var(--text-muted)" }}>
-                      Binance ${arb.binance} | Bybit ${arb.bybit}
+                    <div style={{ fontSize: "8px", color: "var(--text-muted)", marginTop: "2px" }}>
+                      Buy: {arb.buyEx} (${Number(arb.buyPrice).toFixed(4)}) | Sell: {arb.sellEx} (${Number(arb.sellPrice).toFixed(4)})
                     </div>
                   </div>
-                  <span className="trade-action-badge">{arb.spread} Spread</span>
+                  <span className="trade-action-badge">{Number(arb.spreadPct).toFixed(2)}% Spread</span>
                 </div>
               ))
             ) : (
@@ -65,7 +64,6 @@ const HeatmapArbitrageGrid = ({ socialStats, arbitrage, tvlData, priceCompass })
         >
           <div className="card-header-row">
             <h4 className="card-title-main">Price Compass</h4>
-            <span className="glow-tag-green">CCXT</span>
           </div>
           <div
             style={{
@@ -194,7 +192,6 @@ const HeatmapArbitrageGrid = ({ socialStats, arbitrage, tvlData, priceCompass })
         <div className="premium-card">
           <div className="card-header-row">
             <h4 className="card-title-main">Top Protocols by TVL</h4>
-            <span className="glow-tag-green">DEFILLAMA</span>
           </div>
           <table className="custom-crypto-table">
             <thead>
@@ -233,7 +230,6 @@ const HeatmapArbitrageGrid = ({ socialStats, arbitrage, tvlData, priceCompass })
         <div className="premium-card" style={{ minHeight: "180px" }}>
           <div className="card-header-row">
             <h4 className="card-title-main">Narrative Heatmap</h4>
-            <span className="glow-tag-purple">LUNARCRUSH</span>
           </div>
 
           {/* CSS Bubble floating layout inside custom wrapper */}
