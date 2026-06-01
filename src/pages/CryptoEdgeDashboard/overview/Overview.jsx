@@ -67,23 +67,23 @@ export default function Overview({
         tvContainerRef={tvContainerRef}
         activeTab={activeTab} 
       />
-      {/* Row 3: Narrative Heatmap bubbles & TVL Protocols & Arbitrage & Compass */}
+      {/* Row 3: Top Arbitrage & TVL + Heatmap stack */}
       <HeatmapArbitrageGrid
         socialStats={socialStats}
         arbitrage={arbitrage}
         tvlData={tvlData}
+      />
+      {/* Row 4: Price Compass (left) + Social/Financial (right) */}
+      <SocialFinancialGrid
+        alerts={alerts}
+        socialStats={socialStats}
+        financials={financials}
         priceCompass={
           sentimentData?.priceCompass || 
           sentimentData?.data?.priceCompass || 
           (sentimentData?.deviation && sentimentData?.prices ? sentimentData : null) ||
           socialStats?.priceCompass
         }
-      />
-      {/* Row 4: Social & Financial Metrics Grid & Alerts feed */}
-      <SocialFinancialGrid
-        alerts={alerts}
-        socialStats={socialStats}
-        financials={financials}
       />
       </div>
     </div>
