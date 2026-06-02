@@ -1037,8 +1037,6 @@ export default function useChartFunctions({
               },
             };
 
-
-
           /* ================= DEFAULT ================= */
 
           default:
@@ -1054,10 +1052,35 @@ export default function useChartFunctions({
     fetchIndicatorData,
   };
 }
+let isFetchingIndicator = false;
+let fetchQueue = [];
+
+async function acquireLock() {
+  if (!isFetchingIndicator) {
+    isFetchingIndicator = true;
+    return;
+  }
+  return new Promise(resolve => fetchQueue.push(resolve));
+}
+
+function releaseLock() {
+  if (fetchQueue.length > 0) {
+    const next = fetchQueue.shift();
+    next();
+  } else {
+    isFetchingIndicator = false;
+  }
+}
+
 async function fetchDataForIndicators(selectedCurrency, type, timeframeValue, config = {}) {
+  await acquireLock();
+
   try {
     const response = await new Promise((resolve, reject) => {
+      let timeoutId;
+
       const handleResponse = (res) => {
+        clearTimeout(timeoutId);
         console.log("[Event: indicator-details-data] Raw indicator data for", type, ":", res);
         socket.off("indicator-details-data", handleResponse);
         socket.off("indicator-error", handleError);
@@ -1065,6 +1088,7 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue, co
       };
 
       const handleError = (err) => {
+        clearTimeout(timeoutId);
         console.error("[Event: indicator-error] Raw indicator error for", type, ":", err);
         socket.off("indicator-details-data", handleResponse);
         socket.off("indicator-error", handleError);
@@ -1076,8 +1100,20 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue, co
 
       console.log("[Event: get-indicator-details] Emitting request for", type, config);
       socket.emit("get-indicator-details", { symbol: selectedCurrency, interval: timeframeValue, type, limit: 1000, ...config });
+
+      timeoutId = setTimeout(() => {
+        console.error("[Event: indicator-error] Timeout waiting for historical data for:", type);
+        socket.off("indicator-details-data", handleResponse);
+        socket.off("indicator-error", handleError);
+        reject(new Error("Timeout fetching indicator data"));
+      }, 60000);
     });
 
+    if (!response) {
+      console.warn("Indicator fetch returned no data for:", type);
+      return { type: "error", data: [] };
+    }
+    
     console.log("Raw indicator data for", type, ":", response);
 
     const mapLine = (arr, field) =>
@@ -2350,7 +2386,9 @@ async function fetchDataForIndicators(selectedCurrency, type, timeframeValue, co
         };
     }
   } catch (error) {
-    console.error("Indicator fetch error:", error);
+    console.error("fetchDataForIndicators Error:", error);
     return { type: "error", data: [] };
+  } finally {
+    releaseLock();
   }
 }

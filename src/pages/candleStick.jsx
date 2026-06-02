@@ -1244,12 +1244,13 @@ export default function Candlestick() {
     selectedPeriod: timeframeValue,
   });
 
+  // 1. Base chart & pattern subscriptions
   useEffect(() => {
     if (!selectedCurrency || !timeframeValue) return;
     const symbol = selectedCurrency;
     const interval = timeframeValue;
 
-    const subscribe = () => {
+    const subscribeBase = () => {
       if (isFutures) {
         socket.emit("subscribe-futures-chart", { symbol, interval });
       } else {
@@ -1258,7 +1259,6 @@ export default function Candlestick() {
 
       socket.emit("get-watchlist");
 
-      // Set up pattern listener directly in the chart component
       const patternListener = (data) => {
         if(data.symbol === symbol && data.interval === interval) {
             console.log("New pattern found!", data);
@@ -1267,8 +1267,30 @@ export default function Candlestick() {
       };
 
       socket.on('live-pattern-update', patternListener);
+    };
 
-      // Subscribe to indicator ticks
+    subscribeBase();
+    socket.on("connect", subscribeBase);
+
+    return () => {
+      socket.off("connect", subscribeBase);
+      socket.off('live-pattern-update');
+      
+      if (isFutures) {
+        socket.emit("unsubscribe-futures-chart", { symbol, interval });
+      } else {
+        socket.emit("unsubscribe-live-tick", { symbol, interval });
+      }
+    };
+  }, [selectedCurrency, timeframeValue, isFutures]);
+
+  // 2. Indicator tick subscriptions
+  useEffect(() => {
+    if (!selectedCurrency || !timeframeValue || !selectedIndicator.length) return;
+    const symbol = selectedCurrency;
+    const interval = timeframeValue;
+
+    const subscribeIndicators = () => {
       selectedIndicator.forEach((indicator) => {
         const config = indicatorConfigs[indicator] || {};
         const payload = {
@@ -1281,21 +1303,14 @@ export default function Candlestick() {
       });
     };
 
-    // Initial subscription
-    subscribe();
-
-    // Re-subscribe if the socket drops and reconnects (e.g. tab wakes from sleep)
-    socket.on("connect", subscribe);
+    // Use a small timeout to prevent race conditions with the cleanup function's unsubscribe
+    const timer = setTimeout(subscribeIndicators, 100);
+    socket.on("connect", subscribeIndicators);
 
     return () => {
-      socket.off("connect", subscribe);
-      if (isFutures) {
-        socket.emit("unsubscribe-futures-chart", { symbol, interval });
-      } else {
-        socket.emit("unsubscribe-live-tick", { symbol, interval });
-      }
-
-      // Unsubscribe from indicator ticks
+      clearTimeout(timer);
+      socket.off("connect", subscribeIndicators);
+      
       selectedIndicator.forEach((indicator) => {
         const config = indicatorConfigs[indicator] || {};
         const payload = {
@@ -1306,11 +1321,8 @@ export default function Candlestick() {
         };
         socket.emit("unsubscribe-indicator-tick", payload);
       });
-
-      // Cleanup pattern listener
-      socket.off('live-pattern-update');
     };
-  }, [selectedCurrency, timeframeValue, isFutures, selectedIndicator, indicatorConfigs]);
+  }, [selectedCurrency, timeframeValue, selectedIndicator, indicatorConfigs]);
 
   const { fetchDataByCurrency, fetchIndicatorData } = useChartFunctions({
     chartRef,
@@ -1746,6 +1758,9 @@ export default function Candlestick() {
                   <div className="absolute top-25 left-2 flex flex-col gap-1 z-50">
                     {selectedIndicator &&
                       selectedIndicator?.map((indicator, index) => {
+                        // Only show the bar if the indicator has been successfully plotted
+                        if (!indicatorSeriesRef.current[indicator]) return null;
+
                         const normalizedType = indicator.replace(
                           /[\s/%]+/g,
                           "",

@@ -295,17 +295,17 @@ const SocialFinancialGrid = ({ alerts, socialStats, financials, priceCompass }) 
                 <svg width="100" height="100" viewBox="0 0 36 36">
                   <circle cx="18" cy="18" r="14" fill="none" stroke="var(--bg-secondary, #121824)" strokeWidth="2.5" />
                   <circle cx="18" cy="18" r="10" fill="none" stroke="var(--bg-secondary, #121824)" strokeWidth="2" />
-                  <circle cx="18" cy="18" r="14" fill="none" stroke="#f97316" strokeWidth="2.5" strokeDasharray="70 100" strokeDashoffset="15" strokeLinecap="round" />
-                  <circle cx="18" cy="18" r="10" fill="none" stroke="#3b82f6" strokeWidth="2" strokeDasharray="50 100" strokeDashoffset="45" strokeLinecap="round" />
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#f97316" strokeWidth="2.5" strokeDasharray="100 100" strokeLinecap="round" pathLength="100" transform="rotate(-90 18 18)" />
+                  <circle cx="18" cy="18" r="10" fill="none" stroke="#3b82f6" strokeWidth="2" strokeDasharray={`${Math.min(100, Math.round(((financials?.feeRaw || 0) / (financials?.revenueRaw || 1)) * 100))} 100`} strokeLinecap="round" pathLength="100" transform="rotate(-90 18 18)" />
                   <text x="18" y="20.5" textAnchor="middle" fill="var(--text-main, #ffffff)" fontSize="6.5" fontWeight="bold">REV</text>
                 </svg>
-                <div style={{ position: 'absolute', right: '0', top: '25px', display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '11px' }}>
-                  <div style={{ color: '#f97316', fontWeight: '600' }}>Revenues</div>
-                  <div style={{ color: '#3b82f6', fontWeight: '600' }}>Fees</div>
+                <div style={{ position: 'absolute', right: '0', top: '25px', display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '11px', textAlign: 'right' }}>
+                  <div style={{ color: '#f97316', fontWeight: '600' }}>Rev: {financials?.revenue || "$0"}</div>
+                  <div style={{ color: '#3b82f6', fontWeight: '600' }}>Fees: {financials?.fee || "$0"}</div>
                 </div>
               </div>
               <div style={{ fontSize: '13px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                Total 30D Revenue: <span style={{ fontWeight: 'bold', color: 'var(--text-main)' }}>{financials?.revenue}</span>
+                Total Revenue: <span style={{ fontWeight: 'bold', color: 'var(--text-main)' }}>{financials?.revenue || "$0"}</span>
               </div>
             </div>
           </div>

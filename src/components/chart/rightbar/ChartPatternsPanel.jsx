@@ -54,6 +54,7 @@ export default function ChartPatternsPanel({
         }
 
         const filteredDetected = (chartData?.patterns || []).filter(pattern => {
+            if (!pattern || !pattern.name) return false;
             return pattern.name.toLowerCase().includes(searchQuery.toLowerCase());
         });
 
