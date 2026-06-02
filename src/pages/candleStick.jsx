@@ -135,6 +135,7 @@ export default function Candlestick() {
     showModal,
     setShowModal,
     modalText,
+    addPattern
   } = usePatterns(selectedCurrency, timeframeValue, chartRef, seriesRef);
 
   // Width resizing logic
@@ -1260,8 +1261,8 @@ export default function Candlestick() {
       // Set up pattern listener directly in the chart component
       const patternListener = (data) => {
         if(data.symbol === symbol && data.interval === interval) {
-            console.log("Naya Pattern Mila!", data);
-            // Yahan aap lines draw karne ka logic call kar sakte hain
+            console.log("New pattern found!", data);
+            addPattern(data);
         }
       };
 
@@ -1742,7 +1743,7 @@ export default function Candlestick() {
                 {/* -----------------INDICATOR BAR------------------- */}
 
                 {selectedIndicator?.length > 0 && (
-                  <div className="absolute top-10 left-2 flex flex-col gap-1 z-50">
+                  <div className="absolute top-25 left-2 flex flex-col gap-1 z-50">
                     {selectedIndicator &&
                       selectedIndicator?.map((indicator, index) => {
                         const normalizedType = indicator.replace(

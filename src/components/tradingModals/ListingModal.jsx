@@ -146,12 +146,14 @@ export const ListingModal = ({
                 onChange={(e) => {
                   setSearchCurrency(e.target.value);
                 }}
-                className="w-full pl-11 pr-4 py-3 text-sm rounded-lg outline-none"
+                className="w-full py-3 text-sm rounded-lg outline-none"
                 style={{
                   backgroundColor: "var(--bg-main, #f7f8fb)",
                   color: "var(--text-main, #131722)",
                   border: "1px solid var(--border-color, #e2e8f0)",
-                  boxShadow: "inset 0 1px 2px rgba(0,0,0,0.05)"
+                  boxShadow: "inset 0 1px 2px rgba(0,0,0,0.05)",
+                  paddingLeft: "40px",
+                  paddingRight: "16px"
                 }}
                 onFocus={(e) => e.target.style.borderColor = "#2962ff"}
                 onBlur={(e) => e.target.style.borderColor = "var(--border-color, #e2e8f0)"}
@@ -220,12 +222,14 @@ export const ListingModal = ({
                 placeholder="Search indicators..."
                 value={searchIndicator}
                 onChange={(e) => setSearchIndicator(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 text-sm rounded-lg outline-none"
+                className="w-full py-3 text-sm rounded-lg outline-none"
                 style={{
                   backgroundColor: "var(--bg-main, #f7f8fb)",
                   color: "var(--text-main, #131722)",
                   border: "1px solid var(--border-color, #e2e8f0)",
-                  boxShadow: "inset 0 1px 2px rgba(0,0,0,0.05)"
+                  boxShadow: "inset 0 1px 2px rgba(0,0,0,0.05)",
+                  paddingLeft: "40px",
+                  paddingRight: "16px"
                 }}
                 onFocus={(e) => e.target.style.borderColor = "#2962ff"}
                 onBlur={(e) => e.target.style.borderColor = "var(--border-color, #e2e8f0)"}

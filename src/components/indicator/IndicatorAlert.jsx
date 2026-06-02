@@ -11,7 +11,7 @@ export default function IndicatorAlert({ onClose, value, symbol, liveOhlcv, addA
   const [alertValue, setAlertValue] = useState(value || "");
   const [alertExpiration, setAlertExpiration] = useState("");
 
-  console.log("IndicatorAlert render: addAlert is:", addAlert, "type:", typeof addAlert);
+  // console.log("IndicatorAlert render: addAlert is:", addAlert, "type:", typeof addAlert);
 
   const handleCreate = () => {
     if (!alertValue) {

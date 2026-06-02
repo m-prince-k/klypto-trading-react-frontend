@@ -211,6 +211,22 @@ export const usePatterns = (symbol, interval, chartRef, candleSeriesRef) => {
 
     }, [chartData, selectedPatterns, chartRef, candleSeriesRef]);
 
+    const addPattern = (newPattern) => {
+        setChartData(prev => {
+            if (!prev) return { patterns: [newPattern] };
+            
+            const exists = prev.patterns.some(p => 
+                p.name === newPattern.name && p.time === newPattern.time
+            );
+            if (exists) return prev;
+            
+            return {
+                ...prev,
+                patterns: [newPattern, ...prev.patterns]
+            };
+        });
+    };
+
     return {
         loading,
         chartData,
@@ -221,6 +237,7 @@ export const usePatterns = (symbol, interval, chartRef, candleSeriesRef) => {
         togglePattern,
         showModal,
         setShowModal,
-        modalText
+        modalText,
+        addPattern
     };
 };

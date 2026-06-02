@@ -44,11 +44,11 @@ export default function useChartFunctions({
       socket.on(responseEvent, handleResponse);
       socket.on("listing-error", handleError);
 
-      // Start the timeout (20 seconds)
+      // Start the timeout (60 seconds)
       timeoutId = setTimeout(() => {
         cleanup();
         reject(new Error("Network timeout: Failed to fetch chart data."));
-      }, 20000);
+      }, 60000);
 
       socket.emit(requestEvent, { symbol, interval, limit: 1000 });
     });
