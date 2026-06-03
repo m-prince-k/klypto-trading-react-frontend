@@ -1,7 +1,11 @@
 import { FiWifiOff } from "react-icons/fi";
 import { Button, Card } from "react-bootstrap";
+import { useTheme } from "../../context/ThemeContext";
 
 const ChartErrorState = ({ onRetry }) => {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
   return (
     <div
       className="position-absolute inset-0 d-flex align-items-center justify-content-center"
@@ -10,7 +14,10 @@ const ChartErrorState = ({ onRetry }) => {
       {/* Backdrop */}
       <div
         className="position-absolute w-100 h-100"
-        style={{ background: "rgba(255,255,255,0.6)", backdropFilter: "blur(2px)" }}
+        style={{ 
+            background: isDark ? "rgba(0,0,0,0.6)" : "rgba(255,255,255,0.6)", 
+            backdropFilter: "blur(2px)" 
+        }}
       />
 
       {/* Card */}
@@ -20,31 +27,33 @@ const ChartErrorState = ({ onRetry }) => {
           minWidth: 300,
           padding: "2rem 2.5rem",
           borderRadius: "1rem",
-          borderColor: "rgba(0,0,0,0.1)",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
+          borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+          background: "var(--bg-card, #ffffff)",
+          boxShadow: isDark ? "0 8px 32px rgba(0,0,0,0.4)" : "0 8px 32px rgba(0,0,0,0.08)",
         }}
       >
         {/* Icon */}
         <div
-          className="d-flex align-items-center justify-content-center rounded-circle bg-light mx-auto mb-3"
-          style={{ width: 48, height: 48 }}
+          className="d-flex align-items-center justify-content-center rounded-circle mx-auto mb-3"
+          style={{ width: 48, height: 48, background: "var(--bg-main, #f8f9fa)" }}
         >
-          <FiWifiOff size={18} className="text-secondary" />
+          <FiWifiOff size={18} style={{ color: "var(--text-muted, #6c757d)" }} />
         </div>
 
         <Card.Body className="p-0 d-flex flex-column align-items-center gap-2">
-          <h6 className="fw-semibold text-dark mb-0" style={{ fontSize: 14 }}>
+          <h6 className="fw-semibold mb-0" style={{ fontSize: 14, color: "var(--text-main, #212529)" }}>
             Unable to load chart data
           </h6>
 
-          <p className="text-secondary mb-0" style={{ fontSize: 12, maxWidth: 200, lineHeight: 1.6 }}>
+          <p className="mb-0" style={{ fontSize: 12, maxWidth: 200, lineHeight: 1.6, color: "var(--text-muted, #6c757d)" }}>
             Please check your connection or try again
           </p>
 
           <Button
-            variant="dark"
+            variant={isDark ? "light" : "dark"}
             onClick={onRetry}
-            className="mt-2 px-4 rounded-pill"
+            className="mt-2 px-4 rounded-pill border-0"
+            style={{ backgroundColor: "var(--accent-color, #212529)", color: "#fff" }}
             size="sm"
           >
             Retry

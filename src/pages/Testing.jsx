@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createChart, CrosshairMode, LineStyle } from "lightweight-charts";
 import axios from "axios";
 
-import "./CupHandleChart.css";
+// import "./CupHandleChart.css";
 
 // Helper to generate arc points for Double Bottoms in the frontend
 function generateArcPoints(data, startIdx, bottomIdx, endIdx, rimPrice) {

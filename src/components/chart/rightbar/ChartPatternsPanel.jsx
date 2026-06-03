@@ -8,7 +8,8 @@ export default function ChartPatternsPanel({
     sidebarMode,
     setSidebarMode,
     availablePatterns,
-    chartData
+    chartData,
+    activePatternType
 }) {
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -30,12 +31,12 @@ export default function ChartPatternsPanel({
                                 gap: '10px',
                                 fontSize: '12px',
                                 cursor: 'pointer',
-                                color: selectedPatterns.includes(name) ? '#2962ff' : 'var(--text-main, #131722)',
+                                color: activePatternType === name ? '#2962ff' : 'var(--text-main, #131722)',
                                 transition: 'color 0.2s'
                             }}>
                                 <input 
                                     type="checkbox" 
-                                    checked={selectedPatterns.includes(name)}
+                                    checked={activePatternType === name}
                                     onChange={() => togglePattern(name)}
                                     style={{ accentColor: '#2962ff', width: '14px', height: '14px', cursor: 'pointer' }}
                                 />
@@ -107,7 +108,7 @@ export default function ChartPatternsPanel({
                                     </span>
                                 )}
                             </div>
-                            <div style={{ fontSize: '11px', color: 'var(--text-muted, #787b86)', marginLeft: '14px' }}>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted, #787b86)', marginLeft: '14px' ,textAlign:'left'}}>
                                 {new Date(pattern.time).toLocaleString()}
                             </div>
                         </div>

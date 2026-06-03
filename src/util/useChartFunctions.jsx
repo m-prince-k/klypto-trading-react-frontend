@@ -63,7 +63,7 @@ export default function useChartFunctions({
   ) {
     if (!selectedIndicator?.length) return;
 
-    for (const indicator of selectedIndicator) {
+    await Promise.all(selectedIndicator.map(async (indicator) => {
       try {
         const baseIndicatorForFetch = indicator.replace(/_\d+$/, "");
         const config = indicatorConfigs?.[indicator] || {};
@@ -75,7 +75,7 @@ export default function useChartFunctions({
           config
         );
 
-        if (!result) continue;
+        if (!result) return;
 
         const baseIndicator = indicator.replace(/_\d+$/, "");
         const { maType } = config;
@@ -1045,7 +1045,7 @@ export default function useChartFunctions({
       } catch (error) {
         console.log(error, "Indicator loading error");
       }
-    }
+    }));
   }
   return {
     fetchDataByCurrency,

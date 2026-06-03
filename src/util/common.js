@@ -62,7 +62,7 @@ export const ChartProprties = {
     rightBarSpacing: 80, // ✅ Future space
     barSpacing: 10, // Slightly tighter like TV
 
-    minBarSpacing: 5, // Prevent over-zoom crush
+    minBarSpacing: 0.01, // Allow zooming out entirely without limits
     fixLeftEdge: false,
     fixRightEdge: false,
 

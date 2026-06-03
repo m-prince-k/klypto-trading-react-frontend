@@ -7,6 +7,7 @@ import {
   AreaSeries,
   HistogramSeries,
   BaselineSeries,
+  createSeriesMarkers,
 } from "lightweight-charts";
 import IndicatorRuleBuilder from "../components/scanner/IndicatorRuleBuilder";
 import { LuCirclePlus, LuCircleMinus } from "react-icons/lu";
@@ -59,12 +60,15 @@ import useAlerts from "../util/useAlerts";
 import { usePatterns } from "../util/usePatterns";
 import ChartPatternsPanel from "../components/chart/rightbar/ChartPatternsPanel";
 
-export default function Candlestick() {
+import { withPatternOverlay } from '../hoc/withPatternOverlay';
+
+function Candlestick(props) {
   const { theme } = useTheme();
-  const chartRef = useRef();
+  const chartRef = useRef(null);
+  const seriesRef = useRef(null);
+  const markersPluginRef = useRef(null);
   const containerRef = useRef();
   const paneContainerRef = useRef();
-  const seriesRef = useRef(null);
   const indicatorSeriesRef = useRef({});
   const latestIndicatorValuesRef = useRef({});
   const panesRef = useRef({});
@@ -85,7 +89,7 @@ export default function Candlestick() {
   );
 
   const [timeframeValue, setTimeframeValue] = useState(
-    params.get("tf") || "1m",
+    params.get("tf") || "1d",
   );
   const [selectedIndicator, setSelectedIndicator] = useState([]);
   const [rangeValue, setRangeValue] = useState("1000");
@@ -124,6 +128,7 @@ export default function Candlestick() {
 
   const sidebarContainerRef = useRef(null);
 
+  const patternState = usePatterns(selectedCurrency, timeframeValue);
   const {
     loading: patternsLoading,
     selectedPatterns,
@@ -135,9 +140,87 @@ export default function Candlestick() {
     showModal,
     setShowModal,
     modalText,
-    addPattern
-  } = usePatterns(selectedCurrency, timeframeValue, chartRef, seriesRef);
+    activePatternType,
+    setActivePatternType
+  } = patternState;
 
+  const drawnPatternSeriesRef = useRef([]);
+
+  // Draw Effect
+  useEffect(() => {
+    if (!chartRef.current || !seriesRef.current || !chartData?.candles) return;
+    
+    drawnPatternSeriesRef.current.forEach(s => {
+      try { chartRef.current.removeSeries(s); } catch(e){}
+    });
+    drawnPatternSeriesRef.current = [];
+
+    let allMarkers = [];
+    let minIdx = Infinity;
+    let maxIdx = -Infinity;
+
+    if (props.patternMiddleware && selectedPatterns.length > 0) {
+      selectedPatterns.forEach(patternId => {
+        const pattern = chartData.patterns?.find(p => p._id === patternId);
+        if (pattern) {
+          const { newSeries, markers } = props.patternMiddleware.drawPattern(
+             chartRef.current, 
+             seriesRef.current, 
+             activePatternType, 
+             pattern, 
+             chartData.candles
+          );
+          drawnPatternSeriesRef.current.push(...newSeries);
+          if (markers && markers.length > 0) {
+              allMarkers.push(...markers);
+          }
+          
+          if (pattern.indices) {
+              const idxs = Object.values(pattern.indices).filter(v => typeof v === 'number' && v >= 0);
+              if (idxs.length > 0) {
+                  minIdx = Math.min(minIdx, ...idxs);
+                  maxIdx = Math.max(maxIdx, ...idxs);
+              }
+          }
+        }
+      });
+    }
+
+    // Sort markers by time before setting to ensure correct rendering order
+    allMarkers.sort((a, b) => a.time < b.time ? -1 : a.time > b.time ? 1 : 0);
+    
+    // Set markers using the v5 plugin
+    if (typeof createSeriesMarkers === 'function') {
+        if (!markersPluginRef.current) {
+            markersPluginRef.current = createSeriesMarkers(seriesRef.current, allMarkers);
+        } else {
+            markersPluginRef.current.setMarkers(allMarkers);
+        }
+    } else if (typeof seriesRef.current.setMarkers === 'function') {
+        seriesRef.current.setMarkers(allMarkers);
+    }
+    
+    // Pan to the pattern if one is selected
+    if (minIdx !== Infinity && maxIdx !== -Infinity && chartData.candles) {
+        const padding = Math.max(5, Math.floor((maxIdx - minIdx) * 0.2));
+        const fromIdx = Math.max(0, minIdx - padding);
+        const toIdx = Math.min(chartData.candles.length - 1, maxIdx + padding);
+        
+        const fromCandle = chartData.candles[fromIdx];
+        const toCandle = chartData.candles[toIdx];
+
+        if (fromCandle && toCandle && chartRef.current && chartRef.current.timeScale()) {
+            const normalizeTime = (t) => {
+                if (typeof t === 'string') return Math.floor(new Date(t).getTime() / 1000);
+                if (typeof t === 'number' && t > 20000000000) return Math.floor(t / 1000);
+                return t;
+            };
+            const fromTime = normalizeTime(fromCandle.time);
+            const toTime = normalizeTime(toCandle.time);
+            chartRef.current.timeScale().setVisibleRange({ from: fromTime, to: toTime });
+        }
+    }
+  }, [selectedPatterns, chartData, activePatternType, props.patternMiddleware]);
   // Width resizing logic
   useEffect(() => {
     if (!isDraggingWidth) return;
@@ -1262,7 +1345,7 @@ export default function Candlestick() {
       const patternListener = (data) => {
         if(data.symbol === symbol && data.interval === interval) {
             console.log("New pattern found!", data);
-            addPattern(data);
+            // addPattern(data); // Removed temporarily as pattern fetching now uses POST endpoint
         }
       };
 
@@ -1483,6 +1566,9 @@ export default function Candlestick() {
                     setMainChartLoading(true);
                   }} />
                 )}
+                
+                {/* Dynamic Legend from HOC */}
+                {props.patternMiddleware && selectedPatterns.length > 0 && props.patternMiddleware.getPatternLegend(activePatternType)}
                 
                 {/* Main chart rendering area */}
                 {mainChartLoading && (
@@ -1958,10 +2044,8 @@ export default function Candlestick() {
 
               <div
                 ref={paneContainerRef}
-                style={{
-                  position: "relative",
-                  width: "100%",
-                }}
+                className="flex flex-col flex-grow relative"
+                style={{ width: `calc(100% - ${sidebarWidth}px)`, minWidth: "250px" }}
               >
                 {renderIndicators()}
               </div>
@@ -2110,6 +2194,7 @@ export default function Candlestick() {
                     setSidebarMode={setSidebarMode}
                     availablePatterns={availablePatterns}
                     chartData={chartData}
+                    activePatternType={activePatternType}
                   />
                 )}
               </div>
@@ -2186,3 +2271,5 @@ export default function Candlestick() {
     </>
   );
 }
+
+export default withPatternOverlay(Candlestick);
