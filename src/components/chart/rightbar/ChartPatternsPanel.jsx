@@ -66,10 +66,12 @@ export default function ChartPatternsPanel({
             return <div style={{ color: 'var(--text-muted, #787b86)', fontSize: '12px', textAlign: 'center', marginTop: '20px' }}>No matches found.</div>;
         }
 
+        const originalPatterns = chartData?.patterns || [];
+
         return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {filteredDetected.map((pattern, idx) => {
-                    const uniqueId = `${pattern.name}-${pattern.time}-${idx}`;
+                {filteredDetected.map((pattern) => {
+                    const uniqueId = pattern._id;
                     const isSelected = selectedPatterns.includes(uniqueId) || selectedPatterns.includes(pattern.name);
                     
                     const isBullish = pattern.type && pattern.type.includes('Bullish');
@@ -85,7 +87,7 @@ export default function ChartPatternsPanel({
                                 flexDirection: 'column', 
                                 gap: '4px',
                                 padding: '10px',
-                                backgroundColor: isSelected ? 'rgba(41, 98, 255, 0.1)' : 'var(--bg-secondary, #f8f9fa)',
+                                backgroundColor: isSelected ? 'rgba(41, 98, 255, 0.1)' : 'var(--bg-main, #f8f9fa)',
                                 borderRadius: '6px',
                                 border: `1px solid ${isSelected ? '#2962ff' : 'var(--border-color, #e2e8f0)'}`,
                                 cursor: 'pointer',
@@ -155,7 +157,7 @@ export default function ChartPatternsPanel({
                     onClick={() => setSidebarMode('detected')} 
                     style={{
                         flex: 1, padding: '8px', borderRadius: '6px', border: 'none',
-                        backgroundColor: sidebarMode === 'detected' ? '#2962ff' : 'var(--bg-secondary, #f8f9fa)',
+                        backgroundColor: sidebarMode === 'detected' ? '#2962ff' : 'var(--bg-main, #f8f9fa)',
                         color: sidebarMode === 'detected' ? '#ffffff' : 'var(--text-muted, #787b86)', 
                         fontSize: '12px', fontWeight: '600', cursor: 'pointer',
                         transition: 'all 0.2s'
@@ -167,7 +169,7 @@ export default function ChartPatternsPanel({
                     onClick={() => setSidebarMode('all')} 
                     style={{
                         flex: 1, padding: '8px', borderRadius: '6px', border: 'none',
-                        backgroundColor: sidebarMode === 'all' ? '#2962ff' : 'var(--bg-secondary, #f8f9fa)',
+                        backgroundColor: sidebarMode === 'all' ? '#2962ff' : 'var(--bg-main, #f8f9fa)',
                         color: sidebarMode === 'all' ? '#ffffff' : 'var(--text-muted, #787b86)', 
                         fontSize: '12px', fontWeight: '600', cursor: 'pointer',
                         transition: 'all 0.2s'
@@ -189,7 +191,7 @@ export default function ChartPatternsPanel({
                         padding: '8px 12px',
                         borderRadius: '6px',
                         border: '1px solid var(--border-color, #e2e8f0)',
-                        backgroundColor: 'var(--bg-secondary, #f8f9fa)',
+                        backgroundColor: 'var(--bg-main, #f8f9fa)',
                         color: 'var(--text-main, #131722)',
                         fontSize: '12px',
                         outline: 'none'

@@ -26,81 +26,12 @@ const MarketData = ({ coins, setCoins, marketMetrics, setMarketMetrics, overview
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   
-  const [isSocketConnected, setIsSocketConnected] = useState(true);
   const [gainers, setGainers] = useState([]);
   const [losers, setLosers] = useState([]);
   const [sortConfig, setSortConfig] = useState({
     key: null,
     direction: "desc",
   });
-
-  // ── Simulated Fallback ticks when WebSocket is offline ────────────
-  useEffect(() => {
-    if (isSocketConnected) return;
-    if (coins.length === 0) return;
-
-    const interval = setInterval(() => {
-      const randomIndex = Math.floor(Math.random() * coins.length);
-      const coinToUpdate = coins[randomIndex];
-      if (!coinToUpdate) return;
-
-      const percentageChange = (Math.random() * 0.4 - 0.18) / 100;
-      const originalPrice = coinToUpdate.price;
-      const newPrice = Number(
-        (originalPrice * (1 + percentageChange)).toFixed(
-          coinToUpdate.price < 1 ? 4 : 2,
-        ),
-      );
-      const direction = newPrice >= originalPrice ? "up" : "down";
-
-      const flashKey = `${coinToUpdate.symbol}-price`;
-      setFlashStates((prev) => ({ ...prev, [flashKey]: direction }));
-      setTimeout(() => {
-        setFlashStates((prev) => {
-          const next = { ...prev };
-          delete next[flashKey];
-          return next;
-        });
-      }, 800);
-
-      setCoins((prevCoins) =>
-        prevCoins.map((coin, index) => {
-          if (index === randomIndex) {
-            const updatedHistory = [...coin.history.slice(1), newPrice];
-            return {
-              ...coin,
-              price: newPrice,
-              change24h: Number(
-                (coin.change24h + percentageChange * 100).toFixed(2),
-              ),
-              history: updatedHistory,
-            };
-          }
-          return coin;
-        }),
-      );
-
-      setMarketMetrics((prev) => {
-        if (!prev) return prev;
-        const mcapTick = Math.random() * 0.02 - 0.01;
-        const fearGreedTick =
-          Math.random() > 0.85 ? (Math.random() > 0.5 ? 1 : -1) : 0;
-        return {
-          ...prev,
-          totalMarketCap: Number((prev.totalMarketCap + mcapTick).toFixed(2)),
-          totalMarketCapChange: Number(
-            (prev.totalMarketCapChange + mcapTick * 8).toFixed(2),
-          ),
-          fearGreedIndex: Math.min(
-            Math.max(prev.fearGreedIndex + fearGreedTick, 0),
-            100,
-          ),
-        };
-      });
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, [isSocketConnected, coins]);
 
   // Derived Gainers and Losers
   useEffect(() => {
@@ -312,7 +243,7 @@ const MarketData = ({ coins, setCoins, marketMetrics, setMarketMetrics, overview
           pointerEvents: isLoading ? 'none' : 'auto'
         }}
       >
-      <MarketDataHeader isSocketConnected={isSocketConnected} />
+      <MarketDataHeader />
 
       <MarketDataTickerGrid
         marketMetrics={marketMetrics}

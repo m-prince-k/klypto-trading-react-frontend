@@ -2,6 +2,53 @@ import { useState, useEffect, useRef } from 'react';
 import { LineSeries, createSeriesMarkers } from 'lightweight-charts';
 import apiService from '../services/apiServices';
 
+const normalizeTime = (t) => {
+    if (typeof t === 'number') {
+        return t < 20000000000 ? t * 1000 : t;
+    }
+    if (typeof t === 'string') {
+        let ms = Date.parse(t);
+        const match = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+        if (match && !isNaN(ms)) {
+            const d1 = parseInt(match[1], 10);
+            const d2 = parseInt(match[2], 10);
+            
+            // If parsed date is more than 30 days away from today, try swapping month and day
+            const diff = Math.abs(ms - Date.now());
+            if (diff > 30 * 24 * 60 * 60 * 1000) {
+                const swappedStr = t.replace(/^(\d{1,2})\/(\d{1,2})/, `${d2}/${d1}`);
+                const swappedMs = Date.parse(swappedStr);
+                if (!isNaN(swappedMs)) {
+                    const swappedDiff = Math.abs(swappedMs - Date.now());
+                    if (swappedDiff < diff) {
+                        return swappedMs;
+                    }
+                }
+            }
+        }
+        if (!isNaN(ms)) return ms;
+    }
+    return t;
+};
+
+let uniqueCounter = 0;
+
+const normalizePattern = (p) => {
+    const normalizedTime = normalizeTime(p.time);
+    const stableId = p._id || `${p.name}-${normalizedTime}-${++uniqueCounter}`;
+    
+    return {
+        ...p,
+        _id: stableId,
+        time: normalizedTime,
+        lines: (p.lines || []).map(line => ({
+            ...line,
+            start: { ...line.start, time: normalizeTime(line.start.time) },
+            end: { ...line.end, time: normalizeTime(line.end.time) }
+        }))
+    };
+};
+
 export const usePatterns = (symbol, interval, chartRef, candleSeriesRef) => {
     const [loading, setLoading] = useState(false);
     const [chartData, setChartData] = useState(null);
@@ -61,8 +108,10 @@ export const usePatterns = (symbol, interval, chartRef, candleSeriesRef) => {
                 console.log(json, "pattern data");  
                 
                 if (json.success) {
+                    const normalized = (json.detectedPatterns || []).map(normalizePattern);
+                    const sortedPatterns = normalized.sort((a, b) => b.time - a.time);
                     setChartData({ 
-                        patterns: json.detectedPatterns || [] 
+                        patterns: sortedPatterns 
                     });
                 }
             } catch (error) {
@@ -76,9 +125,8 @@ export const usePatterns = (symbol, interval, chartRef, candleSeriesRef) => {
 
     const togglePattern = (patternId) => {
         if (chartData && chartData.patterns) {
-            const exists = chartData.patterns.some((p, idx) => {
-                const uniqueId = `${p.name}-${p.time}-${idx}`;
-                return p.name === patternId || uniqueId === patternId;
+            const exists = chartData.patterns.some((p) => {
+                return p.name === patternId || p._id === patternId;
             });
 
             if (!exists) {
@@ -108,8 +156,8 @@ export const usePatterns = (symbol, interval, chartRef, candleSeriesRef) => {
         
         const markers = [];
 
-        chartData.patterns.forEach((pattern, idx) => {
-            const patternUniqueId = `${pattern.name}-${pattern.time}-${idx}`;
+        chartData.patterns.forEach((pattern) => {
+            const patternUniqueId = pattern._id;
             
             if (!selectedPatterns.includes(pattern.name) && !selectedPatterns.includes(patternUniqueId)) return;
 
@@ -191,8 +239,8 @@ export const usePatterns = (symbol, interval, chartRef, candleSeriesRef) => {
                     time: Math.floor(pattern.time / 1000),
                     position: isBullish ? 'belowBar' : (isBearish ? 'aboveBar' : 'inBar'),
                     color: color,
-                    shape: isBullish ? 'arrowUp' : (isBearish ? 'arrowDown' : 'circle'),
-                    text: pattern.name,
+                    shape: isBullish ? 'arrowUp' : 'arrowDown',
+                    id: patternUniqueId
                 });
             }
         });
@@ -211,18 +259,127 @@ export const usePatterns = (symbol, interval, chartRef, candleSeriesRef) => {
 
     }, [chartData, selectedPatterns, chartRef, candleSeriesRef]);
 
-    const addPattern = (newPattern) => {
-        setChartData(prev => {
-            if (!prev) return { patterns: [newPattern] };
+    // Tooltip Hover Logic
+    useEffect(() => {
+        if (!chartRef?.current || !candleSeriesRef?.current) return;
+        const chart = chartRef.current;
+        
+        let toolTip = document.getElementById('pattern-tooltip');
+        if (!toolTip) {
+            toolTip = document.createElement('div');
+            toolTip.id = 'pattern-tooltip';
+            toolTip.style = `position: absolute; display: none; padding: 10px; box-sizing: border-box; font-size: 12px; text-align: left; z-index: 1000; pointer-events: none; border: 1px solid rgba(41, 98, 255, 0.3); box-shadow: 0 4px 10px rgba(0,0,0,0.15); border-radius: 6px; background: var(--bg-card, #ffffff); color: var(--text-main, #131722);`;
             
-            const exists = prev.patterns.some(p => 
-                p.name === newPattern.name && p.time === newPattern.time
-            );
-            if (exists) return prev;
+            const chartElement = chart.chartElement();
+            if (chartElement) {
+                chartElement.style.position = 'relative';
+                chartElement.appendChild(toolTip);
+            }
+        }
+
+        const handler = (param) => {
+            if (!param.time || param.point === undefined || !param.seriesData.get(candleSeriesRef.current)) {
+                toolTip.style.display = 'none';
+                return;
+            }
+
+            if (!chartData || !chartData.patterns) return;
+            
+            const patternsAtTime = chartData.patterns.filter(p => {
+                const isSelected = selectedPatterns.includes(p.name) || selectedPatterns.includes(p._id);
+                const pTime = Math.floor(p.time / 1000); 
+                return isSelected && pTime === param.time;
+            });
+
+            if (patternsAtTime.length === 0) {
+                toolTip.style.display = 'none';
+                return;
+            }
+
+            toolTip.innerHTML = patternsAtTime.map(p => {
+                const isBullish = p.type && p.type.includes('Bullish');
+                const isBearish = p.type && p.type.includes('Bearish');
+                const color = isBullish ? '#2196F3' : (isBearish ? '#E91E63' : '#FF9800');
+                return `<div style="color: ${color}; font-weight: bold; margin-bottom: 2px;">${p.name}</div><div style="font-size: 10px; color: var(--text-muted, gray);">${p.type || ''}</div>`;
+            }).join('<hr style="margin: 6px 0; border: none; border-top: 1px solid var(--border-color, #e2e8f0);"/>');
+
+            toolTip.style.display = 'block';
+            
+            const y = param.point.y;
+            const x = param.point.x;
+            const chartElement = chart.chartElement();
+            
+            if (chartElement) {
+                let left = x + 15;
+                if (left + toolTip.clientWidth > chartElement.clientWidth) {
+                    left = x - 15 - toolTip.clientWidth;
+                }
+                
+                let top = y + 15;
+                if (top + toolTip.clientHeight > chartElement.clientHeight) {
+                    top = y - 15 - toolTip.clientHeight;
+                }
+                
+                toolTip.style.left = left + 'px';
+                toolTip.style.top = top + 'px';
+            }
+        };
+
+        chart.subscribeCrosshairMove(handler);
+
+        return () => {
+            chart.unsubscribeCrosshairMove(handler);
+            if (toolTip && toolTip.parentNode) {
+                toolTip.parentNode.removeChild(toolTip);
+            }
+        };
+    }, [chartData, selectedPatterns, chartRef, candleSeriesRef]);
+
+    const addPattern = (data) => {
+        setChartData(prev => {
+            let incomingPatterns = [];
+            if (data && Array.isArray(data.patterns)) {
+                incomingPatterns = data.patterns.map(normalizePattern);
+            } else if (data && data.name) {
+                incomingPatterns = [normalizePattern(data)];
+            }
+
+            if (incomingPatterns.length === 0) return prev;
+            
+            const prevPatterns = prev?.patterns || [];
+            
+            const updatedPrevPatterns = [...prevPatterns];
+            const brandNewPatterns = [];
+            
+            incomingPatterns.forEach(incoming => {
+                const existingIdx = updatedPrevPatterns.findIndex(p => p.name === incoming.name && p.time === incoming.time);
+                if (existingIdx !== -1) {
+                    // Update the existing pattern with new live tick data (e.g. extending lines)
+                    // We must retain the original _id so it stays selected and redraws!
+                    updatedPrevPatterns[existingIdx] = {
+                        ...incoming,
+                        _id: updatedPrevPatterns[existingIdx]._id
+                    };
+                } else {
+                    brandNewPatterns.push(incoming);
+                }
+            });
+            
+            // If nothing changed, we could optimize, but we need to trigger a redraw for updated patterns
+            const mergedPatterns = [...brandNewPatterns, ...updatedPrevPatterns].sort((a, b) => b.time - a.time);
+            
+            // Automatically select BRAND NEW patterns so they draw instantly on the live chart
+            const newPatternIds = brandNewPatterns.map(p => p._id);
+
+            setSelectedPatterns(currentSelected => {
+                const toAdd = newPatternIds.filter(id => !currentSelected.includes(id));
+                if (toAdd.length === 0) return currentSelected;
+                return [...currentSelected, ...toAdd];
+            });
             
             return {
                 ...prev,
-                patterns: [newPattern, ...prev.patterns]
+                patterns: mergedPatterns
             };
         });
     };

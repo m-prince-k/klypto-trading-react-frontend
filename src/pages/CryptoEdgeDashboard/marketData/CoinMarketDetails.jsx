@@ -26,10 +26,8 @@ const CoinMarketDetails = () => {
     return sym.replace(/USDT|BUSD|USD/gi, '').toUpperCase();
   };
 
-  // ── STEP 1: API polling for initial coin state + periodic refresh ──
+  // ── STEP 1: One-time API call for initial coin metadata ──
   useEffect(() => {
-    let intervalId;
-
     async function fetchCoinData() {
       try {
         const response = await apiService.post(
@@ -49,29 +47,17 @@ const CoinMarketDetails = () => {
         const latest = data[data.length - 1];
         const newPrice = Number(latest.close);
 
-        setCoin((prevCoin) => {
-          if (!prevCoin) {
-            return {
-              symbol: symbol.toUpperCase(),
-              name: symbol.toUpperCase(),
-              price: newPrice,
-              change24h: 0,
-              volume24h: Number(latest.volume),
-              high: Number(latest.high),
-              low: Number(latest.low),
-              history: data.map((d) => Number(d.close)),
-              supply: 0,
-              logoColor: "#6366f1",
-            };
-          }
-
-          return {
-            ...prevCoin,
-            high: Number(latest.high),
-            low: Number(latest.low),
-            volume24h: Number(latest.volume),
-            history: data.map((d) => Number(d.close)),
-          };
+        setCoin({
+          symbol: symbol.toUpperCase(),
+          name: symbol.toUpperCase(),
+          price: newPrice,
+          change24h: 0,
+          volume24h: Number(latest.volume),
+          high: Number(latest.high),
+          low: Number(latest.low),
+          history: data.map((d) => Number(d.close)),
+          supply: 0,
+          logoColor: "#6366f1",
         });
       } catch (err) {
         console.error("API fetch error:", err);
@@ -101,11 +87,9 @@ const CoinMarketDetails = () => {
         .catch(err => console.error("MarketStats fetch error:", err));
     }
 
+    // Single fetch only — live updates come from useSocket
     fetchCoinData();
     fetchMarketStats();
-    intervalId = setInterval(fetchCoinData, 2000);
-
-    return () => clearInterval(intervalId);
   }, [symbol]);
 
   // ── STEP 2: Socket.IO for live price ticks and kline fetching ──
@@ -181,9 +165,9 @@ const CoinMarketDetails = () => {
                 {isUp ? "+" : ""}{coin.change24h.toFixed(2)}% in the past 24 hrs
               </span>
               <span className="dot-separator">•</span>
-              <span className="portfolio-text">
+              {/* <span className="portfolio-text">
                 You have 0 {coin.name} in portfolio <span className="add-now-link">Add Now</span>
-              </span>
+              </span> */}
             </div>
           </div>
         </section>
@@ -276,10 +260,12 @@ const CoinMarketDetails = () => {
               </span>
               <span className="stat-value">{marketStats?.fullyDilutedMarketCap ? (marketStats.fullyDilutedMarketCap >= 1e12 ? `$${(marketStats.fullyDilutedMarketCap / 1e12).toFixed(2)}T` : `$${(marketStats.fullyDilutedMarketCap / 1e9).toFixed(1)}B`) : "N/A"}</span>
             </div>
-            <div className="stat-item">
-              <span className="stat-label">Issue Date</span>
-              <span className="stat-value">{marketStats?.issueDate || "N/A"}</span>
-            </div>
+            {marketStats?.issueDate && (
+              <div className="stat-item">
+                <span className="stat-label">Issue Date</span>
+                <span className="stat-value">{marketStats?.issueDate}</span>
+              </div>
+            )}
           </div>
         </section>
       </main>

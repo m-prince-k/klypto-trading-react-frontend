@@ -179,7 +179,7 @@ export default function MarketDataCoinsTable({
                       {formatCompact(coin.volume24h)}
                     </td>
                     <td className="col-right" style={{ fontSize: '13px' }}>
-                      {coin.supply.toLocaleString()} {coin.symbol}
+                      {formatCompact(coin.supply)}
                     </td>
                     <td className="sparkline-td col-center">
                       {renderSparkline(coin.history, coin.change7d)}

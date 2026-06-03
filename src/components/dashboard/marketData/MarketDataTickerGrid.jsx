@@ -15,7 +15,7 @@ export default function MarketDataTickerGrid({ marketMetrics, renderSparkline })
           </div>
         </div>
         <div className="stat-chart-container">
-          {renderSparkline([2.52, 2.53, 2.51, 2.54, 2.53, 2.55, marketMetrics?.totalMarketCap || 2.55], marketMetrics?.totalMarketCapChange || 0)}
+          {renderSparkline(marketMetrics?.totalMarketCapHistory || [], marketMetrics?.totalMarketCapChange || 0)}
         </div>
       </div>
 
@@ -31,7 +31,7 @@ export default function MarketDataTickerGrid({ marketMetrics, renderSparkline })
           </div>
         </div>
         <div className="stat-chart-container">
-          {renderSparkline([62.5, 64.1, 63.8, 66.2, 65.5, 67.8, marketMetrics?.volume24h || 67.8], marketMetrics?.volume24hChange || 0)}
+          {renderSparkline(marketMetrics?.volume24hHistory || [], marketMetrics?.volume24hChange || 0)}
         </div>
       </div>
 
@@ -47,7 +47,7 @@ export default function MarketDataTickerGrid({ marketMetrics, renderSparkline })
           </div>
         </div>
         <div className="stat-chart-container">
-          {renderSparkline([51.8, 51.7, 51.9, 51.6, 51.5, 51.3, marketMetrics?.btcDominance || 0], marketMetrics?.btcDominanceChange || 0)}
+          {renderSparkline(marketMetrics?.btcDominanceHistory || [], marketMetrics?.btcDominanceChange || 0)}
         </div>
       </div>
 
@@ -63,7 +63,7 @@ export default function MarketDataTickerGrid({ marketMetrics, renderSparkline })
           </div>
         </div>
         <div className="stat-chart-container">
-          {renderSparkline([16.0, 16.1, 15.9, 16.05, 16.12, 16.15, marketMetrics?.ethDominance || 16.15], marketMetrics?.ethDominanceChange || 0)}
+          {renderSparkline(marketMetrics?.ethDominanceHistory || [], marketMetrics?.ethDominanceChange || 0)}
         </div>
       </div>
 

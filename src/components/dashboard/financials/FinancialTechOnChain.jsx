@@ -13,7 +13,7 @@ export default function FinancialTechOnChain({
         
         {/* 6. FINANCIAL METRICS (ON-CHAIN) */}
         <div className="fin-card">
-          <div className="fin-card-title"><span className="icon">⛓️</span> 6. FINANCIAL METRICS (ON-CHAIN)</div>
+          <div className="fin-card-title"><span className="icon">⛓️</span> 5. FINANCIAL METRICS (ON-CHAIN)</div>
           <div className="fin-list" style={{marginBottom: '12px'}}>
             <div className="fin-list-item"><span className="fin-list-label">Total Value Locked (TVL)</span><span className="fin-list-val text-green">${formatLarge(tvlData?.tvl || onChain?.tvl)}</span></div>
             <div className="fin-list-item">
@@ -42,7 +42,7 @@ export default function FinancialTechOnChain({
 
         {/* 5. TECHNOLOGY & FUNDAMENTALS */}
         <div className="fin-card">
-          <div className="fin-card-title"><span className="icon">⚙️</span> 5. TECHNOLOGY & FUNDAMENTALS</div>
+          <div className="fin-card-title"><span className="icon">⚙️</span> 6. TECHNOLOGY & FUNDAMENTALS</div>
           <div className="fin-list">
             <div className="fin-list-item"><span className="fin-list-label">Blockchain</span><span className="fin-list-val">{fundamentals?.blockchain || 'N/A'}</span></div>
             <div className="fin-list-item"><span className="fin-list-label">Smart Contract</span><span className="fin-list-val">{fundamentals?.smartContractStatus && fundamentals.smartContractStatus !== 'N/A (L1 Asset)' && <span className="text-green">✓ </span>}{fundamentals?.smartContractStatus || 'N/A'}</span></div>
