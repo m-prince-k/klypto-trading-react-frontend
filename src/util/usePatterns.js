@@ -100,7 +100,7 @@ export const usePatterns = (symbol, interval, chartRef, candleSeriesRef) => {
             
             try {
                 setLoading(true);
-                const json = await apiService.get('/api/patterns/detect', { 
+                const json = await apiService.get('/api/pattern/analyze-candles', { 
                     symbol, 
                     interval, 
                     limit: 1000 
