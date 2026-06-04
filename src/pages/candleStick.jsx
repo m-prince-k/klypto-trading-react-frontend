@@ -62,6 +62,25 @@ import ChartPatternsPanel from "../components/chart/rightbar/ChartPatternsPanel"
 
 import { withPatternOverlay } from '../hoc/withPatternOverlay';
 
+const parseChartTime = (t) => {
+  if (!t) return 0;
+  if (typeof t === 'object') {
+    if (t.year !== undefined && t.month !== undefined && t.day !== undefined) {
+       return Math.floor(Date.UTC(t.year, t.month - 1, t.day) / 1000);
+    }
+    return 0;
+  }
+  let numT = Number(t);
+  if (isNaN(numT)) {
+     numT = new Date(t).getTime();
+  }
+  if (isNaN(numT)) return 0;
+  if (numT > 1e10) {
+    return Math.floor(numT / 1000);
+  }
+  return numT;
+};
+
 function Candlestick(props) {
   const { theme } = useTheme();
   const chartRef = useRef(null);
@@ -989,8 +1008,7 @@ function Candlestick(props) {
 
         // Normalize time and values to ensure correct chronological order and type
         const processedData = rawData.map(d => {
-          let t = Number(d.time || d.openTime);
-          if (t > 1e10) t = Math.floor(t / 1000);
+          let t = parseChartTime(d.time || d.openTime);
           return { 
             time: t,
             open: Number(d.open),
@@ -1181,10 +1199,9 @@ function Candlestick(props) {
     }
 
     try {
-      let parsedTime = Number(tickTime);
-      if (parsedTime > 1e10) {
-        parsedTime = Math.floor(parsedTime / 1000);
-      }
+      let parsedTime = parseChartTime(tickTime);
+      if (!parsedTime) return;
+
       latestOhlcvTimeRef.current = parsedTime;
 
       switch (chartType) {
@@ -1256,8 +1273,8 @@ function Candlestick(props) {
         let pointData = null;
 
         // 1. Direct flat object (e.g. { time: 1234, rsi: 48, smoothingMA: 52 })
-        if (typeof tickData === "object" && !Array.isArray(tickData) && tickData.time !== undefined) {
-          pointData = tickData;
+        if (typeof tickData === "object" && !Array.isArray(tickData) && (tickData.time !== undefined || tickData.timestamp !== undefined)) {
+          pointData = { ...tickData, time: tickData.time !== undefined ? tickData.time : tickData.timestamp };
         }
         // 2. Array of points
         else if (Array.isArray(tickData)) {
@@ -1273,8 +1290,8 @@ function Candlestick(props) {
             const arr = tickData[key];
             if (Array.isArray(arr) && arr.length > 0) {
               const pt = arr[arr.length - 1];
-              if (pt && pt.time !== undefined) {
-                if (!pointData.time) pointData.time = pt.time;
+              if (pt && (pt.time !== undefined || pt.timestamp !== undefined)) {
+                if (!pointData.time) pointData.time = pt.time !== undefined ? pt.time : pt.timestamp;
                 pointData[key] = pt.value !== undefined ? pt.value : pt[key];
                 hasData = true;
               }
@@ -1284,10 +1301,7 @@ function Candlestick(props) {
         }
 
         if (pointData && pointData.time !== undefined) {
-          let parsedTime = Number(pointData.time);
-          if (parsedTime > 1e10) {
-            parsedTime = Math.floor(parsedTime / 1000);
-          }
+          let parsedTime = parseChartTime(pointData.time);
 
           // Force sync to the live OHLCV candle time so it aligns exactly
           if (latestOhlcvTimeRef.current) {
@@ -1297,18 +1311,22 @@ function Candlestick(props) {
           Object.keys(groupedSeries).forEach((lineName) => {
             const series = groupedSeries[lineName];
             if (series && typeof series.update === "function") {
-              const val = pointData[lineName] ?? pointData[lineName.toUpperCase()] ?? pointData.value;
-              if (val !== undefined && val !== null) {
-                series.update({ time: parsedTime, value: Number(val) });
-              } else if (lineName === "overboughtFill" || lineName === "oversoldFill") {
-                // For RSI fills, update using the base value if available
-                const rsiVal = pointData.rsi ?? pointData.RSI ?? pointData.value;
-                if (rsiVal !== undefined && rsiVal !== null) {
-                  series.update({ time: parsedTime, value: Number(rsiVal) });
+              try {
+                const val = pointData[lineName] ?? pointData[lineName.toUpperCase()] ?? pointData.value;
+                if (val !== undefined && val !== null) {
+                  series.update({ time: parsedTime, value: Number(val) });
+                } else if (lineName === "overboughtFill" || lineName === "oversoldFill") {
+                  // For RSI fills, update using the base value if available
+                  const rsiVal = pointData.rsi ?? pointData.RSI ?? pointData.value;
+                  if (rsiVal !== undefined && rsiVal !== null) {
+                    series.update({ time: parsedTime, value: Number(rsiVal) });
+                  }
+                } else if (groupedSeries.staticValues && groupedSeries.staticValues[lineName] !== undefined) {
+                  // Advance flat lines (upper, middle, lower, bandBackground) to the new live candle
+                  series.update({ time: parsedTime, value: Number(groupedSeries.staticValues[lineName]) });
                 }
-              } else if (groupedSeries.staticValues && groupedSeries.staticValues[lineName] !== undefined) {
-                // Advance flat lines (upper, middle, lower, bandBackground) to the new live candle
-                series.update({ time: parsedTime, value: Number(groupedSeries.staticValues[lineName]) });
+              } catch (err) {
+                // Ignore "Cannot update oldest data" errors for indicators
               }
             }
           });
@@ -1368,44 +1386,69 @@ function Candlestick(props) {
   }, [selectedCurrency, timeframeValue, isFutures]);
 
   // 2. Indicator tick subscriptions
+  const subscribedPayloadsRef = useRef(new Map());
+
   useEffect(() => {
-    if (!selectedCurrency || !timeframeValue || !selectedIndicator.length) return;
+    if (!selectedCurrency || !timeframeValue) return;
     const symbol = selectedCurrency;
     const interval = timeframeValue;
 
-    const subscribeIndicators = () => {
-      selectedIndicator.forEach((indicator) => {
-        const config = indicatorConfigs[indicator] || {};
-        const payload = {
-          symbol,
-          interval,
-          type: indicator.replace(/_\d+$/, ""),
-          ...config,
-        };
+    const currentPayloads = new Map();
+    
+    selectedIndicator.forEach((indicator) => {
+      const config = indicatorConfigs[indicator] || {};
+      const payload = {
+        symbol,
+        interval,
+        type: indicator.replace(/_\d+$/, ""),
+        ...config,
+      };
+      currentPayloads.set(indicator, payload);
+    });
+
+    // 1. Unsubscribe removed or changed indicators
+    subscribedPayloadsRef.current.forEach((oldPayload, indicator) => {
+      const newPayload = currentPayloads.get(indicator);
+      if (!newPayload || JSON.stringify(newPayload) !== JSON.stringify(oldPayload)) {
+        socket.emit("unsubscribe-indicator-tick", oldPayload);
+        subscribedPayloadsRef.current.delete(indicator);
+      }
+    });
+
+    // 2. Subscribe to new or changed indicators
+    let delay = 100;
+    currentPayloads.forEach((newPayload, indicator) => {
+      if (!subscribedPayloadsRef.current.has(indicator)) {
+        setTimeout(() => {
+          socket.emit("subscribe-indicator-tick", newPayload);
+        }, delay);
+        subscribedPayloadsRef.current.set(indicator, newPayload);
+        delay += 250; // Stagger subscriptions by 250ms to prevent backend race conditions dropping subscriptions
+      }
+    });
+
+    const handleConnect = () => {
+      subscribedPayloadsRef.current.forEach((payload) => {
         socket.emit("subscribe-indicator-tick", payload);
       });
     };
 
-    // Use a small timeout to prevent race conditions with the cleanup function's unsubscribe
-    const timer = setTimeout(subscribeIndicators, 100);
-    socket.on("connect", subscribeIndicators);
+    socket.on("connect", handleConnect);
 
     return () => {
-      clearTimeout(timer);
-      socket.off("connect", subscribeIndicators);
-      
-      selectedIndicator.forEach((indicator) => {
-        const config = indicatorConfigs[indicator] || {};
-        const payload = {
-          symbol,
-          interval,
-          type: indicator.replace(/_\d+$/, ""),
-          ...config,
-        };
-        socket.emit("unsubscribe-indicator-tick", payload);
-      });
+      socket.off("connect", handleConnect);
     };
   }, [selectedCurrency, timeframeValue, selectedIndicator, indicatorConfigs]);
+
+  // Clean up all indicator subscriptions ONLY on unmount
+  useEffect(() => {
+    return () => {
+      subscribedPayloadsRef.current.forEach((payload) => {
+        socket.emit("unsubscribe-indicator-tick", payload);
+      });
+      subscribedPayloadsRef.current.clear();
+    };
+  }, []);
 
   const { fetchDataByCurrency, fetchIndicatorData } = useChartFunctions({
     chartRef,
