@@ -89,7 +89,6 @@ const ChartAndOrderBook = ({ selectedSymbol, baseSymbol, prices, orderBook, tvlD
       <div className="premium-card">
         <div className="card-header-row">
           <h4 className="card-title-main">Order Book</h4>
-          <span className="glow-tag-green">BINANCE</span>
         </div>
         <table className="ob-table">
           <thead>
